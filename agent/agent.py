@@ -35,11 +35,12 @@ class Recepcionista(Agent):
         faq: list[dict],
         plantilla: dict | None = None,
         tipos_catalogo: list[str] | None = None,
+        horario: list[dict] | None = None,
     ) -> None:
         super().__init__(
             instructions=prompt_mod.construir(
                 tenant, servicios, faq, plantilla=plantilla,
-                tipos_catalogo=tipos_catalogo,
+                tipos_catalogo=tipos_catalogo, horario=horario,
             )
         )
         self.plantilla = plantilla
@@ -598,13 +599,14 @@ async def entrypoint(ctx: JobContext) -> None:
         await ctx.room.disconnect()
         return
 
-    servicios, faq, plantilla, tipos = await asyncio.gather(
+    servicios, faq, plantilla, tipos, horario = await asyncio.gather(
         agenda.servicios(tenant.id),
         agenda.faq(tenant.id),
         agenda.plantilla_vertical(tenant.vertical),
         agenda.tipos_de_catalogo(tenant.id),
+        agenda.horario_semanal(tenant.id),
     )
-    recepcionista = Recepcionista(tenant, servicios, faq, plantilla, tipos)
+    recepcionista = Recepcionista(tenant, servicios, faq, plantilla, tipos, horario)
     recepcionista.telefono = llamante
 
     session = AgentSession(

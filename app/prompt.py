@@ -102,6 +102,43 @@ SALUDOS = {
 }
 
 
+DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+
+
+def _reloj(valor) -> str:
+    h, m = valor.hour, valor.minute
+    h12 = h % 12 or 12
+    franja = "de la manana" if h < 12 else ("de la tarde" if h < 19 else "de la noche")
+    return f"{h12}{'' if m == 0 else f' y {m:02d}'} {franja}"
+
+
+def _horario_hablado(reglas: list[dict]) -> list[str]:
+    abiertos: dict[int, list[str]] = {}
+    bloqueos: dict[int, list[str]] = {}
+    cerrados: set[int] = set()
+
+    for r in reglas:
+        dia = r["dia_semana"]
+        rango = f"de {_reloj(r['hora_inicio'])} a {_reloj(r['hora_fin'])}"
+        if r["tipo"] == "festivo":
+            cerrados.add(dia)
+        elif r["tipo"] == "bloqueo":
+            bloqueos.setdefault(dia, []).append(rango)
+        else:
+            abiertos.setdefault(dia, []).append(rango)
+
+    salida = []
+    for dia in range(7):
+        if dia in cerrados or (dia not in abiertos and dia not in bloqueos):
+            salida.append(f"{DIAS[dia]}: cerrado")
+            continue
+        texto = f"{DIAS[dia]}: " + " y ".join(abiertos.get(dia, []))
+        if bloqueos.get(dia):
+            texto += " (cerrado " + " y ".join(bloqueos[dia]) + ")"
+        salida.append(texto)
+    return salida
+
+
 def construir(
     tenant: Tenant,
     servicios: list[dict],
@@ -109,6 +146,7 @@ def construir(
     ahora: datetime | None = None,
     plantilla: dict | None = None,
     tipos_catalogo: list[str] | None = None,
+    horario: list[dict] | None = None,
 ) -> str:
     ahora = ahora or datetime.now(tenant.tz)
     instrucciones = (
@@ -138,6 +176,10 @@ def construir(
     if faq:
         lineas.append("\nINFORMACION DEL NEGOCIO:")
         lineas.extend(f"  - {f['pregunta']} -> {f['respuesta']}" for f in faq)
+
+    if horario:
+        lineas.append("\nHORARIO DE ATENCION (dilo cuando pregunten, no lo consultes):")
+        lineas.extend(f"  - {linea}" for linea in _horario_hablado(horario))
 
     if tipos_catalogo:
         lineas.append(

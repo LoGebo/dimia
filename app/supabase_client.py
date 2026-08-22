@@ -69,6 +69,9 @@ class Agenda:
                 command_timeout=5,
             )
 
+    def adoptar_pool(self, pool: asyncpg.Pool) -> None:
+        self._pool = pool
+
     async def cerrar(self) -> None:
         if self._pool:
             await self._pool.close()
@@ -205,6 +208,16 @@ class Agenda:
         if isinstance(d.get("tts_ajustes"), str):
             d["tts_ajustes"] = json.loads(d["tts_ajustes"])
         return Tenant(**d)
+
+    async def horario_semanal(self, tenant_id: uuid.UUID) -> list[dict]:
+        filas = await self.pool.fetch(
+            """select tipo::text, dia_semana, fecha, hora_inicio, hora_fin
+               from schedule_rule
+               where tenant_id = $1 and resource_id is null and dia_semana is not null
+               order by dia_semana, hora_inicio""",
+            tenant_id,
+        )
+        return [dict(f) for f in filas]
 
     async def servicios(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(
