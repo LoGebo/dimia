@@ -1,11 +1,4 @@
-"""Cliente delgado sobre las funciones RPC de Supabase.
-
-Cero logica de negocio aqui: el motor vive en Postgres. Esto solo traduce
-llamadas del agente a RPC y de vuelta a tipos de Python.
-
-Usa asyncpg directo (no PostgREST): una llamada RPC son ~10-30ms contra los
-~80-150ms de HTTP. En un presupuesto de 800ms voz-a-voz, eso importa.
-"""
+"""Cliente delgado sobre las funciones RPC del motor en Postgres."""
 from __future__ import annotations
 
 import json
@@ -69,7 +62,6 @@ class Agenda:
                 settings().pg_dsn,
                 min_size=2,
                 max_size=10,
-                # obligatorio detras del pooler de Supabase en modo transaccion
                 statement_cache_size=0,
                 command_timeout=5,
             )
@@ -85,7 +77,6 @@ class Agenda:
             raise RuntimeError("llama conectar() antes")
         return self._pool
 
-    # ---------- configuracion del negocio ----------
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
         fila = await self.pool.fetchrow(
@@ -115,7 +106,6 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
-    # ---------- el motor ----------
 
     async def slots_libres(
         self, tenant_id: uuid.UUID, servicio_id: uuid.UUID,
@@ -156,7 +146,6 @@ class Agenda:
         )
         return json.loads(crudo) if isinstance(crudo, str) else crudo
 
-    # ---------- bitacora (QA / evaluacion) ----------
 
     async def registrar_llamada(
         self, tenant_id: uuid.UUID, call_id: str, telefono: str | None,

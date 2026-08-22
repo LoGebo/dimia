@@ -1,8 +1,4 @@
-"""La prueba que sostiene el negocio.
-
-Si esta falla, el producto no sirve: agendar dos veces el mismo lugar es el
-error que hace que un cliente te corra. Todo lo demas es cosmetico.
-"""
+"""Concurrencia sobre el motor de reservas."""
 import asyncio
 import json
 import uuid
@@ -45,7 +41,6 @@ async def test_veinte_llamadas_simultaneas_mismo_horario(pool, negocio):
     assert len(ganadores) == 1, f"se agendo {len(ganadores)} veces el mismo lugar"
     assert all(r["error"] == "slot_tomado" for r in perdedores)
 
-    # y en la base quedo una sola fila confirmada
     n = await pool.fetchval(
         "select count(*) from booking where tenant_id=$1 and estado='confirmada'",
         negocio["tenant"],
@@ -94,7 +89,6 @@ async def test_cancelar_libera_el_lugar(pool, negocio):
         "select cancelar_reserva($1,$2)", negocio["tenant"], uuid.UUID(res["booking_id"])
     )
 
-    # el EXCLUDE solo aplica a 'confirmada': cancelar libera de verdad
     otra = await _reservar(pool, negocio, inicio, "Beto")
     assert otra["ok"]
 

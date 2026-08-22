@@ -1,11 +1,4 @@
-"""Agente de voz. Un solo worker sirve a TODOS los negocios.
-
-Al entrar una llamada se resuelve el tenant por el numero marcado y se arma
-el prompt con su configuracion. Nada esta hardcodeado por cliente.
-
-Presupuesto de latencia voz-a-voz: 700-900 ms.
-  telefonia ~50  ·  STT ~150  ·  LLM ~250  ·  herramienta ~30  ·  TTS ~40
-"""
+"""Agente de voz LiveKit. Un worker sirve a todos los negocios."""
 from __future__ import annotations
 
 import asyncio
@@ -32,8 +25,6 @@ load_dotenv()
 log = logging.getLogger("agente")
 cfg = settings()
 
-# Se dicen mientras corre una herramienta lenta. Tapan la latencia y, mas
-# importante, es lo que hace una persona real. Rotan para no sonar a loop.
 RELLENOS = (
     "dejame checar tantito",
     "va, permiteme",
@@ -49,13 +40,12 @@ class Recepcionista(Agent):
         self.servicios = {str(s["id"]): s for s in servicios}
         self.telefono: str | None = None
         self.call_id: str = uuid.uuid4().hex
-        self.fallos = 0                 # dos seguidos -> humano
+        self.fallos = 0
         self.booking_id: uuid.UUID | None = None
         self.escalado = False
         self.motivo_escalamiento: str | None = None
         self._t0 = time.monotonic()
 
-    # -------------------- utilidades --------------------
 
     async def _relleno(self, ctx: RunContext) -> None:
         """Habla mientras trabajamos. add_to_chat_ctx=False: es ruido
@@ -68,7 +58,6 @@ class Recepcionista(Agent):
     def _servicio(self, servicio_id: str) -> dict | None:
         return self.servicios.get(str(servicio_id).strip())
 
-    # -------------------- herramientas --------------------
 
     @function_tool
     async def consultar_disponibilidad(
@@ -103,7 +92,6 @@ class Recepcionista(Agent):
                 f"No hay nada libre el {fecha}. Ofrecele buscar otro dia cercano."
             )
 
-        # Se le entregan pocas y espaciadas: por telefono nadie retiene 8 opciones.
         elegidas = slots[:: max(1, len(slots) // 3)][:3]
         opciones = " | ".join(
             f"{s.hablado(self.tenant.tz)} (inicio_iso={s.inicio.isoformat()}, "
@@ -159,8 +147,6 @@ class Recepcionista(Agent):
 
         if not res.get("ok"):
             if res.get("error") == "slot_tomado":
-                # Carrera perdida: alguien aparto ese horario en paralelo.
-                # El cliente NUNCA debe ver un error; ve una alternativa.
                 return (
                     "Ese horario se acaba de apartar. Discupate rapido y vuelve "
                     "a llamar consultar_disponibilidad para ofrecerle otro."
@@ -224,7 +210,7 @@ class Recepcionista(Agent):
             )
         await ctx.session.say("Claro, te paso con alguien del equipo, un segundo.")
         try:
-            room = ctx.session._room_io._room  # noqa: SLF001
+            room = ctx.session._room_io._room
             async with api.LiveKitAPI() as lk:
                 await lk.sip.transfer_sip_participant(
                     api.TransferSIPParticipantRequest(
@@ -239,10 +225,6 @@ class Recepcionista(Agent):
             return "No se pudo transferir. Toma su numero y dile que le marcan."
         return "Transferido."
 
-
-# ------------------------------------------------------------------
-# ciclo de vida del worker
-# ------------------------------------------------------------------
 
 def prewarm(proc: JobProcess) -> None:
     """Carga el VAD una vez por proceso, no por llamada."""
@@ -272,8 +254,6 @@ async def entrypoint(ctx: JobContext) -> None:
 
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
-        # Flux trae deteccion de fin-de-turno integrada: el problema mas
-        # dificil de un agente de voz, resuelto en la misma pasada del STT.
         stt=deepgram.STT(model="flux-general-es", language="es"),
         llm=anthropic.LLM(model=cfg.llm_model, temperature=0.4),
         tts=cartesia.TTS(
@@ -281,8 +261,6 @@ async def entrypoint(ctx: JobContext) -> None:
             voice=tenant.voz_id or cfg.cartesia_voice_id,
             language="es",
         ),
-        # respaldo semantico del fin de turno: evita cortar a quien duda
-        # ("quiero... eh... para el viernes")
         turn_detection=MultilingualModel(),
         min_endpointing_delay=0.4,
         max_endpointing_delay=4.0,
@@ -295,8 +273,6 @@ async def entrypoint(ctx: JobContext) -> None:
         room_input_options=RoomInputOptions(close_on_disconnect=False),
     )
 
-    # Frase completa, nunca fragmentos concatenados: se puede pre-renderizar
-    # y arranca en 0 ms. Es la unica que se cachea como audio.
     await session.say(prompt_mod.saludo(tenant), allow_interruptions=True)
 
     async def al_colgar() -> None:

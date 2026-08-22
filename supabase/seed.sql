@@ -7,8 +7,6 @@ declare
   v_rest    uuid;
   v_dr_ana  uuid;
   v_dr_luis uuid;
-  v_m2      uuid;
-  v_m4      uuid;
   v_dow     int;
 begin
   -- =============== CONSULTORIO ===============
@@ -19,8 +17,7 @@ begin
 
   insert into resource (tenant_id, nombre, metadatos) values
     (v_clinica, 'Dra. Ana Ruiz',   '{"especialidad":"general"}'),
-    (v_clinica, 'Dr. Luis Mendez', '{"especialidad":"ortodoncia"}')
-  returning id into v_dr_ana;
+    (v_clinica, 'Dr. Luis Mendez', '{"especialidad":"ortodoncia"}');
 
   select id into v_dr_ana  from resource where tenant_id=v_clinica and nombre='Dra. Ana Ruiz';
   select id into v_dr_luis from resource where tenant_id=v_clinica and nombre='Dr. Luis Mendez';
