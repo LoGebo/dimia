@@ -25,6 +25,7 @@ function refrescarPanel(): void {
     "/catalogo",
     "/conocimiento",
     "/agente",
+    "/probar",
   ]) {
     revalidatePath(ruta);
   }
@@ -432,4 +433,82 @@ export async function crearReserva(_previo: Estado, fd: FormData): Promise<Estad
     return { error: mensajes[resultado.error ?? ""] ?? "No se pudo reservar." };
   }
   return { ok: `Reservado con código ${resultado.codigo}.` };
+}
+
+export type ItemPedido = {
+  nombre: string;
+  cantidad: number;
+  precio_unitario: string;
+  subtotal: string;
+  notas: string | null;
+};
+
+export type ResumenPedido = {
+  id: string;
+  codigo: string;
+  estado: string;
+  tipo: string;
+  total: string;
+  items: ItemPedido[];
+};
+
+export type LlamadaPrueba = {
+  call_id: string;
+  inicio: string;
+  duracion_seg: number | null;
+  resuelto: boolean | null;
+  escalado: boolean;
+  motivo_escalamiento: string | null;
+};
+
+export type EstadoPrueba = {
+  pedido: ResumenPedido | null;
+  reservas: {
+    id: string;
+    codigo: string;
+    cliente_nombre: string;
+    inicio: string;
+    servicio: string;
+    recurso: string;
+    personas: number;
+  }[];
+  llamadas: LlamadaPrueba[];
+};
+
+export async function estadoPrueba(minutos: number): Promise<EstadoPrueba> {
+  return datos(async (q, id) => {
+    const pedidos = await q<{ id: string; resumen: Omit<ResumenPedido, "id"> | null }>(
+      `select p.id, public.pedido_resumen($1, p.id) as resumen
+         from pedido p
+        where p.tenant_id = $1 and p.creado >= now() - make_interval(mins => $2::int)
+        order by p.creado desc limit 1`,
+      [id, minutos],
+    );
+
+    const reservas = await q<EstadoPrueba["reservas"][number]>(
+      `select b.id, b.codigo, b.cliente_nombre, b.inicio, s.nombre as servicio,
+              r.nombre as recurso, b.personas
+         from booking b
+         join service s on s.id = b.service_id
+         join resource r on r.id = b.resource_id
+        where b.tenant_id = $1 and b.creado >= now() - make_interval(mins => $2::int)
+        order by b.creado desc limit 5`,
+      [id, minutos],
+    );
+
+    const llamadas = await q<LlamadaPrueba>(
+      `select call_id, inicio, duracion_seg, resuelto, escalado, motivo_escalamiento
+         from call_log
+        where tenant_id = $1 and inicio >= now() - make_interval(mins => $2::int)
+        order by inicio desc limit 5`,
+      [id, minutos],
+    );
+
+    const primero = pedidos[0];
+    return {
+      pedido: primero?.resumen ? { id: primero.id, ...primero.resumen } : null,
+      reservas,
+      llamadas,
+    };
+  });
 }

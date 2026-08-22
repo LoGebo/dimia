@@ -11,6 +11,7 @@ const SECCIONES = [
   { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces" },
   { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta" },
   { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia" },
+  { href: "/probar", nombre: "Probar", detalle: "Háblale en vivo" },
 ] as const;
 
 export function Navegacion() {

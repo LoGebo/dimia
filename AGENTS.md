@@ -26,15 +26,21 @@ franja de tiempo.
    HTTP, n8n ni Edge Functions en el camino de una llamada viva — el
    presupuesto voz-a-voz es 700-900 ms.
 
-4. **Nada hardcodeado por cliente.** Dar de alta un negocio es insertar filas
+4. **Un solo agente para todos los canales.** `agent/agent.py` atiende tanto
+   llamadas por SIP como sesiones de prueba desde el panel. Resuelve el negocio
+   por el número marcado cuando viene de teléfono, y por `tenant_id` en los
+   metadatos de sala cuando viene del panel. Nunca dupliques el agente: lo que
+   se prueba tiene que ser lo que contesta.
+
+5. **Nada hardcodeado por cliente.** Dar de alta un negocio es insertar filas
    en `tenant`, `resource`, `service`, `schedule_rule` y `knowledge`. El prompt
    se ensambla en runtime en `app/prompt.py`. Si te ves escribiendo un `if
    tenant.nombre == ...`, el diseño está mal.
 
-5. **El agente no inventa.** Precios, horarios y disponibilidad salen de una
+6. **El agente no inventa.** Precios, horarios y disponibilidad salen de una
    herramienta o del contexto inyectado. Nunca del modelo.
 
-6. **Nunca datos de tarjeta por voz.** Pago por enlace de WhatsApp/SMS. Meter
+7. **Nunca datos de tarjeta por voz.** Pago por enlace de WhatsApp/SMS. Meter
    un PAN en la llamada nos pone en alcance PCI completo.
 
 ## Mapa
@@ -92,6 +98,9 @@ en asyncpg es obligatorio detrás de pgbouncer en modo transacción.
   no está disponible en español, así que usamos `nova-3` con `es-MX` más el
   detector semántico de LiveKit (`MultilingualModel`). Revisar si Flux
   Multilingual se habilita: sería un cambio de una línea.
+- El precio de un item se congela al momento de ordenar (`pedido_item.precio_unitario`).
+  Cambiar el menú no altera pedidos ya tomados, y borrar un platillo deja el
+  historial intacto (`catalogo_id` pasa a NULL, el nombre se conserva).
 - La búsqueda de conocimiento es léxica, no semántica: no salva sinónimos lejanos
   ("carro" contra "estacionamiento"). Por eso la FAQ prioritaria viaja completa
   en el prompt y la búsqueda cubre solo la cola larga.
