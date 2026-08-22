@@ -53,7 +53,8 @@ begin
   select id, v_usuario, 'owner' from tenant
   on conflict do nothing;
 
-  update tenant set voz_id = '5c5ad5e7-1020-476b-8b91-fdcbe9cc313c' where voz_id is null;
+  update tenant set voz_id = 'MOpELGWw8bqcERsmVMzW'
+   where voz_id is null and tts_proveedor = 'elevenlabs';
 
   delete from call_log;
   delete from booking;
