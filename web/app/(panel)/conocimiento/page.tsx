@@ -3,6 +3,7 @@ import { FormularioFaq } from "@/components/faq";
 import { Boton, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { eliminarFaq } from "@/lib/acciones";
 import { faq } from "@/lib/consultas";
+import { contexto } from "@/lib/sesion";
 
 const SUGERENCIAS = [
   "¿Dónde están?",
@@ -13,6 +14,7 @@ const SUGERENCIAS = [
 ];
 
 export default async function Conocimiento() {
+  const { giro } = await contexto();
   const entradas = await faq();
   const cubiertas = new Set(entradas.map((e) => e.pregunta.toLowerCase()));
   const faltantes = SUGERENCIAS.filter((s) => !cubiertas.has(s.toLowerCase()));
@@ -21,7 +23,8 @@ export default async function Conocimiento() {
     <>
       <Encabezado
         titulo="Respuestas"
-        descripcion="Lo único que el agente puede contestar fuera de agendar. Si no está aquí, transfiere."
+        descripcion="Lo que el agente puede contestar además de su trabajo principal. Si no está aquí, transfiere."
+        giro={giro.nombre}
       />
       <div className="grid gap-4 px-6 py-5 lg:grid-cols-[380px_1fr]">
         <div className="space-y-4">

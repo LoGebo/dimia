@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { conSesion, type Consulta } from "@/lib/db";
 import { usuarioActual } from "@/lib/auth";
-import { HERRAMIENTAS_POR_DEFECTO, permiteSeccion } from "@/lib/giro";
+import { HERRAMIENTAS_POR_DEFECTO, pasosAlta, permiteSeccion, siguientePaso } from "@/lib/giro";
 import type { Herramienta, Membresia } from "@/lib/tipos";
 
 const COOKIE_NEGOCIO = "agenda_negocio";
@@ -73,6 +73,14 @@ export async function giroOpcional(): Promise<Giro | null> {
 export async function exigirSeccion(href: string): Promise<Giro> {
   const { giro } = await contexto();
   if (!permiteSeccion(giro.herramientas, href)) redirect("/resumen");
+  return giro;
+}
+
+export async function exigirPasoAlta(href: string): Promise<Giro> {
+  const { giro } = await contexto();
+  if (!pasosAlta(giro.herramientas).some((p) => p.href === href)) {
+    redirect(siguientePaso(giro.herramientas, "/alta"));
+  }
   return giro;
 }
 

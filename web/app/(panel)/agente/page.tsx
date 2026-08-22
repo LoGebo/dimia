@@ -6,9 +6,11 @@ import { guardarNegocio } from "@/lib/acciones";
 import { ConfiguracionVoz } from "@/components/voz";
 import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { construirPrompt, saludo } from "@/lib/prompt";
+import { contexto } from "@/lib/sesion";
 import { etiquetaTipo, ZONAS_HORARIAS } from "@/lib/tipos";
 
 export default async function Agente() {
+  const { giro } = await contexto();
   const [config, listaServicios, listaFaq, listaRecursos, listaReglas, items] = await Promise.all([
     negocio(),
     servicios(),
@@ -27,10 +29,19 @@ export default async function Agente() {
     plantilla,
     tiposCatalogo: tiposCatalogo.map((t) => etiquetaTipo(t, true).toLowerCase()),
   });
+  const agenda = giro.herramientas.includes("agendar");
+  const pedidos = giro.herramientas.includes("pedido");
   const revisiones = [
-    { nombre: "Recursos dados de alta", listo: listaRecursos.some((r) => r.activo) },
-    { nombre: "Al menos un servicio activo", listo: listaServicios.some((s) => s.activo) },
-    { nombre: "Horario de la semana", listo: listaReglas.some((r) => r.tipo === "disponible") },
+    ...(agenda
+      ? [
+          { nombre: "Recursos dados de alta", listo: listaRecursos.some((r) => r.activo) },
+          { nombre: "Al menos un servicio activo", listo: listaServicios.some((s) => s.activo) },
+        ]
+      : []),
+    ...(pedidos ? [{ nombre: "Menú con precio", listo: items.some((i) => i.disponible && i.precio) }] : []),
+    ...(agenda || pedidos
+      ? [{ nombre: "Horario de la semana", listo: listaReglas.some((r) => r.tipo === "disponible") }]
+      : []),
     { nombre: "Respuestas frecuentes", listo: listaFaq.length >= 3 },
     { nombre: "Número para transferir", listo: !!config.telefono_escalamiento },
     { nombre: "Número de entrada asignado", listo: !!config.telefono_entrada },
@@ -43,6 +54,7 @@ export default async function Agente() {
       <Encabezado
         titulo="Agente"
         descripcion="Cómo suena, a dónde transfiere y con qué contexto contesta."
+        giro={giro.nombre}
       />
       <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,420px)_1fr]">
         <div className="space-y-4">

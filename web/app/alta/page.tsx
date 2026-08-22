@@ -11,7 +11,7 @@ export default async function AltaInicio() {
   return (
     <Paso
       titulo="Empecemos por el negocio"
-      descripcion="Cuatro datos. El giro define el tono con el que contesta el agente y qué preguntas hace: a un restaurante le pregunta cuántas personas, a un consultorio si es primera vez."
+      descripcion="Cuatro datos. El giro define qué sabe hacer el agente y qué te va a pedir después: agendar horarios, tomar pedidos con su total, o solo contestar y dejarte el recado."
     >
       <Tarjeta className="px-5 py-5">
         <AltaNegocio plantillas={lista} />

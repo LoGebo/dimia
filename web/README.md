@@ -57,6 +57,8 @@ daría hecho:
 - membresías `owner` del usuario demo sobre todos los tenants,
 - reservas de dos semanas y treinta días de `call_log` para que las métricas
   y la agenda tengan algo que mostrar,
+- pedidos de cuatro días en los cuatro estados para los giros que los toman,
+  con items, notas de cocina y domicilios, más recados en `lead`,
 - catálogo de ejemplo por vertical: platillos con alérgenos y nivel de picante,
   profesionales con cédula, refacciones con marca y garantía, más un item
   marcado como agotado e `instrucciones_extra` por giro.
@@ -90,12 +92,28 @@ resuelve por IPv6. `dev/seed_panel.sql` no se corre aquí.
 | `/alta` … `/alta/listo` | Onboarding guiado en seis pasos: negocio, recursos, servicios, horario, respuestas, cierre. |
 | `/resumen` | Llamadas por día, containment, escalamiento con motivos, duración promedio, hora pico. Todo de `call_log`. |
 | `/agenda` | Día y semana, búsqueda por código, teléfono o nombre, cancelar y mover. |
+| `/pedidos` | Tablero para la cocina: pedidos del día por estado, items con sus notas y total. Pensado para una tablet. |
+| `/recados` | Bandeja de `lead`: quién llamó, qué necesita, marcar atendido. |
 | `/horarios` | Cuadrícula semanal que se pinta arrastrando, más excepciones por fecha. |
 | `/servicios` | Recursos y servicios: duración, buffer, precio, alias y quién puede dar cada servicio. |
 | `/catalogo` | `catalogo_item`: platillos, profesionales, propiedades, refacciones. Con toggle de disponibilidad y buscador de prueba. |
 | `/conocimiento` | Las respuestas que el agente puede dar. Lo que no está aquí, se transfiere. |
 | `/probar` | Llamada real al agente desde el navegador, con transcripción, latencia y el pedido o la reserva cayendo en vivo. |
 | `/agente` | Proveedor de voz y sus ajustes, indicaciones propias del negocio, zona horaria, número de transferencia y vista previa del prompt. |
+
+### La navegación sale del vertical, no de un `if`
+
+`vertical_template.herramientas` dice qué sabe hacer el giro: `agendar` reserva
+franjas, `pedido` arma un carrito con total, `recado` captura datos de contacto.
+`lib/giro.ts` traduce esa lista a las secciones del panel y a los pasos del
+alta, y no conoce ni una clave de vertical. Un negocio de `comida` ve Pedidos y
+nunca una agenda vacía; uno de `recepcion` ve solo su bandeja de recados y se
+salta horarios y servicios en el alta. Agregar un giro sigue siendo insertar una
+fila en `vertical_template`.
+
+Las secciones que no aplican no se esconden nada más: `exigirSeccion()` y
+`exigirPasoAlta()` redirigen si alguien llega por URL. Eso es orden, no
+seguridad — el control de acceso sigue siendo RLS.
 
 ### El editor de horarios
 

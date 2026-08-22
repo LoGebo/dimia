@@ -8,9 +8,11 @@ import {
 } from "@/components/catalogo";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { negocio, recursos, servicios } from "@/lib/consultas";
+import { exigirSeccion } from "@/lib/sesion";
 import { etiquetasRecurso } from "@/lib/tipos";
 
 export default async function Catalogo() {
+  const giro = await exigirSeccion("/servicios");
   const [config, listaRecursos, listaServicios] = await Promise.all([negocio(), recursos(), servicios()]);
   const vertical = etiquetasRecurso(config.vertical);
 
@@ -19,6 +21,7 @@ export default async function Catalogo() {
       <Encabezado
         titulo="Servicios"
         descripcion="Qué puede reservar el agente, cuánto dura y con quién."
+        giro={giro.nombre}
       />
       <div className="grid gap-4 px-6 py-5 lg:grid-cols-2">
         <Tarjeta>

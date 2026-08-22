@@ -2,14 +2,17 @@ import { Paso } from "@/components/paso";
 import { FormularioFaq } from "@/components/faq";
 import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { faq } from "@/lib/consultas";
+import { siguientePaso } from "@/lib/giro";
+import { exigirPasoAlta } from "@/lib/sesion";
 
 export default async function AltaRespuestas() {
+  const giro = await exigirPasoAlta("/alta/respuestas");
   const lista = await faq();
   return (
     <Paso
       titulo="¿Qué más te preguntan?"
       descripcion="Ubicación, estacionamiento, formas de pago. El agente solo puede contestar lo que esté aquí; cualquier otra cosa la transfiere en vez de inventarla. Con tres o cuatro cubres la mayoría de las llamadas."
-      siguiente="/alta/listo"
+      siguiente={siguientePaso(giro.herramientas, "/alta/respuestas")}
       puedeSaltar={lista.length === 0}
     >
       <div className="grid gap-4 lg:grid-cols-2">

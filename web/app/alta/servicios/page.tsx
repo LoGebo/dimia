@@ -3,15 +3,18 @@ import { FormularioServicio } from "@/components/catalogo";
 import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { recursos, servicios } from "@/lib/consultas";
 import { moneda } from "@/lib/formato";
+import { siguientePaso } from "@/lib/giro";
+import { exigirPasoAlta } from "@/lib/sesion";
 
 export default async function AltaServicios() {
+  const giro = await exigirPasoAlta("/alta/servicios");
   const [listaRecursos, lista] = await Promise.all([recursos(), servicios()]);
 
   return (
     <Paso
       titulo="¿Qué se puede reservar?"
       descripcion="La duración define el hueco que aparta cada cita. El buffer es el tiempo de limpieza o preparación que nadie puede ocupar. El precio se lo dice el agente tal cual: si lo dejas vacío, no inventa uno."
-      siguiente="/alta/horario"
+      siguiente={siguientePaso(giro.herramientas, "/alta/servicios")}
       puedeSaltar={lista.length === 0}
     >
       <div className="grid gap-4 lg:grid-cols-2">

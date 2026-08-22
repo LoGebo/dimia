@@ -5,6 +5,7 @@ import { OcupacionSemanal } from "@/components/graficas";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { buscarReservas, negocio, reservasEntre } from "@/lib/consultas";
 import { fechaLarga, isoDia, lunesDe, sumarDias } from "@/lib/formato";
+import { exigirSeccion } from "@/lib/sesion";
 import { DIAS } from "@/lib/tipos";
 
 type Vista = "dia" | "semana";
@@ -14,6 +15,7 @@ export default async function Agenda({
 }: {
   searchParams: Promise<{ dia?: string; vista?: string; q?: string }>;
 }) {
+  const giro = await exigirSeccion("/agenda");
   const parametros = await searchParams;
   const config = await negocio();
   const hoy = isoDia(new Date(), config.zona_horaria);
@@ -28,6 +30,7 @@ export default async function Agenda({
         <Encabezado
           titulo="Búsqueda"
           descripcion={`Resultados para "${busqueda}"`}
+          giro={giro.nombre}
           acciones={<Buscador valor={busqueda} dia={dia} vista={vista} />}
         />
         <div className="px-6 py-5">
@@ -63,6 +66,7 @@ export default async function Agenda({
       <Encabezado
         titulo="Agenda"
         descripcion={vista === "dia" ? fechaLarga(`${dia}T12:00:00Z`, "UTC") : `Semana del ${lunes}`}
+        giro={giro.nombre}
         acciones={
           <>
             <Buscador valor="" dia={dia} vista={vista} />

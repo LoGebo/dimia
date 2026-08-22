@@ -2,9 +2,12 @@ import { Paso } from "@/components/paso";
 import { FormularioRecurso } from "@/components/catalogo";
 import { Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { negocio, recursos } from "@/lib/consultas";
+import { siguientePaso } from "@/lib/giro";
+import { exigirPasoAlta } from "@/lib/sesion";
 import { etiquetasRecurso } from "@/lib/tipos";
 
 export default async function AltaRecursos() {
+  const giro = await exigirPasoAlta("/alta/recursos");
   const [config, lista] = await Promise.all([negocio(), recursos()]);
   const vertical = etiquetasRecurso(config.vertical);
 
@@ -12,7 +15,7 @@ export default async function AltaRecursos() {
     <Paso
       titulo={`¿Con qué atiendes?`}
       descripcion={`Cada ${vertical.recurso.toLowerCase()} se ocupa por completo mientras dura una reserva. Dos reservas nunca pueden encimarse sobre el mismo. Ejemplos: ${vertical.ejemplos}.`}
-      siguiente="/alta/servicios"
+      siguiente={siguientePaso(giro.herramientas, "/alta/recursos")}
       puedeSaltar={lista.length === 0}
     >
       <div className="grid gap-4 lg:grid-cols-2">

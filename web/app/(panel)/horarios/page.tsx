@@ -4,8 +4,10 @@ import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Boton, Campo, Entrada, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { eliminarRegla, guardarExcepcion } from "@/lib/acciones";
 import { negocio, recursos, reglas } from "@/lib/consultas";
+import { exigirSeccion } from "@/lib/sesion";
 
 export default async function Horarios() {
+  const giro = await exigirSeccion("/horarios");
   const [config, listaRecursos, listaReglas] = await Promise.all([negocio(), recursos(), reglas()]);
   const excepciones = listaReglas.filter((r) => r.fecha !== null);
 
@@ -13,7 +15,8 @@ export default async function Horarios() {
     <>
       <Encabezado
         titulo="Horarios"
-        descripcion={`Cuándo puede agendar el agente. Hora de ${config.zona_horaria}.`}
+        descripcion={`Cuándo contesta y trabaja el negocio. Hora de ${config.zona_horaria}.`}
+        giro={giro.nombre}
       />
       <div className="space-y-4 px-6 py-5">
         <Tarjeta>

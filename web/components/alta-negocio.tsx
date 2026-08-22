@@ -3,7 +3,13 @@
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Boton, Campo, Entrada, Selector } from "@/components/ui/primitivos";
 import { altaNegocio } from "@/lib/acciones";
-import { etiquetasRecurso, ZONAS_HORARIAS, type PlantillaVertical } from "@/lib/tipos";
+import { ZONAS_HORARIAS, type Herramienta, type PlantillaVertical } from "@/lib/tipos";
+
+function queHace(herramientas: Herramienta[]): string {
+  if (herramientas.includes("pedido")) return "Toma pedidos y los cobra";
+  if (herramientas.includes("agendar")) return "Aparta horarios en la agenda";
+  return "Contesta y toma recado";
+}
 
 export function AltaNegocio({ plantillas }: { plantillas: PlantillaVertical[] }) {
   return (
@@ -27,9 +33,7 @@ export function AltaNegocio({ plantillas }: { plantillas: PlantillaVertical[] })
                     className="sr-only"
                   />
                   <span className="block text-[13px] font-medium text-tinta">{p.nombre}</span>
-                  <span className="mt-0.5 block text-[11px] text-tinta-3">
-                    Reserva {etiquetasRecurso(p.clave).recurso.toLowerCase()}
-                  </span>
+                  <span className="mt-0.5 block text-[11px] text-tinta-3">{queHace(p.herramientas)}</span>
                 </label>
               ))}
             </div>

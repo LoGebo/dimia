@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { BotonTema } from "@/components/tema";
 import { Pasos } from "@/components/pasos";
+import { HERRAMIENTAS_POR_DEFECTO, pasosAlta } from "@/lib/giro";
+import { giroOpcional } from "@/lib/sesion";
 
-export default function AltaLayout({ children }: { children: React.ReactNode }) {
+export default async function AltaLayout({ children }: { children: React.ReactNode }) {
+  const giro = await giroOpcional();
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-linea bg-paper/85 backdrop-blur">
@@ -21,7 +24,7 @@ export default function AltaLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
         <div className="mx-auto max-w-4xl px-6 pb-3">
-          <Pasos />
+          <Pasos pasos={pasosAlta(giro?.herramientas ?? HERRAMIENTAS_POR_DEFECTO)} />
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-6 py-8">{children}</main>

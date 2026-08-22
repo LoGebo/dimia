@@ -8,7 +8,7 @@ import { saludo } from "@/lib/prompt";
 import { contexto } from "@/lib/sesion";
 
 export default async function Probar() {
-  const { negocioId } = await contexto();
+  const { negocioId, giro } = await contexto();
   const config = await negocio();
   const plantilla = await plantillaActual(config.vertical);
   const faltantes = variablesFaltantes();
@@ -72,6 +72,7 @@ export default async function Probar() {
       <Encabezado
         titulo="Probar el agente"
         descripcion={`Háblale a ${config.nombre} desde el navegador. Es el mismo agente que contesta el teléfono.`}
+        giro={giro.nombre}
         acciones={
           <div className="flex items-center gap-2">
             <Insignia>{listaServicios.filter((s) => s.activo).length} servicios</Insignia>

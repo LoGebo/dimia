@@ -222,7 +222,156 @@ where d.vertical = t.vertical;
 update tenant set tts_ajustes = '{"estabilidad":0.5,"similitud":0.75,"estilo":0.1,"velocidad":1.0}'::jsonb
 where tts_ajustes = '{}'::jsonb;
 
+-- ---------- pedidos de demo para los giros que los toman ----------
+do $$
+declare
+  v_tenant  record;
+  v_item    record;
+  v_dia     date;
+  v_n       int;
+  v_cuantos int;
+  v_pedido  uuid;
+  v_estado  pedido_estado;
+  v_tipo    pedido_tipo;
+  v_creado  timestamptz;
+  v_semilla text;
+  v_menu    int;
+  v_nombres text[] := array[
+    'Mariana Loera','Jorge Estrada','Paola Nunez','Ricardo Vela','Ana Sofia Marin',
+    'Luis Fernando Cano','Regina Trevino','Emilio Bautista','Carmen Aguirre','Diego Sandoval'];
+  v_notas   text[] := array[
+    'sin cebolla', 'con todo', 'extra salsa verde', 'sin cilantro',
+    'bien doradito', null, null, null];
+  v_calles  text[] := array[
+    'Av. Cuauhtemoc 812, depto 3, entre Xola y Diagonal San Antonio',
+    'Calle Zacatecas 190, Roma Norte, porton negro',
+    'Amsterdam 44, interior 7, tocar timbre 2',
+    'Eje 8 Sur 1233, casa gris con reja blanca'];
+begin
+  delete from pedido where call_id like 'demo-pedido-%';
+
+  for v_tenant in
+    select t.* from tenant t
+      join vertical_template v on v.clave = t.vertical
+     where v.herramientas ? 'pedido'
+  loop
+    select count(*) into v_menu
+      from catalogo_item
+     where tenant_id = v_tenant.id and disponible and precio is not null;
+    continue when v_menu = 0;
+
+    for v_dia in select generate_series(current_date - 3, current_date, interval '1 day')::date loop
+      v_cuantos := 4 + (extract(doy from v_dia)::int + v_menu) % 4;
+
+      for v_n in 1..v_cuantos loop
+        v_semilla := md5(v_tenant.id::text || v_dia::text || v_n::text);
+
+        if v_dia = current_date then
+          v_creado := now() - make_interval(mins => (v_n - 1) * 23 + 2);
+          v_estado := case
+            when v_n % 7 = 0 then 'cancelado'
+            when v_n = 1 then 'abierto'
+            when v_n <= 3 then 'confirmado'
+            else 'entregado' end::pedido_estado;
+        else
+          v_creado := ((v_dia + make_time(13 + (v_n * 2) % 9, (v_n * 37) % 60, 0))
+                       at time zone v_tenant.zona_horaria);
+          v_estado := case when v_n % 5 = 0 then 'cancelado' else 'entregado' end::pedido_estado;
+        end if;
+
+        v_tipo := case when ('x' || substr(v_semilla, 1, 2))::bit(8)::int % 3 = 0
+                       then 'domicilio' else 'recoger' end::pedido_tipo;
+
+        insert into pedido (tenant_id, cliente_nombre, telefono, tipo, direccion, notas,
+                            estado, codigo, listo_para, call_id, creado)
+        values (
+          v_tenant.id,
+          case when v_estado = 'abierto' then null
+               else v_nombres[1 + ('x' || substr(v_semilla, 3, 2))::bit(8)::int % array_length(v_nombres, 1)] end,
+          '+52551' || lpad((('x' || substr(v_semilla, 5, 6))::bit(24)::int % 10000000)::text, 7, '0'),
+          v_tipo,
+          case when v_tipo = 'domicilio'
+               then v_calles[1 + ('x' || substr(v_semilla, 11, 2))::bit(8)::int % array_length(v_calles, 1)] end,
+          case when v_n % 4 = 0 then 'Marcar al llegar, no suena el timbre' end,
+          v_estado,
+          upper(substr(translate(v_semilla, 'bio018', 'PRSTUV'), 1, 4)),
+          case when v_estado <> 'abierto' then v_creado + interval '30 minutes' end,
+          'demo-pedido-' || v_tenant.id || '-' || v_dia || '-' || v_n,
+          v_creado
+        )
+        returning id into v_pedido;
+
+        for v_item in
+          select id, nombre, precio from catalogo_item
+           where tenant_id = v_tenant.id and disponible and precio is not null
+           order by md5(id::text || v_semilla)
+           limit 1 + ('x' || substr(v_semilla, 13, 2))::bit(8)::int % 3
+        loop
+          insert into pedido_item (pedido_id, catalogo_id, nombre, cantidad, precio_unitario, notas)
+          values (
+            v_pedido, v_item.id, v_item.nombre,
+            1 + ('x' || substr(md5(v_item.id::text || v_semilla), 1, 2))::bit(8)::int % 4,
+            v_item.precio,
+            v_notas[1 + ('x' || substr(md5(v_item.id::text || v_semilla), 3, 2))::bit(8)::int % array_length(v_notas, 1)]
+          );
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+end $$;
+
+-- ---------- recados de demo: todos los giros toman recado ----------
+do $$
+declare
+  v_tenant  record;
+  v_n       int;
+  v_semilla text;
+  v_asuntos text[] := array[
+    'Quiere hablar de una factura',
+    'Reclamo por el servicio de ayer',
+    'Pregunta por una vacante',
+    'Proveedor que quiere cotizar',
+    'Pidio que le regresaran la llamada',
+    'Cambio de datos de contacto'];
+  v_detalles text[] := array[
+    'Dice que le llego mal el RFC y necesita que se la reexpidan.',
+    'Pidio hablar con el encargado, se escuchaba molesto.',
+    'Pregunto si hay plaza de medio tiempo y a que hora se puede pasar.',
+    'Vende insumos, quiere agendar una visita con compras.',
+    'No dijo el motivo, solo pidio que le marcaran despues de las seis.',
+    'Cambio de numero, este es el nuevo.'];
+  v_nombres text[] := array[
+    'Hector Palomino','Silvia Ordonez','Ivan Zamudio','Leticia Cardenas',
+    'Ramon Esquivel','Norma Gaytan'];
+begin
+  delete from lead where call_id like 'demo-recado-%';
+
+  for v_tenant in
+    select t.* from tenant t
+      join vertical_template v on v.clave = t.vertical
+     where v.herramientas ? 'recado'
+  loop
+    for v_n in 1..(case when v_tenant.vertical = 'recepcion' then 9 else 4 end) loop
+      v_semilla := md5(v_tenant.id::text || 'recado' || v_n::text);
+      insert into lead (tenant_id, nombre, telefono, asunto, detalle, campos, atendido, call_id, creado)
+      values (
+        v_tenant.id,
+        v_nombres[1 + ('x' || substr(v_semilla, 1, 2))::bit(8)::int % array_length(v_nombres, 1)],
+        '+52551' || lpad((('x' || substr(v_semilla, 3, 6))::bit(24)::int % 10000000)::text, 7, '0'),
+        v_asuntos[1 + (v_n - 1) % array_length(v_asuntos, 1)],
+        v_detalles[1 + (v_n - 1) % array_length(v_detalles, 1)],
+        case when v_n % 3 = 0 then '{"horario_para_marcar":"despues de las 6"}'::jsonb else '{}'::jsonb end,
+        v_n % 4 = 0,
+        'demo-recado-' || v_tenant.id || '-' || v_n,
+        now() - make_interval(hours => v_n * 7 + 1)
+      );
+    end loop;
+  end loop;
+end $$;
+
 select 'usuario demo: dueno@demo.mx / demo1234' as acceso,
        (select count(*) from booking)       as reservas,
        (select count(*) from call_log)      as llamadas,
-       (select count(*) from catalogo_item) as catalogo;
+       (select count(*) from catalogo_item) as catalogo,
+       (select count(*) from pedido)        as pedidos,
+       (select count(*) from lead)          as recados;

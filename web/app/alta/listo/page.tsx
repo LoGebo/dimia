@@ -1,23 +1,44 @@
 import Link from "next/link";
 import { Paso } from "@/components/paso";
 import { Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
+import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
+import { contexto } from "@/lib/sesion";
 import { saludo } from "@/lib/prompt";
 
 export default async function AltaListo() {
-  const [config, listaRecursos, listaServicios, listaReglas, listaFaq] = await Promise.all([
+  const { giro } = await contexto();
+  const [config, listaRecursos, listaServicios, listaReglas, listaFaq, items] = await Promise.all([
     negocio(),
     recursos(),
     servicios(),
     reglas(),
     faq(),
+    catalogo(),
   ]);
   const plantilla = await plantillaActual(config.vertical);
 
+  const agenda = giro.herramientas.includes("agendar");
+  const pedidos = giro.herramientas.includes("pedido");
   const revisiones = [
-    { nombre: "Recursos", valor: listaRecursos.filter((r) => r.activo).length, minimo: 1, ruta: "/alta/recursos" },
-    { nombre: "Servicios", valor: listaServicios.filter((s) => s.activo).length, minimo: 1, ruta: "/alta/servicios" },
-    { nombre: "Franjas de horario", valor: listaReglas.filter((r) => r.tipo === "disponible").length, minimo: 1, ruta: "/alta/horario" },
+    ...(agenda
+      ? [
+          { nombre: "Recursos", valor: listaRecursos.filter((r) => r.activo).length, minimo: 1, ruta: "/alta/recursos" },
+          { nombre: "Servicios", valor: listaServicios.filter((s) => s.activo).length, minimo: 1, ruta: "/alta/servicios" },
+        ]
+      : []),
+    ...(pedidos
+      ? [{ nombre: "Menú con precio", valor: items.filter((i) => i.precio).length, minimo: 1, ruta: "/alta/menu" }]
+      : []),
+    ...(agenda || pedidos
+      ? [
+          {
+            nombre: "Franjas de horario",
+            valor: listaReglas.filter((r) => r.tipo === "disponible").length,
+            minimo: 1,
+            ruta: "/alta/horario",
+          },
+        ]
+      : []),
     { nombre: "Respuestas frecuentes", valor: listaFaq.length, minimo: 3, ruta: "/alta/respuestas" },
   ];
 

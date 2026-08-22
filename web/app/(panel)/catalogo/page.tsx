@@ -4,10 +4,12 @@ import { ProbadorCatalogo } from "@/components/probador-catalogo";
 import { Boton, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { alternarDisponible, eliminarItemCatalogo } from "@/lib/acciones";
 import { catalogo, negocio, recursos } from "@/lib/consultas";
+import { contexto } from "@/lib/sesion";
 import { moneda } from "@/lib/formato";
 import { etiquetaTipo, TIPOS_POR_VERTICAL, type CatalogoItem, type Recurso } from "@/lib/tipos";
 
 export default async function Catalogo() {
+  const { giro } = await contexto();
   const [config, items, listaRecursos] = await Promise.all([negocio(), catalogo(), recursos()]);
 
   const sugeridos = TIPOS_POR_VERTICAL[config.vertical] ?? ["paquete"];
@@ -20,7 +22,8 @@ export default async function Catalogo() {
     <>
       <Encabezado
         titulo="Catálogo"
-        descripcion="Lo que el negocio ofrece e informa: platillos, profesionales, propiedades. No es lo que se agenda, es lo que el agente puede contestar."
+        descripcion="Lo que el negocio ofrece e informa: platillos, profesionales, propiedades. Es de donde el agente saca precios y de donde arma un pedido."
+        giro={giro.nombre}
         acciones={
           agotados > 0 ? <Insignia tono="alerta">{agotados} marcados como no disponibles</Insignia> : null
         }
