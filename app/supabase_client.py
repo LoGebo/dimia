@@ -87,6 +87,31 @@ class Agenda:
         )
         return Tenant(**dict(fila)) if fila else None
 
+    async def plantilla_vertical(self, clave: str) -> dict | None:
+        fila = await self.pool.fetchrow(
+            """select clave, nombre, instrucciones, saludo, herramientas
+               from vertical_template where clave = $1 and activo""",
+            clave,
+        )
+        if not fila:
+            return None
+        d = dict(fila)
+        if isinstance(d["herramientas"], str):
+            d["herramientas"] = json.loads(d["herramientas"])
+        return d
+
+    async def registrar_recado(
+        self, tenant_id: uuid.UUID, telefono: str, asunto: str,
+        nombre: str | None = None, detalle: str | None = None,
+        campos: dict | None = None, call_id: str | None = None,
+    ) -> dict:
+        crudo = await self.pool.fetchval(
+            "select registrar_recado($1,$2,$3,$4,$5,$6,$7)",
+            tenant_id, telefono, asunto, nombre, detalle,
+            json.dumps(campos or {}), call_id,
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else crudo
+
     async def servicios(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(
             """select id, nombre, alias, duracion_min, precio

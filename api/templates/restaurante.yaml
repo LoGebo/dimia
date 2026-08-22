@@ -1,0 +1,68 @@
+vertical: restaurante
+
+tenant:
+  nombre: Restaurante Ejemplo
+  zona_horaria: America/Mexico_City
+  slot_granularidad_min: 30
+  anticipacion_min: 60
+  horizonte_dias: 30
+
+recursos:
+  - nombre: Mesa 1
+    capacidad: 2
+  - nombre: Mesa 2
+    capacidad: 2
+  - nombre: Mesa 3
+    capacidad: 4
+  - nombre: Mesa 4
+    capacidad: 4
+  - nombre: Mesa 5
+    capacidad: 6
+  - nombre: Mesa 6
+    capacidad: 8
+    metadatos:
+      zona: terraza
+
+servicios:
+  - nombre: Comida
+    alias: [comer, almuerzo, mesa para comer]
+    duracion_min: 90
+    buffer_min: 15
+  - nombre: Cena
+    alias: [cenar, mesa para cenar]
+    duracion_min: 120
+    buffer_min: 15
+
+horarios:
+  - tipo: disponible
+    dias: [1, 2, 3, 4]
+    hora_inicio: "13:00"
+    hora_fin: "23:00"
+  - tipo: disponible
+    dias: [5, 6]
+    hora_inicio: "13:00"
+    hora_fin: "23:59"
+  - tipo: festivo
+    dias: [0]
+    hora_inicio: "00:00"
+    hora_fin: "23:59"
+
+conocimiento:
+  - pregunta: Donde estan ubicados
+    respuesta: Estamos en la calle principal numero 55, colonia Centro, junto a la plaza.
+    prioridad: 100
+  - pregunta: Hay valet parking
+    respuesta: Si, tenemos valet parking a partir de las siete de la noche.
+    prioridad: 90
+  - pregunta: Aceptan mascotas
+    respuesta: Si, en la terraza son bienvenidas.
+    prioridad: 80
+  - pregunta: Tienen opciones vegetarianas
+    respuesta: Si, tenemos varios platillos vegetarianos y veganos en la carta.
+    prioridad: 70
+  - pregunta: Cual es el horario
+    respuesta: De martes a viernes de una de la tarde a once de la noche, y fines de semana hasta medianoche. Los lunes cerramos.
+    prioridad: 60
+  - pregunta: Hacen eventos privados
+    respuesta: Si, para grupos grandes el equipo te contacta para armar el evento.
+    prioridad: 50

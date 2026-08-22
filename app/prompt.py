@@ -87,9 +87,15 @@ def construir(
     servicios: list[dict],
     faq: list[dict],
     ahora: datetime | None = None,
+    plantilla: dict | None = None,
 ) -> str:
     ahora = ahora or datetime.now(tenant.tz)
-    lineas = [BASE, PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])]
+    instrucciones = (
+        plantilla["instrucciones"]
+        if plantilla
+        else PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])
+    )
+    lineas = [BASE, instrucciones]
 
     lineas.append(f"\nNEGOCIO: {tenant.nombre}")
     lineas.append(
@@ -112,6 +118,12 @@ def construir(
         lineas.append("\nINFORMACION DEL NEGOCIO:")
         lineas.extend(f"  - {f['pregunta']} -> {f['respuesta']}" for f in faq)
 
+    if plantilla and "recado" in plantilla.get("herramientas", []):
+        lineas.append(
+            "\nSi no puedes resolver algo, toma recado con tomar_recado: "
+            "nombre, telefono confirmado repitiendolo, y que necesita."
+        )
+
     lineas.append(
         "\nSi te preguntan algo que no esta aqui arriba, di que no tienes ese "
         "dato a la mano y ofrece transferir. NO lo inventes."
@@ -119,5 +131,10 @@ def construir(
     return "\n".join(lineas)
 
 
-def saludo(tenant: Tenant) -> str:
-    return SALUDOS.get(tenant.vertical, SALUDOS["generico"]).format(nombre=tenant.nombre)
+def saludo(tenant: Tenant, plantilla: dict | None = None) -> str:
+    patron = (
+        plantilla["saludo"]
+        if plantilla
+        else SALUDOS.get(tenant.vertical, SALUDOS["generico"])
+    )
+    return patron.format(nombre=tenant.nombre)

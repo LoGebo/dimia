@@ -34,14 +34,24 @@ RELLENOS = (
 
 
 class Recepcionista(Agent):
-    def __init__(self, tenant: Tenant, servicios: list[dict], faq: list[dict]) -> None:
-        super().__init__(instructions=prompt_mod.construir(tenant, servicios, faq))
+    def __init__(
+        self,
+        tenant: Tenant,
+        servicios: list[dict],
+        faq: list[dict],
+        plantilla: dict | None = None,
+    ) -> None:
+        super().__init__(
+            instructions=prompt_mod.construir(tenant, servicios, faq, plantilla=plantilla)
+        )
+        self.plantilla = plantilla
         self.tenant = tenant
         self.servicios = {str(s["id"]): s for s in servicios}
         self.telefono: str | None = None
         self.call_id: str = uuid.uuid4().hex
         self.fallos = 0
         self.booking_id: uuid.UUID | None = None
+        self.recado = False
         self.escalado = False
         self.motivo_escalamiento: str | None = None
         self._t0 = time.monotonic()
@@ -193,6 +203,36 @@ class Recepcionista(Agent):
         return "No la encontre. Ofrece transferir."
 
     @function_tool
+    async def tomar_recado(
+        self,
+        ctx: RunContext,
+        asunto: str,
+        nombre_cliente: str = "",
+        detalle: str = "",
+    ) -> str:
+        """Guarda los datos de quien llama cuando no puedes resolver lo que pide.
+        Usar cuando no hay nada que agendar o cuando la respuesta requiere a una
+        persona. Confirma el telefono repitiendolo antes de llamar esto.
+
+        Args:
+            asunto: en pocas palabras, que necesita.
+            nombre_cliente: nombre de quien llama.
+            detalle: todo lo relevante que dijo, con sus palabras.
+        """
+        res = await agenda.registrar_recado(
+            tenant_id=self.tenant.id,
+            telefono=self.telefono or "desconocido",
+            asunto=asunto,
+            nombre=nombre_cliente or None,
+            detalle=detalle or None,
+            call_id=self.call_id,
+        )
+        if not res.get("ok"):
+            return "No se guardo. Ofrece transferir."
+        self.recado = True
+        return "Guardado. Confirmale que alguien le devuelve la llamada y despidete."
+
+    @function_tool
     async def transferir_a_humano(self, ctx: RunContext, motivo: str) -> str:
         """Pasa la llamada a una persona. Usar ante queja, alergia, urgencia,
         dos malentendidos seguidos, o si lo piden.
@@ -246,10 +286,12 @@ async def entrypoint(ctx: JobContext) -> None:
         await ctx.room.disconnect()
         return
 
-    servicios, faq = await asyncio.gather(
-        agenda.servicios(tenant.id), agenda.faq(tenant.id)
+    servicios, faq, plantilla = await asyncio.gather(
+        agenda.servicios(tenant.id),
+        agenda.faq(tenant.id),
+        agenda.plantilla_vertical(tenant.vertical),
     )
-    recepcionista = Recepcionista(tenant, servicios, faq)
+    recepcionista = Recepcionista(tenant, servicios, faq, plantilla)
     recepcionista.telefono = llamante
 
     session = AgentSession(
@@ -273,7 +315,7 @@ async def entrypoint(ctx: JobContext) -> None:
         room_input_options=RoomInputOptions(close_on_disconnect=False),
     )
 
-    await session.say(prompt_mod.saludo(tenant), allow_interruptions=True)
+    await session.say(prompt_mod.saludo(tenant, plantilla), allow_interruptions=True)
 
     async def al_colgar() -> None:
         try:
@@ -282,7 +324,7 @@ async def entrypoint(ctx: JobContext) -> None:
                 call_id=recepcionista.call_id,
                 telefono=llamante,
                 duracion_seg=int(time.monotonic() - recepcionista._t0),
-                resuelto=recepcionista.booking_id is not None,
+                resuelto=recepcionista.booking_id is not None or recepcionista.recado,
                 escalado=recepcionista.escalado,
                 motivo=recepcionista.motivo_escalamiento,
                 booking_id=recepcionista.booking_id,

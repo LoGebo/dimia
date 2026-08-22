@@ -1,0 +1,13 @@
+{
+  "name": "llamadas-entrantes",
+  "trunk_ids": ["ST_REEMPLAZAR"],
+  "rule": {
+    "dispatchRuleIndividual": {
+      "roomPrefix": "llamada"
+    }
+  },
+  "room_config": {
+    "empty_timeout": 60,
+    "departure_timeout": 20
+  }
+}

@@ -1,0 +1,69 @@
+vertical: clinica
+
+tenant:
+  nombre: Consultorio Ejemplo
+  zona_horaria: America/Mexico_City
+  slot_granularidad_min: 15
+  anticipacion_min: 120
+  horizonte_dias: 60
+
+recursos:
+  - nombre: Consultorio 1
+    capacidad: 1
+    metadatos:
+      profesional: Dr. Ejemplo
+  - nombre: Consultorio 2
+    capacidad: 1
+    metadatos:
+      profesional: Dra. Ejemplo
+
+servicios:
+  - nombre: Consulta de primera vez
+    alias: [primera vez, valoracion, revision general, chequeo]
+    duracion_min: 45
+    buffer_min: 10
+    precio: 800
+  - nombre: Consulta de seguimiento
+    alias: [seguimiento, control, revision]
+    duracion_min: 30
+    buffer_min: 10
+    precio: 600
+  - nombre: Limpieza dental
+    alias: [limpieza, profilaxis]
+    duracion_min: 45
+    buffer_min: 10
+    precio: 900
+
+horarios:
+  - tipo: disponible
+    dias: [0, 1, 2, 3, 4]
+    hora_inicio: "09:00"
+    hora_fin: "19:00"
+  - tipo: disponible
+    dias: [5]
+    hora_inicio: "09:00"
+    hora_fin: "14:00"
+  - tipo: bloqueo
+    dias: [0, 1, 2, 3, 4]
+    hora_inicio: "14:00"
+    hora_fin: "15:30"
+
+conocimiento:
+  - pregunta: Donde estan ubicados
+    respuesta: Estamos en la avenida principal numero 100, colonia Centro. A media cuadra del parque.
+    prioridad: 100
+  - pregunta: Hay estacionamiento
+    respuesta: Si, tenemos estacionamiento propio sin costo para pacientes.
+    prioridad: 90
+  - pregunta: Que formas de pago aceptan
+    respuesta: Efectivo, transferencia y tarjeta de credito o debito en el consultorio.
+    prioridad: 80
+  - pregunta: Aceptan seguro de gastos medicos
+    respuesta: Trabajamos con las principales aseguradoras. El equipo confirma tu poliza antes de la cita.
+    prioridad: 70
+  - pregunta: Cuanto cuesta la consulta
+    respuesta: La consulta de primera vez cuesta 800 pesos y la de seguimiento 600 pesos.
+    prioridad: 60
+  - pregunta: Que pasa si no puedo llegar
+    respuesta: Avisa con al menos dos horas de anticipacion y reagendamos sin costo.
+    prioridad: 50

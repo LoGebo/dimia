@@ -1,0 +1,45 @@
+name: agente-voz
+
+services:
+  agente:
+    image: ${IMAGEN_AGENTE:-ghcr.io/OWNER/rjd-agente:main}
+    pull_policy: always
+    env_file: /etc/agente-voz/agente.env
+    restart: unless-stopped
+    stop_grace_period: 300s
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    volumes:
+      - cache_modelos:/srv/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      replicas: ${REPLICAS_AGENTE:-1}
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g
+        reservations:
+          memory: 768m
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8081/', timeout=4).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+volumes:
+  cache_modelos:

@@ -1,0 +1,75 @@
+vertical: salon
+
+tenant:
+  nombre: Salon Ejemplo
+  zona_horaria: America/Mexico_City
+  slot_granularidad_min: 15
+  anticipacion_min: 60
+  horizonte_dias: 45
+
+recursos:
+  - nombre: Silla 1
+    capacidad: 1
+    metadatos:
+      estilista: Estilista Uno
+  - nombre: Silla 2
+    capacidad: 1
+    metadatos:
+      estilista: Estilista Dos
+  - nombre: Silla 3
+    capacidad: 1
+    metadatos:
+      estilista: Estilista Tres
+
+servicios:
+  - nombre: Corte de cabello
+    alias: [corte, cortarme el pelo, corte de pelo]
+    duracion_min: 45
+    buffer_min: 10
+    precio: 350
+  - nombre: Tinte
+    alias: [color, pintarme el pelo, retoque de raiz]
+    duracion_min: 120
+    buffer_min: 15
+    precio: 1200
+  - nombre: Peinado
+    alias: [peinar, peinado de evento]
+    duracion_min: 60
+    buffer_min: 10
+    precio: 600
+  - nombre: Manicure
+    alias: [manos, unas, manicura]
+    duracion_min: 45
+    buffer_min: 10
+    precio: 300
+
+horarios:
+  - tipo: disponible
+    dias: [1, 2, 3, 4, 5]
+    hora_inicio: "10:00"
+    hora_fin: "20:00"
+  - tipo: disponible
+    dias: [6]
+    hora_inicio: "10:00"
+    hora_fin: "16:00"
+  - tipo: festivo
+    dias: [0]
+    hora_inicio: "00:00"
+    hora_fin: "23:59"
+
+conocimiento:
+  - pregunta: Donde estan ubicados
+    respuesta: Estamos en la calle principal numero 20, colonia Centro.
+    prioridad: 100
+  - pregunta: Cuanto cuesta un corte
+    respuesta: El corte de cabello cuesta 350 pesos.
+    prioridad: 90
+  - pregunta: Aceptan tarjeta
+    respuesta: Si, aceptamos tarjeta, efectivo y transferencia.
+    prioridad: 80
+  - pregunta: Atienden sin cita
+    respuesta: Si hay silla libre si, pero conviene apartar para no esperar.
+    prioridad: 70
+  - pregunta: Cuanto dura un tinte
+    respuesta: Entre dos y dos horas y media, depende del largo del cabello.
+    prioridad: 60

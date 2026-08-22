@@ -1,0 +1,75 @@
+name: livekit
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server /etc/redis.conf
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./redis.conf:/etc/redis.conf:ro
+      - redis_datos:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  livekit:
+    image: livekit/livekit-server:${VERSION_LIVEKIT:-latest}
+    command: --config /etc/livekit.yaml
+    network_mode: host
+    restart: unless-stopped
+    depends_on: [redis]
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+  sip:
+    image: livekit/sip:${VERSION_SIP:-latest}
+    network_mode: host
+    restart: unless-stopped
+    depends_on: [livekit]
+    environment:
+      SIP_CONFIG_BODY: |
+        api_key: ${LIVEKIT_API_KEY}
+        api_secret: ${LIVEKIT_API_SECRET}
+        ws_url: ws://127.0.0.1:7880
+        redis:
+          address: 127.0.0.1:6379
+        sip_port: 5060
+        rtp_port: 10000-20000
+        use_external_ip: true
+        logging:
+          level: info
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
+  caddy:
+    image: caddy:2-alpine
+    network_mode: host
+    restart: unless-stopped
+    depends_on: [livekit]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_datos:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  redis_datos:
+  caddy_datos:
+  caddy_config:

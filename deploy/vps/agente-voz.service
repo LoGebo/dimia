@@ -1,0 +1,23 @@
+[Unit]
+Description=Agente de voz telefonico (worker LiveKit)
+Requires=docker.service
+After=docker.service network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/agente-voz
+EnvironmentFile=-/etc/agente-voz/despliegue.env
+TimeoutStartSec=900
+TimeoutStopSec=420
+ExecStartPre=/usr/bin/docker compose --file /opt/agente-voz/docker-compose.yml pull --quiet
+ExecStart=/usr/bin/docker compose --file /opt/agente-voz/docker-compose.yml up --detach --remove-orphans --wait
+ExecStop=/usr/bin/docker compose --file /opt/agente-voz/docker-compose.yml down --timeout 300
+ExecReload=/usr/bin/docker compose --file /opt/agente-voz/docker-compose.yml up --detach --pull always --wait
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

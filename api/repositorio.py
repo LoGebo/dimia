@@ -30,16 +30,22 @@ PaginacionQuery = Annotated[Paginacion, Depends(paginacion)]
 
 
 def sentencia_update(
-    tabla: str, cambios: dict[str, Any], condiciones: dict[str, Any], retorno: str
+    tabla: str,
+    cambios: dict[str, Any],
+    condiciones: dict[str, Any],
+    retorno: str,
+    casts: dict[str, str] | None = None,
 ) -> tuple[str, list[Any]]:
     if not cambios:
         raise ErrorApi(CodigoError.VALIDACION, "no enviaste ningun campo a modificar")
 
+    casts = casts or {}
     valores: list[Any] = []
     asignaciones: list[str] = []
     for columna, valor in cambios.items():
         valores.append(valor)
-        asignaciones.append(f"{columna} = ${len(valores)}")
+        molde = f"::{casts[columna]}" if columna in casts else ""
+        asignaciones.append(f"{columna} = ${len(valores)}{molde}")
 
     filtros: list[str] = []
     for columna, valor in condiciones.items():

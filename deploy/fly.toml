@@ -1,0 +1,30 @@
+app = "agente-voz"
+primary_region = "qro"
+kill_signal = "SIGTERM"
+kill_timeout = "300s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  LOG_LEVEL = "INFO"
+  PYTHONUNBUFFERED = "1"
+
+[processes]
+  worker = "python -m agent.agent start"
+
+[[vm]]
+  processes = ["worker"]
+  size = "shared-cpu-2x"
+  memory = "2gb"
+
+[checks.salud]
+  type = "tcp"
+  port = 8081
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "90s"
+
+[deploy]
+  strategy = "rolling"
+  wait_timeout = "10m"

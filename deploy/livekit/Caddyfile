@@ -1,0 +1,10 @@
+{
+	email operaciones@ejemplo.mx
+	servers {
+		protocols h1 h2
+	}
+}
+
+livekit.ejemplo.mx {
+	reverse_proxy 127.0.0.1:7880
+}
