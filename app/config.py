@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     livekit_api_secret: str = "secret"
 
     deepgram_api_key: str = ""
+    stt_model: str = "nova-3"
+    stt_language: str = "es-MX"
     cartesia_api_key: str = ""
     elevenlabs_api_key: str = ""
     anthropic_api_key: str = ""

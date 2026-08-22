@@ -85,6 +85,17 @@ Contra Supabase gestionado: usa el **pooler** (puerto 6543), no
 `db.<ref>.supabase.co` — ese host solo resuelve IPv6. `statement_cache_size=0`
 en asyncpg es obligatorio detrás de pgbouncer en modo transacción.
 
+## Limitaciones verificadas del proveedor
+
+- **Deepgram Flux solo habla inglés** (verificado por websocket: `flux-general-es`
+  responde 400, `flux-general-en` conecta). Su detección de fin de turno integrada
+  no está disponible en español, así que usamos `nova-3` con `es-MX` más el
+  detector semántico de LiveKit (`MultilingualModel`). Revisar si Flux
+  Multilingual se habilita: sería un cambio de una línea.
+- La búsqueda de conocimiento es léxica, no semántica: no salva sinónimos lejanos
+  ("carro" contra "estacionamiento"). Por eso la FAQ prioritaria viaja completa
+  en el prompt y la búsqueda cubre solo la cola larga.
+
 ## Qué probar antes de decir que algo funciona
 
 Corre `pytest`. `tests/test_sin_doble_reserva.py` es la prueba que sostiene el

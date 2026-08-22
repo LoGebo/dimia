@@ -383,7 +383,14 @@ async def entrypoint(ctx: JobContext) -> None:
 
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
-        stt=deepgram.STT(model="flux-general-es", language="es"),
+        stt=deepgram.STT(
+            model=cfg.stt_model,
+            language=cfg.stt_language,
+            smart_format=True,
+            punctuate=True,
+            filler_words=True,
+            numerals=False,
+        ),
         llm=construir_llm(),
         tts=construir_tts(tenant),
         turn_detection=MultilingualModel(),
