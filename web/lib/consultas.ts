@@ -1,5 +1,14 @@
 import { datos } from "@/lib/sesion";
-import type { Faq, Negocio, Recurso, Regla, Reserva, Servicio } from "@/lib/tipos";
+import type {
+  CatalogoItem,
+  Faq,
+  Negocio,
+  PlantillaVertical,
+  Recurso,
+  Regla,
+  Reserva,
+  Servicio,
+} from "@/lib/tipos";
 
 export function negocio(): Promise<Negocio> {
   return datos(async (q, id) => {
@@ -7,6 +16,31 @@ export function negocio(): Promise<Negocio> {
     if (!filas[0]) throw new Error("Negocio no encontrado");
     return filas[0];
   });
+}
+
+export function plantillas(): Promise<PlantillaVertical[]> {
+  return datos((q) =>
+    q<PlantillaVertical>(
+      "select clave, nombre, saludo, instrucciones, herramientas from vertical_template where activo order by nombre",
+    ),
+  );
+}
+
+export async function plantillaActual(vertical: string): Promise<PlantillaVertical | null> {
+  const lista = await plantillas();
+  return lista.find((p) => p.clave === vertical) ?? null;
+}
+
+export function catalogo(): Promise<CatalogoItem[]> {
+  return datos((q, id) =>
+    q<CatalogoItem>(
+      `select id, tipo, nombre, descripcion, precio, alias, atributos,
+              resource_id, disponible, orden
+         from catalogo_item where tenant_id = $1
+        order by tipo, orden, nombre`,
+      [id],
+    ),
+  );
 }
 
 export function recursos(): Promise<Recurso[]> {

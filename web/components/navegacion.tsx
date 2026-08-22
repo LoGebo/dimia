@@ -7,7 +7,8 @@ const SECCIONES = [
   { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño" },
   { href: "/agenda", nombre: "Agenda", detalle: "Reservas del día" },
   { href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres" },
-  { href: "/catalogo", nombre: "Catálogo", detalle: "Recursos y servicios" },
+  { href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración" },
+  { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces" },
   { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta" },
   { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia" },
 ] as const;

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { conSesion, elevado } from "@/lib/db";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
 import { contexto, datos, elegirNegocio } from "@/lib/sesion";
-import type { Regla, Vertical } from "@/lib/tipos";
+import type { ProveedorTts, Regla, ResultadoCatalogo, TtsAjustes, Vertical } from "@/lib/tipos";
 
 export type Estado = { error?: string; ok?: string };
 
@@ -17,7 +17,15 @@ const numero = (fd: FormData, campo: string, porDefecto = 0): number => {
 const opcional = (fd: FormData, campo: string): string | null => texto(fd, campo) || null;
 
 function refrescarPanel(): void {
-  for (const ruta of ["/resumen", "/agenda", "/horarios", "/catalogo", "/conocimiento", "/agente"]) {
+  for (const ruta of [
+    "/resumen",
+    "/agenda",
+    "/horarios",
+    "/servicios",
+    "/catalogo",
+    "/conocimiento",
+    "/agente",
+  ]) {
     revalidatePath(ruta);
   }
 }
@@ -85,12 +93,25 @@ export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado
   redirect("/alta/recursos");
 }
 
+function ajustesTts(fd: FormData): TtsAjustes {
+  const ajustes: TtsAjustes = {};
+  for (const clave of ["estabilidad", "similitud", "estilo", "velocidad"] as const) {
+    const crudo = fd.get(`tts_${clave}`);
+    if (crudo === null || String(crudo).trim() === "") continue;
+    const valor = Number(crudo);
+    if (Number.isFinite(valor)) ajustes[clave] = valor;
+  }
+  return ajustes;
+}
+
 export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
+  const proveedor = (texto(fd, "tts_proveedor") || "elevenlabs") as ProveedorTts;
   await datos(async (q, id) => {
     await q(
       `update tenant set nombre = $2, zona_horaria = $3, telefono_entrada = $4,
               telefono_escalamiento = $5, voz_id = $6, slot_granularidad_min = $7,
-              anticipacion_min = $8, horizonte_dias = $9
+              anticipacion_min = $8, horizonte_dias = $9, tts_proveedor = $10,
+              tts_ajustes = $11::jsonb, instrucciones_extra = $12
          where id = $1`,
       [
         id,
@@ -102,11 +123,98 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
         numero(fd, "slot_granularidad_min", 15),
         numero(fd, "anticipacion_min", 60),
         numero(fd, "horizonte_dias", 60),
+        proveedor,
+        JSON.stringify(ajustesTts(fd)),
+        opcional(fd, "instrucciones_extra"),
       ],
     );
   });
   refrescarPanel();
   return { ok: "Configuración guardada." };
+}
+
+export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
+  const nombre = texto(fd, "nombre");
+  const tipo = texto(fd, "tipo").toLowerCase();
+  if (!nombre) return { error: "El item necesita un nombre." };
+  if (!tipo) return { error: "Elige o escribe un tipo." };
+
+  const alias = JSON.stringify(
+    texto(fd, "alias")
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean),
+  );
+  const atributos = texto(fd, "atributos") || "{}";
+  try {
+    JSON.parse(atributos);
+  } catch {
+    return { error: "Los atributos quedaron mal formados." };
+  }
+
+  const id = opcional(fd, "id");
+  const precio = texto(fd, "precio") ? numero(fd, "precio") : null;
+  const recurso = opcional(fd, "resource_id");
+
+  try {
+    await datos(async (q, negocioId) => {
+      if (id) {
+        await q(
+          `update catalogo_item
+              set tipo = $2, nombre = $3, descripcion = $4, precio = $5,
+                  alias = $6::jsonb, atributos = $7::jsonb, resource_id = $8, orden = $9
+            where id = $1`,
+          [id, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden")],
+        );
+      } else {
+        await q(
+          `insert into catalogo_item
+             (tenant_id, tipo, nombre, descripcion, precio, alias, atributos, resource_id, orden)
+           values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)`,
+          [negocioId, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden")],
+        );
+      }
+    });
+  } catch {
+    return { error: `Ya existe un ${tipo} con ese nombre.` };
+  }
+  refrescarPanel();
+  return { ok: "Item guardado." };
+}
+
+export async function alternarDisponible(fd: FormData): Promise<void> {
+  await datos((q) =>
+    q("update catalogo_item set disponible = not disponible where id = $1", [texto(fd, "id")]),
+  );
+  refrescarPanel();
+}
+
+export async function eliminarItemCatalogo(fd: FormData): Promise<void> {
+  await datos((q) => q("delete from catalogo_item where id = $1", [texto(fd, "id")]));
+  refrescarPanel();
+}
+
+export async function probarCatalogo(consulta: string, tipo: string | null): Promise<ResultadoCatalogo[]> {
+  const { usuario, negocioId } = await contexto();
+  return conSesion(usuario.id, (q) =>
+    q<ResultadoCatalogo>("select * from public.buscar_catalogo($1, $2, $3, 8)", [
+      negocioId,
+      consulta,
+      tipo,
+    ]),
+  );
+}
+
+export async function probarConocimiento(
+  consulta: string,
+): Promise<{ pregunta: string; respuesta: string; puntaje: number }[]> {
+  const { usuario, negocioId } = await contexto();
+  return conSesion(usuario.id, (q) =>
+    q<{ pregunta: string; respuesta: string; puntaje: number }>(
+      "select * from public.buscar_conocimiento($1, $2, 4)",
+      [negocioId, consulta],
+    ),
+  );
 }
 
 export async function guardarRecurso(_previo: Estado, fd: FormData): Promise<Estado> {

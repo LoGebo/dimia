@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Paso } from "@/components/paso";
 import { Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { faq, negocio, recursos, reglas, servicios } from "@/lib/consultas";
+import { faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { saludo } from "@/lib/prompt";
 
 export default async function AltaListo() {
@@ -12,6 +12,7 @@ export default async function AltaListo() {
     reglas(),
     faq(),
   ]);
+  const plantilla = await plantillaActual(config.vertical);
 
   const revisiones = [
     { nombre: "Recursos", valor: listaRecursos.filter((r) => r.activo).length, minimo: 1, ruta: "/alta/recursos" },
@@ -27,7 +28,7 @@ export default async function AltaListo() {
     >
       <Tarjeta>
         <TarjetaCabecera titulo="Así saluda" />
-        <p className="px-4 py-4 text-[15px] text-tinta">“{saludo(config)}”</p>
+        <p className="px-4 py-4 text-[15px] text-tinta">“{saludo(config, plantilla)}”</p>
       </Tarjeta>
 
       <Tarjeta>

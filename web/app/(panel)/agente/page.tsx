@@ -1,22 +1,32 @@
 import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
-import { Boton, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
+import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { guardarNegocio } from "@/lib/acciones";
-import { faq, negocio, recursos, reglas, servicios } from "@/lib/consultas";
+import { ConfiguracionVoz } from "@/components/voz";
+import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { construirPrompt, saludo } from "@/lib/prompt";
-import { VOCES, ZONAS_HORARIAS } from "@/lib/tipos";
+import { etiquetaTipo, ZONAS_HORARIAS } from "@/lib/tipos";
 
 export default async function Agente() {
-  const [config, listaServicios, listaFaq, listaRecursos, listaReglas] = await Promise.all([
+  const [config, listaServicios, listaFaq, listaRecursos, listaReglas, items] = await Promise.all([
     negocio(),
     servicios(),
     faq(),
     recursos(),
     reglas(),
+    catalogo(),
   ]);
+  const plantilla = await plantillaActual(config.vertical);
 
-  const prompt = construirPrompt(config, listaServicios, listaFaq);
+  const tiposCatalogo = [...new Set(items.filter((i) => i.disponible).map((i) => i.tipo))];
+  const prompt = construirPrompt({
+    negocio: config,
+    servicios: listaServicios,
+    faq: listaFaq,
+    plantilla,
+    tiposCatalogo: tiposCatalogo.map((t) => etiquetaTipo(t, true).toLowerCase()),
+  });
   const revisiones = [
     { nombre: "Recursos dados de alta", listo: listaRecursos.some((r) => r.activo) },
     { nombre: "Al menos un servicio activo", listo: listaServicios.some((s) => s.activo) },
@@ -24,6 +34,7 @@ export default async function Agente() {
     { nombre: "Respuestas frecuentes", listo: listaFaq.length >= 3 },
     { nombre: "Número para transferir", listo: !!config.telefono_escalamiento },
     { nombre: "Número de entrada asignado", listo: !!config.telefono_entrada },
+    { nombre: "Catálogo con items disponibles", listo: items.some((i) => i.disponible) },
   ];
   const pendientes = revisiones.filter((r) => !r.listo).length;
 
@@ -56,16 +67,11 @@ export default async function Agente() {
                   <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta al contestar.">
                     <Entrada name="nombre" defaultValue={config.nombre} required />
                   </Campo>
-                  <Campo etiqueta="Voz">
-                    <Selector name="voz_id" defaultValue={config.voz_id ?? ""}>
-                      <option value="">Voz por defecto</option>
-                      {VOCES.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.nombre} — {v.detalle}
-                        </option>
-                      ))}
-                    </Selector>
-                  </Campo>
+                  <ConfiguracionVoz
+                    proveedor={config.tts_proveedor}
+                    vozId={config.voz_id}
+                    ajustes={config.tts_ajustes}
+                  />
                   <Campo etiqueta="Zona horaria">
                     <Selector name="zona_horaria" defaultValue={config.zona_horaria}>
                       {ZONAS_HORARIAS.map((z) => (
@@ -98,6 +104,17 @@ export default async function Agente() {
                       <Entrada name="horizonte_dias" type="number" min={1} max={365} defaultValue={config.horizonte_dias} />
                     </Campo>
                   </div>
+                  <Campo
+                    etiqueta="Indicaciones del negocio"
+                    ayuda="Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt."
+                  >
+                    <AreaTexto
+                      name="instrucciones_extra"
+                      defaultValue={config.instrucciones_extra ?? ""}
+                      rows={4}
+                      placeholder={"Los martes hay dos por uno.\nSi preguntan por la terraza, di que no se aparta por telefono."}
+                    />
+                  </Campo>
                   <BotonEnviar>
                     Guardar configuración
                   </BotonEnviar>
@@ -108,7 +125,7 @@ export default async function Agente() {
         <div className="space-y-4">
           <Tarjeta>
             <TarjetaCabecera titulo="Cómo contesta" descripcion="Primera frase de cada llamada." />
-            <p className="px-4 py-4 text-[15px] leading-relaxed text-tinta">“{saludo(config)}”</p>
+            <p className="px-4 py-4 text-[15px] leading-relaxed text-tinta">“{saludo(config, plantilla)}”</p>
           </Tarjeta>
 
           <Tarjeta>

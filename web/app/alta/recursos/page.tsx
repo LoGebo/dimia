@@ -2,11 +2,11 @@ import { Paso } from "@/components/paso";
 import { FormularioRecurso } from "@/components/catalogo";
 import { Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { negocio, recursos } from "@/lib/consultas";
-import { VERTICALES } from "@/lib/tipos";
+import { etiquetasRecurso } from "@/lib/tipos";
 
 export default async function AltaRecursos() {
   const [config, lista] = await Promise.all([negocio(), recursos()]);
-  const vertical = VERTICALES.find((v) => v.valor === config.vertical)!;
+  const vertical = etiquetasRecurso(config.vertical);
 
   return (
     <Paso

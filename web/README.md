@@ -56,7 +56,10 @@ daría hecho:
 - la tabla `dev_usuario` (correo + hash bcrypt) que sustituye a `auth.users`,
 - membresías `owner` del usuario demo sobre todos los tenants,
 - reservas de dos semanas y treinta días de `call_log` para que las métricas
-  y la agenda tengan algo que mostrar.
+  y la agenda tengan algo que mostrar,
+- catálogo de ejemplo por vertical: platillos con alérgenos y nivel de picante,
+  profesionales con cédula, refacciones con marca y garantía, más un item
+  marcado como agotado e `instrucciones_extra` por giro.
 
 Usuario demo: **dueno@demo.mx / demo1234**.
 
@@ -88,9 +91,10 @@ resuelve por IPv6. `dev/seed_panel.sql` no se corre aquí.
 | `/resumen` | Llamadas por día, containment, escalamiento con motivos, duración promedio, hora pico. Todo de `call_log`. |
 | `/agenda` | Día y semana, búsqueda por código, teléfono o nombre, cancelar y mover. |
 | `/horarios` | Cuadrícula semanal que se pinta arrastrando, más excepciones por fecha. |
-| `/catalogo` | Recursos y servicios: duración, buffer, precio, alias y quién puede dar cada servicio. |
+| `/servicios` | Recursos y servicios: duración, buffer, precio, alias y quién puede dar cada servicio. |
+| `/catalogo` | `catalogo_item`: platillos, profesionales, propiedades, refacciones. Con toggle de disponibilidad y buscador de prueba. |
 | `/conocimiento` | Las respuestas que el agente puede dar. Lo que no está aquí, se transfiere. |
-| `/agente` | Voz, zona horaria, número de transferencia y vista previa del prompt que se ensambla. |
+| `/agente` | Proveedor de voz y sus ajustes, indicaciones propias del negocio, zona horaria, número de transferencia y vista previa del prompt. |
 
 ### El editor de horarios
 
@@ -109,11 +113,36 @@ Si alguien ganó el lugar en el intervalo, el constraint `booking_sin_traslape`
 lo rechaza y el panel dice que elijas otro. La disponibilidad nunca se calcula
 en TypeScript.
 
+### Catálogo, y por qué no es lo mismo que un servicio
+
+`service` es lo que se agenda y cuánto dura. `catalogo_item` es lo que el
+negocio ofrece e informa: un platillo con sus alérgenos, un doctor con su
+especialidad, una propiedad con sus recámaras. Son dos secciones distintas
+porque son dos preguntas distintas por teléfono.
+
+Los atributos se editan con campos sugeridos según el tipo — alérgenos como
+multi-select, vegetariano y vegano en tres estados (sí / no / sin especificar),
+picante como escala — más pares libres para lo que no esté contemplado. Nunca
+se le pide al dueño que escriba JSON. Los booleanos sin especificar no se
+guardan: `{}` vacío es distinto de "dijimos que no".
+
+La disponibilidad es un solo clic, fuera del formulario: un restaurante marca
+"se acabó" varias veces por servicio y no va a abrir un editor para eso.
+
+El **buscador de prueba** ejecuta `buscar_catalogo()` con la misma frase que
+diría un cliente y muestra el resultado con su puntaje. Sirve para lo contrario
+de lo que parece: si algo *no* aparece, el agente no lo va a decir. Es la forma
+de comprobar que el agente no inventa, y de descubrir qué alias faltan.
+
 ### Vista previa del prompt
 
-`lib/prompt.ts` reproduce lo que arma `app/prompt.py` con la configuración,
-los servicios y las FAQ del negocio. Es de solo lectura a propósito: el prompt
-no se edita a mano, se edita cambiando los datos.
+`lib/prompt.ts` reproduce lo que arma `app/prompt.py`: la plantilla del vertical
+que vive en `vertical_template`, los servicios, las FAQ, los tipos de catálogo
+disponibles y las `instrucciones_extra` del negocio. Es de solo lectura a
+propósito: el prompt no se edita a mano, se edita cambiando los datos.
+
+Las verticales no están codificadas en el panel. Salen de `vertical_template`,
+así que agregar un giro nuevo es insertar una fila, no tocar `web/`.
 
 ## Verificación
 

@@ -1,4 +1,4 @@
-import type { Negocio, Servicio, Faq, Vertical } from "@/lib/tipos";
+import type { Faq, Negocio, PlantillaVertical, Servicio } from "@/lib/tipos";
 
 const BASE = `Eres quien contesta el telefono de un negocio en Mexico. Hablas por telefono,
 no escribes. Todo lo que digas se convierte en voz tal cual.
@@ -14,9 +14,21 @@ COMO HABLAS
   "dejame ver", "ok". Una cada varios turnos, sin exagerar.
 - Si algo tarda, avisa: "dejame checar tantito".
 
+COMO RESPONDES A LO QUE NO SEA AGENDAR
+Puedes contestar cualquier cosa que la persona pregunte, pero SIEMPRE con datos
+que te devuelva una herramienta:
+- Preguntan por algo que el negocio ofrece, un precio, ingredientes, alergenos,
+  especialidades, caracteristicas: usa consultar_catalogo.
+- Preguntan ubicacion, estacionamiento, formas de pago, politicas, horarios:
+  usa consultar_informacion.
+- Consulta ANTES de contestar, aunque creas saber la respuesta. Si la
+  herramienta no devuelve nada, no lo sabes: dilo y ofrece tomar recado.
+- No repitas los datos crudos que devuelve la herramienta. Traducelos a como
+  hablaria una persona.
+
 QUE NUNCA HACES
-- No inventas horarios, precios, servicios ni disponibilidad. Si no viene de
-  una herramienta o del contexto, no existe: preguntas o transfieres.
+- No inventas horarios, precios, servicios, platillos ni disponibilidad. Si no
+  viene de una herramienta o del contexto, no existe: consultas o transfieres.
 - No prometes nada que no confirmo una herramienta.
 - No pides ni aceptas datos de tarjeta. Si quieren pagar, les llega un
   enlace de pago por WhatsApp.
@@ -43,7 +55,7 @@ Si te preguntan si eres una persona, contestas con naturalidad que eres el
 asistente virtual del negocio. No lo niegas ni lo escondes.
 `;
 
-const PLANTILLAS: Record<Vertical, string> = {
+const PLANTILLAS: Record<string, string> = {
   clinica: `CONTEXTO: consultorio medico o dental.
 - Trata a quien llama como paciente. Tono calido y tranquilo, sin prisa.
 - Primera vez o seguimiento: preguntalo, cambia la duracion de la cita.
@@ -66,18 +78,33 @@ const PLANTILLAS: Record<Vertical, string> = {
   generico: "CONTEXTO: negocio de servicios con citas.\n",
 };
 
-const SALUDOS: Record<Vertical, string> = {
+const SALUDOS: Record<string, string> = {
   clinica: "{nombre}, buen dia. ¿En que le puedo ayudar?",
   restaurante: "{nombre}, buenas. ¿Le ayudo con una reservacion?",
   salon: "{nombre}, ¡hola! ¿Que necesitas?",
   generico: "{nombre}, buen dia. ¿En que le ayudo?",
 };
 
-export function saludo(negocio: Negocio): string {
-  return SALUDOS[negocio.vertical].replace("{nombre}", negocio.nombre);
+export type ContextoPrompt = {
+  negocio: Negocio;
+  servicios: Servicio[];
+  faq: Faq[];
+  plantilla: PlantillaVertical | null;
+  tiposCatalogo: string[];
+};
+
+export function saludo(negocio: Negocio, plantilla: PlantillaVertical | null): string {
+  const patron = plantilla?.saludo ?? SALUDOS[negocio.vertical] ?? SALUDOS.generico!;
+  return patron.replace("{nombre}", negocio.nombre);
 }
 
-export function construirPrompt(negocio: Negocio, servicios: Servicio[], faq: Faq[]): string {
+export function construirPrompt({
+  negocio,
+  servicios,
+  faq,
+  plantilla,
+  tiposCatalogo,
+}: ContextoPrompt): string {
   const ahora = new Intl.DateTimeFormat("es-MX", {
     weekday: "long",
     day: "2-digit",
@@ -89,7 +116,8 @@ export function construirPrompt(negocio: Negocio, servicios: Servicio[], faq: Fa
     timeZone: negocio.zona_horaria,
   }).format(new Date());
 
-  const lineas = [BASE, PLANTILLAS[negocio.vertical], `\nNEGOCIO: ${negocio.nombre}`];
+  const instrucciones = plantilla?.instrucciones ?? PLANTILLAS[negocio.vertical] ?? PLANTILLAS.generico!;
+  const lineas = [BASE, instrucciones, `\nNEGOCIO: ${negocio.nombre}`];
   lineas.push(
     `AHORA MISMO: ${ahora} (hora de ${negocio.zona_horaria}).` +
       " Usa esto para entender 'manana', 'el viernes', 'la proxima semana'.",
@@ -108,6 +136,24 @@ export function construirPrompt(negocio: Negocio, servicios: Servicio[], faq: Fa
   if (faq.length > 0) {
     lineas.push("\nINFORMACION DEL NEGOCIO:");
     for (const f of faq) lineas.push(`  - ${f.pregunta} -> ${f.respuesta}`);
+  }
+
+  if (tiposCatalogo.length > 0) {
+    lineas.push(
+      `\nCATALOGO: este negocio tiene informacion de ${tiposCatalogo.join(", ")}.` +
+        " Usa consultar_catalogo con esos tipos cuando pregunten por eso.",
+    );
+  }
+
+  if (negocio.instrucciones_extra) {
+    lineas.push(`\nINDICACIONES DEL NEGOCIO:\n${negocio.instrucciones_extra}`);
+  }
+
+  if (plantilla?.herramientas.includes("recado")) {
+    lineas.push(
+      "\nSi no puedes resolver algo, toma recado con tomar_recado: " +
+        "nombre, telefono confirmado repitiendolo, y que necesita.",
+    );
   }
 
   lineas.push(

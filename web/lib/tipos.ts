@@ -1,4 +1,4 @@
-export type Vertical = "clinica" | "restaurante" | "salon" | "generico";
+export type Vertical = string;
 export type TipoRegla = "disponible" | "bloqueo" | "festivo";
 export type EstadoReserva = "confirmada" | "cancelada" | "no_asistio" | "completada";
 
@@ -10,6 +10,9 @@ export type Negocio = {
   telefono_entrada: string | null;
   telefono_escalamiento: string | null;
   voz_id: string | null;
+  tts_proveedor: ProveedorTts;
+  tts_ajustes: TtsAjustes;
+  instrucciones_extra: string | null;
   slot_granularidad_min: number;
   anticipacion_min: number;
   horizonte_dias: number;
@@ -77,11 +80,152 @@ export type Membresia = {
   rol: Rol;
 };
 
-export const VERTICALES: { valor: Vertical; etiqueta: string; recurso: string; ejemplos: string }[] = [
-  { valor: "clinica", etiqueta: "Consultorio o clínica", recurso: "Doctor o consultorio", ejemplos: "Dra. Ana Ruiz, Dr. Luis Méndez" },
-  { valor: "restaurante", etiqueta: "Restaurante", recurso: "Mesa", ejemplos: "Mesa 1, Terraza 3" },
-  { valor: "salon", etiqueta: "Salón o barbería", recurso: "Estación o estilista", ejemplos: "Silla 1, Karla" },
-  { valor: "generico", etiqueta: "Otro negocio con citas", recurso: "Recurso", ejemplos: "Taller 1, Sala A" },
+export type ProveedorTts = "elevenlabs" | "cartesia";
+
+export type TtsAjustes = {
+  estabilidad?: number;
+  similitud?: number;
+  estilo?: number;
+  velocidad?: number;
+};
+
+export type PlantillaVertical = {
+  clave: string;
+  nombre: string;
+  saludo: string;
+  instrucciones: string;
+  herramientas: string[];
+};
+
+export type CatalogoItem = {
+  id: string;
+  tipo: string;
+  nombre: string;
+  descripcion: string | null;
+  precio: string | null;
+  alias: string[];
+  atributos: Record<string, unknown>;
+  resource_id: string | null;
+  disponible: boolean;
+  orden: number;
+};
+
+export type ResultadoCatalogo = {
+  id: string;
+  tipo: string;
+  nombre: string;
+  descripcion: string | null;
+  precio: string | null;
+  atributos: Record<string, unknown>;
+  resource_id: string | null;
+  puntaje: number;
+};
+
+export type CampoAtributo =
+  | { clave: string; etiqueta: string; tipo: "texto"; ayuda?: string }
+  | { clave: string; etiqueta: string; tipo: "numero"; ayuda?: string }
+  | { clave: string; etiqueta: string; tipo: "booleano"; ayuda?: string }
+  | { clave: string; etiqueta: string; tipo: "opcion"; opciones: string[]; ayuda?: string }
+  | { clave: string; etiqueta: string; tipo: "multiple"; opciones: string[]; ayuda?: string };
+
+export const ESQUEMAS_ATRIBUTOS: Record<string, CampoAtributo[]> = {
+  platillo: [
+    {
+      clave: "alergenos",
+      etiqueta: "Alérgenos",
+      tipo: "multiple",
+      opciones: ["gluten", "lacteos", "huevo", "pescado", "mariscos", "frutos secos", "soya", "ajonjoli"],
+      ayuda: "El agente nunca asegura que algo es seguro: avisa y transfiere.",
+    },
+    { clave: "vegetariano", etiqueta: "Vegetariano", tipo: "booleano" },
+    { clave: "vegano", etiqueta: "Vegano", tipo: "booleano" },
+    { clave: "picante", etiqueta: "Picante", tipo: "opcion", opciones: ["no", "bajo", "medio", "alto"] },
+  ],
+  bebida: [
+    { clave: "alcohol", etiqueta: "Con alcohol", tipo: "booleano" },
+    { clave: "sin_azucar", etiqueta: "Sin azúcar", tipo: "booleano" },
+  ],
+  profesional: [
+    { clave: "especialidad", etiqueta: "Especialidad", tipo: "texto" },
+    { clave: "cedula", etiqueta: "Cédula profesional", tipo: "texto" },
+    { clave: "atiende_ninos", etiqueta: "Atiende niños", tipo: "booleano" },
+    { clave: "idiomas", etiqueta: "Idiomas", tipo: "multiple", opciones: ["espanol", "ingles"] },
+  ],
+  propiedad: [
+    { clave: "operacion", etiqueta: "Operación", tipo: "opcion", opciones: ["venta", "renta"] },
+    { clave: "recamaras", etiqueta: "Recámaras", tipo: "numero" },
+    { clave: "banos", etiqueta: "Baños", tipo: "numero" },
+    { clave: "metros", etiqueta: "Metros cuadrados", tipo: "numero" },
+    { clave: "estacionamiento", etiqueta: "Estacionamiento", tipo: "booleano" },
+  ],
+  refaccion: [
+    { clave: "marca", etiqueta: "Marca", tipo: "texto" },
+    { clave: "modelo", etiqueta: "Modelo compatible", tipo: "texto" },
+    { clave: "garantia_meses", etiqueta: "Garantía (meses)", tipo: "numero" },
+    { clave: "en_existencia", etiqueta: "En existencia", tipo: "booleano" },
+  ],
+  paquete: [
+    { clave: "incluye", etiqueta: "Qué incluye", tipo: "texto" },
+    { clave: "vigencia", etiqueta: "Vigencia", tipo: "texto" },
+  ],
+};
+
+export const TIPOS_POR_VERTICAL: Record<string, string[]> = {
+  restaurante: ["platillo", "bebida"],
+  clinica: ["profesional", "paquete"],
+  salon: ["profesional", "paquete"],
+  taller: ["refaccion", "paquete"],
+  inmobiliaria: ["propiedad"],
+  recepcion: ["paquete"],
+};
+
+export const ETIQUETAS_TIPO: Record<string, { singular: string; plural: string }> = {
+  platillo: { singular: "Platillo", plural: "Platillos" },
+  bebida: { singular: "Bebida", plural: "Bebidas" },
+  profesional: { singular: "Profesional", plural: "Profesionales" },
+  propiedad: { singular: "Propiedad", plural: "Propiedades" },
+  refaccion: { singular: "Refacción", plural: "Refacciones" },
+  paquete: { singular: "Paquete", plural: "Paquetes" },
+};
+
+export function etiquetaTipo(tipo: string, plural = false): string {
+  const conocida = ETIQUETAS_TIPO[tipo];
+  if (conocida) return plural ? conocida.plural : conocida.singular;
+  return tipo.charAt(0).toUpperCase() + tipo.slice(1);
+}
+
+export const ETIQUETAS_RECURSO: Record<string, { recurso: string; ejemplos: string }> = {
+  clinica: { recurso: "Doctor o consultorio", ejemplos: "Dra. Ana Ruiz, Dr. Luis Méndez" },
+  restaurante: { recurso: "Mesa", ejemplos: "Mesa 1, Terraza 3" },
+  salon: { recurso: "Estación o estilista", ejemplos: "Silla 1, Karla" },
+  taller: { recurso: "Bahía o técnico", ejemplos: "Bahía 1, Rampa 2" },
+  inmobiliaria: { recurso: "Asesor", ejemplos: "Asesor Norte, Asesor Centro" },
+  recepcion: { recurso: "Línea o agente", ejemplos: "Línea 1, Recepción" },
+};
+
+export function etiquetasRecurso(vertical: Vertical): { recurso: string; ejemplos: string } {
+  return ETIQUETAS_RECURSO[vertical] ?? { recurso: "Recurso", ejemplos: "Sala A, Taller 1" };
+}
+
+export const AJUSTES_TTS: Record<
+  ProveedorTts,
+  { clave: keyof TtsAjustes; etiqueta: string; ayuda: string; min: number; max: number; paso: number; porDefecto: number }[]
+> = {
+  elevenlabs: [
+    { clave: "estabilidad", etiqueta: "Estabilidad", ayuda: "Bajo varía más la entonación; alto suena parejo y plano.", min: 0, max: 1, paso: 0.05, porDefecto: 0.5 },
+    { clave: "similitud", etiqueta: "Similitud", ayuda: "Qué tanto se apega a la voz original.", min: 0, max: 1, paso: 0.05, porDefecto: 0.75 },
+    { clave: "estilo", etiqueta: "Estilo", ayuda: "Exagera el acento y la intención. Sube la latencia.", min: 0, max: 1, paso: 0.05, porDefecto: 0 },
+    { clave: "velocidad", etiqueta: "Velocidad", ayuda: "1.0 es el ritmo natural.", min: 0.7, max: 1.2, paso: 0.05, porDefecto: 1 },
+  ],
+  cartesia: [
+    { clave: "velocidad", etiqueta: "Velocidad", ayuda: "1.0 es el ritmo natural.", min: 0.7, max: 1.2, paso: 0.05, porDefecto: 1 },
+    { clave: "estilo", etiqueta: "Emoción", ayuda: "Qué tanta carga emocional le pone.", min: 0, max: 1, paso: 0.05, porDefecto: 0.3 },
+  ],
+};
+
+export const PROVEEDORES_TTS: { valor: ProveedorTts; nombre: string; detalle: string }[] = [
+  { valor: "elevenlabs", nombre: "ElevenLabs", detalle: "Más natural, más control" },
+  { valor: "cartesia", nombre: "Cartesia Sonic", detalle: "40 ms al primer audio" },
 ];
 
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const;
