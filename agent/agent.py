@@ -14,7 +14,7 @@ from livekit.agents import (
     Agent, AgentSession, JobContext, JobProcess, RoomInputOptions,
     RunContext, WorkerOptions, cli, function_tool,
 )
-from livekit.plugins import anthropic, cartesia, deepgram, elevenlabs, silero
+from livekit.plugins import anthropic, cartesia, deepgram, elevenlabs, openai, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from app import prompt as prompt_mod
@@ -324,6 +324,12 @@ class Recepcionista(Agent):
         return "Transferido."
 
 
+def construir_llm():
+    if cfg.llm_proveedor == "anthropic":
+        return anthropic.LLM(model=cfg.llm_model, temperature=0.4)
+    return openai.LLM(model=cfg.llm_model, temperature=0.4)
+
+
 def construir_tts(tenant: Tenant):
     ajustes = tenant.tts_ajustes or {}
     if tenant.tts_proveedor == "cartesia":
@@ -378,7 +384,7 @@ async def entrypoint(ctx: JobContext) -> None:
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
         stt=deepgram.STT(model="flux-general-es", language="es"),
-        llm=anthropic.LLM(model=cfg.llm_model, temperature=0.4),
+        llm=construir_llm(),
         tts=construir_tts(tenant),
         turn_detection=MultilingualModel(),
         min_endpointing_delay=0.4,
