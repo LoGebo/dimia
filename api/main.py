@@ -13,7 +13,16 @@ from fastapi.responses import JSONResponse
 from api.config import api_settings
 from api.db import base, traducir_error_postgres
 from api.errores import CodigoError, ErrorApi, ErrorRespuesta, manejar_error_api
-from api.routers import conocimiento, horarios, metricas, negocios, recursos, reservas, servicios
+from api.routers import (
+    conocimiento,
+    horarios,
+    metricas,
+    negocios,
+    recados,
+    recursos,
+    reservas,
+    servicios,
+)
 
 log = logging.getLogger("api")
 
@@ -81,8 +90,18 @@ def crear_app() -> FastAPI:
     app.add_exception_handler(asyncpg.PostgresError, manejar_postgres)
     app.add_exception_handler(Exception, manejar_inesperado)
 
-    for modulo in (negocios, recursos, servicios, horarios, conocimiento, reservas, metricas):
+    for modulo in (
+        negocios,
+        recursos,
+        servicios,
+        horarios,
+        conocimiento,
+        reservas,
+        recados,
+        metricas,
+    ):
         app.include_router(modulo.router)
+    app.include_router(negocios.verticales_router)
 
     @app.get("/salud", tags=["salud"])
     async def salud() -> dict[str, str]:

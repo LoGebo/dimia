@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 from evals.entorno import Contexto
@@ -47,6 +48,10 @@ def _coincide(
         return f"servicio {reserva['servicio']} != {servicio}"
     if (dia := regla.get("dia")) is not None:
         esperado = resolver_dia(dia, tz)
+        if local.date() != esperado:
+            return f"dia {local.date()} != {esperado}"
+    if (relativo := regla.get("dia_relativo")) is not None:
+        esperado = contexto.dia + timedelta(days=int(relativo))
         if local.date() != esperado:
             return f"dia {local.date()} != {esperado}"
     if (hora := regla.get("hora")) and local.strftime("%H:%M") != hora:

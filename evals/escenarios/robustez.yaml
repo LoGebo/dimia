@@ -1,0 +1,67 @@
+id: clinica_cliente_duda_pausas
+descripcion: cliente indeciso con silencios largos; el agente no debe atropellarlo
+tenant: clinica
+etiquetas: [robustez, pausas]
+telefono_cliente: "+5215533330001"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Aurelio Prado y eres muy indeciso. Dudas en voz alta, te quedas
+  callado a media conversacion (usa la marca de silencio al menos dos veces) y
+  cambias de opinion una vez sobre el horario. Al final si agendas una consulta
+  general para el {dia} y das tu nombre.
+guion:
+  - "Este... queria ver lo de una consulta... creo"
+  - "[SILENCIO]"
+  - "Pues... para el {dia}, no se, en la manana tal vez"
+  - "[SILENCIO]"
+  - "Mmm, mejor en la tarde, si se puede"
+  - "Esa ultima esta bien"
+  - "Aurelio Prado"
+  - "Si, si, esta bien. Gracias [COLGAR]"
+max_turnos: 14
+rubrica:
+  - tipo: reserva_creada
+    servicio: Consulta general
+    dia: proximo_miercoles
+    nombre_contiene: Aurelio
+  - tipo: escalo
+    esperado: false
+---
+id: restaurante_acento_ruido
+descripcion: transcripcion sucia por acento y ruido; el agente debe entender igual
+tenant: restaurante
+etiquetas: [robustez, stt]
+telefono_cliente: "+5215533330002"
+semilla: 11
+estado_inicial:
+  dia: proximo_miercoles
+ruido:
+  probabilidad: 1.0
+  sustituciones:
+    reservacion: reserbacion
+    mesa: meza
+    cuatro: cuadro
+    noche: noshe
+    Benitez: Benites
+    para: pa
+persona: |
+  Te llamas Gerardo Benitez y llamas desde la calle, con ruido. Quieres una mesa
+  para cuatro el {dia} en la noche. Repites la informacion con paciencia si no
+  te entienden, y das tu nombre deletreado si te lo piden.
+guion:
+  - "Quiero una reservacion para cuatro el {dia} en la noche"
+  - "Si, para cuatro personas, en la noche"
+  - "Esa hora esta bien"
+  - "Gerardo Benitez"
+  - "Correcto, gracias [COLGAR]"
+max_turnos: 14
+rubrica:
+  - tipo: reserva_creada
+    servicio: Reservacion
+    dia: proximo_miercoles
+    personas: 4
+  - tipo: escalo
+    esperado: false
+  - tipo: max_turnos
+    turnos: 14

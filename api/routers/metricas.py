@@ -54,6 +54,14 @@ group by 1
 order by veces desc
 """
 
+RECADOS = """
+select count(*)::int as pendientes
+from lead
+where tenant_id = $1 and not atendido
+  and creado >= ($2::date::timestamp at time zone $4)
+  and creado <  (($3::date + 1)::timestamp at time zone $4)
+"""
+
 RESERVAS = """
 select
   count(*) filter (where estado = 'confirmada')::int as confirmadas,
@@ -94,6 +102,7 @@ async def metricas_del_tenant(
     argumentos = (tenant_id, desde, hasta, tz)
     resumen = await ejecutar(RESUMEN, *argumentos)
     reservas = await ejecutar(RESERVAS, *argumentos)
+    recados = await ejecutar(RECADOS, *argumentos)
     dias = await ejecutar_muchos(POR_DIA, *argumentos)
     motivos = await ejecutar_muchos(MOTIVOS, *argumentos)
 
@@ -112,6 +121,7 @@ async def metricas_del_tenant(
             duracion_media_seg=round(resumen["duracion_media_seg"], 2),
             reservas_confirmadas=reservas["confirmadas"],
             reservas_canceladas=reservas["canceladas"],
+            recados_pendientes=recados["pendientes"],
         ),
         por_dia=[MetricasDia(**dict(f)) for f in dias],
         motivos_escalamiento={f["motivo"]: f["veces"] for f in motivos},

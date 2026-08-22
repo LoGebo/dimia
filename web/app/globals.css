@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-tema="oscuro"], [data-tema="oscuro"] *));
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5f2;
+  --panel: #ffffff;
+  --panel-2: #fbfaf8;
+  --linea: #e3e1da;
+  --linea-fuerte: #cfccc3;
+  --tinta: #17171a;
+  --tinta-2: #56544e;
+  --tinta-3: #8b887f;
+  --acento: #1c5cab;
+  --acento-tinta: #ffffff;
+  --acento-suave: #e9f0fa;
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --bueno: #008300;
+  --alerta: #eda100;
+  --critico: #e34948;
+  --sombra: 0 1px 2px rgb(23 23 26 / 0.05), 0 1px 1px rgb(23 23 26 / 0.04);
+}
+
+[data-tema="oscuro"] {
+  color-scheme: dark;
+  --paper: #121211;
+  --panel: #1a1a19;
+  --panel-2: #201f1e;
+  --linea: #2d2d2a;
+  --linea-fuerte: #3f3e3a;
+  --tinta: #f3f2ee;
+  --tinta-2: #b2b0a7;
+  --tinta-3: #7c7a72;
+  --acento: #3987e5;
+  --acento-tinta: #0b1a2c;
+  --acento-suave: #16283f;
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --bueno: #3faa4a;
+  --alerta: #c98500;
+  --critico: #e66767;
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-linea: var(--linea);
+  --color-linea-fuerte: var(--linea-fuerte);
+  --color-tinta: var(--tinta);
+  --color-tinta-2: var(--tinta-2);
+  --color-tinta-3: var(--tinta-3);
+  --color-acento: var(--acento);
+  --color-acento-tinta: var(--acento-tinta);
+  --color-acento-suave: var(--acento-suave);
+  --color-serie-1: var(--serie-1);
+  --color-serie-2: var(--serie-2);
+  --color-serie-3: var(--serie-3);
+  --color-bueno: var(--bueno);
+  --color-alerta: var(--alerta);
+  --color-critico: var(--critico);
+  --font-sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+* {
+  border-color: var(--linea);
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  background: var(--paper);
+  color: var(--tinta);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv05", "ss01";
+}
+
+.numeros {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.etiqueta {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tinta-3);
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input[type="time"],
+input[type="date"] {
+  color-scheme: inherit;
+}
+
+::selection {
+  background: var(--acento-suave);
+}
+
+.rejilla-fondo {
+  background-image: linear-gradient(var(--linea) 1px, transparent 1px);
+  background-size: 100% 2.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .entra {
+    animation: entra 0.18s ease-out;
+  }
+}
+
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}

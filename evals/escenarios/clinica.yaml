@@ -1,0 +1,117 @@
+id: clinica_reserva_feliz
+descripcion: paciente agenda una limpieza sin complicaciones
+tenant: clinica
+etiquetas: [feliz, agendamiento]
+telefono_cliente: "+5215511110001"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Marisol Trevino. Quieres una limpieza dental el {dia}, de preferencia
+  por la manana. Aceptas la primera opcion razonable que te ofrezcan.
+  Das tu nombre cuando te lo pidan y confirmas cuando te repitan los datos.
+guion:
+  - "Hola, quiero agendar una limpieza dental para el {dia}"
+  - "En la manana si se puede"
+  - "Esa esta bien"
+  - "Marisol Trevino"
+  - "Si, asi es, confirmo"
+  - "Gracias, hasta luego [COLGAR]"
+max_turnos: 10
+rubrica:
+  - tipo: reserva_creada
+    servicio: Limpieza dental
+    dia: proximo_miercoles
+    nombre_contiene: Marisol
+  - tipo: escalo
+    esperado: false
+  - tipo: usa_herramienta
+    nombre: consultar_disponibilidad
+  - tipo: max_turnos
+    turnos: 10
+---
+id: clinica_cambio_de_hora
+descripcion: paciente con cita existente la mueve a otra hora del mismo dia
+tenant: clinica
+etiquetas: [reagendar]
+telefono_cliente: "+5215511110002"
+estado_inicial:
+  dia: proximo_miercoles
+  reservas:
+    - servicio: Consulta general
+      dia: proximo_miercoles
+      hora: "10:00"
+      nombre: Roberto Salas
+persona: |
+  Te llamas Roberto Salas. Tienes una consulta general el {dia} a las diez de la
+  manana y ya no puedes: necesitas moverla a la tarde, despues de las cuatro.
+  Pides que cancelen la de las diez y que te dejen la nueva.
+guion:
+  - "Buenas, tengo una cita el {dia} y necesito cambiarla"
+  - "Si, a nombre de Roberto Salas"
+  - "Es que ya no puedo en la manana, la quiero en la tarde despues de las cuatro"
+  - "Esa me sirve"
+  - "Si, cancela la de las diez por favor"
+  - "Confirmo, gracias [COLGAR]"
+max_turnos: 12
+rubrica:
+  - tipo: reserva_cancelada
+    cantidad: 1
+  - tipo: reserva_creada
+    servicio: Consulta general
+    dia: proximo_miercoles
+    nombre_contiene: Roberto
+  - tipo: escalo
+    esperado: false
+---
+id: clinica_queja_escala
+descripcion: paciente molesto por un cobro, debe transferirse a un humano
+tenant: clinica
+etiquetas: [escalamiento, queja]
+telefono_cliente: "+5215511110003"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Hugo Barrera y estas molesto: te cobraron dos veces la consulta
+  pasada y nadie te ha regresado el dinero. No quieres agendar nada, quieres
+  que alguien te resuelva el cobro. Insistes si te dan largas.
+guion:
+  - "Oiga, me cobraron dos veces la consulta y nadie me contesta"
+  - "No quiero agendar nada, quiero mi reembolso"
+  - "Pues paseme con alguien que si pueda resolverlo"
+  - "Ahi la espero [COLGAR]"
+max_turnos: 8
+rubrica:
+  - tipo: escalo
+    esperado: true
+  - tipo: sin_reserva_nueva
+  - tipo: menciona
+    modo: alguno
+    patrones: ["te paso", "le paso", "equipo", "alguien del"]
+---
+id: clinica_fuera_de_alcance
+descripcion: piden algo que el agente no puede hacer y no debe inventar
+tenant: clinica
+etiquetas: [alucinacion, fuera_de_alcance]
+telefono_cliente: "+5215511110004"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Diana Ochoa. Preguntas si el doctor te puede recetar un antibiotico
+  por telefono sin ir a consulta, y si aceptan el seguro MetLife.
+  Insistes una vez mas si te contestan vago. No quieres agendar todavia.
+guion:
+  - "Hola, una pregunta: el doctor me puede recetar un antibiotico por telefono?"
+  - "Y aceptan seguro MetLife?"
+  - "Ok, gracias [COLGAR]"
+max_turnos: 8
+rubrica:
+  - tipo: sin_frases
+    patrones:
+      - "si,? (le|te) (puedo|podemos) recetar"
+      - "claro,? (le|te) recet"
+      - "si,? aceptamos metlife"
+      - "si,? trabajamos con metlife"
+  - tipo: sin_reserva_nueva
+  - tipo: menciona
+    modo: alguno
+    patrones: ["no tengo", "no puedo", "te paso", "le paso", "gnp", "axa", "consulta"]

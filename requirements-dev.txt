@@ -1,0 +1,14 @@
+# Dependencias de pruebas y lint. El worker de voz usa requirements.txt.
+asyncpg==0.31.0
+pydantic==2.11.9
+pydantic-settings==2.11.0
+python-dotenv==1.1.1
+
+fastapi==0.141.1
+uvicorn==0.52.4
+httpx==0.28.1
+PyJWT==2.13.0
+
+pytest==9.1.1
+pytest-asyncio==1.4.0
+ruff==0.16.4

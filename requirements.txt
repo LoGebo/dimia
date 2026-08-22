@@ -2,6 +2,12 @@
 livekit-agents[deepgram,cartesia,anthropic,silero,turn-detector]~=1.6
 livekit-plugins-noise-cancellation~=0.2
 
+# --- llm y canales ---
+anthropic==1.0.0
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+httpx==0.28.1
+
 # --- datos ---
 asyncpg==0.30.0
 pydantic==2.11.9

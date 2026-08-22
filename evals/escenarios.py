@@ -173,8 +173,18 @@ def cargar(ruta: Path | str = RUTA_ESCENARIOS, filtro: Sequence[str] = ()) -> li
     return escenarios
 
 
+NOMBRES_DIA = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+
+
+def hablado(dia: date) -> str:
+    return f"{NOMBRES_DIA[dia.weekday()]} {dia.day}"
+
+
 def rellenar(texto: str, dia: date, tz: ZoneInfo) -> str:
-    nombres = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
-    return texto.replace("{fecha}", dia.isoformat()).replace(
-        "{dia}", f"{nombres[dia.weekday()]} {dia.day}"
+    siguiente = dia + timedelta(days=1)
+    return (
+        texto.replace("{fecha}", dia.isoformat())
+        .replace("{dia}", hablado(dia))
+        .replace("{fecha_siguiente}", siguiente.isoformat())
+        .replace("{dia_siguiente}", hablado(siguiente))
     )

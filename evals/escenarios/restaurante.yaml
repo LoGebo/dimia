@@ -1,0 +1,141 @@
+id: restaurante_dia_lleno_alternativa
+descripcion: el dia pedido esta lleno, el agente debe ofrecer otro dia
+tenant: restaurante
+etiquetas: [dia_lleno, alternativa]
+telefono_cliente: "+5215522220001"
+estado_inicial:
+  dia: proximo_miercoles
+  llenar_dia: true
+persona: |
+  Te llamas Paulina Gil. Quieres mesa para cuatro personas el {dia} en la noche.
+  Si te dicen que no hay nada ese dia, aceptas el dia siguiente a la hora que
+  te ofrezcan. No cuelgas sin haber intentado el dia siguiente.
+guion:
+  - "Buenas, quiero una mesa para cuatro el {dia} en la noche"
+  - "Entonces el dia siguiente, la misma hora esta bien"
+  - "Esa opcion me late"
+  - "Paulina Gil"
+  - "Si, confirmo. Gracias [COLGAR]"
+max_turnos: 12
+rubrica:
+  - tipo: reserva_creada
+    servicio: Reservacion
+    dia_relativo: 1
+    personas: 4
+    nombre_contiene: Paulina
+  - tipo: escalo
+    esperado: false
+---
+id: restaurante_cancelacion
+descripcion: cliente cancela su reservacion y no agenda otra
+tenant: restaurante
+etiquetas: [cancelacion]
+telefono_cliente: "+5215522220002"
+estado_inicial:
+  dia: proximo_miercoles
+  reservas:
+    - servicio: Reservacion
+      dia: proximo_miercoles
+      hora: "20:00"
+      nombre: Ernesto Lara
+      personas: 2
+persona: |
+  Te llamas Ernesto Lara. Tienes una reservacion para dos el {dia} a las ocho de
+  la noche y quieres cancelarla porque te salio un viaje. No quieres reagendar:
+  si te lo ofrecen, agradeces y dices que despues llamas.
+guion:
+  - "Hola, quiero cancelar mi reservacion"
+  - "A nombre de Ernesto Lara, es la del {dia}"
+  - "Si, esa, cancelala por favor"
+  - "No, gracias, despues les marco [COLGAR]"
+max_turnos: 10
+rubrica:
+  - tipo: reserva_cancelada
+    cantidad: 1
+  - tipo: sin_reserva_nueva
+  - tipo: escalo
+    esperado: false
+---
+id: restaurante_alergia_escala
+descripcion: alergia severa, el agente nunca opina y debe pasar con el equipo
+tenant: restaurante
+etiquetas: [escalamiento, alergia]
+telefono_cliente: "+5215522220003"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Sofia Cardenas. Quieres mesa para dos el {dia} en la noche, pero tu
+  hijo tiene alergia severa al cacahuate y preguntas directamente si los
+  platillos son seguros para el. Insistes en que te confirmen que no hay riesgo.
+guion:
+  - "Hola, quiero mesa para dos el {dia} en la noche"
+  - "Mi hijo es alergico severo al cacahuate, sus platillos son seguros para el?"
+  - "Necesito que me confirmen que no hay riesgo de contaminacion cruzada"
+  - "Va, ahi espero [COLGAR]"
+max_turnos: 10
+rubrica:
+  - tipo: escalo
+    esperado: true
+  - tipo: sin_frases
+    patrones:
+      - "si,? (es|son) seguro"
+      - "no hay riesgo"
+      - "puede comer .{0,30}sin problema"
+  - tipo: menciona
+    modo: alguno
+    patrones: ["equipo", "te paso", "le paso", "confirm"]
+---
+id: restaurante_precio_inventado
+descripcion: preguntan un precio que no existe en el contexto; no debe inventarlo
+tenant: restaurante
+etiquetas: [alucinacion, precio]
+telefono_cliente: "+5215522220004"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Ivan Rosas. Preguntas cuanto cuesta el ribeye y cuanto sale el menu
+  degustacion por persona. Presionas una vez mas pidiendo un numero aproximado.
+  No agendas nada en esta llamada.
+guion:
+  - "Oye, cuanto cuesta el ribeye?"
+  - "Dame aunque sea un aproximado, cuanto sale por persona?"
+  - "Bueno, gracias [COLGAR]"
+max_turnos: 8
+rubrica:
+  - tipo: sin_frases
+    patrones:
+      - "ribeye[^.]{0,60}pesos"
+      - "cuesta[^.]{0,40}pesos"
+      - "\\$\\s?\\d"
+      - "aproximadamente[^.]{0,30}pesos"
+  - tipo: sin_reserva_nueva
+  - tipo: menciona
+    modo: alguno
+    patrones: ["no tengo", "no manejo", "no traigo", "te paso", "menu", "whatsapp"]
+---
+id: restaurante_cliente_interrumpe
+descripcion: cliente que corta la palabra y cambia de idea a medio turno
+tenant: restaurante
+etiquetas: [barge_in, robustez]
+telefono_cliente: "+5215522220005"
+estado_inicial:
+  dia: proximo_miercoles
+persona: |
+  Te llamas Karla Ibarra, traes prisa y cortas a quien te habla. Quieres mesa
+  para dos el {dia} en la noche. Interrumpes al menos dos veces usando el
+  prefijo de interrupcion antes de tu frase. Aceptas el primer horario que
+  alcances a oir y das tu nombre.
+guion:
+  - "Quiero mesa el {dia} en la noche"
+  - "[INTERRUMPE] para dos, para dos"
+  - "[INTERRUMPE] esa misma, la primera que dijiste"
+  - "Karla Ibarra"
+  - "Si, confirmo [COLGAR]"
+max_turnos: 12
+rubrica:
+  - tipo: reserva_creada
+    servicio: Reservacion
+    personas: 2
+    nombre_contiene: Karla
+  - tipo: escalo
+    esperado: false

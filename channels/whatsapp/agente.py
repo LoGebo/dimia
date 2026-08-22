@@ -54,9 +54,9 @@ class AgenteWhatsApp:
         cfg: WhatsAppSettings | None = None,
     ) -> None:
         self.llm = llm
-        self.agenda = agenda or agenda_global
-        self.cfg = cfg or whatsapp_settings()
-        self.registro = registro or RegistroSesiones(self.cfg)
+        self.agenda = agenda_global if agenda is None else agenda
+        self.cfg = whatsapp_settings() if cfg is None else cfg
+        self.registro = RegistroSesiones(self.cfg) if registro is None else registro
         self._contextos: dict[str, ContextoNegocio] = {}
 
     async def _contexto(self, numero_negocio: str) -> ContextoNegocio | None:

@@ -6,20 +6,14 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated, Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 T = TypeVar("T")
 
-Texto = Annotated[str, Field(min_length=1, max_length=200, strip_whitespace=True)]
-TextoLargo = Annotated[str, Field(min_length=1, max_length=4000, strip_whitespace=True)]
+Texto = Annotated[str, StringConstraints(min_length=1, max_length=200, strip_whitespace=True)]
+TextoLargo = Annotated[str, StringConstraints(min_length=1, max_length=4000, strip_whitespace=True)]
 Telefono = Annotated[str, Field(pattern=r"^\+?[0-9]{8,20}$")]
-
-
-class Vertical(StrEnum):
-    CLINICA = "clinica"
-    RESTAURANTE = "restaurante"
-    SALON = "salon"
-    GENERICO = "generico"
+ClaveVertical = Annotated[str, Field(min_length=1, max_length=40, pattern=r"^[a-z_]+$")]
 
 
 class TipoRegla(StrEnum):
@@ -48,7 +42,7 @@ class Pagina(BaseModel, Generic[T]):
 
 class TenantCrear(Modelo):
     nombre: Texto
-    vertical: Vertical = Vertical.GENERICO
+    vertical: ClaveVertical = "recepcion"
     zona_horaria: Texto = "America/Mexico_City"
     telefono_entrada: Telefono | None = None
     telefono_escalamiento: Telefono | None = None
@@ -60,7 +54,7 @@ class TenantCrear(Modelo):
 
 class TenantActualizar(Modelo):
     nombre: Texto | None = None
-    vertical: Vertical | None = None
+    vertical: ClaveVertical | None = None
     zona_horaria: Texto | None = None
     telefono_entrada: Telefono | None = None
     telefono_escalamiento: Telefono | None = None
@@ -74,7 +68,7 @@ class TenantActualizar(Modelo):
 class Tenant(Modelo):
     id: uuid.UUID
     nombre: str
-    vertical: Vertical
+    vertical: str
     zona_horaria: str
     telefono_entrada: str | None
     telefono_escalamiento: str | None
@@ -180,6 +174,31 @@ class ConocimientoActualizar(Modelo):
     prioridad: int | None = Field(default=None, ge=0, le=1000)
 
 
+class VerticalPlantilla(Modelo):
+    clave: str
+    nombre: str
+    saludo: str
+    herramientas: list[str]
+
+
+class Recado(Modelo):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    nombre: str | None
+    telefono: str
+    asunto: str
+    detalle: str | None
+    campos: dict
+    atendido: bool
+    call_id: str | None
+    creado: datetime
+
+
+class RecadoActualizar(Modelo):
+    atendido: bool | None = None
+    detalle: str | None = Field(default=None, max_length=4000)
+
+
 class Conocimiento(Modelo):
     id: uuid.UUID
     tenant_id: uuid.UUID
@@ -222,6 +241,7 @@ class MetricasResumen(Modelo):
     duracion_media_seg: float
     reservas_confirmadas: int
     reservas_canceladas: int
+    recados_pendientes: int
 
 
 class MetricasDia(Modelo):
