@@ -151,6 +151,47 @@ class Agenda:
         )
         return [f["tipo"] for f in filas]
 
+    async def pedido_abrir(
+        self, tenant_id: uuid.UUID, telefono: str, call_id: str | None = None
+    ) -> uuid.UUID:
+        return await self.pool.fetchval(
+            "select pedido_abrir($1,$2,$3)", tenant_id, telefono, call_id
+        )
+
+    async def pedido_agregar(
+        self, tenant_id: uuid.UUID, pedido_id: uuid.UUID, catalogo_id: uuid.UUID,
+        cantidad: int = 1, notas: str | None = None,
+    ) -> dict:
+        crudo = await self.pool.fetchval(
+            "select pedido_agregar($1,$2,$3,$4,$5)",
+            tenant_id, pedido_id, catalogo_id, cantidad, notas,
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else crudo
+
+    async def pedido_quitar(
+        self, tenant_id: uuid.UUID, pedido_id: uuid.UUID, nombre: str
+    ) -> dict:
+        crudo = await self.pool.fetchval(
+            "select pedido_quitar($1,$2,$3)", tenant_id, pedido_id, nombre
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else crudo
+
+    async def pedido_resumen(self, tenant_id: uuid.UUID, pedido_id: uuid.UUID) -> dict:
+        crudo = await self.pool.fetchval(
+            "select pedido_resumen($1,$2)", tenant_id, pedido_id
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else (crudo or {})
+
+    async def pedido_confirmar(
+        self, tenant_id: uuid.UUID, pedido_id: uuid.UUID, nombre: str,
+        tipo: str = "recoger", direccion: str | None = None, minutos: int = 30,
+    ) -> dict:
+        crudo = await self.pool.fetchval(
+            "select pedido_confirmar($1,$2,$3,$4,$5,$6)",
+            tenant_id, pedido_id, nombre, tipo, direccion, minutos,
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else crudo
+
     async def servicios(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(
             """select id, nombre, alias, duracion_min, precio

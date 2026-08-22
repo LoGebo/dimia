@@ -15,7 +15,7 @@ from livekit.agents import (
     Agent, AgentSession, JobContext, JobProcess, RoomInputOptions,
     RunContext, WorkerOptions, cli, function_tool,
 )
-from livekit.plugins import anthropic, cartesia, deepgram, elevenlabs, openai, silero
+from livekit.plugins import deepgram, elevenlabs, openai, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from app import prompt as prompt_mod
@@ -56,6 +56,8 @@ class Recepcionista(Agent):
         self.call_id: str = uuid.uuid4().hex
         self.fallos = 0
         self.booking_id: uuid.UUID | None = None
+        self.pedido_id: uuid.UUID | None = None
+        self.pedido_cerrado = False
         self.recado = False
         self.escalado = False
         self.motivo_escalamiento: str | None = None
@@ -289,6 +291,121 @@ class Recepcionista(Agent):
             )
         return " | ".join(f"{f['pregunta']}: {f['respuesta']}" for f in filas)
 
+    async def _pedido(self) -> uuid.UUID:
+        if self.pedido_id is None:
+            self.pedido_id = await agenda.pedido_abrir(
+                self.tenant.id, self.telefono or "desconocido", self.call_id
+            )
+        return self.pedido_id
+
+    def _dictar_pedido(self, resumen: dict) -> str:
+        items = resumen.get("items") or []
+        if not items:
+            return "El pedido esta vacio."
+        partes = [
+            f"{i['cantidad']} {i['nombre']}"
+            + (f" ({i['notas']})" if i.get("notas") else "")
+            + f" = ${float(i['subtotal']):.0f}"
+            for i in items
+        ]
+        return " | ".join(partes) + f" | TOTAL ${float(resumen.get('total', 0)):.0f}"
+
+    @function_tool
+    async def agregar_al_pedido(
+        self,
+        ctx: RunContext,
+        catalogo_id: str,
+        cantidad: int = 1,
+        notas: str = "",
+    ) -> str:
+        """Agrega un platillo o bebida al pedido. Usala cada vez que la persona
+        pida algo. Primero busca el item con consultar_catalogo para tener su id.
+
+        Args:
+            catalogo_id: el id que devolvio consultar_catalogo.
+            cantidad: cuantos quiere. Default 1.
+            notas: modificaciones como "sin cebolla", "extra queso", o una alergia.
+        """
+        pedido = await self._pedido()
+        res = await agenda.pedido_agregar(
+            self.tenant.id, pedido, uuid.UUID(catalogo_id), cantidad, notas or None
+        )
+        if not res.get("ok"):
+            if res.get("error") == "no_disponible":
+                return "Eso se acabo o no existe. Dilo y ofrece algo parecido del catalogo."
+            return "No se pudo agregar. Ofrece algo parecido o transfiere."
+        return (
+            f"Agregado: {cantidad} {res['nombre']}. Total va en "
+            f"${float(res['total']):.0f}. Confirmalo corto y pregunta que mas."
+        )
+
+    @function_tool
+    async def quitar_del_pedido(self, ctx: RunContext, nombre: str) -> str:
+        """Quita algo del pedido cuando la persona se arrepiente o se equivoco.
+
+        Args:
+            nombre: lo que quiere quitar, con sus palabras.
+        """
+        if self.pedido_id is None:
+            return "No hay pedido abierto todavia."
+        res = await agenda.pedido_quitar(self.tenant.id, self.pedido_id, nombre)
+        if not res.get("ok"):
+            return "No encontre eso en el pedido. Preguntale a que se refiere."
+        return f"Quitado. Total va en ${float(res['total']):.0f}."
+
+    @function_tool
+    async def repetir_pedido(self, ctx: RunContext) -> str:
+        """Lee el pedido completo con el total. Usala ANTES de cerrar, siempre,
+        y cuando la persona pregunte como va su pedido."""
+        if self.pedido_id is None:
+            return "El pedido esta vacio."
+        resumen = await agenda.pedido_resumen(self.tenant.id, self.pedido_id)
+        return (
+            self._dictar_pedido(resumen)
+            + " Leeselo completo y con calma, y pregunta si esta bien."
+        )
+
+    @function_tool
+    async def cerrar_pedido(
+        self,
+        ctx: RunContext,
+        nombre_cliente: str,
+        tipo: str = "recoger",
+        direccion: str = "",
+    ) -> str:
+        """Cierra el pedido. Usar SOLO despues de repetir_pedido y de que la
+        persona confirme que esta bien.
+
+        Args:
+            nombre_cliente: a nombre de quien va.
+            tipo: "recoger" o "domicilio".
+            direccion: calle, numero y referencias. Obligatoria si es domicilio.
+        """
+        if self.pedido_id is None:
+            return "No hay pedido que cerrar."
+
+        await self._relleno(ctx)
+        res = await agenda.pedido_confirmar(
+            self.tenant.id, self.pedido_id, nombre_cliente,
+            tipo if tipo in ("recoger", "domicilio", "local") else "recoger",
+            direccion or None,
+        )
+        if not res.get("ok"):
+            error = res.get("error")
+            if error == "falta_direccion":
+                return "Falta la direccion. Pidesela con calle, numero y referencias."
+            if error == "pedido_vacio":
+                return "El pedido esta vacio. Preguntale que quiere ordenar."
+            return "No se pudo cerrar. Ofrece transferir."
+
+        self.pedido_cerrado = True
+        codigo = " ".join(res["codigo"])
+        return (
+            f"Listo. Total ${float(res['total']):.0f}, en {res['minutos']} minutos. "
+            f"Dale el codigo deletreado: {codigo}. Recuerdale que el pago es en "
+            "efectivo al recibir o por enlace de WhatsApp."
+        )
+
     @function_tool
     async def tomar_recado(
         self,
@@ -386,6 +503,8 @@ def franja_a_horas(franja: str) -> tuple[dtime | None, dtime | None]:
 
 def construir_llm():
     if cfg.llm_proveedor == "anthropic":
+        from livekit.plugins import anthropic
+
         return anthropic.LLM(model=cfg.llm_model, temperature=0.4)
     return openai.LLM(model=cfg.llm_model, temperature=0.4)
 
@@ -393,12 +512,16 @@ def construir_llm():
 def construir_tts(tenant: Tenant):
     ajustes = tenant.tts_ajustes or {}
     if tenant.tts_proveedor == "cartesia":
+        from livekit.plugins import cartesia
+
         return cartesia.TTS(
             model=ajustes.get("modelo", "sonic-turbo"),
             voice=tenant.voz_id or cfg.cartesia_voice_id,
             language="es",
+            api_key=cfg.cartesia_api_key or None,
         )
     return elevenlabs.TTS(
+        api_key=cfg.elevenlabs_api_key or None,
         model=ajustes.get("modelo", cfg.elevenlabs_model),
         voice_id=tenant.voz_id or cfg.elevenlabs_voice_id,
         language="es",
@@ -474,7 +597,11 @@ async def entrypoint(ctx: JobContext) -> None:
                 call_id=recepcionista.call_id,
                 telefono=llamante,
                 duracion_seg=int(time.monotonic() - recepcionista._t0),
-                resuelto=recepcionista.booking_id is not None or recepcionista.recado,
+                resuelto=(
+                    recepcionista.booking_id is not None
+                    or recepcionista.pedido_cerrado
+                    or recepcionista.recado
+                ),
                 escalado=recepcionista.escalado,
                 motivo=recepcionista.motivo_escalamiento,
                 booking_id=recepcionista.booking_id,

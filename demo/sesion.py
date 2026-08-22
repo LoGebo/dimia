@@ -18,11 +18,11 @@ from evals.herramientas import ESQUEMAS, EjecutorHerramientas
 from evals.llm import (
     ClienteLLM,
     Elemento,
-    LLMAnthropic,
     RespuestaLLM,
     TurnoAsistente,
     TurnoResultados,
     TurnoUsuario,
+    crear_cliente,
 )
 
 ENTRADA_LLAMADA = "[entra la llamada]"
@@ -33,7 +33,7 @@ Evento = dict[str, Any]
 
 def construir_cerebro(modo: ModoDemo, negocio: Negocio) -> ClienteLLM:
     if modo.cerebro == "claude":
-        return LLMAnthropic(modelo=settings().llm_model, temperatura=0.4)
+        return crear_cliente(settings().llm_model, temperatura=0.4)
     return LLMFalso(zona_horaria=negocio.tenant.zona_horaria)
 
 

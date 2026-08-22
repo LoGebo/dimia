@@ -221,8 +221,37 @@ let reconocedor = null;
 
 const CDN_LIVEKIT = "https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.esm.mjs";
 
+let desbloqueo = null;
+
+function pedirDesbloqueo(cuarto) {
+  if (desbloqueo) return;
+  desbloqueo = document.createElement("button");
+  desbloqueo.textContent = "Activar audio";
+  desbloqueo.className = "desbloqueo-audio";
+  desbloqueo.onclick = async () => {
+    await cuarto.startAudio().catch(() => {});
+    contenedorAudio()
+      .querySelectorAll("audio")
+      .forEach((a) => a.play().catch(() => {}));
+    desbloqueo.remove();
+    desbloqueo = null;
+  };
+  nodo("micro").insertAdjacentElement("afterend", desbloqueo);
+}
+
+function contenedorAudio() {
+  let caja = document.getElementById("audio-remoto");
+  if (!caja) {
+    caja = document.createElement("div");
+    caja.id = "audio-remoto";
+    caja.style.display = "none";
+    document.body.appendChild(caja);
+  }
+  return caja;
+}
+
 async function conectarLivekit() {
-  const { Room, RoomEvent } = await import(CDN_LIVEKIT);
+  const { Room, RoomEvent, Track } = await import(CDN_LIVEKIT);
   const respuesta = await fetch(`/api/token/${estado.elegido.clave}`, { method: "POST" });
   if (!respuesta.ok) throw new Error("el servidor no pudo emitir el token");
   const { token, sala, url } = await respuesta.json();
@@ -231,8 +260,32 @@ async function conectarLivekit() {
   panel.onmessage = (mensaje) => recibir(JSON.parse(mensaje.data));
 
   const cuarto = new Room({ adaptiveStream: true, dynacast: true });
-  cuarto.on(RoomEvent.Disconnected, () => panel.close());
+
+  cuarto.on(RoomEvent.TrackSubscribed, (pista) => {
+    if (pista.kind !== Track.Kind.Audio) return;
+    const elemento = pista.attach();
+    elemento.autoplay = true;
+    elemento.playsInline = true;
+    contenedorAudio().appendChild(elemento);
+    elemento.play().catch(() => pedirDesbloqueo(cuarto));
+  });
+
+  cuarto.on(RoomEvent.TrackUnsubscribed, (pista) => {
+    pista.detach().forEach((elemento) => elemento.remove());
+  });
+
+  cuarto.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+    if (!cuarto.canPlaybackAudio) pedirDesbloqueo(cuarto);
+  });
+
+  cuarto.on(RoomEvent.Disconnected, () => {
+    contenedorAudio().replaceChildren();
+    panel.close();
+  });
+
   await cuarto.connect(url, token);
+  await cuarto.startAudio().catch(() => pedirDesbloqueo(cuarto));
+  if (!cuarto.canPlaybackAudio) pedirDesbloqueo(cuarto);
   await cuarto.localParticipant.setMicrophoneEnabled(true);
   estado.livekit = { cuarto, panel };
 }
@@ -279,6 +332,7 @@ function detenerMicrofono() {
   estado.reconociendo = false;
   reconocedor?.stop();
   estado.livekit?.cuarto.disconnect();
+  contenedorAudio().replaceChildren();
   estado.livekit = null;
   estado.medidor?.detener();
   nodo("micro").classList.remove("activo");

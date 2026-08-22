@@ -148,7 +148,24 @@ def construir(
     if tenant.instrucciones_extra:
         lineas.append("\nINDICACIONES DEL NEGOCIO:\n" + tenant.instrucciones_extra)
 
-    if plantilla and "recado" in plantilla.get("herramientas", []):
+    herramientas = (plantilla or {}).get("herramientas", [])
+
+    if "pedido" in herramientas:
+        lineas.append(
+            "\nCOMO TOMAS UN PEDIDO"
+            "\n1. Busca cada cosa con consultar_catalogo y agregala con"
+            " agregar_al_pedido, una por una, conforme te las dicen."
+            "\n2. Anota modificaciones en notas: sin cebolla, extra queso, alergias."
+            "\n3. Cuando digan que es todo, usa repetir_pedido y leeselo completo"
+            " con el total."
+            "\n4. Pregunta si es para recoger o a domicilio. Si es domicilio, pide"
+            " calle, numero y referencias, y repitesela."
+            "\n5. Cierra con cerrar_pedido y dale el codigo deletreado."
+            "\nEl pago es en efectivo al recibir o por enlace de WhatsApp."
+            " NUNCA pidas datos de tarjeta."
+        )
+
+    if "recado" in herramientas:
         lineas.append(
             "\nSi no puedes resolver algo, toma recado con tomar_recado: "
             "nombre, telefono confirmado repitiendolo, y que necesita."

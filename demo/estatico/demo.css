@@ -310,3 +310,15 @@ body {
   .panel { border-left: 0; border-top: 1px solid var(--linea); }
   .negocios { grid-template-columns: repeat(3, 1fr); }
 }
+
+.desbloqueo-audio {
+  margin-left: 12px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid #d9a441;
+  background: #d9a441;
+  color: #141414;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

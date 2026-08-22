@@ -7,7 +7,7 @@ from typing import Literal
 
 from app.config import settings
 
-ModoCerebro = Literal["falso", "claude"]
+ModoCerebro = Literal["falso", "llm"]
 ModoVoz = Literal["navegador", "livekit"]
 
 
@@ -19,13 +19,13 @@ class ModoDemo:
 
     @property
     def es_real(self) -> bool:
-        return self.cerebro == "claude" and self.voz == "livekit"
+        return self.cerebro == "llm" and self.voz == "livekit"
 
     @property
     def etiqueta(self) -> str:
         if self.es_real:
             return "Modo real"
-        if self.cerebro == "claude":
+        if self.cerebro == "llm":
             return "Modo hibrido"
         return "Modo sin llaves"
 
@@ -33,11 +33,11 @@ class ModoDemo:
     def explicacion(self) -> str:
         cerebro = {
             "falso": "cerebro determinista local",
-            "claude": f"cerebro {settings().llm_model}",
+            "llm": f"cerebro {settings().llm_model}",
         }[self.cerebro]
         voz = {
             "navegador": "voz del navegador (Web Speech)",
-            "livekit": "voz LiveKit WebRTC (Deepgram + Cartesia)",
+            "livekit": "voz LiveKit WebRTC (Deepgram + ElevenLabs)",
         }[self.voz]
         return f"{cerebro} · {voz} · Postgres real"
 
@@ -59,18 +59,20 @@ def _tiene(nombre: str) -> bool:
 @lru_cache
 def modo() -> ModoDemo:
     forzado = os.getenv("DEMO_FORZAR_MODO", "").strip().lower()
-    llaves_cerebro = ("ANTHROPIC_API_KEY",)
-    llaves_voz = ("LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET",
-                  "DEEPGRAM_API_KEY", "CARTESIA_API_KEY")
+    tiene_cerebro = _tiene("OPENAI_API_KEY") or _tiene("ANTHROPIC_API_KEY")
+    tiene_tts = _tiene("ELEVENLABS_API_KEY") or _tiene("CARTESIA_API_KEY")
+    llaves_voz = ("LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "DEEPGRAM_API_KEY")
 
-    faltantes = tuple(n for n in llaves_cerebro + llaves_voz if not _tiene(n))
-    cerebro: ModoCerebro = "claude" if _tiene("ANTHROPIC_API_KEY") else "falso"
-    voz: ModoVoz = "livekit" if all(_tiene(n) for n in llaves_voz) else "navegador"
+    faltantes = tuple(
+        n for n in (*llaves_voz, "OPENAI_API_KEY", "ELEVENLABS_API_KEY") if not _tiene(n)
+    )
+    cerebro: ModoCerebro = "llm" if tiene_cerebro else "falso"
+    voz: ModoVoz = "livekit" if all(_tiene(n) for n in llaves_voz) and tiene_tts else "navegador"
 
     if forzado == "falso":
         cerebro, voz = "falso", "navegador"
     elif forzado == "real":
-        cerebro, voz = "claude", "livekit"
+        cerebro, voz = "llm", "livekit"
 
     return ModoDemo(cerebro=cerebro, voz=voz, faltantes=faltantes)
 

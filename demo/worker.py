@@ -24,10 +24,10 @@ from livekit.agents import (
     WorkerOptions,
     cli,
 )
-from livekit.plugins import anthropic, cartesia, deepgram, silero
+from livekit.plugins import deepgram, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
-from agent.agent import Recepcionista
+from agent.agent import Recepcionista, construir_llm, construir_tts
 from app import prompt as prompt_mod
 from app.config import settings
 from app.supabase_client import agenda
@@ -101,13 +101,9 @@ async def entrypoint(ctx: JobContext) -> None:
     cfg = settings()
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
-        stt=deepgram.STT(model="flux-general-es", language="es"),
-        llm=anthropic.LLM(model=cfg.llm_model, temperature=0.4),
-        tts=cartesia.TTS(
-            model="sonic-turbo",
-            voice=negocio.tenant.voz_id or cfg.cartesia_voice_id,
-            language="es",
-        ),
+        stt=deepgram.STT(model=cfg.stt_model, language=cfg.stt_language, smart_format=True, punctuate=True),
+        llm=construir_llm(),
+        tts=construir_tts(negocio.tenant),
         turn_detection=MultilingualModel(),
         min_endpointing_delay=0.4,
         max_endpointing_delay=4.0,
