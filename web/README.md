@@ -94,6 +94,7 @@ resuelve por IPv6. `dev/seed_panel.sql` no se corre aquí.
 | `/servicios` | Recursos y servicios: duración, buffer, precio, alias y quién puede dar cada servicio. |
 | `/catalogo` | `catalogo_item`: platillos, profesionales, propiedades, refacciones. Con toggle de disponibilidad y buscador de prueba. |
 | `/conocimiento` | Las respuestas que el agente puede dar. Lo que no está aquí, se transfiere. |
+| `/probar` | Llamada real al agente desde el navegador, con transcripción, latencia y el pedido o la reserva cayendo en vivo. |
 | `/agente` | Proveedor de voz y sus ajustes, indicaciones propias del negocio, zona horaria, número de transferencia y vista previa del prompt. |
 
 ### El editor de horarios
@@ -133,6 +134,39 @@ El **buscador de prueba** ejecuta `buscar_catalogo()` con la misma frase que
 diría un cliente y muestra el resultado con su puntaje. Sirve para lo contrario
 de lo que parece: si algo *no* aparece, el agente no lo va a decir. Es la forma
 de comprobar que el agente no inventa, y de descubrir qué alias faltan.
+
+### Probar el agente desde el panel
+
+`/probar` abre una llamada WebRTC contra **el mismo worker de producción**, no
+contra una copia: `app/api/prueba/token/route.ts` crea la sala como
+`prueba-<tenant_id>-<hex>` con `{"tenant_id": "…"}` en los metadatos, que es
+justo lo que lee `_tenant_de_metadatos()` en `agent/agent.py` cuando la llamada
+no entra por SIP.
+
+El Route Handler es la frontera de seguridad: verifica la sesión y que exista la
+fila en `tenant_member` **para ese usuario y ese tenant** antes de firmar nada.
+Pedir token de un negocio ajeno responde 403 y la sala nunca se crea.
+
+Necesita `LIVEKIT_URL`, `LIVEKIT_API_KEY` y `LIVEKIT_API_SECRET`. Si falta
+alguna, la sección no truena: explica cuál falta, de dónde sacarla y recuerda
+que el worker tiene que estar corriendo (`python -m agent.agent dev`).
+
+**El audio del navegador es la parte frágil.** Chrome y sobre todo Safari
+bloquean la reproducción automática, así que hay tres redes: se adjunta un
+`<audio autoplay playsinline>` en `TrackSubscribed`, se llama `startAudio()` al
+conectar, y `AudioPlaybackStatusChanged` levanta un botón "Activar audio" si el
+navegador se niega. Si el micrófono no abre, la llamada sigue: escuchas al
+agente y el panel lo dice, en vez de morir con un error.
+
+El panel de la derecha lee Postgres cada dos segundos bajo RLS: para el vertical
+`comida` muestra el carrito con su total desde `pedido_resumen()`, y para los
+demás las reservas creadas durante la prueba. Las líneas de "lo que hizo el
+agente" salen de comparar ese estado contra el anterior, así que cada renglón
+corresponde a un cambio real en la base. La latencia se mide en el cliente:
+de tu última frase final a la primera palabra del agente.
+
+Cada llamada quema crédito de STT, LLM y TTS; la sección lo advierte en la
+tarjeta principal.
 
 ### Vista previa del prompt
 

@@ -18,7 +18,9 @@ export async function membresias(userId: string): Promise<Membresia[]> {
     q<Membresia>(
       `select m.tenant_id, m.rol, t.nombre, t.vertical
          from tenant_member m join tenant t on t.id = m.tenant_id
-        order by t.nombre`,
+        where m.user_id = $1
+        order by t.nombre, t.id`,
+      [userId],
     ),
   );
 }

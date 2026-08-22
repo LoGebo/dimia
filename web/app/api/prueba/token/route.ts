@@ -27,8 +27,8 @@ export async function POST(peticion: Request): Promise<NextResponse> {
   const membresia = await conSesion(usuario.id, (q) =>
     q<{ nombre: string }>(
       `select t.nombre from tenant_member m join tenant t on t.id = m.tenant_id
-        where m.tenant_id = $1`,
-      [tenantId],
+        where m.tenant_id = $1 and m.user_id = $2`,
+      [tenantId, usuario.id],
     ),
   );
   if (membresia.length === 0) {

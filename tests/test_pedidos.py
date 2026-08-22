@@ -130,3 +130,19 @@ async def test_el_resumen_trae_notas(pool, taqueria):
                         taqueria["tenant"], p, taqueria["taco"], 2, "sin cebolla")
     resumen = _j(await pool.fetchval("select pedido_resumen($1,$2)", taqueria["tenant"], p))
     assert resumen["items"][0]["notas"] == "sin cebolla"
+
+
+@pytest.mark.asyncio
+async def test_agregar_por_nombre_cuando_el_modelo_no_manda_id(pool, taqueria):
+    """El agente a veces manda 'flan' en vez del uuid. Debe resolverse igual."""
+    filas = await pool.fetch(
+        "select id, nombre from buscar_catalogo($1,$2,null,1)",
+        taqueria["tenant"], "taco pastor",
+    )
+    assert filas and filas[0]["id"] == taqueria["taco"]
+
+    p = await _abrir(pool, taqueria["tenant"])
+    res = _j(await pool.fetchval("select pedido_agregar($1,$2,$3,$4)",
+                                 taqueria["tenant"], p, filas[0]["id"], 2))
+    assert res["ok"]
+    assert float(res["total"]) == 56

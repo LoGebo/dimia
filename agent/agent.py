@@ -268,8 +268,10 @@ class Recepcionista(Agent):
             desc = f" — {i['descripcion']}" if i.get("descripcion") else ""
             attrs = i.get("atributos") or {}
             extra = f" [{', '.join(f'{k}: {v}' for k, v in attrs.items())}]" if attrs else ""
-            recurso = f" (recurso_id={i['resource_id']})" if i.get("resource_id") else ""
-            partes.append(f"{i['nombre']}{precio}{desc}{extra}{recurso}")
+            recurso = f", recurso_id={i['resource_id']}" if i.get("resource_id") else ""
+            partes.append(
+                f"{i['nombre']}{precio}{desc}{extra} (catalogo_id={i['id']}{recurso})"
+            )
         return (
             "Encontrado: " + " | ".join(partes)
             + ". Menciona maximo dos o tres, hablando natural. No leas los ids ni los corchetes."
@@ -291,6 +293,17 @@ class Recepcionista(Agent):
                 "recado o transferir. NO lo inventes."
             )
         return " | ".join(f"{f['pregunta']}: {f['respuesta']}" for f in filas)
+
+    async def _resolver_catalogo(self, referencia: str) -> uuid.UUID | None:
+        referencia = (referencia or "").strip()
+        if not referencia:
+            return None
+        try:
+            return uuid.UUID(referencia)
+        except ValueError:
+            pass
+        encontrados = await agenda.buscar_catalogo(self.tenant.id, referencia, limite=1)
+        return encontrados[0]["id"] if encontrados else None
 
     async def _pedido(self) -> uuid.UUID:
         if self.pedido_id is None:
@@ -323,13 +336,21 @@ class Recepcionista(Agent):
         pida algo. Primero busca el item con consultar_catalogo para tener su id.
 
         Args:
-            catalogo_id: el id que devolvio consultar_catalogo.
+            catalogo_id: el catalogo_id que devolvio consultar_catalogo. Si no lo
+                tienes, pon el nombre del platillo y yo lo busco.
             cantidad: cuantos quiere. Default 1.
             notas: modificaciones como "sin cebolla", "extra queso", o una alergia.
         """
+        item_id = await self._resolver_catalogo(catalogo_id)
+        if item_id is None:
+            return (
+                "No encontre eso en el menu. Usa consultar_catalogo primero y "
+                "ofrece lo mas parecido que si exista."
+            )
+
         pedido = await self._pedido()
         res = await agenda.pedido_agregar(
-            self.tenant.id, pedido, uuid.UUID(catalogo_id), cantidad, notas or None
+            self.tenant.id, pedido, item_id, cantidad, notas or None
         )
         if not res.get("ok"):
             if res.get("error") == "no_disponible":
