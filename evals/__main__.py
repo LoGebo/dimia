@@ -12,7 +12,7 @@ from evals.escenarios import RUTA_ESCENARIOS, cargar
 from evals.llm import hay_credenciales
 from evals.metricas import Umbrales
 from evals.reporte import guardar_json, imprimir
-from evals.runner import Arnes, fabrica_modelo, fabrica_guion
+from evals.runner import Arnes, fabrica_guion, fabrica_modelo
 
 CODIGO_UMBRAL = 2
 CODIGO_REGRESION = 3
