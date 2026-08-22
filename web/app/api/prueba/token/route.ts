@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+import { AccessToken, RoomConfiguration } from "livekit-server-sdk";
 import { usuarioActual } from "@/lib/auth";
 import { conSesion } from "@/lib/db";
-import { configuracionLivekit, urlHttp, variablesFaltantes } from "@/lib/livekit";
+import { configuracionLivekit, variablesFaltantes } from "@/lib/livekit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,18 +38,6 @@ export async function POST(peticion: Request): Promise<NextResponse> {
   const sala = `prueba-${tenantId}-${randomBytes(4).toString("hex")}`;
   const metadatos = JSON.stringify({ tenant_id: tenantId, origen: "panel" });
 
-  const salas = new RoomServiceClient(
-    urlHttp(configuracion.url),
-    configuracion.apiKey,
-    configuracion.apiSecret,
-  );
-  await salas.createRoom({
-    name: sala,
-    metadata: metadatos,
-    emptyTimeout: 120,
-    maxParticipants: 4,
-  });
-
   const credencial = new AccessToken(configuracion.apiKey, configuracion.apiSecret, {
     identity: `panel-${usuario.id.slice(0, 8)}`,
     name: "Prueba del panel",
@@ -62,6 +50,12 @@ export async function POST(peticion: Request): Promise<NextResponse> {
     canPublish: true,
     canSubscribe: true,
     canPublishData: true,
+    roomCreate: true,
+  });
+  credencial.roomConfig = new RoomConfiguration({
+    emptyTimeout: 120,
+    maxParticipants: 4,
+    metadata: metadatos,
   });
 
   return NextResponse.json({
