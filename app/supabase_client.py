@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
 import asyncpg
@@ -174,10 +174,11 @@ class Agenda:
     async def slots_libres(
         self, tenant_id: uuid.UUID, servicio_id: uuid.UUID,
         dia: date, personas: int = 1, limite: int = 12,
+        desde_hora: time | None = None, hasta_hora: time | None = None,
     ) -> list[Slot]:
         filas = await self.pool.fetch(
-            "select * from slots_libres($1,$2,$3,$4,$5)",
-            tenant_id, servicio_id, dia, personas, limite,
+            "select * from slots_libres($1,$2,$3,$4,$5,$6,$7)",
+            tenant_id, servicio_id, dia, personas, limite, desde_hora, hasta_hora,
         )
         return [
             Slot(f["inicio"], f["fin"], f["resource_id"], f["resource_nombre"])
@@ -197,10 +198,12 @@ class Agenda:
         return json.loads(crudo) if isinstance(crudo, str) else crudo
 
     async def buscar_reserva(
-        self, tenant_id: uuid.UUID, telefono: str | None = None, codigo: str | None = None
+        self, tenant_id: uuid.UUID, telefono: str | None = None,
+        codigo: str | None = None, nombre: str | None = None,
     ) -> list[dict]:
         filas = await self.pool.fetch(
-            "select * from buscar_reserva($1,$2,$3)", tenant_id, telefono, codigo
+            "select * from buscar_reserva($1,$2,$3,$4)",
+            tenant_id, telefono, codigo, nombre,
         )
         return [dict(f) for f in filas]
 

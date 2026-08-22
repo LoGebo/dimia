@@ -12,7 +12,7 @@ from evals.escenarios import RUTA_ESCENARIOS, cargar
 from evals.llm import hay_credenciales
 from evals.metricas import Umbrales
 from evals.reporte import guardar_json, imprimir
-from evals.runner import Arnes, fabrica_anthropic, fabrica_guion
+from evals.runner import Arnes, fabrica_modelo, fabrica_guion
 
 CODIGO_UMBRAL = 2
 CODIGO_REGRESION = 3
@@ -44,21 +44,22 @@ async def ejecutar(args: argparse.Namespace) -> int:
     if not escenarios:
         print("no hay escenarios que correr", file=sys.stderr)
         return CODIGO_CONFIGURACION
-    if not hay_credenciales():
-        print(
-            "falta ANTHROPIC_API_KEY: el arnes real necesita la llave. "
-            "Sin ella, corre las pruebas deterministas con pytest tests/test_evals.py",
-            file=sys.stderr,
-        )
-        return CODIGO_CONFIGURACION
+    for modelo in (args.modelo_agente, args.modelo_cliente):
+        if modelo and not hay_credenciales(modelo):
+            print(
+                f"falta la llave del proveedor de {modelo}. "
+                "Sin ella, corre las pruebas deterministas con pytest tests/test_evals.py",
+                file=sys.stderr,
+            )
+            return CODIGO_CONFIGURACION
 
     pool = await crear_pool(maximo=max(2, args.concurrencia * 2))
     try:
         arnes = Arnes(
             pool=pool,
-            fabrica_agente=fabrica_anthropic(args.modelo_agente),
+            fabrica_agente=fabrica_modelo(args.modelo_agente),
             fabrica_cliente=(
-                fabrica_guion() if args.cliente_guion else fabrica_anthropic(args.modelo_cliente)
+                fabrica_guion() if args.cliente_guion else fabrica_modelo(args.modelo_cliente)
             ),
             modelo_agente=args.modelo_agente,
             modelo_cliente="guion" if args.cliente_guion else args.modelo_cliente,

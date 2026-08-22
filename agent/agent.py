@@ -7,6 +7,7 @@ import random
 import time
 import uuid
 from datetime import date, datetime
+from datetime import time as dtime
 
 from dotenv import load_dotenv
 from livekit import api
@@ -80,6 +81,7 @@ class Recepcionista(Agent):
         servicio_id: str,
         fecha: str,
         personas: int = 1,
+        franja: str = "",
     ) -> str:
         """Busca horarios libres de un servicio en una fecha.
 
@@ -87,6 +89,9 @@ class Recepcionista(Agent):
             servicio_id: el id exacto del servicio, de la lista de SERVICIOS.
             fecha: la fecha en formato AAAA-MM-DD.
             personas: cuantas personas (para restaurantes). Default 1.
+            franja: si la persona dijo a que hora la quiere, pasalo aqui.
+                Acepta "manana", "tarde", "noche", o una hora como "19:00".
+                Vacio busca en todo el dia.
         """
         servicio = self._servicio(servicio_id)
         if servicio is None:
@@ -97,10 +102,29 @@ class Recepcionista(Agent):
         except ValueError:
             return "Fecha invalida. Preguntale de nuevo que dia quiere."
 
+        desde, hasta = franja_a_horas(franja)
+
         await self._relleno(ctx)
         slots = await agenda.slots_libres(
-            self.tenant.id, uuid.UUID(servicio_id), dia, personas, limite=8
+            self.tenant.id, uuid.UUID(servicio_id), dia, personas,
+            limite=8, desde_hora=desde, hasta_hora=hasta,
         )
+        if not slots and (desde or hasta):
+            slots = await agenda.slots_libres(
+                self.tenant.id, uuid.UUID(servicio_id), dia, personas, limite=8
+            )
+            if slots:
+                elegidas = slots[:: max(1, len(slots) // 3)][:3]
+                opciones = " | ".join(
+                    f"{s.hablado(self.tenant.tz)} (inicio_iso={s.inicio.isoformat()}, "
+                    f"recurso_id={s.resource_id})"
+                    for s in elegidas
+                )
+                return (
+                    f"A esa hora no hay, pero el {fecha} si hay: {opciones}. "
+                    "Dile con naturalidad que a la hora que pidio no tienes, y "
+                    "ofrecele estas."
+                )
         if not slots:
             return (
                 f"No hay nada libre el {fecha}. Ofrecele buscar otro dia cercano."
@@ -175,14 +199,19 @@ class Recepcionista(Agent):
         )
 
     @function_tool
-    async def buscar_mi_reserva(self, ctx: RunContext, codigo: str = "") -> str:
-        """Busca la reserva de quien llama, por su numero o por codigo.
+    async def buscar_mi_reserva(
+        self, ctx: RunContext, codigo: str = "", nombre_cliente: str = ""
+    ) -> str:
+        """Busca la reserva de quien llama, por su numero, codigo o nombre.
+        Si te dijeron su nombre, pasalo siempre.
 
         Args:
             codigo: codigo de 4 caracteres, si te lo dictaron. Opcional.
+            nombre_cliente: el nombre que dijo la persona. Opcional.
         """
         filas = await agenda.buscar_reserva(
-            self.tenant.id, telefono=self.telefono, codigo=codigo or None
+            self.tenant.id, telefono=self.telefono,
+            codigo=codigo or None, nombre=nombre_cliente or None,
         )
         if not filas:
             return "No encontre ninguna reserva. Pidele el codigo o el nombre."
@@ -322,6 +351,37 @@ class Recepcionista(Agent):
             log.exception("fallo transferencia")
             return "No se pudo transferir. Toma su numero y dile que le marcan."
         return "Transferido."
+
+
+FRANJAS = {
+    "manana": (dtime(6, 0), dtime(11, 59)),
+    "mañana": (dtime(6, 0), dtime(11, 59)),
+    "mediodia": (dtime(12, 0), dtime(14, 59)),
+    "tarde": (dtime(13, 0), dtime(18, 59)),
+    "noche": (dtime(19, 0), dtime(23, 59)),
+}
+
+
+def franja_a_horas(franja: str) -> tuple[dtime | None, dtime | None]:
+    clave = franja.strip().lower()
+    if not clave:
+        return None, None
+    if clave in FRANJAS:
+        return FRANJAS[clave]
+    for sep in (":", "."):
+        if sep in clave:
+            try:
+                h, m = clave.split(sep)[:2]
+                pedida = dtime(int(h), int(m))
+                return pedida, None
+            except ValueError:
+                break
+    if clave.isdigit():
+        try:
+            return dtime(int(clave), 0), None
+        except ValueError:
+            pass
+    return None, None
 
 
 def construir_llm():

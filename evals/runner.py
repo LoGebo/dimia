@@ -9,7 +9,7 @@ import asyncpg
 from evals.entorno import Contexto, borrar_tenant, preparar
 from evals.escenarios import Escenario
 from evals.jueces import juzgar
-from evals.llm import ClienteLLM, LLMAnthropic, guion_de_texto
+from evals.llm import ClienteLLM, crear_cliente, guion_de_texto
 from evals.metricas import Caso, Reporte, construir_reporte
 from evals.simulador import simular
 
@@ -51,8 +51,11 @@ class Arnes:
         return construir_reporte(casos, self.modelo_agente, self.modelo_cliente)
 
 
-def fabrica_anthropic(modelo: str, temperatura: float | None = None) -> FabricaLLM:
-    return lambda _escenario, _contexto: LLMAnthropic(modelo=modelo, temperatura=temperatura)
+def fabrica_modelo(modelo: str, temperatura: float | None = None) -> FabricaLLM:
+    return lambda _escenario, _contexto: crear_cliente(modelo, temperatura)
+
+
+fabrica_anthropic = fabrica_modelo
 
 
 def fabrica_guion() -> FabricaLLM:
