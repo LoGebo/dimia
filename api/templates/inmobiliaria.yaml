@@ -1,0 +1,57 @@
+vertical: inmobiliaria
+
+tenant:
+  nombre: Inmobiliaria Ejemplo
+  zona_horaria: America/Mexico_City
+  slot_granularidad_min: 30
+  anticipacion_min: 240
+  horizonte_dias: 30
+
+recursos:
+  - nombre: Asesor 1
+    capacidad: 1
+    metadatos:
+      zona: norte
+  - nombre: Asesor 2
+    capacidad: 1
+    metadatos:
+      zona: sur
+
+servicios:
+  - nombre: Visita a propiedad
+    alias: [visita, recorrido, ver la casa, ver el departamento, cita para ver]
+    duracion_min: 60
+    buffer_min: 30
+    precio: null
+  - nombre: Asesoria de credito
+    alias: [credito, infonavit, hipoteca, asesoria]
+    duracion_min: 45
+    buffer_min: 15
+    precio: null
+
+horarios:
+  - tipo: disponible
+    dias: [0, 1, 2, 3, 4]
+    hora_inicio: "09:00"
+    hora_fin: "19:00"
+  - tipo: disponible
+    dias: [5]
+    hora_inicio: "10:00"
+    hora_fin: "15:00"
+
+conocimiento:
+  - pregunta: Donde esta la oficina
+    respuesta: La oficina esta en la avenida principal numero 500, piso 3.
+    prioridad: 100
+  - pregunta: Cobran por la visita
+    respuesta: No, las visitas a propiedades no tienen costo.
+    prioridad: 95
+  - pregunta: Manejan credito infonavit
+    respuesta: Si, trabajamos con Infonavit, Fovissste y credito bancario. Un asesor te explica las opciones.
+    prioridad: 90
+  - pregunta: Que necesito para apartar
+    respuesta: Identificacion oficial y comprobante de ingresos. El asesor te da la lista completa en la visita.
+    prioridad: 80
+  - pregunta: Tienen propiedades en renta
+    respuesta: Si, manejamos venta y renta. Dime que zona te interesa y el equipo te manda opciones.
+    prioridad: 70

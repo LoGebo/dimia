@@ -30,8 +30,10 @@ PATRON_SERVICIO = re.compile(
 )
 PATRON_FAQ = re.compile(r"^\s*-\s(?P<pregunta>.+?)\s->\s(?P<respuesta>.+?)\s*$")
 PATRON_OPCION = re.compile(
-    r"(?P<hablado>[^|]+?)\s\(inicio_iso=(?P<inicio>[^,]+),\srecurso_id=(?P<recurso>[0-9a-fA-F-]{36})\)"
+    r"(?P<hablado>[^|:]+?)\s\(inicio_iso=(?P<inicio>[^,]+),"
+    r"\srecurso_id=(?P<recurso>[0-9a-fA-F-]{36})\)"
 )
+PATRON_ENCABEZADO = re.compile(r"Libre el \d{4}-\d{2}-\d{2}:\s*")
 PATRON_CODIGO = re.compile(r"deletreado:\s([A-Z0-9 ]+)\.")
 
 NUMEROS = {
@@ -58,6 +60,10 @@ ESCALAMIENTO = {
     "humano": "lo pidio explicitamente",
     "persona real": "lo pidio explicitamente",
 }
+FRASES_PRECIO = (
+    "cuanto cuesta", "cuanto sale", "cuanto vale", "cuanto es",
+    "que precio", "el precio", "cuanto me sale", "cuanto cobran",
+)
 AFIRMACIONES = {"si", "sip", "simon", "claro", "va", "sale", "correcto", "esa",
                 "ese", "perfecto", "ok", "okey", "dale", "confirmo", "asi es"}
 VACIAS = {"de", "la", "el", "los", "las", "un", "una", "que", "en", "y", "a",
@@ -200,9 +206,10 @@ class LLMFalso:
         contenido = " ".join(texto for _, texto in turno.resultados)
 
         if "Libre el" in contenido:
+            limpio = PATRON_ENCABEZADO.sub("", contenido)
             self.opciones = [
-                Opcion(m.group("hablado").strip(" :|"), m.group("inicio"), m.group("recurso"))
-                for m in PATRON_OPCION.finditer(contenido)
+                Opcion(m.group("hablado").strip(" |"), m.group("inicio"), m.group("recurso"))
+                for m in PATRON_OPCION.finditer(limpio)
             ]
             if not self.opciones:
                 return self._decir("No me aparece nada libre. ¿Te busco otro dia?")
@@ -401,14 +408,12 @@ class LLMFalso:
 
     @staticmethod
     def _pregunta_precio(plano: str) -> bool:
-        return any(
-            frase in plano
-            for frase in ("cuanto cuesta", "cuanto sale", "cuanto vale", "cuanto es",
-                          "que precio", "el precio", "cuanto me sale", "cuanto cobran")
-        )
+        return any(frase in plano for frase in FRASES_PRECIO)
 
     def _responder_precio(self, plano: str) -> RespuestaLLM:
-        servicio = self._detectar_servicio(plano) or self.servicio
+        servicio = self._detectar_servicio(plano)
+        if servicio is None and not self._nombra_algo_mas(plano):
+            servicio = self.servicio
         if servicio is None or servicio.precio is None:
             return self._decir(
                 "Ese precio no lo tengo a la mano y no te quiero decir mal. "
@@ -417,6 +422,12 @@ class LLMFalso:
         return self._decir(
             f"{servicio.nombre} cuesta {int(servicio.precio)} pesos. ¿Te lo agendo?"
         )
+
+    def _nombra_algo_mas(self, plano: str) -> bool:
+        resto = plano
+        for frase in FRASES_PRECIO:
+            resto = resto.replace(frase, " ")
+        return bool(_palabras(resto))
 
     def _buscar_faq(self, texto: str) -> str | None:
         palabras = _palabras(texto)

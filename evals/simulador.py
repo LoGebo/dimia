@@ -156,10 +156,9 @@ async def simular(
                 )
                 if not respuesta_agente.llamadas:
                     break
-                resultados = tuple(
-                    (llamada.id, await ejecutor.ejecutar(llamada))
-                    for llamada in respuesta_agente.llamadas
-                )
+                resultados: tuple[tuple[str, str], ...] = ()
+                for llamada in respuesta_agente.llamadas:
+                    resultados += ((llamada.id, await ejecutor.ejecutar(llamada)),)
                 historial.append(TurnoResultados(resultados))
                 transcripcion.append(
                     {

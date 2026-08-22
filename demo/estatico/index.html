@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agente telefonico · demo en vivo</title>
+<link rel="stylesheet" href="/estatico/demo.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="marca">
+    <span class="senal" id="senal"></span>
+    <span class="marca-nombre">Recepcion automatica</span>
+    <span class="marca-sub">demo en vivo sobre Postgres</span>
+  </div>
+  <div class="modo" id="modo">
+    <span class="modo-etiqueta" id="modo-etiqueta">…</span>
+    <span class="modo-detalle" id="modo-detalle"></span>
+  </div>
+</header>
+
+<main class="tablero">
+
+  <section class="escena">
+    <div class="rotulo">1 · Elige el negocio</div>
+    <div class="negocios" id="negocios"></div>
+
+    <div class="ficha" id="ficha" hidden>
+      <div class="ficha-nombre" id="ficha-nombre"></div>
+      <ul class="ficha-servicios" id="ficha-servicios"></ul>
+      <button class="enlace" id="ver-prompt">ver el prompt que se le arma</button>
+    </div>
+
+    <div class="rotulo">2 · Habla con el</div>
+    <div class="llamada">
+      <button class="micro" id="micro" disabled>
+        <span class="micro-anillo" id="micro-anillo"></span>
+        <span class="micro-texto" id="micro-texto">Elige un negocio</span>
+      </button>
+      <div class="micro-pie" id="micro-pie">El audio no sale de tu maquina.</div>
+    </div>
+
+    <div class="rotulo">Transcripcion</div>
+    <div class="transcripcion" id="transcripcion">
+      <p class="vacio">La conversacion aparece aqui, turno por turno.</p>
+    </div>
+
+    <form class="teclado" id="teclado">
+      <input id="entrada" type="text" autocomplete="off"
+             placeholder="…o escribelo aqui si el microfono no jala" disabled>
+      <button type="submit" disabled id="enviar">Enviar</button>
+    </form>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-bloque">
+      <div class="rotulo">Herramientas llamadas</div>
+      <div class="herramientas" id="herramientas">
+        <p class="vacio">Cada vez que el agente consulta o escribe, se registra aqui.</p>
+      </div>
+    </div>
+
+    <div class="panel-bloque">
+      <div class="rotulo">Latencia por turno</div>
+      <div class="metricas">
+        <div class="metrica"><span class="metrica-valor" id="lat-ultima">—</span><span class="metrica-pie">ultimo turno</span></div>
+        <div class="metrica"><span class="metrica-valor" id="lat-mediana">—</span><span class="metrica-pie">mediana</span></div>
+        <div class="metrica"><span class="metrica-valor" id="lat-turnos">0</span><span class="metrica-pie">turnos</span></div>
+      </div>
+      <div class="barras" id="barras"></div>
+    </div>
+
+    <div class="panel-bloque crece">
+      <div class="rotulo rotulo-fila">
+        <span>Agenda del negocio <em id="agenda-fuente">postgres</em></span>
+        <button class="enlace" id="limpiar">vaciar</button>
+      </div>
+      <div class="agenda" id="agenda">
+        <p class="vacio">Las reservas confirmadas se leen de la base, no de memoria.</p>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<div class="visor" id="visor" hidden>
+  <div class="visor-caja">
+    <div class="visor-barra">
+      <span>Prompt ensamblado en runtime</span>
+      <button class="enlace" id="cerrar-visor">cerrar</button>
+    </div>
+    <pre id="visor-texto"></pre>
+  </div>
+</div>
+
+<script src="/estatico/demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+vertical: taller
+
+tenant:
+  nombre: Taller Ejemplo
+  zona_horaria: America/Mexico_City
+  slot_granularidad_min: 30
+  anticipacion_min: 180
+  horizonte_dias: 45
+
+recursos:
+  - nombre: Bahia 1
+    capacidad: 1
+    metadatos:
+      tipo: servicio general
+  - nombre: Bahia 2
+    capacidad: 1
+    metadatos:
+      tipo: servicio general
+  - nombre: Bahia de diagnostico
+    capacidad: 1
+    metadatos:
+      tipo: diagnostico
+
+servicios:
+  - nombre: Servicio de afinacion
+    alias: [afinacion, servicio mayor, mantenimiento]
+    duracion_min: 180
+    buffer_min: 30
+    precio: 2500
+  - nombre: Cambio de aceite
+    alias: [aceite, servicio menor, cambio de aceite y filtro]
+    duracion_min: 60
+    buffer_min: 15
+    precio: 900
+  - nombre: Diagnostico
+    alias: [revision, checar, escaneo, diagnostico computarizado]
+    duracion_min: 60
+    buffer_min: 15
+    precio: 500
+  - nombre: Verificacion de frenos
+    alias: [frenos, balatas, revision de frenos]
+    duracion_min: 90
+    buffer_min: 15
+    precio: 700
+
+horarios:
+  - tipo: disponible
+    dias: [0, 1, 2, 3, 4]
+    hora_inicio: "08:00"
+    hora_fin: "18:00"
+  - tipo: disponible
+    dias: [5]
+    hora_inicio: "08:00"
+    hora_fin: "14:00"
+  - tipo: bloqueo
+    dias: [0, 1, 2, 3, 4]
+    hora_inicio: "14:00"
+    hora_fin: "15:00"
+
+conocimiento:
+  - pregunta: Donde estan ubicados
+    respuesta: Estamos en la avenida principal numero 250, colonia Industrial.
+    prioridad: 100
+  - pregunta: Cuanto tarda una afinacion
+    respuesta: La afinacion tarda alrededor de tres horas. Si dejas el carro en la manana, esta listo por la tarde.
+    prioridad: 90
+  - pregunta: Puedo dejar el carro todo el dia
+    respuesta: Si, puedes dejarlo desde las ocho de la manana y recogerlo antes de las seis.
+    prioridad: 85
+  - pregunta: Dan garantia
+    respuesta: Todos los servicios tienen tres meses de garantia en mano de obra.
+    prioridad: 80
+  - pregunta: Que formas de pago aceptan
+    respuesta: Efectivo, transferencia y tarjeta. Tambien manejamos meses sin intereses en montos mayores.
+    prioridad: 70
+  - pregunta: Trabajan con seguros
+    respuesta: Si, trabajamos con las principales aseguradoras. El equipo confirma los detalles contigo.
+    prioridad: 60

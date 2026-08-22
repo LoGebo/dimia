@@ -11,8 +11,7 @@ ignore = ["E501", "RUF001", "RUF002", "RUF003", "B008", "UP046", "UP047"]
 "agent/agent.py" = ["I001"]
 
 [lint.isort]
-split-on-trailing-comma = false
-known-first-party = ["app", "agent", "api"]
+known-first-party = ["app", "agent", "api", "channels", "evals", "demo"]
 
 [format]
 quote-style = "double"

@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Instalar ruff
+        run: pip install -r requirements-dev.txt
+
+      - name: ruff check
+        run: ruff check --output-format=github .
+
+  pruebas:
+    name: Pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+      PGPASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Stub de auth (Supabase gestiona este esquema en produccion)
+        run: psql "$PG_DSN" -v ON_ERROR_STOP=1 -f .dev/auth_stub.sql
+
+      - name: Aplicar migraciones en orden
+        run: |
+          for archivo in $(ls supabase/migrations/*.sql | sort); do
+            echo "::group::$archivo"
+            psql "$PG_DSN" -v ON_ERROR_STOP=1 -q -f "$archivo"
+            echo "::endgroup::"
+          done
+
+      - name: Verificar el constraint anti-traslape
+        run: |
+          faltan=$(psql "$PG_DSN" -tAc "select count(*) from pg_constraint where conrelid = 'booking'::regclass and contype = 'x'")
+          test "$faltan" -ge 1 || { echo "El EXCLUDE anti-traslape no existe"; exit 1; }
+
+      - name: Cargar seed
+        run: psql "$PG_DSN" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+
+      - name: pytest
+        run: python -m pytest -v
+
+  imagen:
+    name: Imagen del worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construir (sin publicar)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
