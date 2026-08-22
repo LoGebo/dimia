@@ -140,4 +140,4 @@ async def test_tenant_trae_config_de_voz(pool, negocio):
     fila = await pool.fetchrow(
         "select tts_proveedor, tts_ajustes from tenant where id = $1", negocio["tenant"]
     )
-    assert fila["tts_proveedor"] in ("elevenlabs", "cartesia")
+    assert fila["tts_proveedor"] in ("deepgram", "elevenlabs", "cartesia")
