@@ -14,6 +14,7 @@ TELEFONOS_DEMO: dict[str, str] = {
     "salon": "+525510000003",
     "taller": "+525510000004",
     "generico": "+525510000005",
+    "taqueria": "+525510000006",
 }
 
 DESCRIPCIONES: dict[str, tuple[str, str]] = {
@@ -22,6 +23,7 @@ DESCRIPCIONES: dict[str, tuple[str, str]] = {
     "salon": ("Salon", "Servicios de duracion muy distinta, tres estilistas"),
     "taller": ("Taller", "Rampas y bahia de diagnostico, comida bloqueada"),
     "generico": ("Generico", "Cualquier negocio de citas, sin nada hardcodeado"),
+    "taqueria": ("Taqueria", "Toma el pedido, arma el carrito y cobra el total"),
 }
 
 

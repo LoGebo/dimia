@@ -192,6 +192,20 @@ class Agenda:
         )
         return json.loads(crudo) if isinstance(crudo, str) else crudo
 
+    async def tenant_por_id(self, tenant_id: uuid.UUID) -> Tenant | None:
+        fila = await self.pool.fetchrow(
+            """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
+                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra
+               from tenant where id = $1 and activo""",
+            tenant_id,
+        )
+        if not fila:
+            return None
+        d = dict(fila)
+        if isinstance(d.get("tts_ajustes"), str):
+            d["tts_ajustes"] = json.loads(d["tts_ajustes"])
+        return Tenant(**d)
+
     async def servicios(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(
             """select id, nombre, alias, duracion_min, precio

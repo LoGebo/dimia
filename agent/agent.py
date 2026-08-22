@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import random
 import time
@@ -501,6 +502,24 @@ def franja_a_horas(franja: str) -> tuple[dtime | None, dtime | None]:
     return None, None
 
 
+def _tenant_de_metadatos(metadata: str | None, nombre_sala: str) -> uuid.UUID | None:
+    if metadata:
+        try:
+            crudo = json.loads(metadata).get("tenant_id")
+            if crudo:
+                return uuid.UUID(str(crudo))
+        except (ValueError, TypeError, AttributeError):
+            pass
+    if nombre_sala.startswith("prueba-"):
+        try:
+            return uuid.UUID(nombre_sala.removeprefix("prueba-").split("-", 5)[0]
+                             if len(nombre_sala.removeprefix("prueba-")) < 40
+                             else nombre_sala.removeprefix("prueba-")[:36])
+        except ValueError:
+            return None
+    return None
+
+
 def construir_llm():
     if cfg.llm_proveedor == "anthropic":
         from livekit.plugins import anthropic
@@ -549,9 +568,17 @@ async def entrypoint(ctx: JobContext) -> None:
     marcado = attrs.get("sip.trunkPhoneNumber") or attrs.get("sip.phoneNumber") or ""
     llamante = attrs.get("sip.from_number") or participante.identity
 
-    tenant = await agenda.tenant_por_telefono(marcado)
+    tenant = None
+    if marcado:
+        tenant = await agenda.tenant_por_telefono(marcado)
+    else:
+        tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
+        if tenant_id:
+            tenant = await agenda.tenant_por_id(tenant_id)
+            llamante = attrs.get("prueba.telefono") or "prueba-panel"
+
     if tenant is None:
-        log.error("numero %s sin tenant asignado", marcado)
+        log.error("sala %s sin tenant resoluble", ctx.room.name)
         await ctx.room.disconnect()
         return
 
