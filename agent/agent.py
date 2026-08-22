@@ -541,6 +541,11 @@ def construir_llm():
 
 def construir_tts(tenant: Tenant):
     ajustes = tenant.tts_ajustes or {}
+    if tenant.tts_proveedor == "deepgram":
+        return deepgram.TTS(
+            model=tenant.voz_id or cfg.deepgram_voz,
+            api_key=cfg.deepgram_api_key or None,
+        )
     if tenant.tts_proveedor == "cartesia":
         from livekit.plugins import cartesia
 
