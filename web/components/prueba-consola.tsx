@@ -31,12 +31,14 @@ export function ConsolaPrueba({
   const [microActivo, setMicroActivo] = useState(true);
   const [avisoMicro, setAvisoMicro] = useState<string | null>(null);
   const [estado, setEstado] = useState<EstadoPrueba | null>(null);
+  const [nivelMicro, setNivelMicro] = useState(0);
 
   const sala = useRef<Room | null>(null);
   const audios = useRef<HTMLDivElement>(null);
   const inicioTurno = useRef<number | null>(null);
   const esperando = useRef(false);
   const previo = useRef<EstadoPrueba | null>(null);
+  const medidor = useRef<{ contexto: AudioContext; flujo: MediaStream } | null>(null);
 
   const anotar = useCallback((texto: string) => {
     setAcciones((lista) => [
@@ -69,7 +71,66 @@ export function ConsolaPrueba({
     setNecesitaDesbloqueo(false);
   }
 
+  function detenerMedidor() {
+    medidor.current?.flujo.getTracks().forEach((p) => p.stop());
+    void medidor.current?.contexto.close();
+    medidor.current = null;
+    setNivelMicro(0);
+  }
+
+  async function abrirMicrofono(): Promise<MediaStream | null> {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setAvisoMicro("Este navegador no permite usar el micrófono. Prueba en Chrome.");
+      return null;
+    }
+    try {
+      const flujo = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      const [primera] = flujo.getAudioTracks();
+      if (!primera || primera.readyState !== "live") {
+        setAvisoMicro("El micrófono abrió pero no entrega audio. Revisa el de entrada en Ajustes del sistema.");
+        return null;
+      }
+
+      const contexto = new AudioContext();
+      const analizador = contexto.createAnalyser();
+      analizador.fftSize = 512;
+      contexto.createMediaStreamSource(flujo).connect(analizador);
+      const muestras = new Uint8Array(analizador.frequencyBinCount);
+      medidor.current = { contexto, flujo };
+
+      const medir = () => {
+        if (!medidor.current) return;
+        analizador.getByteTimeDomainData(muestras);
+        let pico = 0;
+        for (const m of muestras) pico = Math.max(pico, Math.abs(m - 128));
+        setNivelMicro(Math.min(1, pico / 60));
+        requestAnimationFrame(medir);
+      };
+      requestAnimationFrame(medir);
+
+      setAvisoMicro(null);
+      return flujo;
+    } catch (falla) {
+      const nombre = falla instanceof DOMException ? falla.name : "";
+      setAvisoMicro(
+        nombre === "NotAllowedError"
+          ? "El navegador bloqueó el micrófono. Dale permiso en el candado de la barra de direcciones y vuelve a llamar."
+          : nombre === "NotFoundError"
+            ? "No se encontró micrófono. Revisa el dispositivo de entrada en Ajustes del sistema."
+            : "No se pudo abrir el micrófono. Ciérralo en otras apps (Zoom, Meet) y vuelve a intentar.",
+      );
+      return null;
+    }
+  }
+
   async function llamar() {
+    const flujoMicro = await abrirMicrofono();
     setError(null);
     setTurnos([]);
     setAcciones([]);
@@ -127,6 +188,7 @@ export function ConsolaPrueba({
 
       cuarto.on(RoomEvent.Disconnected, () => {
         audios.current?.replaceChildren();
+        detenerMedidor();
         setFase("listo");
         setNecesitaDesbloqueo(false);
         anotar("Llamada terminada");
@@ -140,14 +202,15 @@ export function ConsolaPrueba({
       setFase("en_llamada");
       anotar("Llamada abierta");
 
-      try {
-        await cuarto.localParticipant.setMicrophoneEnabled(true);
+      const pistaMicro = flujoMicro?.getAudioTracks()[0];
+      if (pistaMicro) {
+        await cuarto.localParticipant.publishTrack(pistaMicro, {
+          source: Track.Source.Microphone,
+        });
         setMicroActivo(true);
-      } catch {
+        anotar("Micrófono publicado");
+      } else {
         setMicroActivo(false);
-        setAvisoMicro(
-          "No pudimos abrir el micrófono. Vas a oír al agente, pero no te va a oír: dale permiso al navegador y vuelve a llamar.",
-        );
       }
     } catch (falla) {
       setFase("listo");
@@ -166,6 +229,7 @@ export function ConsolaPrueba({
     const cuarto = sala.current;
     if (!cuarto) return;
     const siguiente = !microActivo;
+    medidor.current?.flujo.getAudioTracks().forEach((p) => (p.enabled = siguiente));
     await cuarto.localParticipant.setMicrophoneEnabled(siguiente);
     setMicroActivo(siguiente);
   }
@@ -189,9 +253,32 @@ export function ConsolaPrueba({
             </Boton>
 
             {enLlamada ? (
-              <Boton onClick={() => void alternarMicro()} className="h-10">
-                {microActivo ? "Silenciar micrófono" : "Reactivar micrófono"}
-              </Boton>
+              <>
+                <Boton onClick={() => void alternarMicro()} className="h-10">
+                  {microActivo ? "Silenciar micrófono" : "Reactivar micrófono"}
+                </Boton>
+                <div
+                  className="flex items-center gap-2"
+                  title={microActivo ? "Nivel de tu micrófono" : "Micrófono silenciado"}
+                >
+                  <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+                    tu voz
+                  </span>
+                  <div className="flex h-6 items-end gap-[3px]">
+                    {[0.08, 0.2, 0.35, 0.5, 0.68, 0.85].map((umbral) => (
+                      <span
+                        key={umbral}
+                        className={`w-[4px] rounded-sm transition-colors ${
+                          microActivo && nivelMicro >= umbral
+                            ? "bg-emerald-400"
+                            : "bg-neutral-700"
+                        }`}
+                        style={{ height: `${8 + umbral * 16}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : null}
 
             {necesitaDesbloqueo ? (
