@@ -1,0 +1,176 @@
+- generic [ref=f5e2]:
+  - complementary [ref=f5e3]:
+    - combobox [ref=f5e6]:
+      - option "Clinica Dental Sonrisa" [selected]
+      - option "Clinica Dental Sonrisa"
+      - option "Cocina de Humo"
+      - option "Cocina de Humo"
+      - option "Consultoria Vertice"
+      - option "Estudio Marea"
+      - option "Taller Ejemplo"
+      - option "Taller Ruiz Automotriz"
+    - generic [ref=f5e7]:
+      - paragraph [ref=f5e8]: Número de entrada
+      - paragraph [ref=f5e9]: +52 55 1000 0001
+      - generic [ref=f5e10]: Activo
+    - navigation [ref=f5e13]:
+      - link "Resumen Llamadas y desempeño" [ref=f5e14] [cursor=pointer]:
+        - /url: /resumen
+        - generic [ref=f5e15]: Resumen
+        - generic [ref=f5e16]: Llamadas y desempeño
+      - link "Agenda Reservas del día" [ref=f5e17] [cursor=pointer]:
+        - /url: /agenda
+        - generic [ref=f5e18]: Agenda
+        - generic [ref=f5e19]: Reservas del día
+      - link "Horarios Cuándo abres" [ref=f5e20] [cursor=pointer]:
+        - /url: /horarios
+        - generic [ref=f5e21]: Horarios
+        - generic [ref=f5e22]: Cuándo abres
+      - link "Catálogo Recursos y servicios" [ref=f5e23] [cursor=pointer]:
+        - /url: /catalogo
+        - generic [ref=f5e24]: Catálogo
+        - generic [ref=f5e25]: Recursos y servicios
+      - link "Respuestas Qué contesta" [ref=f5e26] [cursor=pointer]:
+        - /url: /conocimiento
+        - generic [ref=f5e27]: Respuestas
+        - generic [ref=f5e28]: Qué contesta
+      - link "Agente Voz y transferencia" [ref=f5e29] [cursor=pointer]:
+        - /url: /agente
+        - generic [ref=f5e30]: Agente
+        - generic [ref=f5e31]: Voz y transferencia
+    - generic [ref=f5e32]:
+      - generic [ref=f5e33]:
+        - generic [ref=f5e34]:
+          - paragraph [ref=f5e35]: dueno@demo.mx
+          - paragraph [ref=f5e36]: Dueño
+        - button "Cambiar a modo oscuro" [ref=f5e37]
+      - generic [ref=f5e40]:
+        - button "Cerrar sesión" [ref=f5e42]
+        - generic [ref=f5e43]: ·
+        - link "Nuevo negocio" [ref=f5e44] [cursor=pointer]:
+          - /url: /alta
+  - main [ref=f5e45]:
+    - generic [ref=f5e46]:
+      - generic [ref=f5e47]:
+        - heading "Resumen" [level=1] [ref=f5e48]
+        - paragraph [ref=f5e49]: Clinica Dental Sonrisa · últimos 14 días
+      - generic [ref=f5e51]:
+        - link "7 d" [ref=f5e52] [cursor=pointer]:
+          - /url: /resumen?dias=7
+        - link "14 d" [ref=f5e53] [cursor=pointer]:
+          - /url: /resumen?dias=14
+        - link "30 d" [ref=f5e54] [cursor=pointer]:
+          - /url: /resumen?dias=30
+    - generic [ref=f5e55]:
+      - generic [ref=f5e56]:
+        - generic [ref=f5e57]:
+          - paragraph [ref=f5e58]: Llamadas
+          - paragraph [ref=f5e59]: "104"
+          - paragraph [ref=f5e60]: 7.4 por día
+        - generic [ref=f5e61]:
+          - paragraph [ref=f5e62]: Resueltas sin humano
+          - paragraph [ref=f5e63]: 88%
+          - paragraph [ref=f5e64]: 91 de 104
+        - generic [ref=f5e65]:
+          - paragraph [ref=f5e66]: Escalamiento
+          - paragraph [ref=f5e67]: 13%
+          - paragraph [ref=f5e68]: 13 pasaron a una persona
+        - generic [ref=f5e69]:
+          - paragraph [ref=f5e70]: Duración promedio
+          - paragraph [ref=f5e71]: 2:30
+          - paragraph [ref=f5e72]: minutos por llamada
+        - generic [ref=f5e73]:
+          - paragraph [ref=f5e74]: Reservas generadas
+          - paragraph [ref=f5e75]: "0"
+          - paragraph [ref=f5e76]: 0% de las llamadas
+      - generic [ref=f5e77]:
+        - generic [ref=f5e79]:
+          - heading "Llamadas por día" [level=2] [ref=f5e80]
+          - paragraph [ref=f5e81]: Cada columna es un día. El azul se resolvió solo; el naranja pasó a una persona.
+        - generic [ref=f5e82]:
+          - generic [ref=f5e83]:
+            - generic [ref=f5e84]: Resueltas por el agente
+            - generic [ref=f5e86]: Escaladas a una persona
+          - generic [ref=f5e88]:
+            - generic [ref=f5e89]:
+              - generic [ref=f5e90]: "11"
+              - generic [ref=f5e91]: "6"
+              - generic [ref=f5e92]: "0"
+            - generic [ref=f5e93]:
+              - generic [ref=f5e98]:
+                - 'button "2026-08-09: 11 llamadas" [ref=f5e99]'
+                - 'button "2026-08-10: 9 llamadas" [ref=f5e103]'
+                - 'button "2026-08-11: 10 llamadas" [ref=f5e107]'
+                - 'button "2026-08-12: 11 llamadas" [ref=f5e110]'
+                - 'button "2026-08-13: 5 llamadas" [ref=f5e114]'
+                - 'button "2026-08-14: 3 llamadas" [ref=f5e118]'
+                - 'button "2026-08-15: 4 llamadas" [ref=f5e122]'
+                - 'button "2026-08-16: 6 llamadas" [ref=f5e125]'
+                - 'button "2026-08-17: 4 llamadas" [ref=f5e129]'
+                - 'button "2026-08-18: 6 llamadas" [ref=f5e132]'
+                - 'button "2026-08-19: 6 llamadas" [ref=f5e135]'
+                - 'button "2026-08-20: 8 llamadas" [ref=f5e138]'
+                - 'button "2026-08-21: 7 llamadas" [ref=f5e142]'
+                - 'button "2026-08-22: 8 llamadas" [ref=f5e146]'
+              - generic [ref=f5e149]:
+                - generic [ref=f5e150]: "9"
+                - generic [ref=f5e152]: "11"
+                - generic [ref=f5e154]: "13"
+                - generic [ref=f5e156]: "15"
+                - generic [ref=f5e158]: "17"
+                - generic [ref=f5e160]: "19"
+                - generic [ref=f5e162]: "21"
+      - generic [ref=f5e164]:
+        - generic [ref=f5e165]:
+          - generic [ref=f5e167]:
+            - heading "Por qué se escala" [level=2] [ref=f5e168]
+            - paragraph [ref=f5e169]: Motivos más frecuentes de transferencia.
+          - list [ref=f5e170]:
+            - listitem [ref=f5e171]:
+              - generic [ref=f5e172]:
+                - generic [ref=f5e173]: tema de salud delicado
+                - generic [ref=f5e174]: "4"
+            - listitem [ref=f5e177]:
+              - generic [ref=f5e178]:
+                - generic [ref=f5e179]: lo pidio la persona
+                - generic [ref=f5e180]: "3"
+            - listitem [ref=f5e183]:
+              - generic [ref=f5e184]:
+                - generic [ref=f5e185]: no entendio dos veces
+                - generic [ref=f5e186]: "3"
+            - listitem [ref=f5e189]:
+              - generic [ref=f5e190]:
+                - generic [ref=f5e191]: queja o reclamo
+                - generic [ref=f5e192]: "2"
+            - listitem [ref=f5e195]:
+              - generic [ref=f5e196]:
+                - generic [ref=f5e197]: fuera de lo que puede hacer
+                - generic [ref=f5e198]: "1"
+        - generic [ref=f5e201]:
+          - generic [ref=f5e203]:
+            - heading "A qué hora te llaman" [level=2] [ref=f5e204]
+            - paragraph [ref=f5e205]: Hora local de America/Mexico_City.
+          - generic [ref=f5e206]:
+            - generic [ref=f5e207]:
+              - generic "7:00 — 0 llamadas" [ref=f5e208]
+              - generic "8:00 — 0 llamadas" [ref=f5e210]
+              - generic "9:00 — 8 llamadas" [ref=f5e212]
+              - generic "10:00 — 7 llamadas" [ref=f5e214]
+              - generic "11:00 — 9 llamadas" [ref=f5e216]
+              - generic "12:00 — 9 llamadas" [ref=f5e218]
+              - generic "13:00 — 10 llamadas" [ref=f5e220]
+              - generic "14:00 — 9 llamadas" [ref=f5e222]
+              - generic "15:00 — 9 llamadas" [ref=f5e224]
+              - generic "16:00 — 10 llamadas" [ref=f5e226]
+              - generic "17:00 — 11 llamadas" [ref=f5e228]
+              - generic "18:00 — 11 llamadas" [ref=f5e230]
+              - generic "19:00 — 11 llamadas" [ref=f5e232]
+              - generic "20:00 — 0 llamadas" [ref=f5e234]
+              - generic "21:00 — 0 llamadas" [ref=f5e236]
+              - generic "22:00 — 0 llamadas" [ref=f5e238]
+            - generic [ref=f5e240]:
+              - generic [ref=f5e243]: "9"
+              - generic [ref=f5e246]: "12"
+              - generic [ref=f5e249]: "15"
+              - generic [ref=f5e252]: "18"
+              - generic [ref=f5e255]: "21"

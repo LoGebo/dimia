@@ -44,6 +44,9 @@ class Tenant:
     zona_horaria: str
     telefono_escalamiento: str | None
     voz_id: str | None
+    tts_proveedor: str = "elevenlabs"
+    tts_ajustes: dict | None = None
+    instrucciones_extra: str | None = None
 
     @property
     def tz(self) -> ZoneInfo:
@@ -80,12 +83,17 @@ class Agenda:
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
         fila = await self.pool.fetchrow(
-            """select id, nombre, vertical::text, zona_horaria,
-                      telefono_escalamiento, voz_id
+            """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
+                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra
                from tenant where telefono_entrada = $1 and activo""",
             numero,
         )
-        return Tenant(**dict(fila)) if fila else None
+        if not fila:
+            return None
+        d = dict(fila)
+        if isinstance(d.get("tts_ajustes"), str):
+            d["tts_ajustes"] = json.loads(d["tts_ajustes"])
+        return Tenant(**d)
 
     async def plantilla_vertical(self, clave: str) -> dict | None:
         fila = await self.pool.fetchrow(
@@ -111,6 +119,37 @@ class Agenda:
             json.dumps(campos or {}), call_id,
         )
         return json.loads(crudo) if isinstance(crudo, str) else crudo
+
+    async def buscar_catalogo(
+        self, tenant_id: uuid.UUID, consulta: str | None = None,
+        tipo: str | None = None, limite: int = 8,
+    ) -> list[dict]:
+        filas = await self.pool.fetch(
+            "select * from buscar_catalogo($1,$2,$3,$4)",
+            tenant_id, consulta, tipo, limite,
+        )
+        salida = []
+        for f in filas:
+            d = dict(f)
+            if isinstance(d.get("atributos"), str):
+                d["atributos"] = json.loads(d["atributos"])
+            salida.append(d)
+        return salida
+
+    async def buscar_conocimiento(
+        self, tenant_id: uuid.UUID, consulta: str, limite: int = 4
+    ) -> list[dict]:
+        filas = await self.pool.fetch(
+            "select * from buscar_conocimiento($1,$2,$3)", tenant_id, consulta, limite
+        )
+        return [dict(f) for f in filas]
+
+    async def tipos_de_catalogo(self, tenant_id: uuid.UUID) -> list[str]:
+        filas = await self.pool.fetch(
+            "select distinct tipo from catalogo_item where tenant_id=$1 and disponible order by tipo",
+            tenant_id,
+        )
+        return [f["tipo"] for f in filas]
 
     async def servicios(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(

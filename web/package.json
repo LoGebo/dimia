@@ -10,21 +10,21 @@
     "seed:demo": "psql \"$PG_DSN\" -v ON_ERROR_STOP=1 -f dev/seed_panel.sql"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.95.0",
-    "next": "^15.6.1",
-    "pg": "^8.16.3",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3",
+    "next": "^15.5.23",
+    "pg": "^8.23.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.19",
-    "@types/node": "^24.10.1",
-    "@types/pg": "^8.15.6",
-    "@types/react": "^19.2.7",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.19",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   }
 }

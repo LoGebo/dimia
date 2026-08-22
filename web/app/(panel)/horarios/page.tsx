@@ -1,6 +1,6 @@
 import { Encabezado } from "@/components/encabezado";
 import { EditorHorario } from "@/components/editor-horario";
-import { Formulario } from "@/components/formulario";
+import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Boton, Campo, Entrada, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { eliminarRegla, guardarExcepcion } from "@/lib/acciones";
 import { negocio, recursos, reglas } from "@/lib/consultas";
@@ -28,8 +28,6 @@ export default async function Horarios() {
           <Tarjeta>
             <TarjetaCabecera titulo="Agregar excepción" descripcion="Un festivo, un puente, una junta." />
             <Formulario accion={guardarExcepcion} className="space-y-3 px-4 py-4" reiniciar>
-              {(pendiente) => (
-                <>
                   <Campo etiqueta="Fecha">
                     <Entrada type="date" name="fecha" required />
                   </Campo>
@@ -48,11 +46,9 @@ export default async function Horarios() {
                       <Entrada type="time" name="hora_fin" defaultValue="23:59" />
                     </Campo>
                   </div>
-                  <Boton variante="solido" disabled={pendiente} className="w-full">
+                  <BotonEnviar className="w-full">
                     Agregar
-                  </Boton>
-                </>
-              )}
+                  </BotonEnviar>
             </Formulario>
           </Tarjeta>
 

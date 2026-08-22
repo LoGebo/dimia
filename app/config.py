@@ -16,9 +16,12 @@ class Settings(BaseSettings):
 
     deepgram_api_key: str = ""
     cartesia_api_key: str = ""
+    elevenlabs_api_key: str = ""
     anthropic_api_key: str = ""
 
     cartesia_voice_id: str = "5c5ad5e7-1020-476b-8b91-fdcbe9cc313c"
+    elevenlabs_voice_id: str = "TxGEqnHWrfWFTfGW9XjX"
+    elevenlabs_model: str = "eleven_flash_v2_5"
     llm_model: str = "claude-haiku-4-5-20251001"
 
     n8n_webhook: str | None = None

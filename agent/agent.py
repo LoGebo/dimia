@@ -14,7 +14,7 @@ from livekit.agents import (
     Agent, AgentSession, JobContext, JobProcess, RoomInputOptions,
     RunContext, WorkerOptions, cli, function_tool,
 )
-from livekit.plugins import anthropic, cartesia, deepgram, silero
+from livekit.plugins import anthropic, cartesia, deepgram, elevenlabs, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from app import prompt as prompt_mod
@@ -40,9 +40,13 @@ class Recepcionista(Agent):
         servicios: list[dict],
         faq: list[dict],
         plantilla: dict | None = None,
+        tipos_catalogo: list[str] | None = None,
     ) -> None:
         super().__init__(
-            instructions=prompt_mod.construir(tenant, servicios, faq, plantilla=plantilla)
+            instructions=prompt_mod.construir(
+                tenant, servicios, faq, plantilla=plantilla,
+                tipos_catalogo=tipos_catalogo,
+            )
         )
         self.plantilla = plantilla
         self.tenant = tenant
@@ -203,6 +207,60 @@ class Recepcionista(Agent):
         return "No la encontre. Ofrece transferir."
 
     @function_tool
+    async def consultar_catalogo(
+        self,
+        ctx: RunContext,
+        busqueda: str,
+        tipo: str = "",
+    ) -> str:
+        """Consulta lo que ofrece el negocio: platillos, profesionales, propiedades,
+        refacciones, lo que sea. Usala SIEMPRE que pregunten por algo que se ofrece,
+        por un precio, por ingredientes, alergenos, especialidades o caracteristicas.
+        Nunca contestes de memoria: lo que no devuelva esta herramienta, no existe.
+
+        Args:
+            busqueda: lo que pregunto la persona, con sus propias palabras.
+            tipo: filtra por categoria si la sabes. Vacio busca en todo.
+        """
+        items = await agenda.buscar_catalogo(
+            self.tenant.id, busqueda, tipo or None, limite=6
+        )
+        if not items:
+            return (
+                "No hay nada que coincida. Dile que no tienes ese dato a la mano "
+                "y ofrece tomar recado o transferir. NO lo inventes."
+            )
+        partes = []
+        for i in items:
+            precio = f", ${i['precio']:.0f}" if i.get("precio") is not None else ""
+            desc = f" — {i['descripcion']}" if i.get("descripcion") else ""
+            attrs = i.get("atributos") or {}
+            extra = f" [{', '.join(f'{k}: {v}' for k, v in attrs.items())}]" if attrs else ""
+            recurso = f" (recurso_id={i['resource_id']})" if i.get("resource_id") else ""
+            partes.append(f"{i['nombre']}{precio}{desc}{extra}{recurso}")
+        return (
+            "Encontrado: " + " | ".join(partes)
+            + ". Menciona maximo dos o tres, hablando natural. No leas los ids ni los corchetes."
+        )
+
+    @function_tool
+    async def consultar_informacion(self, ctx: RunContext, pregunta: str) -> str:
+        """Busca en la informacion del negocio: ubicacion, estacionamiento, formas de
+        pago, politicas, horarios especiales. Usala cuando pregunten algo que no sea
+        agendar ni del catalogo.
+
+        Args:
+            pregunta: la pregunta tal como la hizo la persona.
+        """
+        filas = await agenda.buscar_conocimiento(self.tenant.id, pregunta, limite=3)
+        if not filas:
+            return (
+                "No hay informacion sobre eso. Dilo con naturalidad y ofrece tomar "
+                "recado o transferir. NO lo inventes."
+            )
+        return " | ".join(f"{f['pregunta']}: {f['respuesta']}" for f in filas)
+
+    @function_tool
     async def tomar_recado(
         self,
         ctx: RunContext,
@@ -266,6 +324,28 @@ class Recepcionista(Agent):
         return "Transferido."
 
 
+def construir_tts(tenant: Tenant):
+    ajustes = tenant.tts_ajustes or {}
+    if tenant.tts_proveedor == "cartesia":
+        return cartesia.TTS(
+            model=ajustes.get("modelo", "sonic-turbo"),
+            voice=tenant.voz_id or cfg.cartesia_voice_id,
+            language="es",
+        )
+    return elevenlabs.TTS(
+        model=ajustes.get("modelo", cfg.elevenlabs_model),
+        voice_id=tenant.voz_id or cfg.elevenlabs_voice_id,
+        language="es",
+        voice_settings=elevenlabs.VoiceSettings(
+            stability=ajustes.get("estabilidad", 0.45),
+            similarity_boost=ajustes.get("similitud", 0.8),
+            style=ajustes.get("estilo", 0.15),
+            speed=ajustes.get("velocidad", 1.0),
+            use_speaker_boost=True,
+        ),
+    )
+
+
 def prewarm(proc: JobProcess) -> None:
     """Carga el VAD una vez por proceso, no por llamada."""
     proc.userdata["vad"] = silero.VAD.load()
@@ -286,23 +366,20 @@ async def entrypoint(ctx: JobContext) -> None:
         await ctx.room.disconnect()
         return
 
-    servicios, faq, plantilla = await asyncio.gather(
+    servicios, faq, plantilla, tipos = await asyncio.gather(
         agenda.servicios(tenant.id),
         agenda.faq(tenant.id),
         agenda.plantilla_vertical(tenant.vertical),
+        agenda.tipos_de_catalogo(tenant.id),
     )
-    recepcionista = Recepcionista(tenant, servicios, faq, plantilla)
+    recepcionista = Recepcionista(tenant, servicios, faq, plantilla, tipos)
     recepcionista.telefono = llamante
 
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
         stt=deepgram.STT(model="flux-general-es", language="es"),
         llm=anthropic.LLM(model=cfg.llm_model, temperature=0.4),
-        tts=cartesia.TTS(
-            model="sonic-turbo",
-            voice=tenant.voz_id or cfg.cartesia_voice_id,
-            language="es",
-        ),
+        tts=construir_tts(tenant),
         turn_detection=MultilingualModel(),
         min_endpointing_delay=0.4,
         max_endpointing_delay=4.0,

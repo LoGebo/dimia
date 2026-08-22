@@ -1,0 +1,41 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - complementary [ref=f4e3]:
+      - link "A Agenda por voz" [ref=f4e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f4e6]: A
+        - generic [ref=f4e7]: Agenda por voz
+      - generic [ref=f4e8]:
+        - heading "Tu teléfono contestado, agendado y medido." [level=1] [ref=f4e9]
+        - paragraph [ref=f4e10]: El agente contesta cada llamada, consulta disponibilidad real y reserva en el momento. Aquí controlas qué ofrece, a qué horas y con qué recursos.
+        - generic [ref=f4e11]:
+          - generic [ref=f4e12]:
+            - term [ref=f4e13]: < 15 min
+            - definition [ref=f4e14]: para dar de alta
+          - generic [ref=f4e15]:
+            - term [ref=f4e16]: "0"
+            - definition [ref=f4e17]: dobles reservas
+          - generic [ref=f4e18]:
+            - term [ref=f4e19]: 24/7
+            - definition [ref=f4e20]: sin buzón
+      - paragraph [ref=f4e21]: La garantía de no traslape vive en la base de datos, no en el código.
+    - main [ref=f4e22]:
+      - button "Cambiar a modo oscuro" [ref=f4e24]
+      - generic [ref=f4e29]:
+        - generic [ref=f4e30]:
+          - heading "Entra a tu panel" [level=1] [ref=f4e31]
+          - paragraph [ref=f4e32]: Administra la agenda y el agente de tu negocio.
+        - generic [ref=f4e33]:
+          - generic [ref=f4e34]:
+            - generic [ref=f4e35]: Correo
+            - textbox "Correo" [ref=f4e36]:
+              - /placeholder: tu@negocio.mx
+          - generic [ref=f4e37]:
+            - generic [ref=f4e38]: Contraseña
+            - textbox "Contraseña" [ref=f4e39]
+          - button "Entrar" [ref=f4e40]
+        - paragraph [ref=f4e41]:
+          - text: ¿No tienes cuenta?
+          - link "Regístrate" [ref=f4e42] [cursor=pointer]:
+            - /url: /registro
+  - alert [ref=f4e43]

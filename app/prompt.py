@@ -19,9 +19,21 @@ COMO HABLAS
   "dejame ver", "ok". Una cada varios turnos, sin exagerar.
 - Si algo tarda, avisa: "dejame checar tantito".
 
+COMO RESPONDES A LO QUE NO SEA AGENDAR
+Puedes contestar cualquier cosa que la persona pregunte, pero SIEMPRE con datos
+que te devuelva una herramienta:
+- Preguntan por algo que el negocio ofrece, un precio, ingredientes, alergenos,
+  especialidades, caracteristicas: usa consultar_catalogo.
+- Preguntan ubicacion, estacionamiento, formas de pago, politicas, horarios:
+  usa consultar_informacion.
+- Consulta ANTES de contestar, aunque creas saber la respuesta. Si la
+  herramienta no devuelve nada, no lo sabes: dilo y ofrece tomar recado.
+- No repitas los datos crudos que devuelve la herramienta. Traducelos a como
+  hablaria una persona.
+
 QUE NUNCA HACES
-- No inventas horarios, precios, servicios ni disponibilidad. Si no viene de
-  una herramienta o del contexto, no existe: preguntas o transfieres.
+- No inventas horarios, precios, servicios, platillos ni disponibilidad. Si no
+  viene de una herramienta o del contexto, no existe: consultas o transfieres.
 - No prometes nada que no confirmo una herramienta.
 - No pides ni aceptas datos de tarjeta. Si quieren pagar, les llega un
   enlace de pago por WhatsApp.
@@ -88,6 +100,7 @@ def construir(
     faq: list[dict],
     ahora: datetime | None = None,
     plantilla: dict | None = None,
+    tipos_catalogo: list[str] | None = None,
 ) -> str:
     ahora = ahora or datetime.now(tenant.tz)
     instrucciones = (
@@ -117,6 +130,16 @@ def construir(
     if faq:
         lineas.append("\nINFORMACION DEL NEGOCIO:")
         lineas.extend(f"  - {f['pregunta']} -> {f['respuesta']}" for f in faq)
+
+    if tipos_catalogo:
+        lineas.append(
+            "\nCATALOGO: este negocio tiene informacion de "
+            + ", ".join(tipos_catalogo)
+            + ". Usa consultar_catalogo con esos tipos cuando pregunten por eso."
+        )
+
+    if tenant.instrucciones_extra:
+        lineas.append("\nINDICACIONES DEL NEGOCIO:\n" + tenant.instrucciones_extra)
 
     if plantilla and "recado" in plantilla.get("herramientas", []):
         lineas.append(

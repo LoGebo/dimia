@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Formulario } from "@/components/formulario";
+import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Boton, Campo, Entrada, Selector } from "@/components/ui/primitivos";
 import { guardarRecurso, guardarServicio } from "@/lib/acciones";
 import type { Recurso, Servicio, Vertical } from "@/lib/tipos";
@@ -33,8 +33,6 @@ export function FormularioRecurso({
   const capacidadImporta = vertical === "restaurante";
   return (
     <Formulario accion={guardarRecurso} className="space-y-3" reiniciar={!recurso}>
-      {(pendiente) => (
-        <>
           {recurso ? <input type="hidden" name="id" value={recurso.id} /> : null}
           <div className={compacto ? "space-y-3" : "grid gap-3 sm:grid-cols-3"}>
             <Campo etiqueta="Nombre" className={compacto ? "" : "sm:col-span-2"}>
@@ -50,11 +48,9 @@ export function FormularioRecurso({
           <Campo etiqueta="Etiqueta interna" ayuda="Zona, especialidad o piso. Solo la ves tú.">
             <Entrada name="etiqueta" defaultValue={recurso?.metadatos?.etiqueta} placeholder="terraza" />
           </Campo>
-          <Boton variante="solido" disabled={pendiente}>
+          <BotonEnviar>
             {recurso ? "Guardar cambios" : "Agregar recurso"}
-          </Boton>
-        </>
-      )}
+          </BotonEnviar>
     </Formulario>
   );
 }
@@ -70,8 +66,6 @@ export function FormularioServicio({
 }) {
   return (
     <Formulario accion={guardarServicio} className="space-y-3" reiniciar={!servicio}>
-      {(pendiente) => (
-        <>
           {servicio ? <input type="hidden" name="id" value={servicio.id} /> : null}
           <Campo etiqueta="Nombre">
             <Entrada name="nombre" defaultValue={servicio?.nombre} required placeholder="Limpieza dental" />
@@ -111,11 +105,9 @@ export function FormularioServicio({
               ))}
             </div>
           </fieldset>
-          <Boton variante="solido" disabled={pendiente}>
+          <BotonEnviar>
             {servicio ? "Guardar cambios" : "Agregar servicio"}
-          </Boton>
-        </>
-      )}
+          </BotonEnviar>
     </Formulario>
   );
 }

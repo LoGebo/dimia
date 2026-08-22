@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import type { ReactNode } from "react";
-import { Aviso } from "@/components/ui/primitivos";
+import { Aviso, Boton } from "@/components/ui/primitivos";
 import type { Estado } from "@/lib/acciones";
 
 export function Formulario({
@@ -12,21 +13,33 @@ export function Formulario({
   reiniciar = false,
 }: {
   accion: (previo: Estado, fd: FormData) => Promise<Estado>;
-  children: (pendiente: boolean) => ReactNode;
+  children: ReactNode;
   className?: string;
   reiniciar?: boolean;
 }) {
-  const [estado, enviar, pendiente] = useActionState(accion, {} as Estado);
+  const [estado, enviar] = useActionState(accion, {} as Estado);
   return (
-    <form
-      action={enviar}
-      className={className}
-      key={reiniciar && estado.ok ? estado.ok : undefined}
-      noValidate
-    >
-      {children(pendiente)}
+    <form action={enviar} className={className} key={reiniciar && estado.ok ? estado.ok : undefined}>
+      {children}
       {estado.error ? <Aviso tono="error">{estado.error}</Aviso> : null}
       {estado.ok ? <Aviso tono="ok">{estado.ok}</Aviso> : null}
     </form>
+  );
+}
+
+export function BotonEnviar({
+  children,
+  pendienteTexto = "Guardando…",
+  className = "",
+}: {
+  children: ReactNode;
+  pendienteTexto?: string;
+  className?: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <Boton variante="solido" type="submit" disabled={pending} className={className}>
+      {pending ? pendienteTexto : children}
+    </Boton>
   );
 }

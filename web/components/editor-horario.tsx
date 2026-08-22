@@ -242,7 +242,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
                     }}
                     onMouseEnter={() => pintando && pintar(indiceDia, fila)}
                     className={`h-[13px] cursor-crosshair border-b transition-colors ${
-                      fila % 2 === 1 ? "border-linea" : "border-transparent"
+                      celda ? "border-transparent" : fila % 2 === 1 ? "border-linea" : "border-transparent"
                     } ${celda ? COLOR[celda] : "bg-panel-2 hover:bg-linea"}`}
                   />
                 ))}

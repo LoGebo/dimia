@@ -10,6 +10,7 @@ const estado = {
   latencias: [],
   codigosVistos: new Set(),
   medidor: null,
+  livekit: null,
 };
 
 const RECONOCEDOR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -70,12 +71,16 @@ function elegir(negocio, boton) {
   nodo("lat-mediana").textContent = "—";
   nodo("lat-turnos").textContent = "0";
   nodo("micro").disabled = false;
-  nodo("micro-texto").textContent = RECONOCEDOR ? "Tomar la llamada" : "Iniciar (teclado)";
+  const hayVoz = estado.modo.voz === "livekit" || RECONOCEDOR;
+  nodo("micro-texto").textContent = hayVoz ? "Tomar la llamada" : "Iniciar (teclado)";
   nodo("entrada").disabled = false;
   nodo("enviar").disabled = false;
-  nodo("micro-pie").textContent = RECONOCEDOR
-    ? "El audio no sale de tu maquina. Habla normal, con frases cortas."
-    : "Este navegador no reconoce voz: usa el campo de texto de abajo.";
+  nodo("micro-pie").textContent =
+    estado.modo.voz === "livekit"
+      ? "Audio por WebRTC contra el worker de produccion. Habla normal."
+      : RECONOCEDOR
+        ? "El audio no sale de tu maquina. Habla normal, con frases cortas."
+        : "Este navegador no reconoce voz: usa el campo de texto de abajo.";
 
   enviar({ tipo: "iniciar", negocio: negocio.clave });
 }
@@ -97,8 +102,8 @@ function enviar(mensaje) {
 function recibir(evento) {
   switch (evento.tipo) {
     case "agente":
-      agregarTurno("agente", estado.elegido?.nombre ?? "agente", evento.texto, evento.ms);
-      decir(evento.texto);
+      agregarTurno("agente", "agente", evento.texto, evento.ms);
+      if (estado.modo.voz === "navegador") decir(evento.texto);
       break;
     case "cliente":
       agregarTurno("cliente", "prospecto", evento.texto);
@@ -127,7 +132,7 @@ function agregarTurno(clase, quien, texto, ms) {
   contenedor.querySelector(".vacio")?.remove();
   const fila = document.createElement("div");
   fila.className = `turno ${clase}`;
-  const marca = ms !== undefined && ms > 0 ? `<span class="turno-ms">${Math.round(ms)} ms</span>` : "";
+  const marca = ms !== undefined && ms >= 1 ? `<span class="turno-ms">${Math.round(ms)} ms</span>` : "";
   fila.innerHTML = `<div class="turno-quien">${quien}</div><div class="turno-texto">${escapar(texto)}${marca}</div>`;
   contenedor.append(fila);
   contenedor.scrollTop = contenedor.scrollHeight;
@@ -141,7 +146,7 @@ function agregarHerramienta(evento) {
   const caja = document.createElement("div");
   caja.className = `llamada-herramienta ${escribe ? "escritura" : ""} ${humano ? "humano" : ""}`;
   const argumentos = Object.entries(evento.argumentos)
-    .map(([clave, valor]) => `${clave}=${String(valor).slice(0, 30)}`)
+    .map(([clave, valor]) => `${clave}=${String(valor).slice(0, 46)}`)
     .join("  ");
   caja.innerHTML =
     `<div class="llamada-cabeza"><span class="llamada-nombre">${evento.nombre}()</span>` +
@@ -161,7 +166,7 @@ function registrarLatencia(ms) {
   const tope = Math.max(...estado.latencias, 1);
   nodo("barras").innerHTML = estado.latencias
     .slice(-28)
-    .map((v) => `<div class="barra" style="height:${Math.max(4, (v / tope) * 100)}%"></div>`)
+    .map((v) => `<div class="barra-latencia" style="height:${Math.max(4, (v / tope) * 100)}%"></div>`)
     .join("");
 }
 
@@ -214,8 +219,40 @@ function decir(texto) {
 
 let reconocedor = null;
 
+const CDN_LIVEKIT = "https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.esm.mjs";
+
+async function conectarLivekit() {
+  const { Room, RoomEvent } = await import(CDN_LIVEKIT);
+  const respuesta = await fetch(`/api/token/${estado.elegido.clave}`, { method: "POST" });
+  if (!respuesta.ok) throw new Error("el servidor no pudo emitir el token");
+  const { token, sala, url } = await respuesta.json();
+
+  const panel = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/panel/${sala}`);
+  panel.onmessage = (mensaje) => recibir(JSON.parse(mensaje.data));
+
+  const cuarto = new Room({ adaptiveStream: true, dynacast: true });
+  cuarto.on(RoomEvent.Disconnected, () => panel.close());
+  await cuarto.connect(url, token);
+  await cuarto.localParticipant.setMicrophoneEnabled(true);
+  estado.livekit = { cuarto, panel };
+}
+
 function alternarMicrofono() {
   if (estado.reconociendo) return detenerMicrofono();
+
+  if (estado.modo.voz === "livekit") {
+    estado.reconociendo = true;
+    nodo("micro").classList.add("activo");
+    nodo("micro-texto").textContent = "Colgar";
+    nodo("senal").className = "senal viva";
+    medirNivel();
+    conectarLivekit().catch((error) => {
+      agregarTurno("sistema", "error", `LiveKit: ${error.message}`);
+      detenerMicrofono();
+    });
+    return;
+  }
+
   if (!RECONOCEDOR) {
     nodo("entrada").focus();
     return;
@@ -241,6 +278,8 @@ function alternarMicrofono() {
 function detenerMicrofono() {
   estado.reconociendo = false;
   reconocedor?.stop();
+  estado.livekit?.cuarto.disconnect();
+  estado.livekit = null;
   estado.medidor?.detener();
   nodo("micro").classList.remove("activo");
   nodo("micro-texto").textContent = "Tomar la llamada";

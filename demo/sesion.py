@@ -11,6 +11,9 @@ import asyncpg
 
 from app import prompt as prompt_mod
 from app.config import settings
+from demo.config import ModoDemo
+from demo.falso import LLMFalso
+from demo.negocios import AgendaDemo, Negocio, reservas
 from evals.herramientas import ESQUEMAS, EjecutorHerramientas
 from evals.llm import (
     ClienteLLM,
@@ -21,10 +24,6 @@ from evals.llm import (
     TurnoResultados,
     TurnoUsuario,
 )
-
-from demo.config import ModoDemo
-from demo.falso import LLMFalso
-from demo.negocios import AgendaDemo, Negocio, reservas
 
 ENTRADA_LLAMADA = "[entra la llamada]"
 MAX_RONDAS_HERRAMIENTAS = 4
