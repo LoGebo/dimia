@@ -9,3 +9,9 @@ venv/
 .DS_Store
 supabase/.temp/
 supabase/.branches/
+node_modules/
+.next/
+.ruff_cache/
+*.egg-info/
+.dev/*
+!.dev/auth_stub.sql

@@ -96,7 +96,9 @@ async def metricas_del_tenant(
         raise ErrorApi(CodigoError.VALIDACION, "desde debe ser anterior a hasta", campo="desde")
     if (hasta - desde).days > VENTANA_MAX_DIAS:
         raise ErrorApi(
-            CodigoError.VALIDACION, f"la ventana maxima es de {VENTANA_MAX_DIAS} dias", campo="desde"
+            CodigoError.VALIDACION,
+            f"la ventana maxima es de {VENTANA_MAX_DIAS} dias",
+            campo="desde",
         )
 
     argumentos = (tenant_id, desde, hasta, tz)
