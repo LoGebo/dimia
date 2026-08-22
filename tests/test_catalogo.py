@@ -38,11 +38,37 @@ async def test_busqueda_por_frase_completa(pool, catalogo):
 
 
 @pytest.mark.asyncio
-async def test_no_devuelve_lo_que_no_existe(pool, catalogo):
+async def test_lo_que_no_existe_cae_a_respaldo_marcado(pool, catalogo):
+    """Un agente de telefono nunca debe quedarse mudo. Si nada coincide,
+    devuelve el catalogo marcado como respaldo para que ofrezca alternativas
+    sin afirmar que tiene lo que le pidieron."""
     filas = await pool.fetch(
-        "select nombre from buscar_catalogo($1,$2,null,5)", catalogo, "sushi de atun"
+        "select nombre, es_respaldo from buscar_catalogo($1,$2,null,5)",
+        catalogo, "sushi de atun",
     )
-    assert [f["nombre"] for f in filas] == []
+    assert filas
+    assert all(f["es_respaldo"] for f in filas)
+    assert "sushi" not in " ".join(f["nombre"].lower() for f in filas)
+
+
+@pytest.mark.asyncio
+async def test_pregunta_abierta_devuelve_el_menu(pool, catalogo):
+    filas = await pool.fetch(
+        "select nombre, es_respaldo from buscar_catalogo($1,$2,null,5)",
+        catalogo, "que tienes disponible",
+    )
+    assert len(filas) == 3
+    assert all(f["es_respaldo"] for f in filas)
+
+
+@pytest.mark.asyncio
+async def test_una_coincidencia_real_no_se_marca_respaldo(pool, catalogo):
+    filas = await pool.fetch(
+        "select nombre, es_respaldo from buscar_catalogo($1,$2,null,3)",
+        catalogo, "tacos de pastol",
+    )
+    assert filas[0]["nombre"] == "Tacos de pastor"
+    assert not filas[0]["es_respaldo"]
 
 
 @pytest.mark.asyncio

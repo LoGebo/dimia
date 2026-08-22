@@ -129,3 +129,19 @@ input[type="date"] {
     transform: translateY(2px);
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .late {
+    animation: late 1.6s ease-out infinite;
+  }
+}
+
+@keyframes late {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--serie-2) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}

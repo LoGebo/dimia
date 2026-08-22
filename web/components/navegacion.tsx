@@ -2,23 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { secciones } from "@/lib/giro";
+import type { Herramienta } from "@/lib/tipos";
 
-const SECCIONES = [
-  { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño" },
-  { href: "/agenda", nombre: "Agenda", detalle: "Reservas del día" },
-  { href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres" },
-  { href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración" },
-  { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces" },
-  { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta" },
-  { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia" },
-  { href: "/probar", nombre: "Probar", detalle: "Háblale en vivo" },
-] as const;
-
-export function Navegacion() {
+export function Navegacion({ herramientas }: { herramientas: Herramienta[] }) {
   const ruta = usePathname();
   return (
     <nav className="flex flex-col gap-0.5 px-2">
-      {SECCIONES.map((s) => {
+      {secciones(herramientas).map((s) => {
         const activo = ruta === s.href || ruta.startsWith(`${s.href}/`);
         return (
           <Link

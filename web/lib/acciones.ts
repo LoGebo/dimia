@@ -5,7 +5,16 @@ import { redirect } from "next/navigation";
 import { conSesion, elevado } from "@/lib/db";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
 import { contexto, datos, elegirNegocio } from "@/lib/sesion";
-import type { ProveedorTts, Regla, ResultadoCatalogo, TtsAjustes, Vertical } from "@/lib/tipos";
+import { siguientePaso } from "@/lib/giro";
+import type {
+  EstadoPedido,
+  Herramienta,
+  ProveedorTts,
+  Regla,
+  ResultadoCatalogo,
+  TtsAjustes,
+  Vertical,
+} from "@/lib/tipos";
 
 export type Estado = { error?: string; ok?: string };
 
@@ -20,6 +29,8 @@ function refrescarPanel(): void {
   for (const ruta of [
     "/resumen",
     "/agenda",
+    "/pedidos",
+    "/recados",
     "/horarios",
     "/servicios",
     "/catalogo",
@@ -71,7 +82,13 @@ export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado
   if (!nombre) return { error: "Ponle nombre al negocio." };
   const vertical = (texto(fd, "vertical") || "generico") as Vertical;
 
-  const negocioId = await elevado(async (q) => {
+  const creado = await elevado(async (q) => {
+    const plantillas = await q<{ herramientas: Herramienta[] }>(
+      "select herramientas from vertical_template where clave = $1",
+      [vertical],
+    );
+    const herramientas = plantillas[0]?.herramientas ?? ["agendar", "recado"];
+    const rapido = herramientas.includes("pedido") || vertical === "restaurante";
     const filas = await q<{ id: string }>(
       `insert into tenant (nombre, vertical, zona_horaria, telefono_escalamiento,
                            slot_granularidad_min, anticipacion_min)
@@ -81,17 +98,17 @@ export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado
         vertical,
         texto(fd, "zona_horaria") || "America/Mexico_City",
         opcional(fd, "telefono_escalamiento"),
-        vertical === "restaurante" ? 15 : 30,
-        vertical === "restaurante" ? 60 : 120,
+        rapido ? 15 : 30,
+        rapido ? 60 : 120,
       ],
     );
     const id = filas[0]!.id;
     await q("insert into tenant_member (tenant_id, user_id, rol) values ($1, $2, 'owner')", [id, usuario.id]);
-    return id;
+    return { id, herramientas };
   });
 
-  await elegirNegocio(negocioId);
-  redirect("/alta/recursos");
+  await elegirNegocio(creado.id);
+  redirect(siguientePaso(creado.herramientas, "/alta"));
 }
 
 function ajustesTts(fd: FormData): TtsAjustes {
@@ -511,4 +528,26 @@ export async function estadoPrueba(minutos: number): Promise<EstadoPrueba> {
       llamadas,
     };
   });
+}
+
+export async function cambiarEstadoPedido(fd: FormData): Promise<void> {
+  const estado = texto(fd, "estado") as EstadoPedido;
+  await datos((q, negocioId) =>
+    q("update pedido set estado = $3::pedido_estado where id = $2 and tenant_id = $1", [
+      negocioId,
+      texto(fd, "id"),
+      estado,
+    ]),
+  );
+  refrescarPanel();
+}
+
+export async function alternarRecado(fd: FormData): Promise<void> {
+  await datos((q, negocioId) =>
+    q("update lead set atendido = not atendido where id = $2 and tenant_id = $1", [
+      negocioId,
+      texto(fd, "id"),
+    ]),
+  );
+  refrescarPanel();
 }

@@ -3,7 +3,9 @@ import type {
   CatalogoItem,
   Faq,
   Negocio,
+  Pedido,
   PlantillaVertical,
+  Recado,
   Recurso,
   Regla,
   Reserva,
@@ -193,4 +195,109 @@ export function llamadasPorHora(dias: number): Promise<LlamadaPorHora[]> {
       [id, dias],
     ),
   );
+}
+
+const SELECT_PEDIDO = `
+  select p.id, p.codigo, p.cliente_nombre, p.telefono, p.tipo, p.direccion,
+         p.notas, p.estado, p.creado, p.listo_para,
+         coalesce(r->>'total', '0') as total,
+         coalesce(r->'items', '[]'::jsonb) as items
+    from pedido p
+    join tenant t on t.id = p.tenant_id
+    cross join lateral public.pedido_resumen(p.tenant_id, p.id) as r`;
+
+export function pedidosDelDia(dia: string): Promise<Pedido[]> {
+  return datos((q, id) =>
+    q<Pedido>(
+      `${SELECT_PEDIDO}
+        where p.tenant_id = $1
+          and (p.creado at time zone t.zona_horaria)::date = $2::date
+        order by p.creado desc`,
+      [id, dia],
+    ),
+  );
+}
+
+export type ResumenPedidos = {
+  total: number;
+  abiertos: number;
+  confirmados: number;
+  entregados: number;
+  cancelados: number;
+  vendido: number;
+  ticket: number | null;
+};
+
+export function resumenPedidos(dia: string): Promise<ResumenPedidos> {
+  return datos(async (q, id) => {
+    const filas = await q<ResumenPedidos>(
+      `with del_dia as (
+         select p.id, p.estado, public.pedido_total(p.id) as total
+           from pedido p
+           join tenant t on t.id = p.tenant_id
+          where p.tenant_id = $1
+            and (p.creado at time zone t.zona_horaria)::date = $2::date
+       ),
+       vendidos as (select * from del_dia where estado in ('confirmado','entregado'))
+       select (select count(*) from del_dia)::int as total,
+              (select count(*) from del_dia where estado = 'abierto')::int as abiertos,
+              (select count(*) from del_dia where estado = 'confirmado')::int as confirmados,
+              (select count(*) from del_dia where estado = 'entregado')::int as entregados,
+              (select count(*) from del_dia where estado = 'cancelado')::int as cancelados,
+              (select coalesce(sum(total), 0) from vendidos)::float as vendido,
+              (select avg(total) from vendidos)::float as ticket`,
+      [id, dia],
+    );
+    return (
+      filas[0] ?? {
+        total: 0,
+        abiertos: 0,
+        confirmados: 0,
+        entregados: 0,
+        cancelados: 0,
+        vendido: 0,
+        ticket: null,
+      }
+    );
+  });
+}
+
+export function recados(soloPendientes: boolean): Promise<Recado[]> {
+  return datos((q, id) =>
+    q<Recado>(
+      `select id, nombre, telefono, asunto, detalle, campos, atendido, creado
+         from lead
+        where tenant_id = $1 and ($2::boolean is false or not atendido)
+        order by atendido, creado desc
+        limit 200`,
+      [id, soloPendientes],
+    ),
+  );
+}
+
+export function recadosPendientes(): Promise<number> {
+  return datos(async (q, id) => {
+    const filas = await q<{ total: number }>(
+      "select count(*)::int as total from lead where tenant_id = $1 and not atendido",
+      [id],
+    );
+    return filas[0]?.total ?? 0;
+  });
+}
+
+export type ResumenAgendaHoy = { confirmadas: number; canceladas: number; personas: number };
+
+export function resumenAgendaHoy(dia: string): Promise<ResumenAgendaHoy> {
+  return datos(async (q, id) => {
+    const filas = await q<ResumenAgendaHoy>(
+      `select count(*) filter (where b.estado = 'confirmada')::int as confirmadas,
+              count(*) filter (where b.estado = 'cancelada')::int as canceladas,
+              coalesce(sum(b.personas) filter (where b.estado = 'confirmada'), 0)::int as personas
+         from booking b
+         join tenant t on t.id = b.tenant_id
+        where b.tenant_id = $1 and (b.inicio at time zone t.zona_horaria)::date = $2::date`,
+      [id, dia],
+    );
+    return filas[0] ?? { confirmadas: 0, canceladas: 0, personas: 0 };
+  });
 }

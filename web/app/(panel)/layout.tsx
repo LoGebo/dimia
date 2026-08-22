@@ -9,7 +9,7 @@ import { Insignia } from "@/components/ui/primitivos";
 import { telefono } from "@/lib/formato";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  const { membresias, negocioId, usuario, rol } = await contexto();
+  const { membresias, negocioId, usuario, rol, giro } = await contexto();
   const actual = await negocio();
 
   return (
@@ -28,7 +28,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </div>
         </div>
         <div className="flex-1 overflow-y-auto py-3">
-          <Navegacion />
+          <Navegacion herramientas={giro.herramientas} />
         </div>
         <div className="border-t border-linea px-3 py-3">
           <div className="mb-2 flex items-center justify-between gap-2">

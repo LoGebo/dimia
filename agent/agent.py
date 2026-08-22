@@ -239,6 +239,8 @@ class Recepcionista(Agent):
         items = await agenda.buscar_catalogo(
             self.tenant.id, busqueda, tipo or None, limite=6
         )
+        generico = bool(items) and items[0].get("es_respaldo", False)
+
         if not items:
             return (
                 "No hay nada que coincida. Dile que no tienes ese dato a la mano "
@@ -253,6 +255,13 @@ class Recepcionista(Agent):
             recurso = f", recurso_id={i['resource_id']}" if i.get("resource_id") else ""
             partes.append(
                 f"{i['nombre']}{precio}{desc}{extra} (catalogo_id={i['id']}{recurso})"
+            )
+        if generico:
+            return (
+                "No hay nada que coincida exactamente con eso, pero esto es lo que "
+                "si hay: " + " | ".join(partes)
+                + ". Dile que no tienes justo eso y ofrecele dos o tres de estas, "
+                "hablando natural. No leas los ids ni los corchetes."
             )
         return (
             "Encontrado: " + " | ".join(partes)

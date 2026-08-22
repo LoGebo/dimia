@@ -1,6 +1,9 @@
 export type Vertical = string;
+export type Herramienta = "agendar" | "pedido" | "recado";
 export type TipoRegla = "disponible" | "bloqueo" | "festivo";
 export type EstadoReserva = "confirmada" | "cancelada" | "no_asistio" | "completada";
+export type EstadoPedido = "abierto" | "confirmado" | "cancelado" | "entregado";
+export type TipoPedido = "recoger" | "domicilio" | "local";
 
 export type Negocio = {
   id: string;
@@ -71,12 +74,48 @@ export type Faq = {
   prioridad: number;
 };
 
+export type PedidoItem = {
+  nombre: string;
+  cantidad: number;
+  precio_unitario: string;
+  subtotal: string;
+  notas: string | null;
+};
+
+export type Pedido = {
+  id: string;
+  codigo: string;
+  cliente_nombre: string | null;
+  telefono: string;
+  tipo: TipoPedido;
+  direccion: string | null;
+  notas: string | null;
+  estado: EstadoPedido;
+  creado: string;
+  listo_para: string | null;
+  total: string;
+  items: PedidoItem[];
+};
+
+export type Recado = {
+  id: string;
+  nombre: string | null;
+  telefono: string;
+  asunto: string;
+  detalle: string | null;
+  campos: Record<string, unknown>;
+  atendido: boolean;
+  creado: string;
+};
+
 export type Rol = "owner" | "staff";
 
 export type Membresia = {
   tenant_id: string;
   nombre: string;
   vertical: Vertical;
+  vertical_nombre: string;
+  herramientas: Herramienta[];
   rol: Rol;
 };
 
@@ -94,7 +133,7 @@ export type PlantillaVertical = {
   nombre: string;
   saludo: string;
   instrucciones: string;
-  herramientas: string[];
+  herramientas: Herramienta[];
 };
 
 export type CatalogoItem = {
@@ -145,6 +184,20 @@ export const ESQUEMAS_ATRIBUTOS: Record<string, CampoAtributo[]> = {
     { clave: "alcohol", etiqueta: "Con alcohol", tipo: "booleano" },
     { clave: "sin_azucar", etiqueta: "Sin azúcar", tipo: "booleano" },
   ],
+  taco: [
+    { clave: "picante", etiqueta: "Picante", tipo: "opcion", opciones: ["no", "bajo", "medio", "alto"] },
+    { clave: "vegetariano", etiqueta: "Vegetariano", tipo: "booleano" },
+  ],
+  especialidad: [
+    {
+      clave: "alergenos",
+      etiqueta: "Alérgenos",
+      tipo: "multiple",
+      opciones: ["gluten", "lacteos", "huevo", "pescado", "mariscos", "frutos secos", "soya", "ajonjoli"],
+    },
+    { clave: "picante", etiqueta: "Picante", tipo: "opcion", opciones: ["no", "bajo", "medio", "alto"] },
+    { clave: "vegetariano", etiqueta: "Vegetariano", tipo: "booleano" },
+  ],
   profesional: [
     { clave: "especialidad", etiqueta: "Especialidad", tipo: "texto" },
     { clave: "cedula", etiqueta: "Cédula profesional", tipo: "texto" },
@@ -172,6 +225,7 @@ export const ESQUEMAS_ATRIBUTOS: Record<string, CampoAtributo[]> = {
 
 export const TIPOS_POR_VERTICAL: Record<string, string[]> = {
   restaurante: ["platillo", "bebida"],
+  comida: ["taco", "especialidad", "bebida", "extra", "postre"],
   clinica: ["profesional", "paquete"],
   salon: ["profesional", "paquete"],
   taller: ["refaccion", "paquete"],
@@ -181,6 +235,10 @@ export const TIPOS_POR_VERTICAL: Record<string, string[]> = {
 
 export const ETIQUETAS_TIPO: Record<string, { singular: string; plural: string }> = {
   platillo: { singular: "Platillo", plural: "Platillos" },
+  taco: { singular: "Taco", plural: "Tacos" },
+  especialidad: { singular: "Especialidad", plural: "Especialidades" },
+  extra: { singular: "Extra", plural: "Extras" },
+  postre: { singular: "Postre", plural: "Postres" },
   bebida: { singular: "Bebida", plural: "Bebidas" },
   profesional: { singular: "Profesional", plural: "Profesionales" },
   propiedad: { singular: "Propiedad", plural: "Propiedades" },
@@ -197,6 +255,7 @@ export function etiquetaTipo(tipo: string, plural = false): string {
 export const ETIQUETAS_RECURSO: Record<string, { recurso: string; ejemplos: string }> = {
   clinica: { recurso: "Doctor o consultorio", ejemplos: "Dra. Ana Ruiz, Dr. Luis Méndez" },
   restaurante: { recurso: "Mesa", ejemplos: "Mesa 1, Terraza 3" },
+  comida: { recurso: "Estación de cocina", ejemplos: "Plancha, Trompo" },
   salon: { recurso: "Estación o estilista", ejemplos: "Silla 1, Karla" },
   taller: { recurso: "Bahía o técnico", ejemplos: "Bahía 1, Rampa 2" },
   inmobiliaria: { recurso: "Asesor", ejemplos: "Asesor Norte, Asesor Centro" },
