@@ -1,0 +1,13 @@
+# --- agente de voz ---
+livekit-agents[deepgram,cartesia,anthropic,silero,turn-detector]~=1.6
+livekit-plugins-noise-cancellation~=0.2
+
+# --- datos ---
+asyncpg==0.30.0
+pydantic==2.11.9
+pydantic-settings==2.11.0
+python-dotenv==1.1.1
+
+# --- pruebas ---
+pytest==8.4.2
+pytest-asyncio==1.2.0

@@ -1,0 +1,19 @@
+# Solo para desarrollo local. En produccion: Supabase gestionado + este
+# contenedor del agente en un VPS chico.
+services:
+  agente:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    command: python -m agent.agent start
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports: ["5678:5678"]
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: America/Mexico_City
+    volumes: [n8ndata:/home/node/.n8n]
+
+volumes:
+  n8ndata:
