@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import random
 import time
 import uuid
 from datetime import date, datetime
@@ -26,13 +25,6 @@ from app.supabase_client import Tenant, agenda
 load_dotenv()
 log = logging.getLogger("agente")
 cfg = settings()
-
-RELLENOS = (
-    "dejame checar tantito",
-    "va, permiteme",
-    "ahorita reviso",
-    "sale, dejame ver",
-)
 
 
 class Recepcionista(Agent):
@@ -64,14 +56,6 @@ class Recepcionista(Agent):
         self.motivo_escalamiento: str | None = None
         self._t0 = time.monotonic()
 
-
-    async def _relleno(self, ctx: RunContext) -> None:
-        """Habla mientras trabajamos. add_to_chat_ctx=False: es ruido
-        conversacional, no debe contaminar el historial del LLM."""
-        try:
-            await ctx.session.say(random.choice(RELLENOS), add_to_chat_ctx=False)
-        except Exception:
-            pass
 
     def _servicio(self, servicio_id: str) -> dict | None:
         return self.servicios.get(str(servicio_id).strip())
@@ -107,7 +91,6 @@ class Recepcionista(Agent):
 
         desde, hasta = franja_a_horas(franja)
 
-        await self._relleno(ctx)
         slots = await agenda.slots_libres(
             self.tenant.id, uuid.UUID(servicio_id), dia, personas,
             limite=8, desde_hora=desde, hasta_hora=hasta,
@@ -169,7 +152,6 @@ class Recepcionista(Agent):
         if servicio is None:
             return "Servicio invalido."
 
-        await self._relleno(ctx)
         try:
             res = await agenda.reservar(
                 tenant_id=self.tenant.id,
@@ -406,7 +388,6 @@ class Recepcionista(Agent):
         if self.pedido_id is None:
             return "No hay pedido que cerrar."
 
-        await self._relleno(ctx)
         res = await agenda.pedido_confirmar(
             self.tenant.id, self.pedido_id, nombre_cliente,
             tipo if tipo in ("recoger", "domicilio", "local") else "recoger",
@@ -625,9 +606,13 @@ async def entrypoint(ctx: JobContext) -> None:
         llm=construir_llm(),
         tts=construir_tts(tenant),
         turn_detection=MultilingualModel(),
-        min_endpointing_delay=0.4,
-        max_endpointing_delay=4.0,
+        preemptive_generation=True,
+        min_endpointing_delay=0.25,
+        max_endpointing_delay=3.0,
+        min_consecutive_speech_delay=0.05,
         allow_interruptions=True,
+        resume_false_interruption=True,
+        false_interruption_timeout=1.0,
     )
 
     await session.start(
