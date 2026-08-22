@@ -1,0 +1,107 @@
+- generic [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - generic [ref=f1e5]: Recepcion automatica
+      - generic [ref=f1e6]: demo en vivo sobre Postgres
+    - generic [ref=f1e7]:
+      - generic [ref=f1e8]: Modo sin llaves
+      - generic [ref=f1e9]: cerebro determinista local · voz del navegador (Web Speech) · Postgres real · falta ANTHROPIC_API_KEY, LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, DEEPGRAM_API_KEY, CARTESIA_API_KEY
+  - main [ref=f1e10]:
+    - generic [ref=f1e11]:
+      - generic [ref=f1e12]: 1 · Elige el negocio
+      - generic [ref=f1e13]:
+        - button "Consultorio Citas por doctor, un servicio solo con el ortodoncista" [ref=f1e14] [cursor=pointer]:
+          - strong [ref=f1e15]: Consultorio
+          - generic [ref=f1e16]: Citas por doctor, un servicio solo con el ortodoncista
+        - button "Restaurante Mesas por capacidad, nunca quema la mesa grande" [ref=f1e17] [cursor=pointer]:
+          - strong [ref=f1e18]: Restaurante
+          - generic [ref=f1e19]: Mesas por capacidad, nunca quema la mesa grande
+        - button "Salon Servicios de duracion muy distinta, tres estilistas" [ref=f1e20] [cursor=pointer]:
+          - strong [ref=f1e21]: Salon
+          - generic [ref=f1e22]: Servicios de duracion muy distinta, tres estilistas
+        - button "Taller Rampas y bahia de diagnostico, comida bloqueada" [ref=f1e23] [cursor=pointer]:
+          - strong [ref=f1e24]: Taller
+          - generic [ref=f1e25]: Rampas y bahia de diagnostico, comida bloqueada
+        - button "Generico Cualquier negocio de citas, sin nada hardcodeado" [ref=f1e26] [cursor=pointer]:
+          - strong [ref=f1e27]: Generico
+          - generic [ref=f1e28]: Cualquier negocio de citas, sin nada hardcodeado
+      - generic [ref=f1e66]:
+        - generic [ref=f1e67]: Cocina de Humo
+        - list [ref=f1e68]:
+          - listitem [ref=f1e69]: Reservacion · 90 min · sin precio
+        - button "ver el prompt que se le arma" [ref=f1e70] [cursor=pointer]
+      - generic [ref=f1e29]: 2 · Habla con el
+      - generic [ref=f1e30]:
+        - button "Tomar la llamada" [ref=f1e71] [cursor=pointer]
+        - generic [ref=f1e34]: El audio no sale de tu maquina. Habla normal, con frases cortas.
+      - generic [ref=f1e35]: Transcripcion
+      - generic [ref=f1e36]:
+        - generic [ref=f1e72]:
+          - generic [ref=f1e73]: Cocina de Humo
+          - generic [ref=f1e74]: Cocina de Humo, buenas. ¿Le ayudo con una reservacion?
+        - generic [ref=f1e90]:
+          - generic [ref=f1e91]: prospecto
+          - generic [ref=f1e92]: Hola, quiero una mesa para seis personas manana
+        - generic [ref=f1e93]:
+          - generic [ref=f1e94]: Cocina de Humo
+          - generic [ref=f1e95]: Dejame checar tantito.1 ms
+        - generic [ref=f1e96]:
+          - generic [ref=f1e97]: Cocina de Humo
+          - generic [ref=f1e98]: Tengo a las 1 de la tarde o a las 1 y media de la tarde. ¿Cual te late?0 ms
+        - generic [ref=f1e105]:
+          - generic [ref=f1e106]: prospecto
+          - generic [ref=f1e107]: La segunda me late
+        - generic [ref=f1e108]:
+          - generic [ref=f1e109]: Cocina de Humo
+          - generic [ref=f1e110]: Perfecto. ¿A nombre de quien lo dejo?0 ms
+        - generic [ref=f1e113]:
+          - generic [ref=f1e114]: prospecto
+          - generic [ref=f1e115]: A nombre de Ricardo Salas
+        - generic [ref=f1e116]:
+          - generic [ref=f1e117]: Cocina de Humo
+          - generic [ref=f1e118]: "Entonces te confirmo: reservacion a las 1 y media de la tarde, a nombre de Ricardo Salas. ¿Lo aparto?0 ms"
+      - generic [ref=f1e38]:
+        - textbox "…o escribelo aqui si el microfono no jala" [active] [ref=f1e39]
+        - button "Enviar" [ref=f1e40] [cursor=pointer]
+    - complementary [ref=f1e41]:
+      - generic [ref=f1e42]:
+        - generic [ref=f1e43]: Herramientas llamadas
+        - generic [ref=f1e99]:
+          - generic [ref=f1e100]:
+            - generic [ref=f1e101]: consultar_disponibilidad()
+            - generic [ref=f1e102]: 8.6 ms
+          - generic [ref=f1e103]: servicio_id=1aee7252-42aa-4308-8481-aa32fd fecha=2026-08-23 personas=6
+      - generic [ref=f1e46]:
+        - generic [ref=f1e47]: Latencia por turno
+        - generic [ref=f1e48]:
+          - generic [ref=f1e49]:
+            - generic [ref=f1e50]: 0 ms
+            - generic [ref=f1e51]: ultimo turno
+          - generic [ref=f1e52]:
+            - generic [ref=f1e53]: 0 ms
+            - generic [ref=f1e54]: mediana
+          - generic [ref=f1e55]:
+            - generic [ref=f1e56]: "3"
+            - generic [ref=f1e57]: turnos
+      - generic [ref=f1e59]:
+        - generic [ref=f1e60]:
+          - generic [ref=f1e61]:
+            - text: Agenda del negocio
+            - emphasis [ref=f1e62]: postgres
+          - button "vaciar" [ref=f1e63] [cursor=pointer]
+        - generic [ref=f1e64]:
+          - generic [ref=f1e75]:
+            - generic [ref=f1e76]: TU3F
+            - generic [ref=f1e77]:
+              - generic [ref=f1e78]: dom 23, 1:30 p.m.
+              - generic [ref=f1e79]: Mariana Robles · Reservacion · Mesa 3
+          - generic [ref=f1e80]:
+            - generic [ref=f1e81]: WCKH
+            - generic [ref=f1e82]:
+              - generic [ref=f1e83]: dom 23, 1:30 p.m.
+              - generic [ref=f1e84]: Mariana Robles · Reservacion · Mesa 4
+          - generic [ref=f1e85]:
+            - generic [ref=f1e86]: CXFP
+            - generic [ref=f1e87]:
+              - generic [ref=f1e88]: dom 23, 1:30 p.m.
+              - generic [ref=f1e89]: Paula Cervantes · Reservacion · Mesa 5

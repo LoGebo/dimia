@@ -170,7 +170,7 @@ class Herramientas:
                 titulo=reloj(slot.inicio, self.tenant.tz),
                 descripcion=f"{fecha_larga(slot.inicio, self.tenant.tz)} · {slot.resource_nombre}",
             )
-            for clave, slot in zip(claves, elegidos)
+            for clave, slot in zip(claves, elegidos, strict=False)
         ]
         resumen = ", ".join(horario.etiqueta for horario in horarios)
         return (

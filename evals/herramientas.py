@@ -6,7 +6,6 @@ from datetime import date, datetime
 from typing import Any
 
 from app.supabase_client import Agenda, Tenant
-
 from evals.llm import LlamadaHerramienta
 
 ESQUEMAS: tuple[dict[str, Any], ...] = (

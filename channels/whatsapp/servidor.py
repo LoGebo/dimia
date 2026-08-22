@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any
 
 from anthropic import AsyncAnthropic
 from fastapi import BackgroundTasks, FastAPI, Request, Response

@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 from app.config import settings
-
 from evals import baseline as baseline_mod
 from evals.entorno import crear_pool
 from evals.escenarios import RUTA_ESCENARIOS, cargar

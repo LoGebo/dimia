@@ -6,7 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from app.supabase_client import Agenda, Tenant, agenda as agenda_global
+from app.supabase_client import Agenda, Tenant
+from app.supabase_client import agenda as agenda_global
 from channels.whatsapp import plantilla
 from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings

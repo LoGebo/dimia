@@ -17,8 +17,8 @@ from evals.escenarios import Escenario, Ruido, cargar, desde_dict, resolver_dia
 from evals.jueces import JUECES
 from evals.llm import (
     Elemento,
-    LLMGuionado,
     LlamadaHerramienta,
+    LLMGuionado,
     RespuestaLLM,
     TurnoResultados,
     guion_de_texto,
@@ -322,7 +322,7 @@ async def test_ruido_es_determinista_y_llega_al_agente(pool_evals: asyncpg.Pool)
         fabrica_cliente=lambda e, _c: guion_de_texto(e.guion),
     )
     caso = await arnes.correr_uno(escenario)
-    dicho = [t for t in caso.resultado.transcripcion if t["rol"] == "cliente"][0]
+    dicho = next(t for t in caso.resultado.transcripcion if t["rol"] == "cliente")
     assert dicho["texto"] == "Quiero una meza para cuadro"
     assert dicho["original"] == "Quiero una mesa para cuatro"
 

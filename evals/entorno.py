@@ -11,7 +11,6 @@ import asyncpg
 
 from app.config import settings
 from app.supabase_client import Agenda, Tenant
-
 from evals.escenarios import Escenario, resolver_dia
 
 TENANTS_SEMILLA = {

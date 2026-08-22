@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from app import prompt as prompt_mod
-
 from evals.entorno import Contexto
 from evals.escenarios import Escenario, rellenar
 from evals.herramientas import ESQUEMAS, EjecutorHerramientas

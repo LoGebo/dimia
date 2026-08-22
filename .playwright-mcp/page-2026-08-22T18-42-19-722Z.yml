@@ -1,0 +1,59 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - generic [ref=f1e5]: Recepcion automatica
+      - generic [ref=f1e6]: demo en vivo sobre Postgres
+    - generic [ref=f1e7]:
+      - generic [ref=f1e8]: Modo sin llaves
+      - generic [ref=f1e9]: cerebro determinista local · voz del navegador (Web Speech) · Postgres real · falta ANTHROPIC_API_KEY, LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET, DEEPGRAM_API_KEY, CARTESIA_API_KEY
+  - main [ref=f1e10]:
+    - generic [ref=f1e11]:
+      - generic [ref=f1e12]: 1 · Elige el negocio
+      - generic [ref=f1e13]:
+        - button "Consultorio Citas por doctor, un servicio solo con el ortodoncista" [ref=f1e14] [cursor=pointer]:
+          - strong [ref=f1e15]: Consultorio
+          - generic [ref=f1e16]: Citas por doctor, un servicio solo con el ortodoncista
+        - button "Restaurante Mesas por capacidad, nunca quema la mesa grande" [ref=f1e17] [cursor=pointer]:
+          - strong [ref=f1e18]: Restaurante
+          - generic [ref=f1e19]: Mesas por capacidad, nunca quema la mesa grande
+        - button "Salon Servicios de duracion muy distinta, tres estilistas" [ref=f1e20] [cursor=pointer]:
+          - strong [ref=f1e21]: Salon
+          - generic [ref=f1e22]: Servicios de duracion muy distinta, tres estilistas
+        - button "Taller Rampas y bahia de diagnostico, comida bloqueada" [ref=f1e23] [cursor=pointer]:
+          - strong [ref=f1e24]: Taller
+          - generic [ref=f1e25]: Rampas y bahia de diagnostico, comida bloqueada
+        - button "Generico Cualquier negocio de citas, sin nada hardcodeado" [ref=f1e26] [cursor=pointer]:
+          - strong [ref=f1e27]: Generico
+          - generic [ref=f1e28]: Cualquier negocio de citas, sin nada hardcodeado
+      - generic [ref=f1e29]: 2 · Habla con el
+      - generic [ref=f1e30]:
+        - button "Elige un negocio" [disabled] [ref=f1e31]
+        - generic [ref=f1e34]: El audio no sale de tu maquina.
+      - generic [ref=f1e35]: Transcripcion
+      - paragraph [ref=f1e37]: La conversacion aparece aqui, turno por turno.
+      - generic [ref=f1e38]:
+        - textbox "…o escribelo aqui si el microfono no jala" [disabled] [ref=f1e39]
+        - button "Enviar" [disabled] [ref=f1e40]
+    - complementary [ref=f1e41]:
+      - generic [ref=f1e42]:
+        - generic [ref=f1e43]: Herramientas llamadas
+        - paragraph [ref=f1e45]: Cada vez que el agente consulta o escribe, se registra aqui.
+      - generic [ref=f1e46]:
+        - generic [ref=f1e47]: Latencia por turno
+        - generic [ref=f1e48]:
+          - generic [ref=f1e49]:
+            - generic [ref=f1e50]: —
+            - generic [ref=f1e51]: ultimo turno
+          - generic [ref=f1e52]:
+            - generic [ref=f1e53]: —
+            - generic [ref=f1e54]: mediana
+          - generic [ref=f1e55]:
+            - generic [ref=f1e56]: "0"
+            - generic [ref=f1e57]: turnos
+      - generic [ref=f1e59]:
+        - generic [ref=f1e60]:
+          - generic [ref=f1e61]:
+            - text: Agenda del negocio
+            - emphasis [ref=f1e62]: postgres
+          - button "vaciar" [ref=f1e63] [cursor=pointer]
+        - paragraph [ref=f1e65]: Las reservas confirmadas se leen de la base, no de memoria.
