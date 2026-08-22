@@ -561,6 +561,8 @@ def construir_tts(tenant: Tenant):
         model=ajustes.get("modelo", cfg.elevenlabs_model),
         voice_id=tenant.voz_id or cfg.elevenlabs_voice_id,
         language="es",
+        streaming_latency=ajustes.get("latencia", 3),
+        chunk_length_schedule=ajustes.get("fragmentos", [80, 120, 200, 260]),
         voice_settings=elevenlabs.VoiceSettings(
             stability=ajustes.get("estabilidad", 0.45),
             similarity_boost=ajustes.get("similitud", 0.8),
@@ -662,4 +664,10 @@ async def entrypoint(ctx: JobContext) -> None:
 
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))
+    cli.run_app(
+        WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            prewarm_fnc=prewarm,
+            num_idle_processes=cfg.procesos_precalentados,
+        )
+    )

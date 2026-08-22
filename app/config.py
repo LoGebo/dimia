@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     stt_model: str = "nova-3"
     stt_language: str = "es-MX"
     deepgram_voz: str = "aura-2-javier-es"
+    procesos_precalentados: int = 2
     cartesia_api_key: str = ""
     elevenlabs_api_key: str = ""
     anthropic_api_key: str = ""
