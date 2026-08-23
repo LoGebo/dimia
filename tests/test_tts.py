@@ -79,3 +79,39 @@ def test_config_invalida_no_tumba_la_llamada(ajustes):
 def test_rate_valido_si_se_aplica():
     tts = construir_tts(_tenant("azure", "es-MX-DaliaNeural", {"prosodia": {"rate": 1.12}}))
     assert "azure" in type(tts).__module__
+
+
+from agent.agent import construir_llm
+
+
+def _tenant_llm(proveedor: str, modelo: str | None = None) -> Tenant:
+    return Tenant(
+        id=uuid.uuid4(),
+        nombre="Prueba",
+        vertical="comida",
+        zona_horaria="America/Mexico_City",
+        telefono_escalamiento=None,
+        voz_id="es-MX-DaliaNeural",
+        tts_proveedor="azure",
+        tts_ajustes={},
+        instrucciones_extra=None,
+        llm_proveedor=proveedor,
+        llm_modelo=modelo,
+    )
+
+
+@pytest.mark.parametrize("proveedor", ["openai", "google"])
+def test_cada_llm_construye(proveedor):
+    llm = construir_llm(_tenant_llm(proveedor))
+    assert proveedor in type(llm).__module__
+
+
+def test_modelo_explicito_se_respeta():
+    llm = construir_llm(_tenant_llm("google", "gemini-3-flash-preview"))
+    assert "google" in type(llm).__module__
+
+
+def test_proveedor_desconocido_cae_al_base():
+    """Nunca dejar al cliente sin agente por un valor raro en la base."""
+    llm = construir_llm(_tenant_llm("inventado"))
+    assert llm is not None

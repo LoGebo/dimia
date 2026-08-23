@@ -1,6 +1,9 @@
 # --- agente de voz ---
 livekit-agents[deepgram,cartesia,elevenlabs,openai,anthropic,silero,turn-detector]~=1.6
 livekit-plugins-noise-cancellation~=0.2
+livekit-plugins-azure~=1.6
+livekit-plugins-google~=1.6
+livekit-plugins-anthropic~=1.6
 
 # --- llm y canales ---
 anthropic==1.0.0

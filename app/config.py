@@ -26,12 +26,18 @@ class Settings(BaseSettings):
     azure_speech_region: str = "eastus"
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    google_api_key: str = ""
 
     cartesia_voice_id: str = "5c5ad5e7-1020-476b-8b91-fdcbe9cc313c"
     elevenlabs_voice_id: str = "MOpELGWw8bqcERsmVMzW"
     elevenlabs_model: str = "eleven_flash_v2_5"
     llm_proveedor: str = "openai"
     llm_model: str = "gpt-4.1-mini"
+    modelo_por_proveedor: dict[str, str] = {
+        "openai": "gpt-4.1-mini",
+        "anthropic": "claude-haiku-4-5-20251001",
+        "google": "gemini-2.5-flash",
+    }
 
     n8n_webhook: str | None = None
     log_level: str = "INFO"

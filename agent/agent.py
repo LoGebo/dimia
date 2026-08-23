@@ -534,12 +534,31 @@ def _tenant_de_metadatos(metadata: str | None, nombre_sala: str) -> uuid.UUID | 
     return None
 
 
-def construir_llm():
-    if cfg.llm_proveedor == "anthropic":
+def construir_llm(tenant: Tenant | None = None):
+    try:
+        return _construir_llm(tenant)
+    except Exception:
+        log.exception("no se pudo construir el LLM del negocio; usando el base")
+        return openai.LLM(model=cfg.llm_model, temperature=0.4)
+
+
+def _construir_llm(tenant: Tenant | None = None):
+    proveedor = tenant.llm_proveedor if tenant else cfg.llm_proveedor
+    modelo = (tenant.llm_modelo if tenant else None) or cfg.modelo_por_proveedor.get(
+        proveedor, cfg.llm_model
+    )
+
+    if proveedor == "google":
+        from livekit.plugins import google
+
+        return google.LLM(
+            model=modelo, temperature=0.4, api_key=cfg.google_api_key or None
+        )
+    if proveedor == "anthropic":
         from livekit.plugins import anthropic
 
-        return anthropic.LLM(model=cfg.llm_model, temperature=0.4)
-    return openai.LLM(model=cfg.llm_model, temperature=0.4)
+        return anthropic.LLM(model=modelo, temperature=0.4)
+    return openai.LLM(model=modelo, temperature=0.4)
 
 
 def construir_tts(tenant: Tenant):
@@ -655,7 +674,7 @@ async def entrypoint(ctx: JobContext) -> None:
             numerals=False,
             keyterms=terminos,
         ),
-        llm=construir_llm(),
+        llm=construir_llm(tenant),
         tts=construir_tts(tenant),
         turn_detection=MultilingualModel(),
         preemptive_generation=True,

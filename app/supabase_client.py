@@ -47,6 +47,8 @@ class Tenant:
     tts_proveedor: str = "elevenlabs"
     tts_ajustes: dict | None = None
     instrucciones_extra: str | None = None
+    llm_proveedor: str = "openai"
+    llm_modelo: str | None = None
 
     @property
     def tz(self) -> ZoneInfo:
@@ -87,7 +89,8 @@ class Agenda:
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
         fila = await self.pool.fetchrow(
             """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
-                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra
+                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra,
+                      llm_proveedor, llm_modelo
                from tenant where telefono_entrada = $1 and activo""",
             numero,
         )
@@ -198,7 +201,8 @@ class Agenda:
     async def tenant_por_id(self, tenant_id: uuid.UUID) -> Tenant | None:
         fila = await self.pool.fetchrow(
             """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
-                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra
+                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra,
+                      llm_proveedor, llm_modelo
                from tenant where id = $1 and activo""",
             tenant_id,
         )
