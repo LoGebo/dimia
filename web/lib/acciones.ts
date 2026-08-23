@@ -170,7 +170,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
                 telefono_escalamiento = $5, voz_id = $6, slot_granularidad_min = $7,
                 anticipacion_min = $8, horizonte_dias = $9, tts_proveedor = $10,
                 tts_ajustes = $11::jsonb, instrucciones_extra = $12,
-                llm_proveedor = $13, llm_modelo = $14
+                llm_proveedor = $13, llm_modelo = $14, saludo = $15
            where id = $1`,
         [
           id,
@@ -187,6 +187,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
           opcional(fd, "instrucciones_extra"),
           proveedorLlm,
           opcional(fd, "llm_modelo"),
+          opcional(fd, "saludo"),
         ],
       );
     });

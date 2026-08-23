@@ -228,9 +228,13 @@ def construir(
 
 
 def saludo(tenant: Tenant, plantilla: dict | None = None) -> str:
-    patron = (
+    propio = (tenant.saludo or "").strip()
+    patron = propio or (
         plantilla["saludo"]
         if plantilla
         else SALUDOS.get(tenant.vertical, SALUDOS["generico"])
     )
-    return patron.format(nombre=tenant.nombre)
+    try:
+        return patron.format(nombre=tenant.nombre)
+    except (KeyError, IndexError, ValueError):
+        return patron

@@ -93,9 +93,14 @@ export type ContextoPrompt = {
   tiposCatalogo: string[];
 };
 
+export function saludoDelGiro(plantilla: PlantillaVertical | null, vertical?: string): string {
+  return plantilla?.saludo ?? SALUDOS[vertical ?? ""] ?? SALUDOS.generico!;
+}
+
 export function saludo(negocio: Negocio, plantilla: PlantillaVertical | null): string {
-  const patron = plantilla?.saludo ?? SALUDOS[negocio.vertical] ?? SALUDOS.generico!;
-  return patron.replace("{nombre}", negocio.nombre);
+  const propio = negocio.saludo?.trim();
+  const patron = propio || saludoDelGiro(plantilla, negocio.vertical);
+  return patron.replaceAll("{nombre}", negocio.nombre);
 }
 
 export function construirPrompt({

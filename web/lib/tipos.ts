@@ -18,6 +18,7 @@ export type Negocio = {
   llm_proveedor: ProveedorLlm;
   llm_modelo: string | null;
   instrucciones_extra: string | null;
+  saludo: string | null;
   slot_granularidad_min: number;
   anticipacion_min: number;
   horizonte_dias: number;

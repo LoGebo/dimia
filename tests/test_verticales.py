@@ -94,3 +94,38 @@ async def test_el_bloqueo_de_comida_se_dice(pool, negocio):
     )
     lineas = pm._horario_hablado([dict(f) for f in filas])
     assert "cerrado de 2 de la tarde a 3 de la tarde" in lineas[0]
+
+
+@pytest.mark.asyncio
+async def test_saludo_propio_gana_al_del_giro(pool, negocio):
+    """El dueno debe poder escribir la primera frase de su llamada."""
+    from app import prompt as pm
+    from app.supabase_client import Tenant
+
+    plantilla = {"saludo": "{nombre}, buen dia. ¿En que le ayudo?"}
+
+    def tenant(saludo=None):
+        return Tenant(
+            id=negocio["tenant"], nombre="Cocina de Humo", vertical="restaurante",
+            zona_horaria="America/Mexico_City", telefono_escalamiento=None,
+            voz_id=None, tts_proveedor="azure", tts_ajustes={},
+            instrucciones_extra=None, llm_proveedor="openai", llm_modelo=None,
+            saludo=saludo,
+        )
+
+    assert pm.saludo(tenant(), plantilla) == "Cocina de Humo, buen dia. ¿En que le ayudo?"
+    assert pm.saludo(tenant("¡Qué onda! Habla a {nombre}"), plantilla) == (
+        "¡Qué onda! Habla a Cocina de Humo"
+    )
+    assert pm.saludo(tenant("   "), plantilla).startswith("Cocina de Humo")
+    assert pm.saludo(tenant("Hola {invento}"), plantilla) == "Hola {invento}"
+
+
+@pytest.mark.asyncio
+async def test_el_saludo_se_guarda_en_la_base(pool, negocio):
+    await pool.execute(
+        "update tenant set saludo = $2 where id = $1",
+        negocio["tenant"], "Buenas, ¿le tomo su pedido?",
+    )
+    fila = await pool.fetchrow("select saludo from tenant where id = $1", negocio["tenant"])
+    assert fila["saludo"] == "Buenas, ¿le tomo su pedido?"
