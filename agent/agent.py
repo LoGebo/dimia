@@ -544,14 +544,18 @@ def construir_llm():
 def construir_tts(tenant: Tenant):
     ajustes = tenant.tts_ajustes or {}
     if tenant.tts_proveedor == "azure":
-        from livekit.plugins import azure
+        from livekit.plugins.azure import tts as aztts
 
         extra: dict[str, Any] = {}
-        if ajustes.get("prosodia"):
-            extra["prosody"] = azure.ProsodyConfig(**ajustes["prosodia"])
-        if ajustes.get("estilo"):
-            extra["style"] = ajustes["estilo"]
-        return azure.TTS(
+        prosodia = ajustes.get("prosodia")
+        if isinstance(prosodia, dict):
+            extra["prosody"] = aztts.ProsodyConfig(**prosodia)
+        estilo = ajustes.get("estilo")
+        if isinstance(estilo, str) and estilo:
+            extra["style"] = aztts.StyleConfig(
+                style=estilo, degree=ajustes.get("intensidad")
+            )
+        return aztts.TTS(
             speech_key=cfg.azure_speech_key or None,
             speech_region=cfg.azure_speech_region,
             voice=tenant.voz_id or cfg.azure_voz,
