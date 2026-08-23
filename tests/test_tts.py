@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 
-from agent.agent import construir_tts
+from agent.agent import construir_llm, construir_tts
 from app.supabase_client import Tenant
 
 
@@ -80,8 +80,6 @@ def test_rate_valido_si_se_aplica():
     tts = construir_tts(_tenant("azure", "es-MX-DaliaNeural", {"prosodia": {"rate": 1.12}}))
     assert "azure" in type(tts).__module__
 
-
-from agent.agent import construir_llm
 
 
 def _tenant_llm(proveedor: str, modelo: str | None = None) -> Tenant:
