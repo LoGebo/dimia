@@ -18,9 +18,12 @@ class Settings(BaseSettings):
     stt_model: str = "nova-3"
     stt_language: str = "es-MX"
     deepgram_voz: str = "aura-2-javier-es"
+    azure_voz: str = "es-MX-JorgeNeural"
     procesos_precalentados: int = 2
     cartesia_api_key: str = ""
     elevenlabs_api_key: str = ""
+    azure_speech_key: str = ""
+    azure_speech_region: str = "eastus"
     anthropic_api_key: str = ""
     openai_api_key: str = ""
 
