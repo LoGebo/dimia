@@ -6,6 +6,7 @@ import json
 import logging
 import time
 import uuid
+from dataclasses import replace
 from typing import Any
 from datetime import date, datetime
 from datetime import time as dtime
@@ -542,6 +543,17 @@ def construir_llm():
 
 
 def construir_tts(tenant: Tenant):
+    try:
+        return _construir_tts(tenant)
+    except Exception:
+        log.exception(
+            "tts_ajustes invalidos para %s (%s); usando la configuracion base",
+            tenant.nombre, tenant.tts_proveedor,
+        )
+        return _construir_tts(replace(tenant, tts_ajustes={}))
+
+
+def _construir_tts(tenant: Tenant):
     ajustes = tenant.tts_ajustes or {}
     if tenant.tts_proveedor == "azure":
         from livekit.plugins.azure import tts as aztts

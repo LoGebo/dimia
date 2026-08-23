@@ -57,3 +57,25 @@ def test_cada_proveedor_construye(proveedor, voz):
 def test_sin_voz_usa_la_del_sistema():
     tts = construir_tts(_tenant("azure", None, {}))
     assert "azure" in type(tts).__module__
+
+
+@pytest.mark.parametrize(
+    "ajustes",
+    [
+        {"prosodia": {"rate": "+12%"}},
+        {"prosodia": {"rate": "basura"}},
+        {"prosodia": {"volume": 99}},
+        {"prosodia": "no soy un objeto"},
+        {"estilo": 0.15},
+    ],
+)
+def test_config_invalida_no_tumba_la_llamada(ajustes):
+    """Un valor malo en tts_ajustes reventaba la sesion antes del saludo.
+    Debe caer a la configuracion base y seguir hablando."""
+    tts = construir_tts(_tenant("azure", "es-MX-DaliaNeural", ajustes))
+    assert "azure" in type(tts).__module__
+
+
+def test_rate_valido_si_se_aplica():
+    tts = construir_tts(_tenant("azure", "es-MX-DaliaNeural", {"prosodia": {"rate": 1.12}}))
+    assert "azure" in type(tts).__module__
