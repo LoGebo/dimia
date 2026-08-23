@@ -386,7 +386,7 @@ export const MODELOS_LLM: Record<
     { id: "gpt-4.1", nombre: "GPT-4.1", detalle: "Más fino, ocho veces más caro", costoMinuto: 0.032 },
   ],
   google: [
-    { id: "gemini-3-flash-preview", nombre: "Gemini 3 Flash (preview)", detalle: "Probado en llamada real, muy conciso", costoMinuto: 0.005 },
+    { id: "gemini-3-flash-preview", nombre: "Gemini 3 Flash (preview)", detalle: "Muy conciso, pero da 504 seguido: no lo dejes en producción", costoMinuto: 0.005 },
   ],
   anthropic: [
     { id: "claude-haiku-4-5-20251001", nombre: "Claude Haiku 4.5", detalle: "Rápido y muy obediente", costoMinuto: 0.004 },

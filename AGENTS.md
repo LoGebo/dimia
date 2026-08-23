@@ -114,6 +114,9 @@ en asyncpg es obligatorio detrás de pgbouncer en modo transacción.
   los detecta por nombre y devuelve False. La llamada muere con 400 al segundo
   turno. Usa el id explícito: `gemini-3-flash-preview`. Los modelos 2.5 ya
   fueron retirados por Google.
+- **Gemini 3 Flash Preview da 504 `DEADLINE_EXCEEDED`** bajo carga real, y el
+  reintento del plugin agota cuatro turnos antes de rendirse: la llamada se
+  queda muda medio minuto. Sirve para comparar tono, no para atender clientes.
 - La búsqueda de conocimiento es léxica, no semántica: no salva sinónimos lejanos
   ("carro" contra "estacionamiento"). Por eso la FAQ prioritaria viaja completa
   en el prompt y la búsqueda cubre solo la cola larga.

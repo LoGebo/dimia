@@ -1,4 +1,5 @@
 """Pedidos de comida: carrito, total y cierre."""
+import asyncio
 import json
 import uuid
 
@@ -146,3 +147,45 @@ async def test_agregar_por_nombre_cuando_el_modelo_no_manda_id(pool, taqueria):
                                  taqueria["tenant"], p, filas[0]["id"], 2))
     assert res["ok"]
     assert float(res["total"]) == 56
+
+
+@pytest.mark.asyncio
+async def test_una_llamada_es_un_solo_pedido(pool, taqueria):
+    """El agente agrega varios platillos en paralelo. Si cada llamada abre su
+    propio pedido, el cliente recibe dos cuentas y el total sale mal."""
+    ids = await asyncio.gather(*[
+        pool.fetchval("select pedido_abrir($1,$2,$3)",
+                      taqueria["tenant"], "+5215500000000", "llamada-1")
+        for _ in range(12)
+    ])
+    assert len(set(ids)) == 1
+
+
+@pytest.mark.asyncio
+async def test_llamadas_distintas_tienen_pedidos_distintos(pool, taqueria):
+    a = await pool.fetchval("select pedido_abrir($1,$2,$3)",
+                            taqueria["tenant"], "+5215500000000", "llamada-a")
+    b = await pool.fetchval("select pedido_abrir($1,$2,$3)",
+                            taqueria["tenant"], "+5215500000001", "llamada-b")
+    assert a != b
+
+
+@pytest.mark.asyncio
+async def test_agregar_en_paralelo_suma_en_un_solo_total(pool, taqueria):
+    async def agregar(item, cantidad):
+        pedido = await pool.fetchval("select pedido_abrir($1,$2,$3)",
+                                     taqueria["tenant"], "+5215500000000", "llamada-p")
+        return await pool.fetchval("select pedido_agregar($1,$2,$3,$4)",
+                                   taqueria["tenant"], pedido, item, cantidad)
+
+    await asyncio.gather(
+        agregar(taqueria["taco"], 5),
+        agregar(taqueria["agua"], 2),
+    )
+    filas = await pool.fetch(
+        "select id from pedido where tenant_id=$1 and call_id='llamada-p'",
+        taqueria["tenant"],
+    )
+    assert len(filas) == 1
+    total = await pool.fetchval("select pedido_total($1)", filas[0]["id"])
+    assert float(total) == 5 * 28 + 2 * 35
