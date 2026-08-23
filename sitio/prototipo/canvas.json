@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 9400, "title": "dimia.mx · escritorio", "print": "flow", "expand": "fill" },
+    { "file": "Movil.dc.html", "x": 1600, "y": 0, "w": 390, "h": 6800, "title": "dimia.mx · móvil 390", "print": "flow" }
+  ],
+  "annotations": [
+    { "id": "datos-editables", "x": 2110, "y": 0, "w": 300, "text": "Datos editables\n\n· Marquesina: la lista «sectores» en la lógica de cada artboard. Se sustituye por nombres y logotipos reales cuando haya autorización por escrito.\n· Casos: la lista «fuente» (escritorio). Los corchetes son placeholders: [ Nombre del cliente autorizado ], [ Resultado por confirmar ], [ Periodo medido ].\n· Teléfono: [ +52 55 0000 0000 ] en el cierre y en el pie.\n· Correo: hola@dimia.mx." },
+    { "id": "formulario", "x": 2110, "y": 430, "w": 300, "text": "Formulario\n\nNo simula un envío exitoso: al enviar pasa a «Enviando…» y después avisa que aún no está conectado a un destino, con el teléfono y el correo como salida. Cuando exista backend, se cambia ese estado por la confirmación real." },
+    { "id": "cifras", "x": 2110, "y": 760, "w": 300, "text": "Cifras\n\n24/7 y 0 traslapes son verificables hoy. Tiempo medio y llamadas fuera de horario quedan como [ dato por confirmar ] hasta tener la medición de un cliente real." }
+  ],
+  "launch": { "view": "focused", "file": "Main.dc.html" }
+}

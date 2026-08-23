@@ -1,0 +1,912 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap">
+  <style>
+    :root {
+      --ink:#0b0f17; --panel:#111723; --panel-2:#161d2b;
+      --linea:#212a3a; --linea-2:#2f3a4d;
+      --hueso:#eef1f7; --acero:#97a2b5; --acero-2:#66718a;
+      --azul:#6e9bf5; --azul-hondo:#1f47c4; --laton:#c8a45c; --papel:#f2f4f8;
+      --verde:#3fb68b; --ambar:#e0a838; --rojo:#e2685c;
+      --edit:"Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+      --sans:"Archivo", ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
+      --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    * { box-sizing:border-box; }
+    html, body { height:auto; }
+    body { margin:0; background:var(--ink); color:var(--hueso); font-family:var(--sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+    a { color:var(--azul); text-decoration:none; text-underline-offset:4px; }
+    a:hover { color:var(--hueso); }
+    button { font:inherit; color:inherit; border:0; background:none; cursor:pointer; }
+    input { font:inherit; }
+    ::selection { background:var(--azul); color:#08111f; }
+
+    /* logotipo construido */
+    .dimia { font-family:var(--sans); font-weight:800; letter-spacing:-0.028em; line-height:1; white-space:nowrap; display:inline-block; color:var(--hueso); }
+    .i { display:inline-block; width:.145em; height:.526em; background:currentColor; position:relative; margin:0 .075em 0 .062em; vertical-align:baseline; }
+    .i::before { content:""; position:absolute; left:-.008em; bottom:.611em; width:.16em; height:.16em; background:currentColor; }
+    .i.a1::before { background:var(--azul); }
+    .fin { display:inline-block; width:.2em; height:.2em; background:var(--azul); margin-left:.085em; vertical-align:baseline; }
+
+    /* animación de marca: astas primero, cuadrados 200 ms después */
+    .marca-anim .i { animation:asta 380ms cubic-bezier(.2,.7,.3,1) both; }
+    .marca-anim .i:nth-of-type(2) { animation-delay:60ms; }
+    .marca-anim .i::before,
+    .marca-anim .fin { animation:cae 260ms cubic-bezier(.3,.6,.2,1) both; animation-delay:200ms; }
+    .marca-anim .i:nth-of-type(2)::before { animation-delay:280ms; }
+    .marca-anim .fin { animation-delay:360ms; }
+    @keyframes asta { from { opacity:0; transform:scaleY(.2); transform-origin:bottom; } to { opacity:1; transform:scaleY(1); } }
+    @keyframes cae  { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+    .lat { width:7px; height:7px; background:var(--azul); display:inline-block; animation:lat 1.9s ease-in-out infinite; }
+    @keyframes lat { 0%,100% { opacity:1 } 50% { opacity:.28 } }
+
+    .via { width:6px; height:6px; background:var(--azul); flex:none; margin-top:.55em; }
+
+    .enl { display:inline-flex; align-items:center; gap:9px; font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--acero); border-bottom:1px solid var(--linea-2); padding-bottom:5px; transition:color 150ms, border-color 150ms; }
+    .enl:hover { color:var(--azul); border-color:var(--azul); }
+    .enl svg { flex:none; }
+
+    .navlink { font-size:14px; color:var(--acero); display:inline-flex; align-items:center; gap:8px; transition:color 150ms; }
+    .navlink:hover { color:var(--hueso); }
+    .navlink i { width:5px; height:5px; background:var(--azul); opacity:0; transition:opacity 150ms; }
+    .navlink:hover i { opacity:1; }
+
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:10px; white-space:nowrap; font-weight:600; font-size:14px; padding:13px 22px; border:1px solid transparent; transition:background 150ms, border-color 150ms, color 150ms; }
+    .btn-p { background:var(--azul); color:#08111f; }
+    .btn-p:hover { background:#8ab0f8; }
+    .btn-s { border-color:var(--linea-2); color:var(--hueso); }
+    .btn-s:hover { border-color:var(--azul); color:var(--azul); }
+
+    .fila-serv { transition:background 150ms; }
+    .fila-serv:hover { background:#0e131d; }
+
+    .cap-fila:hover { background:#0e131d; }
+
+    .marq { display:flex; width:max-content; animation:marq 40s linear infinite; }
+    .marq-wrap:hover .marq { animation-play-state:paused; }
+    @keyframes marq { from { transform:translateX(0) } to { transform:translateX(-50%) } }
+
+    .campo { width:100%; background:transparent; border:0; border-bottom:1px solid var(--linea-2); color:var(--hueso); padding:12px 0; outline:none; transition:border-color 150ms; }
+    .campo::placeholder { color:var(--acero-2); }
+    .campo:hover { border-color:var(--acero-2); }
+    .campo:focus { border-color:var(--azul); }
+
+    .rev { animation:rev 400ms ease-out both; }
+    @keyframes rev { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+
+    :focus-visible { outline:2px solid var(--azul); outline-offset:3px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .marq { animation:none; }
+      .lat { animation:none; }
+      .marca-anim .i, .marca-anim .i::before, .marca-anim .fin, .rev { animation:none; opacity:1; transform:none; }
+    }
+  </style>
+</helmet>
+
+<div style="background:#0b0f17; color:#eef1f7; font-family:var(--sans); overflow-x:clip">
+
+  <!-- ══════════ NAVEGACIÓN ══════════ -->
+  <header style="position:sticky; top:0; z-index:40; background:rgba(11,15,23,.92); border-bottom:1px solid #212a3a; backdrop-filter:blur(6px)">
+    <div style="max-width:1280px; margin:0 auto; padding:0 56px; height:68px; display:flex; align-items:center; justify-content:space-between; gap:32px">
+      <a href="#" style="display:flex; align-items:center; gap:12px; color:#eef1f7">
+        <svg viewBox="0 0 100 100" width="22" height="22" aria-hidden="true">
+          <rect x="27" y="42" width="15" height="44" fill="#eef1f7"></rect><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"></rect>
+          <rect x="58" y="42" width="15" height="44" fill="#eef1f7"></rect><rect x="58" y="18" width="15" height="15" fill="#eef1f7"></rect>
+        </svg>
+        <span class="dimia" style="font-size:21px">D<i class="i a1"></i>m<i class="i"></i>a<i class="fin"></i></span>
+      </a>
+      <nav style="display:flex; align-items:center; gap:34px">
+        <a class="navlink" href="#servicios"><i></i>Servicios</a>
+        <a class="navlink" href="#productos"><i></i>Productos</a>
+        <a class="navlink" href="#proyectos"><i></i>Proyectos</a>
+        <a class="navlink" href="#metodo"><i></i>Método</a>
+        <a class="btn btn-p" href="#contacto" style="margin-left:8px">Agendar demostración</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ══════════ HERO ══════════ -->
+  <section style="position:relative; border-bottom:1px solid #212a3a">
+    <div style="position:absolute; inset:0; background-image:linear-gradient(#151c29 1px, transparent 1px), linear-gradient(90deg, #151c29 1px, transparent 1px); background-size:96px 96px; opacity:.5"></div>
+    <div style="position:absolute; left:0; right:0; top:0; height:1px; background:linear-gradient(90deg, transparent, #6e9bf5, transparent); opacity:.45"></div>
+
+    <div style="position:relative; max-width:1280px; margin:0 auto; padding:112px 56px 104px; display:grid; grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr); gap:72px; align-items:center">
+
+      <div style="display:flex; flex-direction:column; gap:32px">
+        <div style="display:flex; align-items:center; gap:12px">
+          <span style="width:6px; height:6px; background:#c8a45c"></span>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:#c8a45c">Consultoría · Ciudad de México</span>
+        </div>
+
+        <h1 style="font-family:var(--edit); font-weight:300; font-size:66px; line-height:1.06; letter-spacing:-0.018em; margin:0; text-wrap:balance">Contestamos lo que su negocio no alcanza a contestar<span style="display:inline-block; width:11px; height:11px; background:#6e9bf5; margin-left:6px"></span></h1>
+
+        <p style="max-width:52ch; margin:0; font-size:17.5px; line-height:1.65; color:#97a2b5">Diseñamos, construimos y operamos sistemas que atienden, agendan, automatizan y convierten datos en decisiones.</p>
+
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap">
+          <a class="btn btn-p" href="#contacto">Agendar una demostración</a>
+          <a class="btn btn-s" href="#garantia">Ver cómo funciona</a>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:14px; padding-top:8px">
+          <span class="lat" aria-hidden="true"></span>
+          <span style="font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#66718a">Panel de operación · en vivo</span>
+        </div>
+      </div>
+
+      <!-- panel operativo -->
+      <div style="border:1px solid #212a3a; background:#111723">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 18px; border-bottom:1px solid #212a3a">
+          <div style="display:flex; align-items:center; gap:10px">
+            <svg viewBox="0 0 100 100" width="13" height="13" aria-hidden="true">
+              <rect x="27" y="42" width="15" height="44" fill="#eef1f7"></rect><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"></rect>
+              <rect x="58" y="42" width="15" height="44" fill="#eef1f7"></rect><rect x="58" y="18" width="15" height="15" fill="#eef1f7"></rect>
+            </svg>
+            <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#66718a">Consultorio Dra. Rivas</span>
+          </div>
+          <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; color:#66718a; font-variant-numeric:tabular-nums">+52 55 ·· ·· ····</span>
+        </div>
+
+        <div style="padding:26px 26px 20px; display:flex; flex-direction:column; gap:22px">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px">
+            <div style="display:flex; align-items:center; gap:11px">
+              <span style="width:9px; height:9px; flex:none; background:{{estado.color}}; opacity:{{estado.op}}"></span>
+              <span style="font-family:var(--mono); font-size:12.5px; letter-spacing:.2em; text-transform:uppercase; color:{{estado.color}}">{{estado.texto}}</span>
+            </div>
+            <span style="font-family:var(--mono); font-size:34px; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; color:#eef1f7">{{crono}}</span>
+          </div>
+
+          <div style="height:1px; background:#212a3a"></div>
+
+          <div style="display:flex; flex-direction:column; gap:11px; min-height:186px">
+            <sc-for list="{{lineas}}" as="l" hint-placeholder-count="4">
+              <div style="display:flex; align-items:baseline; gap:14px">
+                <span style="font-family:var(--mono); font-size:11px; color:#66718a; font-variant-numeric:tabular-nums; flex:none; width:44px">{{l.hora}}</span>
+                <span style="width:5px; height:5px; flex:none; background:{{l.color}}; transform:translateY(-2px)"></span>
+                <span style="font-size:14px; color:{{l.tinta}}">{{l.texto}}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="height:1px; background:#212a3a"></div>
+
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1px; background:#212a3a">
+            <div style="background:#111723; padding:14px 4px 4px">
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#66718a">Fecha</div>
+              <div style="font-family:var(--mono); font-size:15px; color:{{reserva.tinta}}; font-variant-numeric:tabular-nums; margin-top:6px">{{reserva.fecha}}</div>
+            </div>
+            <div style="background:#111723; padding:14px 4px 4px">
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#66718a">Personas</div>
+              <div style="font-family:var(--mono); font-size:15px; color:{{reserva.tinta}}; font-variant-numeric:tabular-nums; margin-top:6px">{{reserva.personas}}</div>
+            </div>
+            <div style="background:#111723; padding:14px 4px 4px">
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#66718a">Reserva</div>
+              <div style="font-family:var(--mono); font-size:15px; color:{{reserva.tinta}}; font-variant-numeric:tabular-nums; margin-top:6px">{{reserva.folio}}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #212a3a; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:16px">
+          <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:{{aviso.color}}">{{aviso.texto}}</span>
+          <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:#66718a">Simulación del agente</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ BANDA DE CIFRAS ══════════ -->
+  <section style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:0 56px">
+      <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0">
+        <div style="padding:40px 32px 40px 0; border-right:1px solid #212a3a">
+          <div style="font-family:var(--mono); font-size:40px; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; color:#eef1f7">24/7</div>
+          <div style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-top:14px">Atención continua</div>
+        </div>
+        <div style="padding:40px 32px; border-right:1px solid #212a3a">
+          <div style="font-family:var(--mono); font-size:40px; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; color:#6e9bf5">0</div>
+          <div style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-top:14px">Traslapes por diseño</div>
+        </div>
+        <div style="padding:40px 32px; border-right:1px solid #212a3a">
+          <div style="font-family:var(--mono); font-size:22px; line-height:1.45; letter-spacing:.02em; color:#66718a">[ dato por confirmar ]</div>
+          <div style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-top:14px">Tiempo medio de llamada</div>
+        </div>
+        <div style="padding:40px 0 40px 32px">
+          <div style="font-family:var(--mono); font-size:22px; line-height:1.45; letter-spacing:.02em; color:#66718a">[ dato por confirmar ]</div>
+          <div style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-top:14px">Llamadas fuera de horario</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ SERVICIOS ══════════ -->
+  <section id="servicios" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:104px 56px">
+      <div style="display:grid; grid-template-columns:190px minmax(0,1fr); gap:56px; margin-bottom:56px">
+        <div style="border-top:1px solid #2f3a4d; padding-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#66718a">Servicios<b style="display:block; color:#c8a45c; font-weight:400; margin-top:5px">cinco líneas</b></div>
+        <div>
+          <h2 style="font-family:var(--edit); font-weight:300; font-size:40px; line-height:1.14; letter-spacing:-0.014em; margin:0 0 18px; max-width:22ch">Un mismo motor, cinco maneras de cobrarle valor<span style="display:inline-block; width:8px; height:8px; background:#6e9bf5; margin-left:5px"></span></h2>
+          <p style="margin:0; max-width:60ch; color:#97a2b5">La IA es el método. El argumento es la cita que sí quedó, el proceso que dejó de depender de una hoja de cálculo y la campaña que se puede medir contra ingreso real.</p>
+        </div>
+      </div>
+
+      <!-- servicio dominante -->
+      <article class="fila-serv" style="border-top:1px solid #2f3a4d; padding:44px 0 48px">
+        <div style="display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:64px">
+          <div style="display:flex; flex-direction:column; gap:22px">
+            <div style="display:flex; align-items:center; gap:12px">
+              <span style="width:7px; height:7px; background:#6e9bf5"></span>
+              <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.22em; text-transform:uppercase; color:#6e9bf5">Servicio insignia</span>
+            </div>
+            <h3 style="font-family:var(--edit); font-weight:300; font-size:44px; line-height:1.1; letter-spacing:-0.014em; margin:0">Agente de voz</h3>
+            <p style="margin:0; max-width:48ch; font-size:17px; color:#97a2b5">Un número que contesta 24/7, entiende, agenda en firme y avisa por WhatsApp. La cita queda escrita antes de colgar.</p>
+            <div style="display:flex; flex-direction:column; gap:11px; padding-top:4px">
+              <div style="display:flex; gap:12px"><span class="via"></span><span style="font-size:15px; color:#97a2b5">Atiende en español de México, con turnos de una sola pregunta.</span></div>
+              <div style="display:flex; gap:12px"><span class="via"></span><span style="font-size:15px; color:#97a2b5">Consulta disponibilidad real antes de proponer un horario.</span></div>
+              <div style="display:flex; gap:12px"><span class="via"></span><span style="font-size:15px; color:#97a2b5">Pasa con una persona cuando no entiende dos veces seguidas.</span></div>
+            </div>
+            <a class="enl" href="#productos" style="align-self:flex-start; margin-top:10px">Explorar servicio
+              <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4"></path></svg>
+            </a>
+          </div>
+
+          <div style="border:1px solid #212a3a; background:#111723; padding:26px; display:flex; flex-direction:column; gap:18px; align-self:start">
+            <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a">Anatomía de una llamada</div>
+            <div style="display:flex; flex-direction:column; gap:0">
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 0"><span style="width:7px; height:7px; background:#6e9bf5; flex:none"></span><span style="font-family:var(--mono); font-size:12.5px; color:#eef1f7">Timbra</span><span style="margin-left:auto; font-family:var(--mono); font-size:11px; color:#66718a; font-variant-numeric:tabular-nums">00:00</span></div>
+              <div style="height:14px; width:1px; background:#212a3a; margin-left:3px"></div>
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 0"><span style="width:7px; height:7px; background:#6e9bf5; flex:none"></span><span style="font-family:var(--mono); font-size:12.5px; color:#eef1f7">Entiende la intención</span><span style="margin-left:auto; font-family:var(--mono); font-size:11px; color:#66718a; font-variant-numeric:tabular-nums">00:06</span></div>
+              <div style="height:14px; width:1px; background:#212a3a; margin-left:3px"></div>
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 0"><span style="width:7px; height:7px; background:#6e9bf5; flex:none"></span><span style="font-family:var(--mono); font-size:12.5px; color:#eef1f7">Consulta la base</span><span style="margin-left:auto; font-family:var(--mono); font-size:11px; color:#66718a; font-variant-numeric:tabular-nums">00:22</span></div>
+              <div style="height:14px; width:1px; background:#212a3a; margin-left:3px"></div>
+              <div style="display:flex; align-items:center; gap:14px; padding:11px 0"><span style="width:7px; height:7px; background:#3fb68b; flex:none"></span><span style="font-family:var(--mono); font-size:12.5px; color:#eef1f7">Escribe la cita</span><span style="margin-left:auto; font-family:var(--mono); font-size:11px; color:#66718a; font-variant-numeric:tabular-nums">00:42</span></div>
+            </div>
+            <div style="height:1px; background:#212a3a"></div>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px">
+              <span style="font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#66718a">Cuelga con la cita hecha</span>
+              <span style="font-family:var(--mono); font-size:12px; color:#3fb68b; letter-spacing:.14em">CONFIRMADA</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- cuatro servicios restantes -->
+      <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0">
+        <article class="fila-serv" style="border-top:1px solid #212a3a; padding:36px 40px 40px 0; display:flex; flex-direction:column; gap:16px">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px">
+            <h3 style="font-family:var(--sans); font-weight:600; font-size:21px; letter-spacing:-0.015em; margin:0">Automatización de operaciones</h3>
+            <span style="font-family:var(--mono); font-size:11px; color:#66718a; letter-spacing:.14em">02</span>
+          </div>
+          <p style="margin:0; max-width:44ch; color:#97a2b5; font-size:15.5px">Confirmaciones, recordatorios, cobranza, seguimiento, altas y reportes. Automatizamos el tramo mecánico y dejamos cada acción auditada.</p>
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 0; border-top:1px solid #212a3a; margin-top:auto">
+            <span style="width:6px; height:6px; background:#3fb68b"></span>
+            <span style="font-family:var(--mono); font-size:11.5px; color:#97a2b5">Cada acción queda con hora, origen y responsable</span>
+          </div>
+          <a class="enl" href="#contacto" style="align-self:flex-start">Explorar servicio
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4"></path></svg>
+          </a>
+        </article>
+
+        <article class="fila-serv" style="border-top:1px solid #212a3a; padding:36px 0 40px 40px; border-left:1px solid #212a3a; display:flex; flex-direction:column; gap:16px">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px">
+            <h3 style="font-family:var(--sans); font-weight:600; font-size:21px; letter-spacing:-0.015em; margin:0">Datos y analítica</h3>
+            <span style="font-family:var(--mono); font-size:11px; color:#66718a; letter-spacing:.14em">03</span>
+          </div>
+          <p style="margin:0; max-width:44ch; color:#97a2b5; font-size:15.5px">Convertimos datos dispersos en bases confiables y tableros que un dueño puede revisar sin que nadie se los explique.</p>
+          <div style="display:flex; align-items:flex-end; gap:5px; height:46px; padding-top:6px; margin-top:auto">
+            <span style="width:14px; height:38%; background:#212a3a"></span>
+            <span style="width:14px; height:56%; background:#212a3a"></span>
+            <span style="width:14px; height:44%; background:#212a3a"></span>
+            <span style="width:14px; height:72%; background:#212a3a"></span>
+            <span style="width:14px; height:64%; background:#212a3a"></span>
+            <span style="width:14px; height:88%; background:#6e9bf5"></span>
+            <span style="font-family:var(--mono); font-size:11px; color:#66718a; margin-left:10px; align-self:flex-end">Reservas por semana</span>
+          </div>
+          <a class="enl" href="#contacto" style="align-self:flex-start">Explorar servicio
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4"></path></svg>
+          </a>
+        </article>
+
+        <article class="fila-serv" style="border-top:1px solid #212a3a; padding:36px 40px 40px 0; display:flex; flex-direction:column; gap:16px">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px">
+            <h3 style="font-family:var(--sans); font-weight:600; font-size:21px; letter-spacing:-0.015em; margin:0">Transformación digital</h3>
+            <span style="font-family:var(--mono); font-size:11px; color:#66718a; letter-spacing:.14em">04</span>
+          </div>
+          <p style="margin:0; max-width:44ch; color:#97a2b5; font-size:15.5px">Diagnóstico, hoja de ruta y ejecución. No entregamos recomendaciones aisladas: entregamos sistemas operando.</p>
+          <div style="display:flex; align-items:center; gap:0; padding:14px 0 12px; margin-top:auto">
+            <span style="width:7px; height:7px; background:#6e9bf5"></span>
+            <span style="height:1px; width:34px; background:#212a3a"></span>
+            <span style="width:7px; height:7px; background:#6e9bf5"></span>
+            <span style="height:1px; width:34px; background:#212a3a"></span>
+            <span style="width:7px; height:7px; background:#6e9bf5"></span>
+            <span style="height:1px; width:34px; background:#212a3a"></span>
+            <span style="width:7px; height:7px; background:#3fb68b"></span>
+            <span style="font-family:var(--mono); font-size:11px; color:#66718a; margin-left:14px">Del diagnóstico a la operación</span>
+          </div>
+          <a class="enl" href="#metodo" style="align-self:flex-start">Explorar servicio
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4"></path></svg>
+          </a>
+        </article>
+
+        <article class="fila-serv" style="border-top:1px solid #212a3a; padding:36px 0 40px 40px; border-left:1px solid #212a3a; display:flex; flex-direction:column; gap:16px">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px">
+            <h3 style="font-family:var(--sans); font-weight:600; font-size:21px; letter-spacing:-0.015em; margin:0">Marketing con datos</h3>
+            <span style="font-family:var(--mono); font-size:11px; color:#66718a; letter-spacing:.14em">05</span>
+          </div>
+          <p style="margin:0; max-width:44ch; color:#97a2b5; font-size:15.5px">Conectamos campañas con ingreso real para saber qué acción produjo cada oportunidad y cuánto valió.</p>
+          <div style="display:flex; align-items:center; gap:14px; padding:12px 0; border-top:1px solid #212a3a; margin-top:auto">
+            <span style="font-family:var(--mono); font-size:11.5px; color:#66718a">Campaña</span>
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="#2f3a4d" stroke-width="1.4"></path></svg>
+            <span style="font-family:var(--mono); font-size:11.5px; color:#66718a">Llamada</span>
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="#2f3a4d" stroke-width="1.4"></path></svg>
+            <span style="font-family:var(--mono); font-size:11.5px; color:#eef1f7">Ingreso</span>
+          </div>
+          <a class="enl" href="#contacto" style="align-self:flex-start">Explorar servicio
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4"></path></svg>
+          </a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ PRODUCTOS ══════════ -->
+  <section id="productos" style="border-bottom:1px solid #212a3a; background:#0d121c">
+    <div style="max-width:1280px; margin:0 auto; padding:104px 56px">
+      <div style="display:grid; grid-template-columns:190px minmax(0,1fr); gap:56px; margin-bottom:52px">
+        <div style="border-top:1px solid #2f3a4d; padding-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#66718a">Productos<b style="display:block; color:#c8a45c; font-weight:400; margin-top:5px">de Dimia</b></div>
+        <h2 style="font-family:var(--edit); font-weight:300; font-size:40px; line-height:1.14; letter-spacing:-0.014em; margin:0; max-width:20ch">Lo que construimos una vez y opera para muchos<span style="display:inline-block; width:8px; height:8px; background:#6e9bf5; margin-left:5px"></span></h2>
+      </div>
+
+      <div style="border:1px solid #212a3a; background:#111723">
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0">
+          <div style="padding:44px 44px 40px; display:flex; flex-direction:column; gap:24px; border-right:1px solid #212a3a">
+            <div style="display:flex; align-items:center; gap:12px">
+              <span style="width:7px; height:7px; background:#3fb68b"></span>
+              <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#3fb68b">En operación</span>
+            </div>
+            <h3 style="font-family:var(--edit); font-weight:300; font-size:34px; line-height:1.12; margin:0">Agente de voz Dimia</h3>
+            <div style="display:flex; flex-direction:column; gap:18px">
+              <div>
+                <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:7px">Qué resuelve</div>
+                <p style="margin:0; color:#97a2b5; font-size:15.5px; max-width:44ch">La llamada que nadie contesta a las ocho de la noche, el sábado, o mientras se atiende a alguien más.</p>
+              </div>
+              <div>
+                <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:7px">Cómo funciona</div>
+                <p style="margin:0; color:#97a2b5; font-size:15.5px; max-width:44ch">Contesta, entiende, consulta disponibilidad real en la base y escribe la cita antes de colgar. Después avisa por WhatsApp.</p>
+              </div>
+              <div>
+                <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:7px">Para quién</div>
+                <p style="margin:0; color:#97a2b5; font-size:15.5px; max-width:44ch">Consultorios, clínicas, restaurantes, salones y despachos: cualquier negocio que reserve un recurso en una franja de tiempo.</p>
+              </div>
+            </div>
+            <a class="btn btn-p" href="#contacto" style="align-self:flex-start; margin-top:6px">Solicitar demostración</a>
+          </div>
+
+          <div style="padding:44px; display:flex; flex-direction:column; gap:26px">
+            <div>
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:14px">Integraciones</div>
+              <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1px; background:#212a3a; border:1px solid #212a3a">
+                <div style="background:#111723; padding:13px 14px; display:flex; align-items:center; gap:10px"><span style="width:6px; height:6px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:12px; color:#97a2b5">Telefonía / SIP</span></div>
+                <div style="background:#111723; padding:13px 14px; display:flex; align-items:center; gap:10px"><span style="width:6px; height:6px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:12px; color:#97a2b5">WhatsApp</span></div>
+                <div style="background:#111723; padding:13px 14px; display:flex; align-items:center; gap:10px"><span style="width:6px; height:6px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:12px; color:#97a2b5">Calendario</span></div>
+                <div style="background:#111723; padding:13px 14px; display:flex; align-items:center; gap:10px"><span style="width:6px; height:6px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:12px; color:#97a2b5">CRM del negocio</span></div>
+              </div>
+            </div>
+
+            <div style="height:1px; background:#212a3a"></div>
+
+            <div>
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:14px">Siguientes productos</div>
+              <div style="display:flex; flex-direction:column; gap:0">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:15px 0; border-top:1px solid #212a3a">
+                  <span style="font-size:15px; color:#97a2b5">[ Nombre del producto ]</span>
+                  <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:#c8a45c">Próximamente</span>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding:15px 0; border-top:1px solid #212a3a">
+                  <span style="font-size:15px; color:#97a2b5">[ Nombre del producto ]</span>
+                  <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:#c8a45c">Próximamente</span>
+                </div>
+                <div style="border-top:1px solid #212a3a; padding-top:15px">
+                  <p style="margin:0; font-size:13.5px; color:#66718a; max-width:40ch">Esta lista crece conforme se lance cada producto. Nada aparece aquí antes de estar en operación con un cliente real.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ LA GARANTÍA (papel) ══════════ -->
+  <section id="garantia" style="background:#f2f4f8; color:#0b0f17; border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:104px 56px">
+      <div style="display:grid; grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr); gap:72px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:26px">
+          <div style="display:flex; align-items:center; gap:12px">
+            <span style="width:6px; height:6px; background:#a8853f"></span>
+            <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#a8853f">La garantía</span>
+          </div>
+          <h2 style="font-family:var(--edit); font-weight:300; font-size:46px; line-height:1.08; letter-spacing:-0.016em; margin:0; color:#0b0f17">Dos citas encimadas son imposibles por diseño<span style="display:inline-block; width:10px; height:10px; background:#1f47c4; margin-left:6px"></span></h2>
+          <p style="margin:0; max-width:46ch; font-size:17px; color:#3c4658">La disponibilidad no se revisa a mano ni se confía a una hoja de cálculo. La restricción vive en la base de datos: si dos reservas se traslapan, la segunda no entra. Entren cinco llamadas o quinientas.</p>
+          <p style="margin:0; max-width:46ch; font-size:15.5px; color:#5a6478">Es la diferencia entre una promesa de servicio y una garantía del motor. Ninguna agencia puede copiarla escribiendo mejores procesos.</p>
+          <div style="border-left:2px solid #a8853f; padding-left:18px; margin-top:6px">
+            <p style="margin:0; font-family:var(--edit); font-style:italic; font-weight:300; font-size:19px; line-height:1.4; color:#0b0f17">«Automatización con garantía, no con buenas intenciones.»</p>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0; background:#ffffff; border:1px solid #dfe3ea">
+          <div style="padding:16px 22px; border-bottom:1px solid #dfe3ea; display:flex; align-items:center; justify-content:space-between; gap:16px">
+            <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#5a6478">Ruta de una reserva</span>
+            <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#5a6478">Sala 2 · jueves 4</span>
+          </div>
+
+          <div style="padding:30px 22px 26px; display:flex; flex-direction:column; gap:0">
+            <div style="display:flex; align-items:center; gap:16px">
+              <span style="width:9px; height:9px; background:#1f47c4; flex:none"></span>
+              <span style="font-size:15px; color:#0b0f17">Entra la llamada</span>
+              <span style="margin-left:auto; font-family:var(--mono); font-size:11.5px; color:#5a6478; font-variant-numeric:tabular-nums">17:12</span>
+            </div>
+            <div style="width:1px; height:22px; background:#c7ceda; margin-left:4px"></div>
+            <div style="display:flex; align-items:center; gap:16px">
+              <span style="width:9px; height:9px; background:#1f47c4; flex:none"></span>
+              <span style="font-size:15px; color:#0b0f17">Consulta de disponibilidad</span>
+              <span style="margin-left:auto; font-family:var(--mono); font-size:11.5px; color:#5a6478; font-variant-numeric:tabular-nums">17:00 – 17:30</span>
+            </div>
+            <div style="width:1px; height:22px; background:#c7ceda; margin-left:4px"></div>
+            <div style="display:flex; align-items:center; gap:16px">
+              <span style="width:9px; height:9px; background:#1f47c4; flex:none"></span>
+              <span style="font-size:15px; color:#0b0f17">Restricción de la base</span>
+              <span style="margin-left:auto; font-family:var(--mono); font-size:11.5px; color:#5a6478">sin traslape</span>
+            </div>
+            <div style="width:1px; height:22px; background:#c7ceda; margin-left:4px"></div>
+            <div style="display:flex; align-items:center; gap:16px">
+              <span style="width:9px; height:9px; background:#12805c; flex:none"></span>
+              <span style="font-size:15px; color:#0b0f17">Reserva confirmada</span>
+              <span style="margin-left:auto; font-family:var(--mono); font-size:11.5px; color:#12805c; letter-spacing:.1em">#A-2291</span>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid #dfe3ea; padding:22px; background:#f7f8fa">
+            <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#5a6478; margin-bottom:14px">Segunda llamada, mismo horario</div>
+            <div style="display:flex; align-items:stretch; gap:0; margin-bottom:14px">
+              <div style="flex:1; border:1px solid #1f47c4; padding:10px 12px; display:flex; flex-direction:column; gap:3px">
+                <span style="font-family:var(--mono); font-size:10.5px; color:#5a6478">Reserva A</span>
+                <span style="font-family:var(--mono); font-size:13px; color:#0b0f17; font-variant-numeric:tabular-nums">17:00 – 17:30</span>
+              </div>
+              <div style="flex:1; border:1px solid #c4392f; border-left:0; padding:10px 12px; display:flex; flex-direction:column; gap:3px; background:#fbf1f0">
+                <span style="font-family:var(--mono); font-size:10.5px; color:#c4392f">Reserva B</span>
+                <span style="font-family:var(--mono); font-size:13px; color:#c4392f; font-variant-numeric:tabular-nums">17:15 – 17:45</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px">
+              <span style="width:7px; height:7px; background:#c4392f"></span>
+              <span style="font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#c4392f">Rechazada por la base</span>
+              <span style="margin-left:auto; font-size:13.5px; color:#5a6478">Se ofrece 17:45 en la misma llamada</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ MÉTODO ══════════ -->
+  <section id="metodo" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:104px 56px">
+      <div style="display:grid; grid-template-columns:190px minmax(0,1fr); gap:56px; margin-bottom:56px">
+        <div style="border-top:1px solid #2f3a4d; padding-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#66718a">Método<b style="display:block; color:#c8a45c; font-weight:400; margin-top:5px">cómo trabajamos</b></div>
+        <h2 style="font-family:var(--edit); font-weight:300; font-size:40px; line-height:1.14; letter-spacing:-0.014em; margin:0; max-width:22ch">Cuatro etapas, y usted ve el panel en la primera<span style="display:inline-block; width:8px; height:8px; background:#6e9bf5; margin-left:5px"></span></h2>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0; border-top:1px solid #2f3a4d">
+        <div style="padding:34px 32px 38px 0; border-right:1px solid #212a3a; display:flex; flex-direction:column; gap:14px">
+          <div style="display:flex; align-items:center; gap:10px"><span style="width:7px; height:7px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:#6e9bf5">01</span></div>
+          <h3 style="font-family:var(--sans); font-weight:600; font-size:19px; margin:0; letter-spacing:-0.01em">Diagnóstico</h3>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#66718a">2 semanas</span>
+          <p style="margin:0; color:#97a2b5; font-size:15px">Mapeamos el proceso y medimos qué se está perdiendo hoy.</p>
+        </div>
+        <div style="padding:34px 32px 38px; border-right:1px solid #212a3a; display:flex; flex-direction:column; gap:14px">
+          <div style="display:flex; align-items:center; gap:10px"><span style="width:7px; height:7px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:#6e9bf5">02</span></div>
+          <h3 style="font-family:var(--sans); font-weight:600; font-size:19px; margin:0; letter-spacing:-0.01em">Piloto</h3>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#66718a">4 semanas</span>
+          <p style="margin:0; color:#97a2b5; font-size:15px">Un número, un proceso y un negocio, con métricas desde el primer día.</p>
+        </div>
+        <div style="padding:34px 32px 38px; border-right:1px solid #212a3a; display:flex; flex-direction:column; gap:14px">
+          <div style="display:flex; align-items:center; gap:10px"><span style="width:7px; height:7px; background:#6e9bf5"></span><span style="font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:#6e9bf5">03</span></div>
+          <h3 style="font-family:var(--sans); font-weight:600; font-size:19px; margin:0; letter-spacing:-0.01em">Operación</h3>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#66718a">Continuo</span>
+          <p style="margin:0; color:#97a2b5; font-size:15px">Nosotros lo operamos. Usted ve el panel, no el código.</p>
+        </div>
+        <div style="padding:34px 0 38px 32px; display:flex; flex-direction:column; gap:14px">
+          <div style="display:flex; align-items:center; gap:10px"><span style="width:7px; height:7px; background:#3fb68b"></span><span style="font-family:var(--mono); font-size:11px; letter-spacing:.2em; color:#3fb68b">04</span></div>
+          <h3 style="font-family:var(--sans); font-weight:600; font-size:19px; margin:0; letter-spacing:-0.01em">Escala</h3>
+          <span style="font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#66718a">Continuo</span>
+          <p style="margin:0; color:#97a2b5; font-size:15px">Más procesos, más sucursales y el mismo motor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ CARRUSEL ══════════ -->
+  <section style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:44px 56px 0">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:22px">
+        <span style="width:6px; height:6px; background:#c8a45c"></span>
+        <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#c8a45c">Confían en Dimia</span>
+      </div>
+    </div>
+    <div class="marq-wrap" style="border-top:1px solid #212a3a; border-bottom:1px solid #212a3a; overflow:hidden; padding:26px 0">
+      <div class="marq">
+        <sc-for list="{{marquesina}}" as="m" hint-placeholder-count="6">
+          <span style="font-family:var(--mono); font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:#eef1f7; opacity:.55; padding:0 28px; white-space:nowrap; height:28px; display:inline-flex; align-items:center">{{m.nombre}}</span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="max-width:1280px; margin:0 auto; padding:14px 56px 40px">
+      <p style="margin:0; font-size:12.5px; color:#66718a; max-width:70ch">Sectores atendidos. Los nombres y logotipos de clientes aparecen aquí únicamente cuando existe autorización por escrito.</p>
+    </div>
+  </section>
+
+  <!-- ══════════ PROYECTOS ══════════ -->
+  <section id="proyectos" style="border-bottom:1px solid #212a3a; background:#0d121c">
+    <div style="max-width:1280px; margin:0 auto; padding:104px 56px">
+      <div style="display:grid; grid-template-columns:190px minmax(0,1fr); gap:56px; margin-bottom:48px">
+        <div style="border-top:1px solid #2f3a4d; padding-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#66718a">Proyectos<b style="display:block; color:#c8a45c; font-weight:400; margin-top:5px">casos medidos</b></div>
+        <h2 style="font-family:var(--edit); font-weight:300; font-size:40px; line-height:1.14; letter-spacing:-0.014em; margin:0; max-width:22ch">Lo que instalamos, y lo que se pudo medir después<span style="display:inline-block; width:8px; height:8px; background:#6e9bf5; margin-left:5px"></span></h2>
+      </div>
+
+      <div style="display:grid; grid-template-columns:300px minmax(0,1fr); gap:0; border:1px solid #212a3a; background:#111723">
+        <div style="border-right:1px solid #212a3a; display:flex; flex-direction:column">
+          <sc-for list="{{casos}}" as="c" hint-placeholder-count="3">
+            <button type="button" onClick="{{c.elegir}}" style="text-align:left; padding:24px 22px; border-bottom:1px solid #212a3a; background:{{c.fondo}}; display:flex; flex-direction:column; gap:8px; transition:background 150ms">
+              <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:{{c.rotuloColor}}">{{c.giro}}</span>
+              <span style="font-size:15.5px; font-weight:500; color:{{c.tituloColor}}">{{c.titulo}}</span>
+              <span style="display:flex; align-items:center; gap:9px; margin-top:2px">
+                <span style="width:6px; height:6px; background:{{c.punto}}"></span>
+                <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:#66718a">{{c.estado}}</span>
+              </span>
+            </button>
+          </sc-for>
+          <div style="padding:20px 22px; font-size:12.5px; color:#66718a; line-height:1.5">Los nombres se publican solo con autorización por escrito del cliente.</div>
+        </div>
+
+        <div style="padding:40px 44px; display:flex; flex-direction:column; gap:28px">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:10px">
+              <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:#c8a45c">{{caso.giro}}</span>
+              <h3 style="font-family:var(--edit); font-weight:300; font-size:32px; line-height:1.12; margin:0">{{caso.cliente}}</h3>
+            </div>
+            <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:#66718a; white-space:nowrap; padding-top:8px">{{caso.periodo}}</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:32px">
+            <div>
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:9px">Problema operativo</div>
+              <p style="margin:0; color:#97a2b5; font-size:15.5px">{{caso.problema}}</p>
+            </div>
+            <div>
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:9px">Qué instaló Dimia</div>
+              <p style="margin:0; color:#97a2b5; font-size:15.5px">{{caso.instalado}}</p>
+            </div>
+          </div>
+
+          <div style="height:1px; background:#212a3a"></div>
+
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:32px; flex-wrap:wrap">
+            <div>
+              <div style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:11px">Resultado</div>
+              <div style="font-family:var(--mono); font-size:26px; line-height:1.2; color:#eef1f7; font-variant-numeric:tabular-nums">{{caso.resultado}}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:18px">
+              <sc-for list="{{caso.tec}}" as="t" hint-placeholder-count="3">
+                <span style="font-family:var(--mono); font-size:11px; color:#66718a; letter-spacing:.1em">{{t.n}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ CAPACIDADES ══════════ -->
+  <section style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:96px 56px">
+      <div style="display:grid; grid-template-columns:190px minmax(0,1fr); gap:56px">
+        <div style="border-top:1px solid #2f3a4d; padding-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#66718a">Capacidades<b style="display:block; color:#c8a45c; font-weight:400; margin-top:5px">índice</b></div>
+        <div>
+          <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 56px">
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">01</span><span style="font-size:16px; color:#eef1f7; flex:1">Voz y atención</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">telefonía · turnos</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">05</span><span style="font-size:16px; color:#eef1f7; flex:1">Analítica</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">tableros · métricas</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">02</span><span style="font-size:16px; color:#eef1f7; flex:1">Automatización</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">procesos · avisos</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">06</span><span style="font-size:16px; color:#eef1f7; flex:1">Productos digitales</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">web · paneles</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">03</span><span style="font-size:16px; color:#eef1f7; flex:1">Integración de sistemas</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">CRM · calendario</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">07</span><span style="font-size:16px; color:#eef1f7; flex:1">Operación continua</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">guardia · soporte</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a; border-bottom:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">04</span><span style="font-size:16px; color:#eef1f7; flex:1">Bases de datos</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">integridad · reglas</span></div>
+            <div class="cap-fila" style="display:flex; align-items:baseline; gap:16px; padding:17px 0; border-top:1px solid #212a3a; border-bottom:1px solid #212a3a"><span style="font-family:var(--mono); font-size:11px; color:#66718a; width:26px; flex:none">08</span><span style="font-size:16px; color:#eef1f7; flex:1">Medición de resultados</span><span style="font-family:var(--mono); font-size:11px; color:#66718a">ingreso · atribución</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ EQUIPO ══════════ -->
+  <section style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1280px; margin:0 auto; padding:96px 56px">
+      <div style="display:grid; grid-template-columns:190px minmax(0,1fr); gap:56px">
+        <div style="border-top:1px solid #2f3a4d; padding-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:#66718a">Equipo<b style="display:block; color:#c8a45c; font-weight:400; margin-top:5px">los socios</b></div>
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0; border-top:1px solid #2f3a4d">
+          <div style="padding:36px 40px 36px 0; border-right:1px solid #212a3a; display:flex; gap:26px">
+            <div style="width:96px; height:120px; flex:none; border:1px solid #212a3a; background:#111723; display:flex; align-items:flex-end; padding:12px">
+              <span class="dimia" style="font-size:26px; color:#2f3a4d">RD</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px">
+              <h3 style="font-family:var(--sans); font-weight:600; font-size:19px; margin:0; letter-spacing:-0.01em">Rogelio Díaz Alanís</h3>
+              <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:#c8a45c">Socio · Operaciones</span>
+              <p style="margin:6px 0 0; color:#97a2b5; font-size:15px; max-width:34ch">[ Trayectoria verificable: años, sectores y responsabilidad anterior. ]</p>
+            </div>
+          </div>
+          <div style="padding:36px 0 36px 40px; display:flex; gap:26px">
+            <div style="width:96px; height:120px; flex:none; border:1px solid #212a3a; background:#111723; display:flex; align-items:flex-end; padding:12px">
+              <span class="dimia" style="font-size:26px; color:#2f3a4d">JM</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px">
+              <h3 style="font-family:var(--sans); font-weight:600; font-size:19px; margin:0; letter-spacing:-0.01em">Jesús Daniel Martínez García</h3>
+              <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:#c8a45c">Socio · Tecnología</span>
+              <p style="margin:6px 0 0; color:#97a2b5; font-size:15px; max-width:34ch">[ Trayectoria verificable: años, sectores y responsabilidad anterior. ]</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="margin:22px 0 0; font-size:12.5px; color:#66718a; padding-left:246px">Los bloques tipográficos se sustituyen por fotografía real en duotono tinta/azul cuando esté disponible.</p>
+    </div>
+  </section>
+
+  <!-- ══════════ CIERRE ══════════ -->
+  <section id="contacto" style="border-bottom:1px solid #212a3a; position:relative">
+    <div style="position:absolute; inset:0; background-image:linear-gradient(#151c29 1px, transparent 1px), linear-gradient(90deg, #151c29 1px, transparent 1px); background-size:96px 96px; opacity:.45"></div>
+    <div style="position:relative; max-width:1280px; margin:0 auto; padding:112px 56px">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.86fr); gap:80px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:30px">
+          <span class="dimia marca-anim" style="font-size:64px">D<i class="i a1"></i>m<i class="i"></i>a<i class="fin"></i></span>
+          <h2 style="font-family:var(--edit); font-weight:300; font-size:52px; line-height:1.06; letter-spacing:-0.016em; margin:0; max-width:14ch">Donde el dato decide<span style="display:inline-block; width:11px; height:11px; background:#6e9bf5; margin-left:6px"></span></h2>
+          <div style="display:flex; flex-direction:column; gap:16px; padding-top:8px">
+            <div style="display:flex; align-items:center; gap:14px">
+              <span class="lat" aria-hidden="true"></span>
+              <a href="tel:+525500000000" style="font-family:var(--mono); font-size:22px; color:#eef1f7; font-variant-numeric:tabular-nums; letter-spacing:.02em">[ +52 55 0000 0000 ]</a>
+            </div>
+            <p style="margin:0; font-size:14px; color:#97a2b5; max-width:42ch">Este número contesta con el agente de voz de Dimia. Pregúntele por un horario y compruébelo usted mismo.</p>
+            <a href="mailto:hola@dimia.mx" style="font-family:var(--mono); font-size:14px; color:#97a2b5; letter-spacing:.06em">hola@dimia.mx</a>
+          </div>
+        </div>
+
+        <form onSubmit="{{enviar}}" style="border:1px solid #212a3a; background:#111723; padding:38px 36px; display:flex; flex-direction:column; gap:26px">
+          <div style="display:flex; align-items:center; gap:12px">
+            <span style="width:6px; height:6px; background:#c8a45c"></span>
+            <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.22em; text-transform:uppercase; color:#c8a45c">Agendar demostración</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:22px">
+            <label style="display:flex; flex-direction:column; gap:7px">
+              <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a">Nombre</span>
+              <input class="campo" type="text" name="nombre" placeholder="Su nombre" autocomplete="name">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px">
+              <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a">Empresa</span>
+              <input class="campo" type="text" name="empresa" placeholder="Nombre del negocio" autocomplete="organization">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:7px">
+              <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a">Teléfono o correo</span>
+              <input class="campo" type="text" name="contacto" placeholder="Por dónde le contestamos" autocomplete="tel">
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-p" style="width:100%; background:{{boton.fondo}}; color:{{boton.tinta}}">{{boton.texto}}</button>
+
+          <div style="border-top:1px solid #212a3a; padding-top:18px; display:flex; align-items:flex-start; gap:12px; min-height:62px">
+            <span style="width:7px; height:7px; flex:none; background:{{aviso2.color}}; margin-top:7px"></span>
+            <p style="margin:0; font-size:13.5px; line-height:1.55; color:{{aviso2.tinta}}">{{aviso2.texto}}</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ FOOTER ══════════ -->
+  <footer style="background:#0b0f17">
+    <div style="max-width:1280px; margin:0 auto; padding:64px 56px 40px">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:64px; align-items:start; padding-bottom:48px; border-bottom:1px solid #212a3a">
+        <div style="display:flex; flex-direction:column; gap:20px">
+          <div style="display:flex; flex-direction:column; gap:9px">
+            <span class="dimia" style="font-size:30px">D<i class="i a1"></i>m<i class="i"></i>a<i class="fin"></i></span>
+            <span style="font-family:var(--mono); font-size:10px; letter-spacing:.43em; text-transform:uppercase; color:#97a2b5; padding-left:2px">Consulting</span>
+          </div>
+          <p style="margin:0; font-family:var(--edit); font-weight:300; font-size:24px; line-height:1.25; color:#97a2b5; max-width:26ch">Sistemas de decisión para empresas que ya no alcanzan a contestar.</p>
+        </div>
+        <div style="display:flex; gap:72px">
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:4px">Firma</span>
+            <a href="#servicios" style="font-size:14px; color:#97a2b5">Servicios</a>
+            <a href="#productos" style="font-size:14px; color:#97a2b5">Productos</a>
+            <a href="#proyectos" style="font-size:14px; color:#97a2b5">Proyectos</a>
+            <a href="#metodo" style="font-size:14px; color:#97a2b5">Método</a>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <span style="font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#66718a; margin-bottom:4px">Contacto</span>
+            <a href="#contacto" style="font-size:14px; color:#97a2b5">Agendar demostración</a>
+            <a href="mailto:hola@dimia.mx" style="font-size:14px; color:#97a2b5">hola@dimia.mx</a>
+            <a href="#" style="font-size:14px; color:#97a2b5">LinkedIn</a>
+            <a href="#" style="font-size:14px; color:#97a2b5">Aviso de privacidad</a>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:24px; padding-top:24px">
+        <span style="font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:#66718a">Dimia Consulting · Ciudad de México · dimia.mx</span>
+        <span style="width:9px; height:9px; background:#6e9bf5"></span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":9400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { t: 0, caso: 0, envio: 'reposo' };
+    this.quieto = false;
+  }
+
+  componentDidMount() {
+    try {
+      this.quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) { this.quieto = false; }
+    if (this.quieto) { this.setState({ t: 52 }); return; }
+    this.reloj = setInterval(() => {
+      this.setState((s) => ({ t: s.t >= 78 ? 0 : s.t + 1 }));
+    }, 200);
+  }
+
+  componentWillUnmount() { if (this.reloj) clearInterval(this.reloj); }
+
+  mmss(seg) {
+    const m = Math.floor(seg / 60), s = seg % 60;
+    return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+  }
+
+  renderVals() {
+    const t = this.state.t;
+
+    // ── panel del hero ──
+    let estado = { texto: 'Línea disponible', color: '#66718a', op: 1 };
+    if (t >= 5 && t < 8) estado = { texto: 'Llamada entrante', color: '#e0a838', op: 1 };
+    else if (t >= 8 && t < 50) estado = { texto: 'En llamada', color: '#6e9bf5', op: (t % 5 < 2 ? 0.3 : 1) };
+    else if (t >= 50 && t < 64) estado = { texto: 'Confirmada', color: '#3fb68b', op: 1 };
+    else if (t >= 64) estado = { texto: 'Línea disponible', color: '#66718a', op: 1 };
+
+    const seg = t < 8 ? 0 : (t >= 50 ? 42 : t - 8);
+    const crono = this.mmss(seg);
+
+    const guion = [
+      { t: 5,  hora: '00:00', texto: 'Llamada entrante · número no registrado', color: '#e0a838', tinta: '#97a2b5' },
+      { t: 8,  hora: '00:00', texto: 'El agente contesta y se identifica', color: '#6e9bf5', tinta: '#97a2b5' },
+      { t: 14, hora: '00:06', texto: 'Intención: reservar mesa para el jueves', color: '#6e9bf5', tinta: '#eef1f7' },
+      { t: 22, hora: '00:14', texto: 'Consulta de disponibilidad en la base', color: '#6e9bf5', tinta: '#97a2b5' },
+      { t: 32, hora: '00:24', texto: 'Propone jueves 4 · 18:30 · 4 personas', color: '#6e9bf5', tinta: '#eef1f7' },
+      { t: 44, hora: '00:36', texto: 'Escribe la reserva #A-2291', color: '#6e9bf5', tinta: '#97a2b5' },
+      { t: 50, hora: '00:42', texto: 'Reserva confirmada · cuelga', color: '#3fb68b', tinta: '#eef1f7' },
+      { t: 58, hora: '00:44', texto: 'Aviso por WhatsApp preparado', color: '#3fb68b', tinta: '#97a2b5' }
+    ];
+    const visibles = guion.filter((l) => t >= l.t).slice(-5);
+
+    const hayReserva = t >= 32;
+    const reserva = {
+      fecha: hayReserva ? 'Jue 4 · 18:30' : '—',
+      personas: hayReserva ? '4' : '—',
+      folio: t >= 44 ? '#A-2291' : '—',
+      tinta: hayReserva ? '#eef1f7' : '#2f3a4d'
+    };
+
+    let aviso = { texto: 'En espera de llamadas', color: '#66718a' };
+    if (t >= 58 && t < 64) aviso = { texto: 'Aviso por WhatsApp enviado', color: '#3fb68b' };
+    else if (t >= 8 && t < 50) aviso = { texto: 'Grabando y transcribiendo', color: '#66718a' };
+    else if (t >= 50 && t < 58) aviso = { texto: 'Escribiendo en la agenda', color: '#66718a' };
+
+    // ── marquesina: lista editable (nombre real cuando haya autorización) ──
+    const sectores = [
+      { nombre: 'Consultorios' }, { nombre: 'Restaurantes' }, { nombre: 'Clínicas' },
+      { nombre: 'Salones' }, { nombre: 'Despachos' }, { nombre: 'Empresas de servicios' }
+    ];
+    const marquesina = sectores.concat(sectores);
+
+    // ── casos ──
+    const fuente = [
+      {
+        giro: 'Consultorio dental',
+        titulo: '[ Nombre del cliente autorizado ]',
+        cliente: '[ Nombre del cliente autorizado ]',
+        estado: 'En operación',
+        punto: '#3fb68b',
+        periodo: '[ Periodo medido ]',
+        problema: 'Una recepcionista atendía el mostrador y el teléfono al mismo tiempo. Las llamadas de la tarde se quedaban sin contestar.',
+        instalado: 'Agente de voz sobre el número existente, motor de reservas en la base y aviso por WhatsApp al confirmar.',
+        resultado: '[ Resultado por confirmar ]',
+        tec: [{ n: 'Telefonía' }, { n: 'Base de reservas' }, { n: 'WhatsApp' }]
+      },
+      {
+        giro: 'Restaurante',
+        titulo: '[ Nombre del cliente autorizado ]',
+        cliente: '[ Nombre del cliente autorizado ]',
+        estado: 'En operación',
+        punto: '#3fb68b',
+        periodo: '[ Periodo medido ]',
+        problema: 'Las reservas vivían en una libreta y en dos teléfonos. Dos mesas quedaban encimadas cada fin de semana.',
+        instalado: 'Motor de reservas con restricción de traslape en la base y panel de sala para el anfitrión.',
+        resultado: '[ Resultado por confirmar ]',
+        tec: [{ n: 'Base de reservas' }, { n: 'Panel de sala' }]
+      },
+      {
+        giro: 'Despacho de servicios',
+        titulo: '[ Nombre del cliente autorizado ]',
+        cliente: '[ Nombre del cliente autorizado ]',
+        estado: 'Piloto',
+        punto: '#e0a838',
+        periodo: '[ Periodo medido ]',
+        problema: 'El seguimiento a prospectos dependía de que alguien se acordara de marcar al día siguiente.',
+        instalado: 'Automatización de seguimiento con registro auditado y tablero de conversión por origen.',
+        resultado: '[ Resultado por confirmar ]',
+        tec: [{ n: 'Automatización' }, { n: 'Tablero' }]
+      }
+    ];
+
+    const casos = fuente.map((c, i) => ({
+      giro: c.giro,
+      titulo: c.titulo,
+      estado: c.estado,
+      punto: c.punto,
+      fondo: i === this.state.caso ? '#161d2b' : 'transparent',
+      rotuloColor: i === this.state.caso ? '#c8a45c' : '#66718a',
+      tituloColor: i === this.state.caso ? '#eef1f7' : '#97a2b5',
+      elegir: () => this.setState({ caso: i })
+    }));
+
+    const caso = fuente[this.state.caso] || fuente[0];
+
+    // ── formulario ──
+    const envio = this.state.envio;
+    const boton = {
+      texto: envio === 'enviando' ? 'Enviando…' : 'Agendar demostración',
+      fondo: envio === 'enviando' ? '#2f3a4d' : '#6e9bf5',
+      tinta: envio === 'enviando' ? '#97a2b5' : '#08111f'
+    };
+    let aviso2 = {
+      texto: 'Sus datos se usan únicamente para contactarle. Respondemos el mismo día hábil.',
+      color: '#2f3a4d', tinta: '#66718a'
+    };
+    if (envio === 'enviando') aviso2 = { texto: 'Enviando su solicitud…', color: '#e0a838', tinta: '#97a2b5' };
+    if (envio === 'sin-conexion') aviso2 = {
+      texto: 'Este formulario todavía no está conectado a un destino. Mientras tanto, llame al número de arriba o escriba a hola@dimia.mx.',
+      color: '#e2685c', tinta: '#e2685c'
+    };
+
+    const enviar = (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      this.setState({ envio: 'enviando' });
+      setTimeout(() => this.setState({ envio: 'sin-conexion' }), 700);
+    };
+
+    return { estado, crono, lineas: visibles, reserva, aviso, marquesina, casos, caso, boton, aviso2, enviar };
+  }
+}
+</script>
+</body>
+</html>

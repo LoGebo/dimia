@@ -1,0 +1,371 @@
+<title>Color del acento · Dimia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;1,6..72,300&display=swap">
+
+<style>
+  :root {
+    color-scheme: dark;
+    --ink:#0b0f17; --ink-2:#111723;
+    --linea:#212a3a; --linea-2:#2f3a4d;
+    --hueso:#eef1f7; --acero:#97a2b5; --acero-2:#66718a;
+    --azul:#6e9bf5; --azul-hondo:#1f47c4; --laton:#c8a45c; --papel:#f2f4f8;
+    --f-edit:"Newsreader", ui-serif, Georgia, serif;
+    --f-sans:"Archivo", ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --f-mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ink); color:var(--hueso); font-family:var(--f-sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+  .hoja { max-width:1180px; margin:0 auto; padding:clamp(26px,4.5vw,60px) clamp(18px,4vw,48px) 84px; }
+
+  .dimia {
+    --c1:var(--azul); --c2:var(--hueso); --cf:var(--hueso);
+    font-family:var(--f-sans); font-weight:800; letter-spacing:-0.028em;
+    line-height:1; white-space:nowrap; display:inline-block; color:var(--hueso); font-size:34px;
+  }
+  .i { display:inline-block; width:.145em; height:.52em; background:currentColor; position:relative; margin:0 .075em 0 .062em; vertical-align:baseline; }
+  .i::before { content:""; position:absolute; left:-.008em; bottom:.605em; width:.16em; height:.16em; }
+  .i1::before { background:var(--c1); }
+  .i2::before { background:var(--c2); }
+  .fin { display:inline-block; width:.2em; height:.2em; background:var(--cf); margin-left:.085em; vertical-align:baseline; }
+
+  header { padding-bottom:34px; border-bottom:1px solid var(--linea-2); }
+  .kicker { font-family:var(--f-mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--laton); margin-bottom:16px; }
+  h1 { font-family:var(--f-edit); font-weight:300; font-size:clamp(29px,4vw,48px); line-height:1.12; letter-spacing:-0.012em; margin:0 0 18px; text-wrap:balance; }
+  .parrafo { max-width:64ch; color:var(--acero); font-size:16.5px; margin:0 0 14px; }
+  .parrafo strong { color:var(--hueso); font-weight:600; }
+  .parrafo em { color:var(--acero); font-style:normal; }
+  .mono { font-family:var(--f-mono); font-size:.9em; }
+
+  h2 { font-family:var(--f-edit); font-weight:300; font-size:clamp(23px,2.5vw,30px); letter-spacing:-0.01em; margin:0 0 8px; }
+  .seccion { padding-top:52px; }
+  .intro-s { color:var(--acero-2); font-size:13.5px; max-width:62ch; margin:0 0 24px; }
+
+  .rejilla { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(320px,1fr)); }
+  .v { margin:0; border:1px solid var(--linea); background:var(--ink-2); display:flex; flex-direction:column; }
+  .v .placa { background:var(--ink); border-bottom:1px solid var(--linea); padding:26px 22px; display:flex; flex-direction:column; gap:18px; align-items:flex-start; justify-content:center; min-height:164px; }
+  .lockup { display:flex; align-items:center; gap:14px; }
+  .lockup.chico { gap:7px; }
+  .lockup.chico .dimia { font-size:13px; }
+  .v figcaption { padding:14px 16px 17px; display:flex; flex-direction:column; gap:9px; }
+  .v .cab { display:flex; align-items:center; gap:9px; }
+  .v .num { font-family:var(--f-mono); font-size:10px; letter-spacing:.18em; color:var(--acero-2); }
+  .v .nom { font-weight:600; font-size:14.5px; letter-spacing:-0.005em; }
+  .chips { display:flex; gap:12px; flex-wrap:wrap; }
+  .chip { font-family:var(--f-mono); font-size:10px; letter-spacing:.1em; color:var(--acero-2); display:inline-flex; align-items:center; gap:5px; }
+  .chip i { width:9px; height:9px; display:inline-block; }
+  .v .nota { margin:0; font-size:12.5px; color:var(--acero-2); line-height:1.5; }
+
+  .veredicto { margin-top:54px; border:1px solid var(--laton); background:linear-gradient(160deg,#141118,#0b0f17 70%); padding:clamp(22px,3.4vw,32px); }
+  .veredicto h2 { margin-bottom:14px; }
+  ul.limpia { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; }
+  ul.limpia li { padding-left:20px; position:relative; font-size:15.5px; color:var(--acero); }
+  ul.limpia li::before { content:""; position:absolute; left:0; top:.58em; width:6px; height:6px; background:var(--azul); }
+  ul.limpia li strong { color:var(--hueso); font-weight:600; }
+
+  footer { margin-top:64px; padding-top:22px; border-top:1px solid var(--linea-2); font-family:var(--f-mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--acero-2); display:flex; flex-wrap:wrap; gap:10px 28px; justify-content:space-between; }
+  :focus-visible { outline:2px solid var(--azul); outline-offset:3px; }
+</style>
+
+<div class="hoja">
+  <header>
+    <div class="kicker">Dimia Consulting · Reparto del color</div>
+    <h1>Dieciséis maneras de repartir el color entre los tres cuadrados</h1>
+    <p class="parrafo">Misma forma en todas: <strong>el dibujo no se toca</strong>. Lo único que cambia es qué color lleva el punto de la primera <span class="mono">i</span>, el de la segunda y el punto final — y con eso cambia por completo dónde entra el ojo y qué tan formal se siente el nombre.</p>
+    <p class="parrafo">Los cuatro colores disponibles son <span class="mono">hueso</span>, <span class="mono">azul</span>, <span class="mono">latón</span> y <span class="mono">acero</span>. Cada tarjeta muestra el ícono, el logotipo grande, el mismo en tamaño de firma, y las tres fichas de color que la componen.</p>
+  </header>
+
+  <section class="seccion">
+    <h2>El banco de repartos</h2>
+    <p class="intro-s">De un solo acento a los tres encendidos, y después las mezclas con latón y acero.</p>
+    <div class="rejilla">
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 01"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--hueso); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--hueso); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">01</span><span class="nom">Entrada</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#eef1f7"></i>punto</span></div>
+        <p class="nota">El acento abre la palabra. Es la versión que está hoy en el manual: el ojo aterriza donde empieza a leer.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 02"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--azul); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--azul); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">02</span><span class="nom">Centro</span></div>
+        <div class="chips"><span class="chip"><i style="background:#eef1f7"></i>i¹</span><span class="chip"><i style="background:#6e9bf5"></i>i²</span><span class="chip"><i style="background:#eef1f7"></i>punto</span></div>
+        <p class="nota">El acento cae en el medio exacto del nombre. Estable, simétrico, y el más tranquilo de los tres.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 03"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">03</span><span class="nom">Cierre</span></div>
+        <div class="chips"><span class="chip"><i style="background:#eef1f7"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">El acento remata. Era el logotipo original: la marca termina en una afirmación.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 04"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--azul); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--azul); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">04</span><span class="nom">Arriba</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#6e9bf5"></i>i²</span><span class="chip"><i style="background:#eef1f7"></i>punto</span></div>
+        <p class="nota">Los dos puntos de las i en azul y el cierre en hueso. Se lee como una línea de puntos suspendida.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 05"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">05</span><span class="nom">Paréntesis</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">Azul al abrir y al cerrar, hueso en medio. La palabra queda encerrada entre dos acentos.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 06"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--azul); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--azul); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">06</span><span class="nom">Cola</span></div>
+        <div class="chips"><span class="chip"><i style="background:#eef1f7"></i>i¹</span><span class="chip"><i style="background:#6e9bf5"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">Los dos últimos en azul. El peso se recarga a la derecha y empuja hacia adelante.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 07"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--azul); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--azul); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">07</span><span class="nom">Lleno</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#6e9bf5"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">Los tres en azul. Máximo color, mínima jerarquía: el nombre se fragmenta en pedazos sueltos.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 08"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--hueso); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--hueso); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">08</span><span class="nom">Silencio</span></div>
+        <div class="chips"><span class="chip"><i style="background:#eef1f7"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#eef1f7"></i>punto</span></div>
+        <p class="nota">Todo en hueso. Bordado, grabado, una sola tinta, o fondos donde el azul no aguanta.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 09"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--laton); --c2:var(--hueso); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--laton); --c2:var(--hueso); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">09</span><span class="nom">Firma</span></div>
+        <div class="chips"><span class="chip"><i style="background:#c8a45c"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#eef1f7"></i>punto</span></div>
+        <p class="nota">Latón en la primera i. La versión ceremonial: contrato, reconocimiento, aniversario.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 10"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--hueso); --cf:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--hueso); --c2:var(--hueso); --cf:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">10</span><span class="nom">Sello</span></div>
+        <div class="chips"><span class="chip"><i style="background:#eef1f7"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#c8a45c"></i>punto</span></div>
+        <p class="nota">Latón solo en el cierre. Más discreto que la 09 y funciona mejor impreso en foil.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 11"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--hueso); --cf:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--hueso); --cf:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">11</span><span class="nom">Metal frío</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#c8a45c"></i>punto</span></div>
+        <p class="nota">Azul al abrir, latón al cerrar. Los dos colores de la marca conviven sin pelearse.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 12"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--laton); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--laton); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">12</span><span class="nom">Metal cálido</span></div>
+        <div class="chips"><span class="chip"><i style="background:#c8a45c"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">Latón al abrir, azul al cerrar. Invierte el orden: primero la firma, después el dato.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 13"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#97a2b5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--acero); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#97a2b5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--acero); --cf:var(--hueso)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">13</span><span class="nom">Sombra</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#97a2b5"></i>i²</span><span class="chip"><i style="background:#eef1f7"></i>punto</span></div>
+        <p class="nota">La segunda i en acero. El acento azul manda y la segunda queda como su eco apagado.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 14"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#97a2b5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--acero); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#97a2b5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--acero); --c2:var(--hueso); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">14</span><span class="nom">Eco</span></div>
+        <div class="chips"><span class="chip"><i style="background:#97a2b5"></i>i¹</span><span class="chip"><i style="background:#eef1f7"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">La primera en acero y el cierre en azul. La palabra empieza en gris y termina resolviendo.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 15"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#97a2b5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#97a2b5"/></svg>
+          <span class="dimia" style="--c1:var(--acero); --c2:var(--acero); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#97a2b5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#97a2b5"/></svg>
+          <span class="dimia" style="--c1:var(--acero); --c2:var(--acero); --cf:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">15</span><span class="nom">Vigilia</span></div>
+        <div class="chips"><span class="chip"><i style="background:#97a2b5"></i>i¹</span><span class="chip"><i style="background:#97a2b5"></i>i²</span><span class="chip"><i style="background:#6e9bf5"></i>punto</span></div>
+        <p class="nota">Las dos i en acero y solo el cierre en azul. Máxima contención: casi todo el nombre calla.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="52" height="52" role="img" aria-label="Ícono variante 16"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--azul); --cf:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="19" height="19" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c1:var(--azul); --c2:var(--azul); --cf:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab"><span class="num">16</span><span class="nom">Doble firma</span></div>
+        <div class="chips"><span class="chip"><i style="background:#6e9bf5"></i>i¹</span><span class="chip"><i style="background:#6e9bf5"></i>i²</span><span class="chip"><i style="background:#c8a45c"></i>punto</span></div>
+        <p class="nota">Azules arriba, latón abajo. Es la más recargada que aún se sostiene; solo para pieza ceremonial.</p>
+      </figcaption>
+    </figure>
+    </div>
+  </section>
+
+  <div class="veredicto">
+    <h2>Cómo elegiría</h2>
+    <ul class="limpia">
+      <li><strong>01 · Entrada</strong> como principal. Un solo acento y en el arranque: es la que más rápido enseña a leer la marca, y la que mejor sobrevive cuando el logotipo va a 13 px en una firma de correo.</li>
+      <li><strong>09 · Firma</strong> como ceremonial. La misma pieza en latón, reservada a contrato, reconocimiento y portada final. No es otra marca, es la misma vestida.</li>
+      <li><strong>08 · Silencio</strong> como técnica. Para bordado, grabado, una sola tinta y cualquier fondo donde el azul no aguante.</li>
+    </ul>
+    <p class="parrafo" style="margin-top:16px">Tres repartos —principal, ceremonial y técnico— es todo lo que un sistema necesita. <em>La 05 y la 11 son bonitas pero cuestan caro:</em> dos acentos obligan al lector a decidir dónde mirar, y esa duda es exactamente lo que un logotipo debe evitar. La <span class="mono">07</span> queda descartada sin discusión.</p>
+  </div>
+
+  <footer>
+    <span>Dimia Consulting · Reparto del color · para elegir</span>
+    <span><span class="dimia" style="font-size:12px; letter-spacing:0">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span></span>
+  </footer>
+</div>

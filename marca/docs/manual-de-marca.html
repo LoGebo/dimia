@@ -1,0 +1,1167 @@
+<title>Dimia Consulting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap">
+
+<style>
+  /* Dimia Consulting — manual de identidad.
+     Sistema comprometido con fondo oscuro: los valores de superficie clara
+     existen como especificación de impresión y documento, no como tema alterno. */
+  :root {
+    color-scheme: dark;
+
+    --ink:        #0b0f17;
+    --ink-2:      #111723;
+    --ink-3:      #161d2b;
+    --linea:      #212a3a;
+    --linea-2:    #2f3a4d;
+
+    --hueso:      #eef1f7;
+    --acero:      #97a2b5;
+    --acero-2:    #66718a;
+
+    --azul:       #6e9bf5;
+    --azul-hondo: #1f47c4;
+    --azul-vel:   #16203a;
+
+    --laton:      #c8a45c;
+    --papel:      #f2f4f8;
+
+    --verde:      #3fb68b;
+    --ambar:      #e0a838;
+    --rojo:       #e2685c;
+
+    --f-edit: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+    --f-sans: "Archivo", ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--hueso);
+    font-family: var(--f-sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .hoja { max-width: 1160px; margin: 0 auto; padding: clamp(26px,4.5vw,64px) clamp(18px,4vw,52px) 88px; }
+
+  /* ══════ logotipo: lettering con las dos i construidas ══════ */
+  .dimia {
+    font-family: var(--f-sans);
+    font-weight: 800;
+    letter-spacing: -0.028em;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--hueso);
+    display: inline-block;
+  }
+  .i {                                   /* asta */
+    display: inline-block;
+    width: .145em; height: .52em;
+    background: currentColor;
+    position: relative;
+    margin: 0 .075em 0 .062em;
+    vertical-align: baseline;
+  }
+  .i::before {                           /* punto cuadrado */
+    content: "";
+    position: absolute;
+    left: -.008em; bottom: .605em;
+    width: .16em; height: .16em;
+    background: var(--tilde, currentColor);
+  }
+  .i.ia::before { background: var(--tilde-2, var(--azul)); }   /* el acento: primera i */
+  .fin {                                 /* punto final */
+    display: inline-block;
+    width: .2em; height: .2em;
+    background: var(--punto, var(--azul));
+    margin-left: .085em;
+    vertical-align: baseline;
+  }
+
+  .lock { display: inline-flex; flex-direction: column; gap: .5em; }
+  .lock .dimia { font-size: var(--s, 56px); }
+  .lock .desc {
+    font-family: var(--f-mono);
+    font-size: calc(var(--s, 56px) * .168);
+    letter-spacing: .43em;
+    text-transform: uppercase;
+    color: var(--acero);
+    padding-left: .2em;
+  }
+
+  /* cuadrado suelto: viñeta y remate de titular */
+  .pt { display: inline-block; width: .16em; height: .16em; background: var(--azul); margin-left: .06em; }
+
+  /* ══════ portada ══════ */
+  .portada { display: grid; gap: 46px; padding: clamp(30px,5vw,60px) 0 clamp(38px,4vw,54px); border-bottom: 1px solid var(--linea-2); }
+  @media (min-width: 900px) { .portada { grid-template-columns: minmax(0,1fr) minmax(0,1.05fr); gap: 64px; align-items: center; } }
+
+  .marco {
+    background: linear-gradient(160deg, #0d121c 0%, #0b0f17 60%);
+    border: 1px solid var(--linea);
+    padding: clamp(34px,5vw,60px) clamp(26px,4vw,48px);
+    display: grid; place-items: center; position: relative;
+  }
+  .marco::after { content:""; position:absolute; left:0; right:0; top:0; height:1px; background: linear-gradient(90deg, transparent, var(--azul), transparent); opacity:.5; }
+
+  .tesis { font-family: var(--f-edit); font-weight: 300; font-size: clamp(31px,4.3vw,52px); line-height: 1.12; letter-spacing: -0.012em; margin: 0 0 20px; text-wrap: balance; }
+  .tesis em { font-style: italic; }
+
+  p { margin: 0 0 14px; }
+  .parrafo { max-width: 64ch; color: var(--acero); font-size: 16.5px; }
+  .parrafo strong { color: var(--hueso); font-weight: 600; }
+  .parrafo em, .nota em { color: var(--acero); font-style: normal; }
+
+  /* ══════ índice ══════ */
+  .indice {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 1px; background: var(--linea);
+    border: 1px solid var(--linea);
+    margin-top: 44px;
+  }
+  .indice a { background: var(--ink); padding: 13px 14px; text-decoration: none; display: flex; flex-direction: column; gap: 3px; transition: background .15s; }
+  .indice a:hover { background: var(--ink-2); }
+  .indice .n { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .2em; color: var(--acero-2); }
+  .indice .t { font-size: 13.5px; color: var(--hueso); font-weight: 500; }
+
+  /* ══════ secciones ══════ */
+  section { padding-top: 62px; scroll-margin-top: 24px; }
+  .fila { display: grid; gap: 24px; }
+  @media (min-width: 900px) { .fila { grid-template-columns: 190px minmax(0,1fr); gap: 56px; } }
+
+  .rotulo { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--acero-2); padding-top: 10px; border-top: 1px solid var(--linea-2); }
+  .rotulo b { display: block; color: var(--laton); font-weight: 400; margin-top: 4px; }
+
+  h2 { font-family: var(--f-edit); font-weight: 300; font-size: clamp(24px,2.6vw,32px); line-height: 1.2; letter-spacing: -0.01em; margin: 0 0 18px; text-wrap: balance; }
+  h3 { font-family: var(--f-mono); font-weight: 500; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--acero-2); margin: 32px 0 13px; }
+  h3:first-child { margin-top: 0; }
+
+  .nota { font-size: 13.5px; color: var(--acero-2); max-width: 62ch; line-height: 1.55; }
+  code, .mono { font-family: var(--f-mono); font-size: .88em; }
+  code { background: var(--ink-3); border: 1px solid var(--linea); border-radius: 2px; padding: 1px 5px; color: var(--acero); }
+
+  .caja { background: var(--ink-2); border: 1px solid var(--linea); padding: 20px; }
+  .rejilla { display: grid; gap: 14px; }
+  @media (min-width: 680px) { .cols-2 { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 820px) { .cols-3 { grid-template-columns: repeat(3,1fr); } }
+  @media (min-width: 620px) { .cols-4 { grid-template-columns: repeat(2,1fr); } }
+  @media (min-width: 980px) { .cols-4 { grid-template-columns: repeat(4,1fr); } }
+
+  /* ══════ lienzos de marca ══════ */
+  .lienzos { display: grid; gap: 14px; }
+  @media (min-width: 720px) { .lienzos { grid-template-columns: repeat(2,1fr); } }
+  .lienzo { border: 1px solid var(--linea); min-height: 168px; display: grid; place-items: center; padding: 26px; }
+  .lienzo.oscuro { background: var(--ink-2); }
+  .lienzo.claro { background: var(--papel); }
+  .lienzo.claro .dimia { color: var(--ink); }
+  .lienzo.claro .i.ia::before, .lienzo.claro .fin { background: var(--azul-hondo); }
+  .lienzo.claro .desc { color: #5a6478; }
+  .lienzo.azul { background: var(--azul-hondo); }
+  .lienzo.azul .dimia { color: #fff; }
+  .lienzo.azul .i.ia::before, .lienzo.azul .fin { background: #fff; }
+  .lienzo.azul .desc { color: rgb(255 255 255 / .72); }
+  .lienzo.laton { background: var(--ink); }
+  .lienzo.laton .i.ia::before, .lienzo.laton .fin { background: var(--laton); }
+  .pie { font-family: var(--f-mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--acero-2); margin-top: 9px; }
+
+  .construccion { display: flex; flex-wrap: wrap; gap: 28px; align-items: center; }
+  .cs { position: relative; background: var(--ink-2); border: 1px solid var(--linea); padding: 32px; }
+  .cs .guia { position: absolute; inset: 32px; border: 1px dashed var(--azul); opacity: .5; }
+
+  .horizontal { display: inline-flex; align-items: center; gap: .42em; }
+
+  /* ══════ ícono ══════ */
+  .tamanos { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+  .tam { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .tam .pie { margin: 0; }
+  .tile { background: var(--ink-2); border: 1px solid var(--linea); display: grid; place-items: center; }
+  .tile.circ { border-radius: 50%; background: var(--ink); border-color: var(--linea-2); }
+
+  /* ══════ color ══════ */
+  .muestra { border: 1px solid var(--linea); background: var(--ink-2); display: flex; flex-direction: column; }
+  .muestra .chip { height: 92px; border-bottom: 1px solid var(--linea); }
+  .muestra .datos { padding: 13px 15px 16px; display: flex; flex-direction: column; gap: 3px; }
+  .muestra .nombre { font-weight: 600; font-size: 14px; }
+  .muestra .hex { font-family: var(--f-mono); font-size: 11.5px; color: var(--acero); font-variant-numeric: tabular-nums; text-transform: uppercase; }
+  .muestra .uso { font-size: 12.5px; color: var(--acero-2); line-height: 1.45; margin-top: 5px; }
+
+  .proporcion { display: flex; height: 46px; border: 1px solid var(--linea); overflow: hidden; }
+  .leyenda { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 9px; font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--acero-2); }
+
+  /* ══════ tipografía ══════ */
+  .escala { display: flex; flex-direction: column; }
+  .escala > div { display: grid; grid-template-columns: 140px minmax(0,1fr); gap: 22px; align-items: baseline; padding: 18px 0; border-bottom: 1px solid var(--linea); }
+  .escala > div:last-child { border-bottom: 0; }
+  .escala .spec { font-family: var(--f-mono); font-size: 10.5px; color: var(--acero-2); line-height: 1.5; letter-spacing: .04em; }
+  .t-edit   { font-family: var(--f-edit); font-weight: 300; font-size: clamp(27px,3.3vw,40px); line-height: 1.1; letter-spacing: -0.012em; }
+  .t-edit-i { font-family: var(--f-edit); font-weight: 300; font-style: italic; font-size: 23px; color: var(--acero); }
+  .t-tit    { font-family: var(--f-sans); font-weight: 600; font-size: 19px; letter-spacing: -0.015em; }
+  .t-cuerpo { font-family: var(--f-sans); font-weight: 400; font-size: 16px; color: var(--acero); }
+  .t-dato   { font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .t-rot    { font-family: var(--f-mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--acero-2); }
+
+  /* ══════ voz ══════ */
+  .par { display: grid; gap: 14px; }
+  @media (min-width: 760px) { .par { grid-template-columns: 1fr 1fr; } }
+  .voz { border: 1px solid var(--linea); background: var(--ink-2); padding: 18px 20px; display: flex; flex-direction: column; gap: 9px; }
+  .voz .et { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
+  .voz.si { border-top: 2px solid var(--laton); }
+  .voz.no { border-top: 2px solid var(--linea-2); }
+  .voz.si .et { color: var(--laton); }
+  .voz.no .et { color: var(--acero-2); }
+  .voz p { margin: 0; font-size: 16px; font-family: var(--f-edit); font-weight: 300; line-height: 1.4; }
+  .voz.no p { color: var(--acero-2); }
+  .voz .por { font-size: 12.5px; color: var(--acero-2); }
+
+  /* ══════ listas ══════ */
+  ul.limpia { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 11px; }
+  ul.limpia li { padding-left: 20px; position: relative; font-size: 15.5px; color: var(--acero); }
+  ul.limpia li::before { content:""; position:absolute; left:0; top:.58em; width:6px; height:6px; background: var(--azul); }
+  ul.limpia li strong { color: var(--hueso); font-weight: 600; }
+  ul.no li::before { background: var(--linea-2); }
+
+  /* ══════ tabla ══════ */
+  .tabla-envoltura { overflow-x: auto; border: 1px solid var(--linea); background: var(--ink-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { font-family: var(--f-mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--acero-2); font-weight: 400; }
+  tr:last-child td { border-bottom: 0; }
+  td { color: var(--acero); }
+  td strong { color: var(--hueso); font-weight: 600; }
+  td.mono { font-family: var(--f-mono); font-size: 12.5px; }
+  tr.nosotros td { background: var(--azul-vel); color: var(--hueso); }
+
+  /* ══════ redes ══════ */
+  .avatares { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .av { display: flex; flex-direction: column; gap: 9px; align-items: center; width: 104px; }
+  .av .tile { width: 104px; height: 104px; }
+  .av .pie { text-align: center; line-height: 1.5; margin: 0; }
+
+  .feed { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; max-width: 620px; }
+  .post { aspect-ratio: 1; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+  .post .cifra { font-family: var(--f-mono); font-size: clamp(22px,4.6vw,40px); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .post .frase { font-family: var(--f-edit); font-weight: 300; font-size: clamp(13px,2.1vw,18px); line-height: 1.22; }
+  .post .pie-p { font-family: var(--f-mono); font-size: clamp(7px,1.05vw,9px); letter-spacing: .16em; text-transform: uppercase; color: var(--acero-2); margin-top: 8px; }
+  .post.tinta { background: var(--ink-2); border: 1px solid var(--linea); }
+  .post.papel { background: var(--papel); color: var(--ink); }
+  .post.papel .pie-p { color: #5a6478; }
+  .post.azul { background: var(--azul-hondo); color: #fff; }
+  .post.azul .pie-p { color: rgb(255 255 255 / .7); }
+
+  .banner {
+    background: linear-gradient(120deg, #0d121c, #0b0f17 55%);
+    border: 1px solid var(--linea);
+    aspect-ratio: 1128 / 191;
+    padding: clamp(14px,2.4vw,30px);
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 96px;
+  }
+  .banner .frase-b { font-family: var(--f-edit); font-weight: 300; font-size: clamp(14px,2.3vw,28px); line-height: 1.15; max-width: 22ch; }
+  .banner .der { font-family: var(--f-mono); font-size: clamp(7.5px,1.1vw,10px); letter-spacing: .2em; text-transform: uppercase; color: var(--acero-2); text-align: right; }
+
+  .historia { width: 190px; aspect-ratio: 9/16; background: var(--ink-2); border: 1px solid var(--linea); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; }
+  .historia .frase { font-family: var(--f-edit); font-weight: 300; font-size: 19px; line-height: 1.22; }
+  .historia .pie-p { font-family: var(--f-mono); font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--acero-2); }
+
+  /* ══════ aplicaciones ══════ */
+  .app { border: 1px solid var(--linea); background: var(--ink-2); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .app .tit { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--acero-2); }
+
+  .portada-doc {
+    aspect-ratio: 1 / 1.294; background: var(--papel); color: var(--ink);
+    padding: 26px 24px; display: flex; flex-direction: column; justify-content: space-between;
+    border-top: 3px solid var(--azul-hondo);
+  }
+  .portada-doc .dimia { color: var(--ink); }
+  .portada-doc .i.ia::before, .portada-doc .fin { background: var(--azul-hondo); }
+  .portada-doc .titulo { font-family: var(--f-edit); font-weight: 300; font-size: 26px; line-height: 1.15; letter-spacing: -0.01em; }
+  .portada-doc .meta { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: #5a6478; }
+
+  .tarjeta { aspect-ratio: 85/55; background: var(--ink); border: 1px solid var(--linea-2); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+  .tarjeta .arriba { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .tarjeta .nom { font-weight: 600; font-size: 14px; }
+  .tarjeta .car { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--acero-2); margin-top: 3px; }
+  .tarjeta .datos-c { font-family: var(--f-mono); font-size: 10.5px; color: var(--acero); line-height: 1.7; }
+
+  .firma { background: var(--ink); border: 1px solid var(--linea); padding: 18px; display: flex; gap: 18px; align-items: center; }
+  .firma .barra { width: 2px; align-self: stretch; background: var(--laton); }
+  .firma .n { font-weight: 600; font-size: 14.5px; }
+  .firma .c { font-size: 13px; color: var(--acero); }
+  .firma .d { font-family: var(--f-mono); font-size: 11.5px; color: var(--acero-2); margin-top: 6px; }
+
+  .estado-fila { background: var(--ink); border: 1px solid var(--linea); padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+  .estado-fila .quien { font-size: 14.5px; font-weight: 500; }
+  .estado-fila .sub-q { font-family: var(--f-mono); font-size: 11px; color: var(--acero-2); font-variant-numeric: tabular-nums; }
+  .estado { font-family: var(--f-mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .luz { width: 7px; height: 7px; flex: none; }
+  .vivo { color: var(--azul); } .vivo .luz { background: var(--azul); animation: latido 1.9s ease-in-out infinite; }
+  .ok { color: var(--verde); } .ok .luz { background: var(--verde); }
+  .falla { color: var(--rojo); } .falla .luz { background: var(--rojo); }
+  @keyframes latido { 0%,100% { opacity:1 } 50% { opacity:.28 } }
+  @media (prefers-reduced-motion: reduce) { .vivo .luz { animation: none; } }
+
+  .iconos { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  pre.codigo { margin: 0; background: var(--ink-3); border: 1px solid var(--linea); padding: 16px 18px; overflow-x: auto; font-family: var(--f-mono); font-size: 12px; line-height: 1.7; color: var(--acero); }
+  pre.codigo b { color: var(--azul); font-weight: 400; }
+
+  footer {
+    margin-top: 78px; padding-top: 24px; border-top: 1px solid var(--linea-2);
+    font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--acero-2);
+    display: flex; flex-wrap: wrap; gap: 10px 28px; justify-content: space-between;
+  }
+  a { color: var(--azul); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--azul); outline-offset: 3px; }
+</style>
+
+<div class="hoja">
+
+  <header class="portada">
+    <div class="marco">
+      <div class="lock" style="--s: clamp(44px, 7.2vw, 78px)">
+        <span class="dimia">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span>
+        <span class="desc">Consulting</span>
+      </div>
+    </div>
+
+    <div>
+      <p class="tesis">El punto donde el dato <em>deja de informar</em> y empieza a decidir<i class="pt"></i></p>
+      <p class="parrafo">Dimia Consulting diseña, construye y opera sistemas de decisión para empresas medianas: <strong>agentes de voz que atienden, motores que agendan en firme y datos con garantía de integridad en la base</strong>, no en una hoja de cálculo.</p>
+      <p class="parrafo">La identidad se sostiene en una sola forma: <strong>el cuadrado</strong>. Son los puntos de las dos <span class="mono">i</span> del nombre y el punto que lo cierra — tres piezas iguales que atraviesan la palabra y que, recortadas, se vuelven el ícono.</p>
+    </div>
+  </header>
+
+  <nav class="indice" aria-label="Índice del manual">
+    <a href="#posicionamiento"><span class="n">01</span><span class="t">Posicionamiento</span></a>
+    <a href="#servicios"><span class="n">02</span><span class="t">Servicios</span></a>
+    <a href="#territorio"><span class="n">03</span><span class="t">Territorio</span></a>
+    <a href="#nombre"><span class="n">04</span><span class="t">Nombre</span></a>
+    <a href="#logotipo"><span class="n">05</span><span class="t">Logotipo</span></a>
+    <a href="#icono"><span class="n">06</span><span class="t">Ícono</span></a>
+    <a href="#color"><span class="n">07</span><span class="t">Color</span></a>
+    <a href="#tipografia"><span class="n">08</span><span class="t">Tipografía</span></a>
+    <a href="#voz"><span class="n">09</span><span class="t">Voz</span></a>
+    <a href="#redes"><span class="n">10</span><span class="t">Redes</span></a>
+    <a href="#sitio"><span class="n">11</span><span class="t">Sitio web</span></a>
+    <a href="#aplicaciones"><span class="n">12</span><span class="t">Aplicaciones</span></a>
+    <a href="#tokens"><span class="n">13</span><span class="t">Implementación</span></a>
+  </nav>
+
+  <!-- 01 -->
+  <section id="posicionamiento">
+    <div class="fila">
+      <div class="rotulo">Posicionamiento<b>01 · qué somos</b></div>
+      <div>
+        <h2>Automatización con garantía, no con buenas intenciones<i class="pt"></i></h2>
+        <div class="rejilla cols-3">
+          <div class="caja">
+            <h3>A quién servimos</h3>
+            <p class="nota">Consultorios, restaurantes, salones y clínicas en México que pierden ingresos cada vez que nadie contesta. Dueños operativos, no departamentos de TI.</p>
+          </div>
+          <div class="caja">
+            <h3>Qué entregamos</h3>
+            <p class="nota">Un número que contesta 24/7, agenda en firme y avisa por WhatsApp. Dar de alta un cliente nuevo es insertar filas, nunca escribir código.</p>
+          </div>
+          <div class="caja">
+            <h3>Por qué nosotros</h3>
+            <p class="nota">El motor vive en la base de datos: la garantía es del motor, no de la aplicación. Sheets, Airtable y Calendar no pueden ofrecer eso.</p>
+          </div>
+        </div>
+
+        <h3>Frases de firma</h3>
+        <ul class="limpia">
+          <li><strong>Institucional —</strong> «Sistemas de decisión para empresas que ya no alcanzan a contestar.»</li>
+          <li><strong>Comercial —</strong> «Contestamos lo que su negocio no alcanza a contestar.»</li>
+          <li><strong>Corta · cierre, audio, firma —</strong> «Dimia. Donde el dato decide.»</li>
+        </ul>
+        <p class="nota" style="margin-top:14px">La inteligencia artificial es el método, nunca el argumento de venta. El argumento es la cita que sí quedó.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 02 -->
+  <section id="servicios">
+    <div class="fila">
+      <div class="rotulo">Servicios<b>02 · qué vendemos</b></div>
+      <div>
+        <h2>Cinco líneas, un mismo motor<i class="pt"></i></h2>
+        <p class="parrafo">El agente de voz va primero en toda pieza de venta: es lo único que se demuestra en treinta segundos. Los demás servicios se cuelgan de esa credibilidad — <em>quien ve contestar al agente ya no duda de lo demás</em>.</p>
+
+        <div class="rejilla cols-2">
+          <div class="caja" style="border-left:2px solid var(--azul)">
+            <h3>01 · Insignia</h3>
+            <p class="parrafo" style="font-size:15.5px; margin-bottom:8px"><strong>Agente de voz</strong></p>
+            <p class="nota">Un número que contesta 24/7, entiende, agenda en firme y avisa por WhatsApp. Contesta al primer timbre y cuelga con la cita ya escrita. El motor vive en la base: dos citas encimadas son físicamente imposibles, entren cinco llamadas o quinientas.</p>
+          </div>
+          <div class="caja">
+            <h3>02</h3>
+            <p class="parrafo" style="font-size:15.5px; margin-bottom:8px"><strong>Automatización de operaciones</strong></p>
+            <p class="nota">Confirmaciones, recordatorios, cobranza, seguimiento, alta de clientes, reportes. Se mapea el proceso, se automatiza el tramo mecánico y queda auditado.</p>
+          </div>
+          <div class="caja">
+            <h3>03</h3>
+            <p class="parrafo" style="font-size:15.5px; margin-bottom:8px"><strong>Datos y analítica</strong></p>
+            <p class="nota">Del dato disperso al tablero que sí se usa. Bases con integridad garantizada y métricas que un dueño revisa en el celular sin que nadie se las explique.</p>
+          </div>
+          <div class="caja">
+            <h3>04</h3>
+            <p class="parrafo" style="font-size:15.5px; margin-bottom:8px"><strong>Transformación digital</strong></p>
+            <p class="nota">Diagnóstico, hoja de ruta y ejecución. No es un PDF con recomendaciones: es un plan con fechas, responsables y sistemas entregados y operando.</p>
+          </div>
+          <div class="caja">
+            <h3>05</h3>
+            <p class="parrafo" style="font-size:15.5px; margin-bottom:8px"><strong>Marketing con datos</strong></p>
+            <p class="nota">Campañas medidas contra ingreso real, no contra impresiones. La atribución se conecta al mismo motor que agenda: se sabe qué campaña produjo qué cita y cuánto valió.</p>
+          </div>
+          <div class="caja" style="border-left:2px solid var(--laton)">
+            <h3>Regla de venta</h3>
+            <p class="nota">En cada servicio, <strong style="color:var(--hueso)">el titular nombra el resultado verificable y el cuerpo explica el método</strong>. Nunca al revés. Si el titular menciona la tecnología antes que el resultado, está mal escrito.</p>
+          </div>
+        </div>
+
+        <h3>Cómo trabajamos</h3>
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Paso</th><th>Qué pasa</th><th>Duración</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1 · Diagnóstico</strong></td><td>Se mapea el proceso y se mide qué se está perdiendo hoy.</td><td class="mono">2 semanas</td></tr>
+              <tr><td><strong>2 · Piloto</strong></td><td>Un número, un proceso, un negocio. Con métricas desde el primer día.</td><td class="mono">4 semanas</td></tr>
+              <tr><td><strong>3 · Operación</strong></td><td>Nosotros lo operamos. El cliente ve el panel, no el código.</td><td class="mono">continuo</td></tr>
+              <tr><td><strong>4 · Escala</strong></td><td>Más procesos, más sucursales, mismo motor.</td><td class="mono">continuo</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="nota" style="margin-top:12px">Esta secuencia sí lleva números porque <em>es</em> una secuencia. En el resto del sistema, numerar es decorar.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section id="territorio">
+    <div class="fila">
+      <div class="rotulo">Territorio<b>03 · el mercado</b></div>
+      <div>
+        <h2>Dónde estamos parados frente a las firmas que ya existen<i class="pt"></i></h2>
+        <p class="parrafo">Las referencias del sector se agrupan en dos extremos: la <strong>autoridad institucional</strong> (McKinsey QuantumBlack, BCG X, Accenture) y la <strong>densidad técnica oscura</strong> (Palantir, Quantexa, Scale, Databricks). Ninguno de los dos atiende a un dueño de clínica en México con un problema concreto: nadie contesta el teléfono a las ocho de la noche.</p>
+
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Referencia</th><th>Cómo se ve</th><th>Cómo suena</th><th>Hueco que deja</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>QuantumBlack</strong><br><span class="mono">AI by McKinsey</span></td>
+                <td>Negro absoluto, arte generativo, tipografía institucional.</td>
+                <td>«Hybrid intelligence», transformación a escala.</td>
+                <td>Inalcanzable: proyecto de doce meses y comité.</td>
+              </tr>
+              <tr>
+                <td><strong>Palantir</strong></td>
+                <td>Blanco severo, mono técnico, casi sin color.</td>
+                <td>Ontología, sistema operativo del dato.</td>
+                <td>Habla a gobiernos y corporativos, no a operadores.</td>
+              </tr>
+              <tr>
+                <td><strong>Quantexa</strong></td>
+                <td>Morado y degradados sobre oscuro, sans neutra.</td>
+                <td>«Decision intelligence», contexto y grafos.</td>
+                <td>Promesa abstracta; el resultado no se toca.</td>
+              </tr>
+              <tr>
+                <td><strong>Scale · Databricks</strong></td>
+                <td>Oscuro de producto, acentos saturados, mucha malla.</td>
+                <td>Plataforma, pipeline, developer-first.</td>
+                <td>Venden herramienta; alguien tiene que operarla.</td>
+              </tr>
+              <tr class="nosotros">
+                <td><strong>Dimia<i class="pt" style="width:6px;height:6px;margin-left:3px"></i></strong></td>
+                <td>Fondo tinta, un solo acento azul, latón para jerarquía. Sobrio, no frío.</td>
+                <td>Español de México, con cifras verificables.</td>
+                <td><strong>Lo tomamos:</strong> firma boutique que además <em>opera</em> lo que construye.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="nota" style="margin-top:14px">Heredamos la <em>sobriedad</em> del extremo institucional y la <em>precisión técnica</em> del extremo de producto, y nos separamos de ambos en el registro: hablamos de la cita que sí quedó, no de la transformación digital.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section id="nombre">
+    <div class="fila">
+      <div class="rotulo">Nombre<b>04 · dimia</b></div>
+      <div>
+        <h2>Corto, limpio y sin la raíz que todos usan<i class="pt"></i></h2>
+        <p class="parrafo"><strong>DIM</strong> de <em>dimensión</em> —el eje por el que se ordena cualquier dato— más <strong>IA</strong>. Y una <strong>D</strong> que es la de Díaz y la de Daniel, los dos fundadores. Cinco letras, tres sílabas, sin acentos: se escribe a la primera cuando se dicta por teléfono.</p>
+
+        <div class="rejilla cols-3">
+          <div class="caja">
+            <h3>Pronunciación</h3>
+            <p class="nota"><span class="mono">DI·mia</span> — acento en la primera sílaba, /ˈdi.mja/. Igual en español y en inglés; no se anglifica.</p>
+          </div>
+          <div class="caja">
+            <h3>Escritura</h3>
+            <p class="nota">Siempre <strong>Dimia</strong>: capital inicial, resto en minúsculas. Nunca <span class="mono">DIMIA</span> en texto corrido, nunca <span class="mono">DimIA</span>. El origen se lee, no se explica.</p>
+          </div>
+          <div class="caja">
+            <h3>Razón social</h3>
+            <p class="nota"><strong>Dimia Consulting</strong> en primera mención; «Dimia» a secas de ahí en adelante dentro del mismo documento.</p>
+          </div>
+        </div>
+
+        <h3>Dominios de la marca</h3>
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Dominio</th><th>Uso</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">dimia.mx</td><td>Sitio principal. Es el dominio de casa.</td><td><strong>Registrar</strong></td></tr>
+              <tr><td class="mono">dimia.ai</td><td>Producto y demos del agente de voz.</td><td><strong>Registrar</strong></td></tr>
+              <tr><td class="mono">dimia.com.mx</td><td>Defensivo. Redirige a <span class="mono">dimia.mx</span>.</td><td><strong>Registrar</strong></td></tr>
+              <tr><td class="mono">dimia.io · dimia.co</td><td>Defensivos.</td><td>Opcionales</td></tr>
+              <tr><td class="mono">dimia.com</td><td>Ocupado desde 2002, sin uso visible.</td><td>Intentar compra</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="nota" style="margin-top:12px">Correo institucional: <span class="mono">nombre@dimia.mx</span>. Registro de marca recomendado en México, clase 42 (servicios de tecnología de la información). Homónimos existentes —una consultora pequeña en Nueva York y una en Indonesia— sin presencia en México ni en el nicho.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section id="logotipo">
+    <div class="fila">
+      <div class="rotulo">Logotipo<b>05 · las dos i</b></div>
+      <div>
+        <h2>Tres cuadrados que atraviesan la palabra<i class="pt"></i></h2>
+        <p class="parrafo">Los puntos de las dos <span class="mono">i</span> se dibujan como <strong>cuadrados</strong>, iguales al punto que cierra el nombre. El logotipo deja de ser tipografía con un adorno al final y se vuelve un sistema: tres piezas idénticas a tres alturas distintas — dos arriba y una en la línea base.</p>
+        <p class="parrafo">El reparto oficial se llama <strong>Paréntesis</strong>: <strong>azul al abrir y azul al cerrar</strong> —el punto de la primera <span class="mono">i</span> y el punto final— con el de la segunda <span class="mono">i</span> en hueso. La palabra queda encerrada entre dos acentos, y entre ellos el nombre respira. <em>Sobre papel los dos azules pasan a azul hondo; en pieza ceremonial, ambos a latón.</em></p>
+
+        <h3>Lockups autorizados</h3>
+        <div class="lienzos">
+          <div>
+            <div class="lienzo oscuro">
+              <div class="lock" style="--s:46px"><span class="dimia">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span><span class="desc">Consulting</span></div>
+            </div>
+            <div class="pie">Principal · sobre tinta</div>
+          </div>
+          <div>
+            <div class="lienzo claro">
+              <div class="lock" style="--s:46px"><span class="dimia">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span><span class="desc">Consulting</span></div>
+            </div>
+            <div class="pie">Documento · superficie clara</div>
+          </div>
+          <div>
+            <div class="lienzo azul">
+              <div class="lock" style="--s:46px"><span class="dimia">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span><span class="desc">Consulting</span></div>
+            </div>
+            <div class="pie">Negativo · azul hondo</div>
+          </div>
+          <div>
+            <div class="lienzo laton">
+              <span class="dimia" style="font-size:46px">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span>
+            </div>
+            <div class="pie">Ceremonial · acento en latón</div>
+          </div>
+          <div>
+            <div class="lienzo oscuro">
+              <span class="horizontal">
+                <svg viewBox="0 0 100 100" width="44" height="44" aria-hidden="true">
+                  <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/>
+                  <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+                </svg>
+                <span class="dimia" style="font-size:40px">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span>
+              </span>
+            </div>
+            <div class="pie">Con ícono · encabezado y web</div>
+          </div>
+          <div>
+            <div class="lienzo oscuro">
+              <span class="dimia" style="font-size:22px">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span>
+            </div>
+            <div class="pie">Mínimo · 90 px sin descriptor</div>
+          </div>
+        </div>
+
+        <h3>Construcción</h3>
+        <div class="construccion">
+          <div class="cs">
+            <div class="guia" aria-hidden="true"></div>
+            <div class="lock" style="--s:40px"><span class="dimia">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span><span class="desc">Consulting</span></div>
+          </div>
+          <div style="max-width:46ch; display:flex; flex-direction:column; gap:10px">
+            <p class="nota"><strong style="color:var(--hueso)">Cuadrado de la <span class="mono">i</span>:</strong> <span class="mono">16 %</span> del cuerpo tipográfico. Separación al asta: <span class="mono">8.5 %</span>. Asta: <span class="mono">14.5 %</span> de ancho por <span class="mono">52 %</span> de alto.</p>
+            <p class="nota"><strong style="color:var(--hueso)">Punto final:</strong> <span class="mono">20 %</span> del cuerpo — algo mayor que los de las <span class="mono">i</span>, porque se apoya en la línea base y ópticamente pesa menos.</p>
+            <p class="nota"><strong style="color:var(--hueso)">Descriptor:</strong> «Consulting» en IBM Plex Mono, versalitas, tracking <span class="mono">0.43 em</span>, a <span class="mono">16.8 %</span> del cuerpo del logotipo, alineado con la <span class="mono">D</span>.</p>
+            <p class="nota"><strong style="color:var(--hueso)">Aire:</strong> el margen libre alrededor equivale al <em>lado del punto final</em>, en los cuatro lados.</p>
+            <p class="nota"><strong style="color:var(--hueso)">Mínimos:</strong> <span class="mono">140 px</span> con descriptor, <span class="mono">90 px</span> sin él. Impreso: <span class="mono">32 mm</span> y <span class="mono">20 mm</span>.</p>
+            <p class="nota">El logotipo es <strong>lettering, no texto</strong>: se entrega vectorizado. Nadie lo teclea en Archivo y le pone cuadrados encima.</p>
+          </div>
+        </div>
+
+        <h3>Lo que rompe la marca</h3>
+        <ul class="limpia no">
+          <li>Teclear <span class="mono">Dimia.</span> con las <span class="mono">i</span> normales de la fuente.</li>
+          <li>Poner en azul el cuadrado de la segunda <span class="mono">i</span>, o dejar el nombre con un solo acento.</li>
+          <li>Redondear las esquinas de cualquiera de los tres cuadrados.</li>
+          <li>Escribir <span class="mono">DIMIA</span> en mayúsculas o partir el nombre.</li>
+          <li>Encimar el logotipo sobre fotografía sin caja sólida detrás.</li>
+          <li>Sombras, contornos, inclinaciones o efectos tridimensionales.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section id="icono">
+    <div class="fila">
+      <div class="rotulo">Ícono<b>06 · el recorte</b></div>
+      <div>
+        <h2>El ícono sale del logotipo, no al revés<i class="pt"></i></h2>
+        <p class="parrafo">Se toman las <strong>dos <span class="mono">i</span> del logotipo</strong> —astas y cuadrados, con el mismo azul en la primera— y se centran en la placa. Nada se redibuja: el ícono es un fragmento literal del nombre, y por eso lo refuerza cada vez que aparece solo.</p>
+        <p class="parrafo">Se usa donde el nombre completo no cabe o no se lee: <em>avatar de redes, favicon, aplicación, bordado, esquina de plantilla</em>. Nunca sustituye al logotipo en portadas ni documentos.</p>
+
+        <div class="tamanos">
+          <div class="tam">
+            <div class="tile" style="width:132px;height:132px;background:var(--ink)">
+              <svg viewBox="0 0 100 100" width="78" height="78" role="img" aria-label="Ícono Dimia: las dos i">
+                <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/>
+                <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">Placa oficial</span>
+          </div>
+          <div class="tam">
+            <div class="tile" style="width:64px;height:64px">
+              <svg viewBox="0 0 100 100" width="38" height="38" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/>
+                <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">64 px</span>
+          </div>
+          <div class="tam">
+            <div class="tile" style="width:32px;height:32px">
+              <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true">
+                <rect x="25" y="42" width="17" height="44" fill="#eef1f7"/><rect x="25" y="16" width="17" height="17" fill="#6e9bf5"/>
+                <rect x="58" y="42" width="17" height="44" fill="#eef1f7"/><rect x="58" y="16" width="17" height="17" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">32 px · óptica</span>
+          </div>
+          <div class="tam">
+            <div class="tile" style="width:16px;height:16px">
+              <svg viewBox="0 0 100 100" width="12" height="12" aria-hidden="true">
+                <rect x="23" y="44" width="19" height="42" fill="#eef1f7"/><rect x="23" y="14" width="19" height="19" fill="#6e9bf5"/>
+                <rect x="58" y="44" width="19" height="42" fill="#eef1f7"/><rect x="58" y="14" width="19" height="19" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">16 px · óptica</span>
+          </div>
+        </div>
+
+        <p class="nota" style="margin-top:14px">De <span class="mono">32 px</span> hacia abajo, las astas engordan y crece el hueco entre punto y asta. Esa corrección es la que <strong>impide que el ícono colapse en dos barras y se lea como el botón de pausa</strong> — el peor malentendido posible para una empresa cuyo producto es una llamada en curso. Misma forma, corregida ópticamente; no se escala la versión grande.</p>
+
+        <h3>El cuadrado como sistema</h3>
+        <div class="rejilla cols-4">
+          <div class="caja"><h3>Como acento</h3><p class="nota">Dos azules por logotipo —el de la primera <span class="mono">i</span> y el final—, nunca tres. En el ícono, uno.</p></div>
+          <div class="caja"><h3>Como viñeta</h3><p class="nota">Sustituye al bullet redondo en toda lista. Cuadrado, 6 px, azul.</p></div>
+          <div class="caja"><h3>Como estado</h3><p class="nota">En el panel es la luz: azul parpadeante en llamada, verde confirmada, rojo conflicto.</p></div>
+          <div class="caja"><h3>Como remate</h3><p class="nota">Cierra el titular de portada y el último párrafo de una propuesta. Uno por documento.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section id="color">
+    <div class="fila">
+      <div class="rotulo">Color<b>07 · paleta</b></div>
+      <div>
+        <h2>Tinta profunda, un azul y una nota de latón<i class="pt"></i></h2>
+        <p class="parrafo">La paleta es deliberadamente corta: <strong>la memorabilidad viene de la disciplina, no de la variedad</strong>. Los neutros llevan sesgo azul — es el gris de un panel de operación, no el gris de una oficina.</p>
+
+        <div class="rejilla cols-4">
+          <div class="muestra"><div class="chip" style="background:#0b0f17"></div><div class="datos"><span class="nombre">Tinta profunda</span><span class="hex">#0b0f17</span><span class="uso">Fondo maestro de todo el sistema: sitio, presentaciones, panel, tarjeta.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:#6e9bf5"></div><div class="datos"><span class="nombre">Azul Dimia</span><span class="hex">#6e9bf5</span><span class="uso">El acento: primer cuadrado y punto final, viñetas, enlaces, estado en vivo.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:#c8a45c"></div><div class="datos"><span class="nombre">Latón</span><span class="hex">#c8a45c</span><span class="uso">Jerarquía y ceremonia: rótulos de sección, filete de firma, contrato.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:#eef1f7"></div><div class="datos"><span class="nombre">Hueso</span><span class="hex">#eef1f7</span><span class="uso">Texto y letras del logotipo. Nunca blanco puro: baja el deslumbre.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:#97a2b5"></div><div class="datos"><span class="nombre">Acero</span><span class="hex">#97a2b5</span><span class="uso">Texto secundario, descriptor del logotipo, pies de tabla.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:#1f47c4"></div><div class="datos"><span class="nombre">Azul hondo</span><span class="hex">#1f47c4</span><span class="uso">El acento para superficie clara: documentos, facturas, impresión.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:#f2f4f8"></div><div class="datos"><span class="nombre">Papel</span><span class="hex">#f2f4f8</span><span class="uso">Única superficie clara autorizada: propuestas, contratos, correo.</span></div></div>
+          <div class="muestra"><div class="chip" style="background:linear-gradient(90deg,#3fb68b 0 34%,#e0a838 34% 67%,#e2685c 67% 100%)"></div><div class="datos"><span class="nombre">Estados</span><span class="hex">#3fb68b · #e0a838 · #e2685c</span><span class="uso">Confirmada · pendiente · conflicto. Función, nunca identidad.</span></div></div>
+        </div>
+
+        <h3>Proporción de uso</h3>
+        <div class="proporcion" role="img" aria-label="Proporción: 72 % tinta, 20 % hueso y acero, 6 % azul, 2 % latón">
+          <span style="background:#0b0f17; flex:72"></span>
+          <span style="background:#97a2b5; flex:20"></span>
+          <span style="background:#6e9bf5; flex:6"></span>
+          <span style="background:#c8a45c; flex:2"></span>
+        </div>
+        <div class="leyenda">
+          <span>72 % tinta</span><span>20 % hueso · acero</span>
+          <span style="color:var(--azul)">6 % azul</span><span style="color:var(--laton)">2 % latón</span>
+        </div>
+        <p class="nota" style="margin-top:14px">Contraste: texto corrido mínimo <span class="mono">4.5:1</span>, rótulos <span class="mono">3:1</span>. El azul <span class="mono">#6e9bf5</span> es para tinta; sobre papel claro se usa <span class="mono">#1f47c4</span>. El latón nunca se usa como texto pequeño.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section id="tipografia">
+    <div class="fila">
+      <div class="rotulo">Tipografía<b>08 · tres voces</b></div>
+      <div>
+        <h2>Newsreader afirma, Archivo organiza, Plex Mono mide<i class="pt"></i></h2>
+        <p class="parrafo">La serif editorial es lo que separa a Dimia del oscuro genérico de producto: da <strong>autoridad de firma</strong> donde todos usan una sans neutra. Archivo sostiene el lettering del logotipo y la interfaz; el mono es la voz del dato.</p>
+
+        <div class="escala">
+          <div><div class="spec">Newsreader 300<br>−1.2 % tracking<br>Editorial · titular</div><div class="t-edit">Nadie deja de contestar</div></div>
+          <div><div class="spec">Newsreader 300 italic<br>Destacado · cita</div><div class="t-edit-i">«Dos citas encimadas son imposibles por diseño.»</div></div>
+          <div><div class="spec">Archivo 800<br>−2.8 % tracking<br>Logotipo · lettering</div><div><span class="dimia" style="font-size:32px">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span></div></div>
+          <div><div class="spec">Archivo 600<br>Subtítulo · interfaz</div><div class="t-tit">Reservas confirmadas por canal</div></div>
+          <div><div class="spec">Archivo 400<br>1.62 interlínea<br>Cuerpo</div><div class="t-cuerpo">El agente contesta al primer timbre, ofrece los horarios que la base confirma libres y cuelga con la cita ya escrita.</div></div>
+          <div><div class="spec">Plex Mono 400<br>tabular-nums<br>Dato</div><div class="t-dato">14:30 · 4 personas · $1,280.00</div></div>
+          <div><div class="spec">Plex Mono 400<br>+22 % tracking<br>Rótulo · descriptor</div><div class="t-rot">Llamada en curso</div></div>
+        </div>
+
+        <p class="nota" style="margin-top:16px">Reglas fijas: cifras, horas y dinero siempre en mono con <code>tabular-nums</code>. El énfasis es peso 600, nunca subrayado. Los párrafos no se centran. La cursiva es de Newsreader y solo para citas o el nombre de una pieza.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 -->
+  <section id="voz">
+    <div class="fila">
+      <div class="rotulo">Voz<b>09 · registro</b></div>
+      <div>
+        <h2>Formal por respeto, concreta por oficio<i class="pt"></i></h2>
+        <p class="parrafo">Español de México. <strong>Usted</strong> con clientes y prospectos, sin excepción. Frases cortas, primero el resultado y después el método. Nunca anglicismos donde exista palabra en español, nunca superlativos, nunca signos de admiración.</p>
+
+        <div class="par">
+          <div class="voz si">
+            <span class="et">Así escribimos</span>
+            <p>«Su número contesta las 24 horas. La cita queda escrita antes de colgar.»</p>
+            <span class="por">Nombra un resultado que el cliente puede verificar mañana.</span>
+          </div>
+          <div class="voz no">
+            <span class="et">Así no</span>
+            <p>«Potenciamos su negocio con IA conversacional de última generación.»</p>
+            <span class="por">Vende la tecnología, no el problema resuelto.</span>
+          </div>
+          <div class="voz si">
+            <span class="et">Así escribimos</span>
+            <p>«Dos reservas encimadas son imposibles: lo impide la base de datos, no una revisión manual.»</p>
+            <span class="por">La garantía cabe en una frase y es verificable.</span>
+          </div>
+          <div class="voz no">
+            <span class="et">Así no</span>
+            <p>«Nuestra solución minimiza significativamente el riesgo de duplicidades.»</p>
+            <span class="por">«Minimiza» y «significativamente» son excusas anticipadas.</span>
+          </div>
+        </div>
+
+        <h3>Palabras prohibidas</h3>
+        <p class="parrafo">Revolucionario · solución 360 · impulsado por IA · transformación digital · partner estratégico · sinergia · disruptivo · ecosistema.</p>
+
+        <h3>La voz al teléfono</h3>
+        <ul class="limpia">
+          <li><strong>Se identifica al inicio</strong> como asistente del negocio. Nunca finge ser una persona.</li>
+          <li><strong>Una pregunta por turno.</strong> No encadena tres datos en una sola frase.</li>
+          <li><strong>Confirma con números:</strong> «Jueves 4, seis y media de la tarde, cuatro personas. ¿Es correcto?»</li>
+          <li><strong>Sabe rendirse:</strong> a la segunda confusión ofrece pasar con una persona.</li>
+          <li><strong>Nunca inventa</strong> horarios, precios ni disponibilidad: si no está en la base, no existe.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section id="redes">
+    <div class="fila">
+      <div class="rotulo">Redes<b>10 · perfil y feed</b></div>
+      <div>
+        <h2>Una sola placa para todas las plataformas<i class="pt"></i></h2>
+        <p class="parrafo">La foto de perfil es <strong>siempre tinta profunda con las astas en hueso y el cuadrado de la primera <span class="mono">i</span> en azul</strong>. No hay versión por red social, no hay versión de temporada, no hay campañas en el avatar: <em>la constancia es lo que construye el reconocimiento</em>.</p>
+
+        <div class="avatares">
+          <div class="av">
+            <div class="tile" style="background:var(--ink); border-color:var(--linea-2)">
+              <svg viewBox="0 0 100 100" width="60" height="60" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/>
+                <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">Oficial<br>LinkedIn · X · IG</span>
+          </div>
+          <div class="av">
+            <div class="tile circ">
+              <svg viewBox="0 0 100 100" width="54" height="54" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/>
+                <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">Recorte circular<br>WhatsApp · Meet</span>
+          </div>
+          <div class="av">
+            <div class="tile" style="background:var(--azul-hondo); border-color:transparent">
+              <svg viewBox="0 0 100 100" width="60" height="60" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#fff"/><rect x="27" y="18" width="15" height="15" fill="#fff"/>
+                <rect x="58" y="42" width="15" height="44" fill="#fff"/><rect x="58" y="18" width="15" height="15" fill="#fff"/>
+              </svg>
+            </div>
+            <span class="pie">Alterno<br>azul hondo</span>
+          </div>
+          <div class="av">
+            <div class="tile" style="background:var(--papel); border-color:transparent">
+              <svg viewBox="0 0 100 100" width="60" height="60" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#0b0f17"/><rect x="27" y="18" width="15" height="15" fill="#1f47c4"/>
+                <rect x="58" y="42" width="15" height="44" fill="#0b0f17"/><rect x="58" y="18" width="15" height="15" fill="#0b0f17"/>
+              </svg>
+            </div>
+            <span class="pie">Papel<br>directorios · prensa</span>
+          </div>
+          <div class="av">
+            <div class="tile" style="background:var(--ink); border-color:var(--laton)">
+              <svg viewBox="0 0 100 100" width="60" height="60" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/>
+                <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">Ceremonial<br>aniversario</span>
+          </div>
+          <div class="av">
+            <div class="tile" style="background:var(--ink); border-color:var(--linea-2)">
+              <svg viewBox="0 0 100 100" width="60" height="60" aria-hidden="true">
+                <rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/>
+                <rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/>
+              </svg>
+            </div>
+            <span class="pie">Monocromo<br>bordado · grabado</span>
+          </div>
+        </div>
+
+        <h3>Ficha por plataforma</h3>
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Plataforma</th><th>Archivo</th><th>Nombre en pantalla</th><th>Nota</th></tr></thead>
+            <tbody>
+              <tr><td><strong>LinkedIn</strong></td><td class="mono">400 × 400 PNG</td><td class="mono">Dimia Consulting</td><td>Portada 1128 × 191 con la frase institucional.</td></tr>
+              <tr><td><strong>Instagram</strong></td><td class="mono">512 × 512 PNG</td><td class="mono">dimia.mx</td><td>El recorte es circular: verificar que las astas no toquen el borde.</td></tr>
+              <tr><td><strong>X</strong></td><td class="mono">400 × 400 PNG</td><td class="mono">@dimia_mx</td><td>Sobre fondo claro de la app el avatar sigue en tinta.</td></tr>
+              <tr><td><strong>WhatsApp Business</strong></td><td class="mono">640 × 640 PNG</td><td class="mono">Dimia Consulting</td><td>Nunca el logotipo completo: no se lee en la lista de chats.</td></tr>
+              <tr><td><strong>Google Empresa</strong></td><td class="mono">720 × 720 PNG</td><td class="mono">Dimia Consulting</td><td>Categoría: consultoría en tecnología de la información.</td></tr>
+              <tr><td><strong>Favicon</strong></td><td class="mono">SVG + 32/16 px</td><td class="mono">dimia.mx</td><td>Versión óptica, fondo tinta incluido en el archivo.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>El feed · tres plantillas</h3>
+        <p class="parrafo">El perfil se lee en cuadrícula, no publicación por publicación. El sistema alterna <strong>tinta, papel y azul</strong> en secuencia fija: el patrón se reconoce antes de leer una palabra. El ícono va siempre en la esquina superior izquierda, mismo tamaño, misma posición.</p>
+
+        <div class="feed">
+          <div class="post tinta">
+            <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+            <div><div class="cifra">31 %</div><div class="pie-p">Llamadas fuera de horario</div></div>
+          </div>
+          <div class="post papel">
+            <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#0b0f17"/><rect x="27" y="18" width="15" height="15" fill="#1f47c4"/><rect x="58" y="42" width="15" height="44" fill="#0b0f17"/><rect x="58" y="18" width="15" height="15" fill="#0b0f17"/></svg>
+            <div><div class="frase">Dos citas encimadas son imposibles por diseño.</div><div class="pie-p">Garantía</div></div>
+          </div>
+          <div class="post azul">
+            <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#fff"/><rect x="27" y="18" width="15" height="15" fill="#fff"/><rect x="58" y="42" width="15" height="44" fill="#fff"/><rect x="58" y="18" width="15" height="15" fill="#fff"/></svg>
+            <div><div class="frase">Donde el dato decide.</div><div class="pie-p">dimia.mx</div></div>
+          </div>
+          <div class="post papel">
+            <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#0b0f17"/><rect x="27" y="18" width="15" height="15" fill="#1f47c4"/><rect x="58" y="42" width="15" height="44" fill="#0b0f17"/><rect x="58" y="18" width="15" height="15" fill="#0b0f17"/></svg>
+            <div><div class="cifra" style="color:#0b0f17">00:42</div><div class="pie-p">Duración media de llamada</div></div>
+          </div>
+          <div class="post azul">
+            <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#fff"/><rect x="27" y="18" width="15" height="15" fill="#fff"/><rect x="58" y="42" width="15" height="44" fill="#fff"/><rect x="58" y="18" width="15" height="15" fill="#fff"/></svg>
+            <div><div class="frase">Contestamos lo que su negocio no alcanza a contestar.</div><div class="pie-p">Caso · Consultorio</div></div>
+          </div>
+          <div class="post tinta">
+            <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+            <div><div class="cifra">24 / 7</div><div class="pie-p">Su número, siempre atendido</div></div>
+          </div>
+        </div>
+
+        <div class="rejilla cols-3" style="margin-top:22px">
+          <div class="caja"><h3>Plantilla · cifra</h3><p class="nota">Un número en Plex Mono y un pie de rótulo. Sin adjetivos. La cifra proviene de un cliente real y va con su periodo.</p></div>
+          <div class="caja"><h3>Plantilla · afirmación</h3><p class="nota">Una frase en Newsreader 300, máximo doce palabras, con punto final. Nunca pregunta retórica, nunca signo de admiración.</p></div>
+          <div class="caja"><h3>Plantilla · caso</h3><p class="nota">Fondo azul hondo. Resultado primero, giro del negocio después. El nombre del cliente solo con autorización escrita.</p></div>
+        </div>
+
+        <h3>Portada de LinkedIn · 1128 × 191</h3>
+        <div class="banner">
+          <div class="frase-b">Sistemas de decisión para empresas que ya no alcanzan a contestar.</div>
+          <div class="der">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:6px">
+              <svg viewBox="0 0 100 100" width="28" height="28" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+            </div>
+            dimia.mx
+          </div>
+        </div>
+        <p class="nota" style="margin-top:10px">El avatar tapa la esquina inferior izquierda de la portada en escritorio y móvil: el texto arranca después del <span class="mono">22 %</span> del ancho.</p>
+
+        <h3>Historia · 9:16</h3>
+        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start">
+          <div class="historia">
+            <svg viewBox="0 0 100 100" width="22" height="22" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+            <div class="frase">El agente contesta al primer timbre y cuelga con la cita ya escrita.</div>
+            <div class="pie-p">Dimia Consulting · dimia.mx</div>
+          </div>
+          <p class="nota" style="max-width:40ch">Zona segura vertical: <span class="mono">14 %</span> arriba y <span class="mono">20 %</span> abajo quedan libres de texto — ahí van los controles de la aplicación y la barra de respuesta.</p>
+        </div>
+
+        <h3>Disciplina del ícono</h3>
+        <div class="rejilla cols-2">
+          <div>
+            <h3>Siempre</h3>
+            <ul class="limpia">
+              <li><strong>El ícono solo</strong> como avatar; el logotipo completo se reserva para portadas y documentos.</li>
+              <li><strong>Mismo avatar en todas las redes</strong>, sin variantes de campaña.</li>
+              <li><strong>Exportado en SVG</strong> y de ahí a PNG. Nunca un rasterizado escalado.</li>
+              <li><strong>Versión óptica</strong> por debajo de 32 px, siempre.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Nunca</h3>
+            <ul class="limpia no">
+              <li>Poner el ícono dentro de un círculo dibujado: el recorte lo hace la plataforma.</li>
+              <li>Quitarle los cuadrados a las astas — sin puntos son un botón de pausa.</li>
+              <li>Rellenarlo con degradado, textura o malla.</li>
+              <li>Acompañarlo de un eslogan dentro de la misma placa.</li>
+              <li>Rotarlo, inclinarlo o animarlo con rebote.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="nota" style="margin-top:12px"><strong style="color:var(--hueso)">Animación autorizada, una sola:</strong> los cuadrados aterrizan — las dos astas entran primero y los puntos caen en su lugar 200 ms después, sin rebote ni giro. Se usa en el cierre de video y en la carga del sitio. Nada más se mueve.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 11 -->
+  <section id="sitio">
+    <div class="fila">
+      <div class="rotulo">Sitio web<b>11 · dimia.mx</b></div>
+      <div>
+        <h2>Cómo se arma la página<i class="pt"></i></h2>
+        <p class="parrafo">Fondo tinta de extremo a extremo. Las secciones en papel son contraste puntual —máximo dos por página—, nunca la base. <strong>Filetes de un píxel, no sombras. Esquinas rectas en todo:</strong> tarjetas, botones, campos, imágenes. La única forma redonda del sistema es el recorte circular que imponen las redes.</p>
+
+        <h3>Orden de secciones</h3>
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Sección</th><th>Qué lleva</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Barra superior</strong></td><td>Ícono y logotipo, cuatro enlaces, botón «Agendar demostración». Filete inferior.</td></tr>
+              <tr><td><strong>Hero</strong></td><td>«Contestamos lo que su negocio no alcanza a contestar.» A la derecha, el panel en vivo con tres filas de estado — es la demostración más honesta y sustituye a cualquier ilustración.</td></tr>
+              <tr><td><strong>Cifras</strong></td><td>Mono con <span class="mono">tabular-nums</span>: 31 % fuera de horario · 00:42 · 24/7 · 0 traslapes.</td></tr>
+              <tr><td><strong>Servicios</strong></td><td>Cinco tarjetas; el agente de voz ocupa doble ancho.</td></tr>
+              <tr><td><strong>La garantía</strong></td><td>Fondo papel. «Dos citas encimadas son imposibles por diseño», con la restricción real de la base a la vista.</td></tr>
+              <tr><td><strong>Cómo trabajamos</strong></td><td>Los cuatro pasos numerados.</td></tr>
+              <tr><td><strong>Carrusel de clientes</strong></td><td>Ver abajo.</td></tr>
+              <tr><td><strong>Casos</strong></td><td>Giro, problema, qué se instaló, resultado en cifra. Nombre del cliente solo con autorización escrita.</td></tr>
+              <tr><td><strong>Equipo</strong></td><td>Los dos socios. Sin adjetivos.</td></tr>
+              <tr><td><strong>Cierre</strong></td><td>«Donde el dato decide.» Formulario de tres campos y el teléfono directo — que contesta el propio agente.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Carrusel de clientes</h3>
+        <div class="rejilla cols-2">
+          <div class="caja">
+            <h3>Cómo se ve</h3>
+            <ul class="limpia">
+              <li>Logotipos <strong>en hueso al 55 %</strong>, una sola tinta; suben a 100 % en hover. Nunca a color: un carrusel multicolor rompe la paleta.</li>
+              <li>Altura uniforme de <span class="mono">28 px</span> de mancha óptica, no de caja. Se ajusta logo por logo a ojo.</li>
+              <li>Separación de <span class="mono">56 px</span>, filete de 1 px arriba y abajo de la franja.</li>
+              <li>Rótulo encima en mono versalitas latón: <span class="mono">Confían en Dimia</span>.</li>
+            </ul>
+          </div>
+          <div class="caja">
+            <h3>Cómo se mueve</h3>
+            <ul class="limpia">
+              <li>Bucle continuo lento, <span class="mono">≈40 s</span> por vuelta, sin saltos.</li>
+              <li><strong>Pausa al hacer hover</strong> y detención total con <code>prefers-reduced-motion</code>.</li>
+              <li>Mientras no haya clientes públicos suficientes: <strong>el sector en lugar del nombre</strong> — Consultorios · Restaurantes · Clínicas dentales · Salones · Despachos — en mono versalitas.</li>
+              <li><strong>Nunca</strong> logotipos inventados, ni «como visto en», ni marcas de proveedores disfrazadas de clientes.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Componentes</h3>
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Componente</th><th>Especificación</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Botón primario</strong></td><td class="mono">bg #6e9bf5 · texto #0b1220 · Archivo 600 14px · padding 13/22 · radio 0</td></tr>
+              <tr><td><strong>Botón secundario</strong></td><td class="mono">transparente · borde 1px #2f3a4d · texto #eef1f7</td></tr>
+              <tr><td><strong>Tarjeta</strong></td><td class="mono">bg #111723 · borde 1px #212a3a · padding 20–22 · sin sombra</td></tr>
+              <tr><td><strong>Viñeta</strong></td><td>Cuadrado de 6 px en azul. Nunca punto redondo, nunca ícono.</td></tr>
+              <tr><td><strong>Remate de titular</strong></td><td>Cuadrado de <span class="mono">0.16em</span> en azul al final del título de sección.</td></tr>
+              <tr><td><strong>Rejilla</strong></td><td>Rótulo de sección 190 px + contenido, separación 56 px. Ancho máximo 1160 px.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Iconografía y fotografía</h3>
+        <p class="parrafo">No hay set de íconos. <strong>El único símbolo del sistema es el cuadrado.</strong> Donde otros sitios ponen un ícono decorativo, aquí va un cuadrado azul, una cifra en mono, o nada. Si un concepto necesita dibujo, se hace un diagrama de líneas en SVG con la paleta.</p>
+        <p class="parrafo">Fotografía: preferentemente ninguna. Si se usa, es real —equipo o cliente— en duotono tinta/azul dentro de caja recta. <strong>Prohibido</strong> el stock de gente frente a laptops, las manos tocando hologramas y los cerebros de circuitos.</p>
+
+        <h3>Movimiento</h3>
+        <ul class="limpia">
+          <li><strong>Animación de marca, una sola:</strong> los cuadrados aterrizan — las astas entran primero y los puntos caen 200 ms después, sin rebote ni giro.</li>
+          <li>Revelado al scroll: opacidad y 12 px de desplazamiento, 400 ms, <span class="mono">ease-out</span>.</li>
+          <li>Hover: cambio de fondo o borde en 150 ms. Nunca escala, nunca elevación.</li>
+          <li>El estado «en llamada» late a 1.9 s, opacidad 1 → 0.28.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section id="aplicaciones">
+    <div class="fila">
+      <div class="rotulo">Aplicaciones<b>12 · en uso</b></div>
+      <div>
+        <h2>La misma disciplina en cada punto de contacto<i class="pt"></i></h2>
+
+        <div class="rejilla cols-2">
+          <div class="app">
+            <span class="tit">Portada de propuesta</span>
+            <div class="portada-doc">
+              <div class="lock" style="--s:28px">
+                <span class="dimia">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span>
+                <span class="desc" style="color:#5a6478">Consulting</span>
+              </div>
+              <div class="titulo">Agente de voz y motor de reservas para Consultorio Rivas</div>
+              <div class="meta">Propuesta 2026-04 · Confidencial · Ciudad de México</div>
+            </div>
+            <span class="nota">Papel <span class="mono">#f2f4f8</span>, filete superior azul hondo, titular en Newsreader 300. Sin imágenes de archivo.</span>
+          </div>
+
+          <div class="app">
+            <span class="tit">Tarjeta de presentación</span>
+            <div class="tarjeta">
+              <div class="arriba">
+                <div>
+                  <div class="nom">Rogelio Díaz Alanís</div>
+                  <div class="car">Socio · Operaciones</div>
+                </div>
+                <span class="dimia" style="font-size:21px">D<i class="i ia"></i>m<i class="i"></i>a<i class="fin"></i></span>
+              </div>
+              <div class="datos-c">+52 55 0000 0000<br>rogelio@dimia.mx · dimia.mx</div>
+            </div>
+            <span class="nota">Tinta profunda, impresión mate. Los dos azules de la pieza son el cuadrado de la primera <span class="mono">i</span> y el punto final; en versión ceremonial van en foil latón.</span>
+          </div>
+
+          <div class="app">
+            <span class="tit">Firma de correo</span>
+            <div class="firma">
+              <div class="barra" aria-hidden="true"></div>
+              <div>
+                <div class="n">Jesús Daniel Martínez García</div>
+                <div class="c">Dimia Consulting · Sistemas de decisión</div>
+                <div class="d">+52 55 0000 0000 · dimia.mx</div>
+              </div>
+            </div>
+            <span class="nota">Filete de latón, sin logotipo en imagen, sin redes, sin aviso legal de tres párrafos.</span>
+          </div>
+
+          <div class="app">
+            <span class="tit">Panel de operación</span>
+            <div class="estado-fila">
+              <div><div class="quien">Consultorio Dra. Rivas</div><div class="sub-q">+52 55 1234 5678</div></div>
+              <span class="estado vivo"><span class="luz"></span> En llamada · 00:42</span>
+            </div>
+            <div class="estado-fila">
+              <div><div class="quien">Mesa para 4 · jue 4, 18:30</div><div class="sub-q">Reserva #A-2291</div></div>
+              <span class="estado ok"><span class="luz"></span> Confirmada</span>
+            </div>
+            <div class="estado-fila">
+              <div><div class="quien">Traslape rechazado</div><div class="sub-q">Sala 2 · 17:00–17:30</div></div>
+              <span class="estado falla"><span class="luz"></span> Conflicto</span>
+            </div>
+            <span class="nota">El estado se lee por color <em>y</em> por palabra. En el teléfono del cliente aparece «Dimia · [negocio]».</span>
+          </div>
+        </div>
+
+        <h3>Ícono, favicon y avatar</h3>
+        <div class="iconos">
+          <div class="tile" style="width:52px;height:52px;background:#0b0f17;border-color:var(--linea-2)">
+            <svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true"><rect x="25" y="42" width="17" height="44" fill="#eef1f7"/><rect x="25" y="16" width="17" height="17" fill="#6e9bf5"/><rect x="58" y="42" width="17" height="44" fill="#eef1f7"/><rect x="58" y="16" width="17" height="17" fill="#eef1f7"/></svg>
+          </div>
+          <div class="tile" style="width:52px;height:52px;background:#1f47c4;border-color:transparent">
+            <svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true"><rect x="25" y="42" width="17" height="44" fill="#fff"/><rect x="25" y="16" width="17" height="17" fill="#fff"/><rect x="58" y="42" width="17" height="44" fill="#fff"/><rect x="58" y="16" width="17" height="17" fill="#fff"/></svg>
+          </div>
+          <div class="tile" style="width:52px;height:52px;background:#f2f4f8;border-color:transparent">
+            <svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true"><rect x="25" y="42" width="17" height="44" fill="#0b0f17"/><rect x="25" y="16" width="17" height="17" fill="#1f47c4"/><rect x="58" y="42" width="17" height="44" fill="#0b0f17"/><rect x="58" y="16" width="17" height="17" fill="#0b0f17"/></svg>
+          </div>
+          <div class="tile" style="width:52px;height:52px;background:#0b0f17;border-color:var(--laton)">
+            <svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true"><rect x="25" y="42" width="17" height="44" fill="#eef1f7"/><rect x="25" y="16" width="17" height="17" fill="#c8a45c"/><rect x="58" y="42" width="17" height="44" fill="#eef1f7"/><rect x="58" y="16" width="17" height="17" fill="#eef1f7"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section id="tokens">
+    <div class="fila">
+      <div class="rotulo">Implementación<b>13 · tokens</b></div>
+      <div>
+        <h2>La marca vive en el código, no en un PDF<i class="pt"></i></h2>
+        <p class="parrafo">El panel usa variables CSS con los nombres de esta guía. Cambiar la identidad es cambiar estos valores en <code>web/app/globals.css</code>, nunca repintar componentes.</p>
+
+        <div class="tabla-envoltura">
+          <table>
+            <thead><tr><th>Variable</th><th>Tinta (app)</th><th>Papel (documento)</th><th>Papel en la marca</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">--paper</td><td class="mono">#0b0f17</td><td class="mono">#f2f4f8</td><td>Fondo maestro.</td></tr>
+              <tr><td class="mono">--panel</td><td class="mono">#111723</td><td class="mono">#ffffff</td><td>Superficie de tarjeta y tabla.</td></tr>
+              <tr><td class="mono">--tinta</td><td class="mono">#eef1f7</td><td class="mono">#0b0f17</td><td>Texto principal y letras del logotipo.</td></tr>
+              <tr><td class="mono">--tinta-2</td><td class="mono">#97a2b5</td><td class="mono">#5a6478</td><td>Texto secundario.</td></tr>
+              <tr><td class="mono">--acento</td><td class="mono">#6e9bf5</td><td class="mono">#1f47c4</td><td>El cuadrado: acento, viñeta, enlace, acción principal.</td></tr>
+              <tr><td class="mono">--laton</td><td class="mono">#c8a45c</td><td class="mono">#a8853f</td><td>Rótulo de sección y pieza ceremonial.</td></tr>
+              <tr><td class="mono">--linea</td><td class="mono">#212a3a</td><td class="mono">#dfe3ea</td><td>Filete de un píxel.</td></tr>
+              <tr><td class="mono">--bueno</td><td class="mono">#3fb68b</td><td class="mono">#12805c</td><td>Confirmada.</td></tr>
+              <tr><td class="mono">--alerta</td><td class="mono">#e0a838</td><td class="mono">#a9760a</td><td>Pendiente.</td></tr>
+              <tr><td class="mono">--critico</td><td class="mono">#e2685c</td><td class="mono">#c4392f</td><td>Conflicto, llamada perdida.</td></tr>
+              <tr><td class="mono">--font-display</td><td class="mono" colspan="2">"Newsreader", 300</td><td>Titulares y citas.</td></tr>
+              <tr><td class="mono">--font-sans</td><td class="mono" colspan="2">"Archivo", 400–800</td><td>Lettering del logotipo, interfaz, cuerpo.</td></tr>
+              <tr><td class="mono">--font-mono</td><td class="mono" colspan="2">"IBM Plex Mono", 400</td><td>Datos, horas, rótulos, descriptor.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>El ícono · archivo maestro</h3>
+        <p class="parrafo">Guardar como <code>icono-dimia.svg</code>. Todo lo demás —favicon, avatar, bordado— sale de aquí.</p>
+        <pre class="codigo">&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"&gt;
+  &lt;title&gt;Dimia Consulting&lt;/title&gt;
+  &lt;!-- primera i: el acento --&gt;
+  &lt;rect x="27" y="42" width="15" height="44" fill="<b>#eef1f7</b>"/&gt;
+  &lt;rect x="27" y="18" width="15" height="15" fill="<b>#6e9bf5</b>"/&gt;
+  &lt;!-- segunda i --&gt;
+  &lt;rect x="58" y="42" width="15" height="44" fill="<b>#eef1f7</b>"/&gt;
+  &lt;rect x="58" y="18" width="15" height="15" fill="<b>#eef1f7</b>"/&gt;
+&lt;/svg&gt;</pre>
+        <p class="nota" style="margin-top:12px">Versión óptica para <span class="mono">≤ 32 px</span>: astas de <span class="mono">17</span> de ancho en <span class="mono">x = 25</span> y <span class="mono">x = 58</span>, cuadrados de <span class="mono">17</span> en <span class="mono">y = 16</span>. A <span class="mono">16 px</span>: astas de <span class="mono">19</span> en <span class="mono">x = 23</span> y <span class="mono">x = 58</span>, cuadrados de <span class="mono">19</span> en <span class="mono">y = 14</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Dimia Consulting · Manual de identidad v1</span>
+    <span>Donde el dato decide<i class="pt" style="width:6px;height:6px;margin-left:6px"></i></span>
+  </footer>
+
+</div>

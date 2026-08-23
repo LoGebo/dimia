@@ -1,0 +1,488 @@
+<title>Variantes Dimia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;1,6..72,300&display=swap">
+
+<style>
+  :root {
+    color-scheme: dark;
+    --ink:#0b0f17; --ink-2:#111723; --ink-3:#161d2b;
+    --linea:#212a3a; --linea-2:#2f3a4d;
+    --hueso:#eef1f7; --acero:#97a2b5; --acero-2:#66718a;
+    --azul:#6e9bf5; --azul-hondo:#1f47c4; --laton:#c8a45c; --papel:#f2f4f8;
+    --f-edit:"Newsreader", ui-serif, Georgia, serif;
+    --f-sans:"Archivo", ui-sans-serif, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --f-mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ink); color:var(--hueso); font-family:var(--f-sans); font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased; }
+  .hoja { max-width:1180px; margin:0 auto; padding:clamp(26px,4.5vw,60px) clamp(18px,4vw,48px) 84px; }
+
+  /* ── logotipo parametrizado ── */
+  .dimia {
+    --asta:.145em; --alto:.52em; --alto2:var(--alto);
+    --pt:.16em;   --pt2:var(--pt);
+    --sep:.085em; --sep2:var(--sep);
+    --c1:var(--azul); --c2:currentColor;
+    font-family:var(--f-sans); font-weight:800; letter-spacing:-0.028em;
+    line-height:1; white-space:nowrap; display:inline-block; color:var(--hueso);
+    font-size:34px;
+  }
+  .i { display:inline-block; width:var(--asta); height:var(--alto); background:currentColor; position:relative; margin:0 .075em 0 .062em; vertical-align:baseline; }
+  .i2 { height:var(--alto2); }
+  .i::before { content:""; position:absolute; left:-.008em; width:var(--pt); height:var(--pt); bottom:calc(var(--alto) + var(--sep)); background:var(--c1); }
+  .i2::before { width:var(--pt2); height:var(--pt2); bottom:calc(var(--alto2) + var(--sep2)); background:var(--c2); }
+  .fin { display:inline-block; width:.2em; height:.2em; background:currentColor; margin-left:.085em; vertical-align:baseline; }
+
+  /* modificadores */
+  .dimia.inv .i2::before { bottom:auto; top:calc(100% + var(--sep2)); }
+  .dimia.pie .i::before  { bottom:auto; top:calc(100% + var(--sep)); }
+  .dimia.conbase .i::after { content:""; position:absolute; left:-.055em; bottom:0; width:.255em; height:.075em; background:currentColor; }
+  .dimia.inclinada { transform:skewX(-10deg); }
+
+  header { padding-bottom:34px; border-bottom:1px solid var(--linea-2); }
+  .kicker { font-family:var(--f-mono); font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--laton); margin-bottom:16px; }
+  h1 { font-family:var(--f-edit); font-weight:300; font-size:clamp(29px,4vw,48px); line-height:1.12; letter-spacing:-0.012em; margin:0 0 18px; text-wrap:balance; }
+  .parrafo { max-width:64ch; color:var(--acero); font-size:16.5px; margin:0 0 14px; }
+  .parrafo strong { color:var(--hueso); font-weight:600; }
+  .parrafo em { color:var(--acero); font-style:normal; }
+  .mono { font-family:var(--f-mono); font-size:.9em; }
+
+  h2 { font-family:var(--f-edit); font-weight:300; font-size:clamp(23px,2.5vw,30px); letter-spacing:-0.01em; margin:0 0 8px; }
+  .seccion { padding-top:52px; }
+  .intro-s { color:var(--acero-2); font-size:13.5px; max-width:62ch; margin:0 0 24px; }
+
+  .rejilla { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(330px,1fr)); }
+  .v { margin:0; border:1px solid var(--linea); background:var(--ink-2); display:flex; flex-direction:column; }
+  .v .placa { background:var(--ink); border-bottom:1px solid var(--linea); padding:26px 22px; display:flex; flex-direction:column; gap:20px; align-items:flex-start; justify-content:center; min-height:172px; }
+  .lockup { display:flex; align-items:center; gap:14px; }
+  .lockup.chico { gap:7px; opacity:.85; }
+  .lockup.chico .dimia { font-size:13px; }
+  .v figcaption { padding:14px 16px 17px; display:flex; flex-direction:column; gap:7px; }
+  .v .cab { display:flex; align-items:center; gap:9px; }
+  .v .num { font-family:var(--f-mono); font-size:10px; letter-spacing:.18em; color:var(--acero-2); }
+  .v .nom { font-weight:600; font-size:14.5px; letter-spacing:-0.005em; }
+  .v .mini { margin-left:auto; display:grid; place-items:center; width:24px; height:24px; background:var(--ink); border:1px solid var(--linea); }
+  .v .nota { margin:0; font-size:12.5px; color:var(--acero-2); line-height:1.5; }
+
+  .veredicto { margin-top:54px; border:1px solid var(--laton); background:linear-gradient(160deg,#141118,#0b0f17 70%); padding:clamp(22px,3.4vw,32px); }
+  .veredicto h2 { margin-bottom:14px; }
+  ul.limpia { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px; }
+  ul.limpia li { padding-left:20px; position:relative; font-size:15.5px; color:var(--acero); }
+  ul.limpia li::before { content:""; position:absolute; left:0; top:.58em; width:6px; height:6px; background:var(--azul); }
+  ul.limpia li strong { color:var(--hueso); font-weight:600; }
+
+  footer { margin-top:64px; padding-top:22px; border-top:1px solid var(--linea-2); font-family:var(--f-mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--acero-2); display:flex; flex-wrap:wrap; gap:10px 28px; justify-content:space-between; }
+  :focus-visible { outline:2px solid var(--azul); outline-offset:3px; }
+</style>
+
+<div class="hoja">
+  <header>
+    <div class="kicker">Dimia Consulting · Variantes con logotipo</div>
+    <h1>Las veinte variantes, cada una con su nombre completo</h1>
+    <p class="parrafo">Ahora el ícono no viaja solo: <strong>cada variante trae el logotipo dibujado con esas mismas <span class="mono">i</span></strong>. Si el punto crece en el ícono, crece en la palabra; si baja un peldaño, baja también al escribir <span class="mono">Dimia</span>. Es la prueba real del sistema — un ícono que se ve bien pero deforma el nombre no sirve.</p>
+    <p class="parrafo">Cada tarjeta muestra el conjunto <strong>en grande y en tamaño de firma de correo</strong>, más la miniatura del ícono a 16 px. <em>Tres pruebas por variante.</em></p>
+  </header>
+
+  <section class="seccion">
+    <h2>El banco completo</h2>
+    <p class="intro-s">Ordenadas de la más cercana a la actual hasta las más lejanas. Dime los números que te laten y afino esos.</p>
+    <div class="rejilla">
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 01"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">01</span><span class="nom">Base</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Astas de 15, puntos de 15. La versión que está hoy en el manual.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 02"><rect x="27" y="44" width="15" height="42" fill="#eef1f7"/><rect x="24" y="15" width="21" height="21" fill="#6e9bf5"/><rect x="58" y="44" width="15" height="42" fill="#eef1f7"/><rect x="55" y="15" width="21" height="21" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--pt:.215em; --sep:.055em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="44" width="15" height="42" fill="#eef1f7"/><rect x="24" y="15" width="21" height="21" fill="#6e9bf5"/><rect x="58" y="44" width="15" height="42" fill="#eef1f7"/><rect x="55" y="15" width="21" height="21" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--pt:.215em; --sep:.055em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">02</span><span class="nom">Punto mayor</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="44" width="15" height="42" fill="#eef1f7"/><rect x="24" y="15" width="21" height="21" fill="#6e9bf5"/><rect x="58" y="44" width="15" height="42" fill="#eef1f7"/><rect x="55" y="15" width="21" height="21" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Los cuadrados crecen y bajan el aire. Más marca, menos letra: manda el cuadrado.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 03"><rect x="27" y="52" width="15" height="34" fill="#eef1f7"/><rect x="27" y="26" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="52" width="15" height="34" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--alto:.40em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="52" width="15" height="34" fill="#eef1f7"/><rect x="27" y="26" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="52" width="15" height="34" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--alto:.40em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">03</span><span class="nom">Asta corta</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="52" width="15" height="34" fill="#eef1f7"/><rect x="27" y="26" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="52" width="15" height="34" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Astas de 34. El logotipo se aplana y los puntos quedan flotando más cerca.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 04"><rect x="27" y="36" width="15" height="50" fill="#eef1f7"/><rect x="27" y="10" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="36" width="15" height="50" fill="#eef1f7"/><rect x="58" y="10" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--alto:.60em; --sep:.07em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="36" width="15" height="50" fill="#eef1f7"/><rect x="27" y="10" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="36" width="15" height="50" fill="#eef1f7"/><rect x="58" y="10" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--alto:.60em; --sep:.07em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">04</span><span class="nom">Asta larga</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="36" width="15" height="50" fill="#eef1f7"/><rect x="27" y="10" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="36" width="15" height="50" fill="#eef1f7"/><rect x="58" y="10" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Astas de 50: las i alcanzan la altura de la D. Severo, casi de despacho jurídico.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 05"><rect x="27" y="46" width="15" height="40" fill="#eef1f7"/><rect x="27" y="12" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="46" width="15" height="40" fill="#eef1f7"/><rect x="58" y="12" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--sep:.17em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="46" width="15" height="40" fill="#eef1f7"/><rect x="27" y="12" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="46" width="15" height="40" fill="#eef1f7"/><rect x="58" y="12" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--sep:.17em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">05</span><span class="nom">Aire abierto</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="46" width="15" height="40" fill="#eef1f7"/><rect x="27" y="12" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="46" width="15" height="40" fill="#eef1f7"/><rect x="58" y="12" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Doble separación entre punto y asta. Respira, pero es el primero que se rompe en chico.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 06"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c2:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia" style="--c2:var(--azul)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">06</span><span class="nom">Doble acento</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#6e9bf5"/></svg></span>
+        </div>
+        <p class="nota">Los dos puntos en azul. Más color, menos jerarquía: el ojo ya no sabe dónde entrar.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 07"><rect x="37" y="16" width="26" height="26" fill="#eef1f7"/><rect x="37" y="58" width="26" height="26" fill="#6e9bf5"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="37" y="16" width="26" height="26" fill="#eef1f7"/><rect x="37" y="58" width="26" height="26" fill="#6e9bf5"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">07</span><span class="nom">Sin astas</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="37" y="16" width="26" height="26" fill="#eef1f7"/><rect x="37" y="58" width="26" height="26" fill="#6e9bf5"/></svg></span>
+        </div>
+        <p class="nota">El ícono son solo los dos cuadrados. El logotipo no cambia: es la única variante donde ícono y letra dejan de ser la misma forma.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 08"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="14" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--sep:.14em; --sep2:.02em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="14" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--sep:.14em; --sep2:.02em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">08</span><span class="nom">Escalón</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="14" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">El segundo punto baja un peldaño. Mata el parecido con el botón de pausa y le da movimiento a la palabra.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 09"><rect x="27" y="36" width="15" height="50" fill="#eef1f7"/><rect x="27" y="12" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="50" width="15" height="36" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--alto:.58em; --alto2:.42em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="36" width="15" height="50" fill="#eef1f7"/><rect x="27" y="12" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="50" width="15" height="36" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--alto:.58em; --alto2:.42em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">09</span><span class="nom">Astas desiguales</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="36" width="15" height="50" fill="#eef1f7"/><rect x="27" y="12" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="50" width="15" height="36" fill="#eef1f7"/><rect x="58" y="26" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">La segunda i arranca más abajo. Asimetría deliberada, como una firma hecha a mano.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 10"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="14" width="15" height="44" fill="#eef1f7"/><rect x="58" y="68" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia inv">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="14" width="15" height="44" fill="#eef1f7"/><rect x="58" y="68" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia inv">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">10</span><span class="nom">Rotacional</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="14" width="15" height="44" fill="#eef1f7"/><rect x="58" y="68" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">La segunda i va de cabeza: su punto cae bajo la línea base. Simetría de 180°, imposible de confundir.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 11"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="46" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="46" height="15" fill="#6e9bf5"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">11</span><span class="nom">Punto corrido</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="46" height="15" fill="#6e9bf5"/></svg></span>
+        </div>
+        <p class="nota">Un cuadrado alargado cubre las dos astas del ícono. En el logotipo no cabe: las i están separadas por la m.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 12"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="42" y="16" width="17" height="17" fill="#6e9bf5"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="42" y="16" width="17" height="17" fill="#6e9bf5"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">12</span><span class="nom">Punto al centro</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="42" y="16" width="17" height="17" fill="#6e9bf5"/></svg></span>
+        </div>
+        <p class="nota">Un solo cuadrado centrado sobre las dos astas. Mismo problema: el logotipo no lo puede repetir.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 13"><rect x="18" y="42" width="15" height="44" fill="#eef1f7"/><rect x="18" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="46" y="42" width="15" height="44" fill="#eef1f7"/><rect x="46" y="18" width="15" height="15" fill="#eef1f7"/><rect x="74" y="71" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="18" y="42" width="15" height="44" fill="#eef1f7"/><rect x="18" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="46" y="42" width="15" height="44" fill="#eef1f7"/><rect x="46" y="18" width="15" height="15" fill="#eef1f7"/><rect x="74" y="71" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">13</span><span class="nom">Los tres</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="18" y="42" width="15" height="44" fill="#eef1f7"/><rect x="18" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="46" y="42" width="15" height="44" fill="#eef1f7"/><rect x="46" y="18" width="15" height="15" fill="#eef1f7"/><rect x="74" y="71" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">El ícono suma el punto final de la línea base: el logotipo entero, condensado en la placa.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 14"><rect x="30" y="42" width="10" height="44" fill="#eef1f7"/><rect x="30" y="20" width="10" height="10" fill="#6e9bf5"/><rect x="60" y="42" width="10" height="44" fill="#eef1f7"/><rect x="60" y="20" width="10" height="10" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--asta:.10em; --pt:.115em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="30" y="42" width="10" height="44" fill="#eef1f7"/><rect x="30" y="20" width="10" height="10" fill="#6e9bf5"/><rect x="60" y="42" width="10" height="44" fill="#eef1f7"/><rect x="60" y="20" width="10" height="10" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--asta:.10em; --pt:.115em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">14</span><span class="nom">Delgada</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="30" y="42" width="10" height="44" fill="#eef1f7"/><rect x="30" y="20" width="10" height="10" fill="#6e9bf5"/><rect x="60" y="42" width="10" height="44" fill="#eef1f7"/><rect x="60" y="20" width="10" height="10" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Astas de 10. Aire de instrumento de precisión; se pierde por debajo de 24 px.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 15"><rect x="21" y="44" width="21" height="42" fill="#eef1f7"/><rect x="21" y="16" width="21" height="21" fill="#6e9bf5"/><rect x="58" y="44" width="21" height="42" fill="#eef1f7"/><rect x="58" y="16" width="21" height="21" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--asta:.19em; --pt:.215em; --sep:.06em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="21" y="44" width="21" height="42" fill="#eef1f7"/><rect x="21" y="16" width="21" height="21" fill="#6e9bf5"/><rect x="58" y="44" width="21" height="42" fill="#eef1f7"/><rect x="58" y="16" width="21" height="21" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--asta:.19em; --pt:.215em; --sep:.06em">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">15</span><span class="nom">Pesada</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="21" y="44" width="21" height="42" fill="#eef1f7"/><rect x="21" y="16" width="21" height="21" fill="#6e9bf5"/><rect x="58" y="44" width="21" height="42" fill="#eef1f7"/><rect x="58" y="16" width="21" height="21" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Astas y puntos de 21. Máxima presencia en avatar chico; en el texto engorda las i.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 16"><rect x="27" y="42" width="15" height="38" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="38" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/><rect x="20" y="80" width="60" height="7" fill="#eef1f7"/></svg>
+          <span class="dimia conbase">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="38" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="38" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/><rect x="20" y="80" width="60" height="7" fill="#eef1f7"/></svg>
+          <span class="dimia conbase">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">16</span><span class="nom">Con base</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="38" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="38" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/><rect x="20" y="80" width="60" height="7" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Cada i se para sobre un pie. Aire de tipografía con serifas, dentro de un sistema geométrico.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 17"><g transform="rotate(-10 50 50)"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></g></svg>
+          <span class="dimia inclinada">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><g transform="rotate(-10 50 50)"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></g></svg>
+          <span class="dimia inclinada">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">17</span><span class="nom">Inclinada</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><g transform="rotate(-10 50 50)"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></g></svg></span>
+        </div>
+        <p class="nota">Diez grados de cursiva. Da velocidad, pero contradice la regla de nunca inclinar la marca.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 18"><rect x="27" y="14" width="15" height="44" fill="#eef1f7"/><rect x="27" y="68" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="14" width="15" height="44" fill="#eef1f7"/><rect x="58" y="68" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia pie">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="14" width="15" height="44" fill="#eef1f7"/><rect x="27" y="68" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="14" width="15" height="44" fill="#eef1f7"/><rect x="58" y="68" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia pie">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">18</span><span class="nom">Puntos al pie</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="14" width="15" height="44" fill="#eef1f7"/><rect x="27" y="68" width="15" height="15" fill="#6e9bf5"/><rect x="58" y="14" width="15" height="44" fill="#eef1f7"/><rect x="58" y="68" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Los dos cuadrados debajo de las astas, colgando de la línea base. Raro y memorable.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 19"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:var(--laton)">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">19</span><span class="nom">Ceremonial</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#c8a45c"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">La base con el acento en latón. Aniversario, reconocimiento, contrato firmado.</p>
+      </figcaption>
+    </figure>
+    <figure class="v">
+      <div class="placa">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100" width="54" height="54" role="img" aria-label="Ícono variante 20"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:currentColor">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+        <div class="lockup chico">
+          <svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg>
+          <span class="dimia" style="--c1:currentColor">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span>
+        </div>
+      </div>
+      <figcaption>
+        <div class="cab">
+          <span class="num">20</span><span class="nom">Monocromo</span>
+          <span class="mini"><svg viewBox="0 0 100 100" width="16" height="16" aria-hidden="true"><rect x="27" y="42" width="15" height="44" fill="#eef1f7"/><rect x="27" y="18" width="15" height="15" fill="#eef1f7"/><rect x="58" y="42" width="15" height="44" fill="#eef1f7"/><rect x="58" y="18" width="15" height="15" fill="#eef1f7"/></svg></span>
+        </div>
+        <p class="nota">Sin acento. Bordado, grabado, sello seco, una sola tinta.</p>
+      </figcaption>
+    </figure>
+    </div>
+  </section>
+
+  <div class="veredicto">
+    <h2>Si tuviera que quedarme con tres</h2>
+    <ul class="limpia">
+      <li><strong>08 · Escalón —</strong> el segundo punto baja un peldaño. Es lo único que elimina del todo el parecido con el botón de pausa, y en el logotipo crea una diagonal descendente —punto alto, punto bajo, punto final— que le da ritmo a la palabra.</li>
+      <li><strong>02 · Punto mayor —</strong> los cuadrados mandan y las astas los sostienen. El que mejor aguanta a 16 px, y en el nombre refuerza el cuadrado como átomo de toda la identidad.</li>
+      <li><strong>13 · Los tres —</strong> el ícono se lleva también el punto final: el logotipo completo condensado. El más rico de leer y el más difícil de imitar.</li>
+    </ul>
+    <p class="parrafo" style="margin-top:16px">Las que descartaría: <span class="mono">07</span>, <span class="mono">11</span> y <span class="mono">12</span> —el ícono deja de ser un recorte del logotipo y se convierte en un dibujo aparte, que es justo lo que veníamos evitando—, <span class="mono">14</span> —desaparece en chico— y <span class="mono">17</span>, porque inclinar contradice una regla que el propio manual pone por escrito.</p>
+  </div>
+
+  <footer>
+    <span>Dimia Consulting · Variantes con logotipo · para elegir</span>
+    <span><span class="dimia" style="font-size:12px; letter-spacing:0">D<i class="i i1"></i>m<i class="i i2"></i>a<i class="fin"></i></span></span>
+  </footer>
+</div>
