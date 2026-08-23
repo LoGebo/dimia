@@ -1,8 +1,118 @@
 "use client";
 
 import { useState } from "react";
-import { Campo, Entrada, Selector } from "@/components/ui/primitivos";
-import { AJUSTES_TTS, PROVEEDORES_TTS, type ProveedorTts, type TtsAjustes } from "@/lib/tipos";
+import { Campo, Entrada, Insignia, Selector } from "@/components/ui/primitivos";
+import {
+  AJUSTES_ELEVENLABS,
+  FORMATO_VOZ,
+  MODELOS_LLM,
+  PROVEEDORES_LLM,
+  PROVEEDORES_TTS,
+  VELOCIDAD_AZURE,
+  VOCES_AZURE,
+  modeloPorDefecto,
+  vozValida,
+  type CampoDeslizador,
+  type ProveedorLlm,
+  type ProveedorTts,
+  type TtsAjustes,
+} from "@/lib/tipos";
+
+function Bloque({
+  titulo,
+  descripcion,
+  children,
+}: {
+  titulo: string;
+  descripcion: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-md border border-linea bg-panel-2 px-3 py-3">
+      <p className="etiqueta">{titulo}</p>
+      <p className="mt-0.5 mb-3 text-[11px] text-tinta-3">{descripcion}</p>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+export function ConfiguracionCerebro({
+  proveedor,
+  modelo,
+}: {
+  proveedor: ProveedorLlm;
+  modelo: string | null;
+}) {
+  const [actual, setActual] = useState<ProveedorLlm>(proveedor);
+  const [texto, setTexto] = useState(modelo ?? "");
+  const opciones = MODELOS_LLM[actual];
+  const porDefecto = modeloPorDefecto(actual);
+  const elegido = texto.trim() || porDefecto;
+
+  return (
+    <Bloque
+      titulo="Cerebro"
+      descripcion="Quién razona durante la llamada. Cambiarlo se nota en qué tan bien entiende y en cuánto cuesta."
+    >
+      <Campo etiqueta="Proveedor">
+        <Selector
+          name="llm_proveedor"
+          value={actual}
+          onChange={(e) => {
+            setActual(e.target.value as ProveedorLlm);
+            setTexto("");
+          }}
+        >
+          {PROVEEDORES_LLM.map((p) => (
+            <option key={p.valor} value={p.valor}>
+              {p.nombre} — {p.detalle}
+            </option>
+          ))}
+        </Selector>
+      </Campo>
+
+      <Campo
+        etiqueta="Modelo"
+        ayuda={`Vacío usa ${porDefecto}. Puedes escribir cualquier modelo del proveedor.`}
+      >
+        <Entrada
+          name="llm_modelo"
+          list={`modelos-${actual}`}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          placeholder={porDefecto}
+          spellCheck={false}
+        />
+      </Campo>
+      <datalist id={`modelos-${actual}`}>
+        {opciones.map((m) => (
+          <option key={m.id} value={m.id} />
+        ))}
+      </datalist>
+
+      <ul className="divide-y divide-linea rounded-md border border-linea bg-panel">
+        {opciones.map((m) => (
+          <li key={m.id} className="flex items-center justify-between gap-3 px-2.5 py-2">
+            <button
+              type="button"
+              onClick={() => setTexto(m.id)}
+              className="min-w-0 flex-1 text-left"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="text-[12px] font-medium text-tinta">{m.nombre}</span>
+                {m.id === elegido ? <Insignia tono="acento">En uso</Insignia> : null}
+              </span>
+              <span className="block truncate text-[11px] text-tinta-3">{m.detalle}</span>
+            </button>
+            <span className="numeros shrink-0 text-[11px] text-tinta-2">
+              ~${m.costoMinuto.toFixed(3)}/min
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Bloque>
+  );
+}
 
 export function ConfiguracionVoz({
   proveedor,
@@ -14,48 +124,108 @@ export function ConfiguracionVoz({
   ajustes: TtsAjustes;
 }) {
   const [actual, setActual] = useState<ProveedorTts>(proveedor);
-  const campos = AJUSTES_TTS[actual];
+  const [voz, setVoz] = useState(vozId ?? "");
+  const formato = FORMATO_VOZ[actual];
+  const mismos = actual === proveedor;
+  const invalida = voz.trim().length > 0 && !vozValida(actual, voz.trim());
 
   return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Campo etiqueta="Proveedor de voz">
-          <Selector
-            name="tts_proveedor"
-            value={actual}
-            onChange={(e) => setActual(e.target.value as ProveedorTts)}
-          >
-            {PROVEEDORES_TTS.map((p) => (
-              <option key={p.valor} value={p.valor}>
-                {p.nombre} — {p.detalle}
-              </option>
-            ))}
-          </Selector>
-        </Campo>
-        <Campo etiqueta="ID de la voz" ayuda="Se copia del panel del proveedor.">
-          <Entrada name="voz_id" defaultValue={vozId ?? ""} placeholder="21m00Tcm4TlvDq8ikWAM" />
-        </Campo>
-      </div>
+    <Bloque
+      titulo="Voz"
+      descripcion="Cómo suena al contestar. El precio es por hora de llamada, no por mes."
+    >
+      <Campo etiqueta="Proveedor">
+        <Selector
+          name="tts_proveedor"
+          value={actual}
+          onChange={(e) => {
+            const nuevo = e.target.value as ProveedorTts;
+            setActual(nuevo);
+            setVoz(nuevo === proveedor ? (vozId ?? "") : nuevo === "azure" ? VOCES_AZURE[0]!.id : "");
+          }}
+        >
+          {PROVEEDORES_TTS.map((p) => (
+            <option key={p.valor} value={p.valor}>
+              {p.nombre} — {p.detalle} (~${p.costoHora.toFixed(2)}/hora)
+            </option>
+          ))}
+        </Selector>
+      </Campo>
 
-      <div className="rounded-md border border-linea bg-panel-2 px-3 py-3">
-        <p className="etiqueta mb-2.5">Ajustes de {actual === "elevenlabs" ? "ElevenLabs" : "Cartesia"}</p>
-        <div className="space-y-3">
-          {campos.map((campo) => (
+      {actual === "azure" ? (
+        <>
+          <Campo etiqueta="Voz" ayuda="Todas son de español de México.">
+            <Selector name="voz_id" value={voz} onChange={(e) => setVoz(e.target.value)}>
+              {VOCES_AZURE.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.nombre} — {v.detalle}
+                </option>
+              ))}
+            </Selector>
+          </Campo>
+          <Deslizador
+            nombre="tts_rate"
+            etiqueta="Velocidad"
+            ayuda="1.0 es el ritmo natural. Arriba de 1.3 empieza a atropellarse."
+            min={VELOCIDAD_AZURE.min}
+            max={VELOCIDAD_AZURE.max}
+            paso={VELOCIDAD_AZURE.paso}
+            inicial={numeroDe(mismos ? ajustes.prosodia?.rate : undefined, VELOCIDAD_AZURE.porDefecto)}
+          />
+        </>
+      ) : (
+        <Campo etiqueta="ID de la voz" ayuda={`${formato.formato}. ${formato.donde}`}>
+          <Entrada
+            name="voz_id"
+            value={voz}
+            onChange={(e) => setVoz(e.target.value)}
+            placeholder={formato.ejemplo}
+            spellCheck={false}
+          />
+        </Campo>
+      )}
+
+      {invalida ? (
+        <p className="rounded-md border border-alerta/30 bg-alerta/10 px-2.5 py-1.5 text-[11px] text-alerta">
+          Ese ID no tiene el formato de {formato.formato} que espera el proveedor. Ejemplo:{" "}
+          <span className="font-mono">{formato.ejemplo}</span>.
+        </p>
+      ) : null}
+
+      {actual === "elevenlabs" ? (
+        <div className="space-y-3 rounded-md border border-linea bg-panel px-2.5 py-2.5">
+          {AJUSTES_ELEVENLABS.map((campo) => (
             <Deslizador
-              key={`${actual}-${campo.clave}`}
+              key={campo.clave}
               nombre={`tts_${campo.clave}`}
               etiqueta={campo.etiqueta}
               ayuda={campo.ayuda}
               min={campo.min}
               max={campo.max}
               paso={campo.paso}
-              inicial={ajustes[campo.clave] ?? campo.porDefecto}
+              inicial={numeroDe(mismos ? ajustes[campo.clave] : undefined, campo.porDefecto)}
             />
           ))}
         </div>
-      </div>
-    </div>
+      ) : null}
+
+      {!mismos ? (
+        <p className="text-[11px] text-tinta-3">
+          Al guardar se descartan los ajustes de {nombreDe(proveedor)}: no son compatibles y tumbarían
+          la llamada.
+        </p>
+      ) : null}
+    </Bloque>
   );
+}
+
+function nombreDe(proveedor: ProveedorTts): string {
+  return PROVEEDORES_TTS.find((p) => p.valor === proveedor)?.nombre ?? proveedor;
+}
+
+function numeroDe(valor: unknown, porDefecto: number): number {
+  const numero = Number(valor);
+  return Number.isFinite(numero) && valor !== null && valor !== "" ? numero : porDefecto;
 }
 
 function Deslizador({
@@ -66,15 +236,7 @@ function Deslizador({
   max,
   paso,
   inicial,
-}: {
-  nombre: string;
-  etiqueta: string;
-  ayuda: string;
-  min: number;
-  max: number;
-  paso: number;
-  inicial: number;
-}) {
+}: Omit<CampoDeslizador, "clave" | "porDefecto"> & { nombre: string; inicial: number }) {
   const [valor, setValor] = useState(inicial);
   return (
     <label className="block">

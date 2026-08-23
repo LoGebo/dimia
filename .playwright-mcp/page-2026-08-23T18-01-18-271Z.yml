@@ -1,0 +1,204 @@
+- generic [ref=f8e2]:
+  - complementary [ref=f8e3]:
+    - generic [ref=f8e5]:
+      - combobox [ref=f8e7]:
+        - option "Clinica Dental Sonrisa"
+        - option "Cocina de Humo"
+        - option "Consultoria Vertice"
+        - option "Estudio Marea"
+        - option "Taller Ruiz Automotriz"
+        - option "Taqueria El Buen Pastor" [selected]
+      - generic "Restaurante con pedidos a domicilio" [ref=f8e8]
+    - generic [ref=f8e9]:
+      - paragraph [ref=f8e10]: Número de entrada
+      - paragraph [ref=f8e11]: +52 55 1000 0006
+      - generic [ref=f8e12]: Activo
+    - navigation [ref=f8e15]:
+      - link "Resumen Llamadas y desempeño" [ref=f8e16] [cursor=pointer]:
+        - /url: /resumen
+        - generic [ref=f8e17]: Resumen
+        - generic [ref=f8e18]: Llamadas y desempeño
+      - link "Pedidos Lo que hay que sacar" [ref=f8e19] [cursor=pointer]:
+        - /url: /pedidos
+        - generic [ref=f8e20]: Pedidos
+        - generic [ref=f8e21]: Lo que hay que sacar
+      - link "Recados Quién pidió que le marquen" [ref=f8e22] [cursor=pointer]:
+        - /url: /recados
+        - generic [ref=f8e23]: Recados
+        - generic [ref=f8e24]: Quién pidió que le marquen
+      - link "Horarios Cuándo abres" [ref=f8e25] [cursor=pointer]:
+        - /url: /horarios
+        - generic [ref=f8e26]: Horarios
+        - generic [ref=f8e27]: Cuándo abres
+      - link "Catálogo Lo que ofreces" [ref=f8e28] [cursor=pointer]:
+        - /url: /catalogo
+        - generic [ref=f8e29]: Catálogo
+        - generic [ref=f8e30]: Lo que ofreces
+      - link "Respuestas Qué contesta" [ref=f8e31] [cursor=pointer]:
+        - /url: /conocimiento
+        - generic [ref=f8e32]: Respuestas
+        - generic [ref=f8e33]: Qué contesta
+      - link "Agente Voz y transferencia" [ref=f8e34] [cursor=pointer]:
+        - /url: /agente
+        - generic [ref=f8e35]: Agente
+        - generic [ref=f8e36]: Voz y transferencia
+      - link "Probar Háblale en vivo" [ref=f8e37] [cursor=pointer]:
+        - /url: /probar
+        - generic [ref=f8e38]: Probar
+        - generic [ref=f8e39]: Háblale en vivo
+    - generic [ref=f8e40]:
+      - generic [ref=f8e41]:
+        - generic [ref=f8e42]:
+          - paragraph [ref=f8e43]: gebouai@gmail.com
+          - paragraph [ref=f8e44]: Dueño
+        - button "Cambiar a modo oscuro" [ref=f8e45]
+      - generic [ref=f8e48]:
+        - button "Cerrar sesión" [ref=f8e50]
+        - generic [ref=f8e51]: ·
+        - link "Nuevo negocio" [ref=f8e52] [cursor=pointer]:
+          - /url: /alta
+  - main [ref=f8e53]:
+    - generic [ref=f8e54]:
+      - generic [ref=f8e55]:
+        - generic [ref=f8e56]:
+          - heading "Resumen" [level=1] [ref=f8e57]
+          - generic "Restaurante con pedidos a domicilio" [ref=f8e58]
+        - paragraph [ref=f8e59]: Taqueria El Buen Pastor · últimos 14 días
+      - generic [ref=f8e61]:
+        - link "7 d" [ref=f8e62] [cursor=pointer]:
+          - /url: /resumen?dias=7
+        - link "14 d" [ref=f8e63] [cursor=pointer]:
+          - /url: /resumen?dias=14
+        - link "30 d" [ref=f8e64] [cursor=pointer]:
+          - /url: /resumen?dias=30
+    - generic [ref=f8e65]:
+      - generic [ref=f8e66]:
+        - generic [ref=f8e67]:
+          - heading "Hoy" [level=2] [ref=f8e69]
+          - link "Ver pedidos" [ref=f8e70] [cursor=pointer]:
+            - /url: /pedidos
+        - generic [ref=f8e71]:
+          - generic [ref=f8e72]:
+            - paragraph [ref=f8e73]: Pedidos del día
+            - paragraph [ref=f8e74]: "5"
+            - paragraph [ref=f8e75]: 0 cancelados
+          - generic [ref=f8e76]:
+            - paragraph [ref=f8e77]: Por sacar
+            - paragraph [ref=f8e78]: "4"
+            - paragraph [ref=f8e79]: 1 ya salieron
+          - generic [ref=f8e80]:
+            - paragraph [ref=f8e81]: Total vendido
+            - paragraph [ref=f8e82]: $700
+            - paragraph [ref=f8e83]: confirmados y entregados
+          - generic [ref=f8e84]:
+            - paragraph [ref=f8e85]: Ticket promedio
+            - paragraph [ref=f8e86]: $233
+            - paragraph [ref=f8e87]: por pedido cerrado
+      - generic [ref=f8e88]:
+        - generic [ref=f8e89]:
+          - paragraph [ref=f8e90]: Llamadas
+          - paragraph [ref=f8e91]: "105"
+          - paragraph [ref=f8e92]: 7.5 por día
+        - generic [ref=f8e93]:
+          - paragraph [ref=f8e94]: Resueltas sin humano
+          - paragraph [ref=f8e95]: 88%
+          - paragraph [ref=f8e96]: 92 de 105
+        - generic [ref=f8e97]:
+          - paragraph [ref=f8e98]: Escalamiento
+          - paragraph [ref=f8e99]: 12%
+          - paragraph [ref=f8e100]: 13 pasaron a una persona
+        - generic [ref=f8e101]:
+          - paragraph [ref=f8e102]: Duración promedio
+          - paragraph [ref=f8e103]: 2:26
+          - paragraph [ref=f8e104]: minutos por llamada
+      - generic [ref=f8e105]:
+        - generic [ref=f8e107]:
+          - heading "Llamadas por día" [level=2] [ref=f8e108]
+          - paragraph [ref=f8e109]: Cada columna es un día. El azul se resolvió solo; el naranja pasó a una persona.
+        - generic [ref=f8e110]:
+          - generic [ref=f8e111]:
+            - generic [ref=f8e112]: Resueltas por el agente
+            - generic [ref=f8e114]: Escaladas a una persona
+          - generic [ref=f8e116]:
+            - generic [ref=f8e117]:
+              - generic [ref=f8e118]: "11"
+              - generic [ref=f8e119]: "6"
+              - generic [ref=f8e120]: "0"
+            - generic [ref=f8e121]:
+              - generic [ref=f8e126]:
+                - 'button "2026-08-10: 9 llamadas" [ref=f8e127]'
+                - 'button "2026-08-11: 10 llamadas" [ref=f8e131]'
+                - 'button "2026-08-12: 11 llamadas" [ref=f8e134]'
+                - 'button "2026-08-13: 5 llamadas" [ref=f8e138]'
+                - 'button "2026-08-14: 3 llamadas" [ref=f8e142]'
+                - 'button "2026-08-15: 4 llamadas" [ref=f8e146]'
+                - 'button "2026-08-16: 6 llamadas" [ref=f8e149]'
+                - 'button "2026-08-17: 4 llamadas" [ref=f8e153]'
+                - 'button "2026-08-18: 6 llamadas" [ref=f8e156]'
+                - 'button "2026-08-19: 6 llamadas" [ref=f8e159]'
+                - 'button "2026-08-20: 8 llamadas" [ref=f8e162]'
+                - 'button "2026-08-21: 7 llamadas" [ref=f8e166]'
+                - 'button "2026-08-22: 8 llamadas" [ref=f8e170]'
+                - 'button "2026-08-23: 10 llamadas" [ref=f8e173]'
+              - generic [ref=f8e177]:
+                - generic [ref=f8e178]: "10"
+                - generic [ref=f8e180]: "12"
+                - generic [ref=f8e182]: "14"
+                - generic [ref=f8e184]: "16"
+                - generic [ref=f8e186]: "18"
+                - generic [ref=f8e188]: "20"
+                - generic [ref=f8e190]: "22"
+      - generic [ref=f8e192]:
+        - generic [ref=f8e193]:
+          - generic [ref=f8e195]:
+            - heading "Por qué se escala" [level=2] [ref=f8e196]
+            - paragraph [ref=f8e197]: Motivos más frecuentes de transferencia.
+          - list [ref=f8e198]:
+            - listitem [ref=f8e199]:
+              - generic [ref=f8e200]:
+                - generic [ref=f8e201]: tema de salud delicado
+                - generic [ref=f8e202]: "4"
+            - listitem [ref=f8e205]:
+              - generic [ref=f8e206]:
+                - generic [ref=f8e207]: lo pidio la persona
+                - generic [ref=f8e208]: "3"
+            - listitem [ref=f8e211]:
+              - generic [ref=f8e212]:
+                - generic [ref=f8e213]: fuera de lo que puede hacer
+                - generic [ref=f8e214]: "2"
+            - listitem [ref=f8e217]:
+              - generic [ref=f8e218]:
+                - generic [ref=f8e219]: no entendio dos veces
+                - generic [ref=f8e220]: "2"
+            - listitem [ref=f8e223]:
+              - generic [ref=f8e224]:
+                - generic [ref=f8e225]: queja o reclamo
+                - generic [ref=f8e226]: "2"
+        - generic [ref=f8e229]:
+          - generic [ref=f8e231]:
+            - heading "A qué hora te llaman" [level=2] [ref=f8e232]
+            - paragraph [ref=f8e233]: Hora local de America/Mexico_City.
+          - generic [ref=f8e234]:
+            - generic [ref=f8e235]:
+              - generic "7:00 — 0 llamadas" [ref=f8e236]
+              - generic "8:00 — 0 llamadas" [ref=f8e238]
+              - generic "9:00 — 8 llamadas" [ref=f8e240]
+              - generic "10:00 — 7 llamadas" [ref=f8e242]
+              - generic "11:00 — 9 llamadas" [ref=f8e244]
+              - generic "12:00 — 10 llamadas" [ref=f8e246]
+              - generic "13:00 — 10 llamadas" [ref=f8e248]
+              - generic "14:00 — 10 llamadas" [ref=f8e250]
+              - generic "15:00 — 8 llamadas" [ref=f8e252]
+              - generic "16:00 — 10 llamadas" [ref=f8e254]
+              - generic "17:00 — 11 llamadas" [ref=f8e256]
+              - generic "18:00 — 11 llamadas" [ref=f8e258]
+              - generic "19:00 — 11 llamadas" [ref=f8e260]
+              - generic "20:00 — 0 llamadas" [ref=f8e262]
+              - generic "21:00 — 0 llamadas" [ref=f8e264]
+              - generic "22:00 — 0 llamadas" [ref=f8e266]
+            - generic [ref=f8e268]:
+              - generic [ref=f8e271]: "9"
+              - generic [ref=f8e274]: "12"
+              - generic [ref=f8e277]: "15"
+              - generic [ref=f8e280]: "18"
+              - generic [ref=f8e283]: "21"

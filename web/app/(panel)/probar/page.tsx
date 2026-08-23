@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
+import { CombinacionActiva } from "@/components/combinacion";
 import { ConsolaPrueba } from "@/components/prueba-consola";
 import { Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { catalogo, faq, negocio, plantillaActual, servicios } from "@/lib/consultas";
@@ -81,7 +82,8 @@ export default async function Probar() {
           </div>
         }
       />
-      <div className="px-6 py-5">
+      <div className="space-y-4 px-6 py-5">
+        <CombinacionActiva negocio={config} />
         <ConsolaPrueba
           tenantId={negocioId}
           nombre={config.nombre}

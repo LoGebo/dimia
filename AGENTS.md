@@ -108,6 +108,12 @@ en asyncpg es obligatorio detrás de pgbouncer en modo transacción.
 - El precio de un item se congela al momento de ordenar (`pedido_item.precio_unitario`).
   Cambiar el menú no altera pedidos ya tomados, y borrar un platillo deja el
   historial intacto (`catalogo_id` pasa a NULL, el nombre se conserva).
+- **No uses alias de Gemini** (`gemini-flash-latest`, `gemini-flash-lite-latest`):
+  el servidor los resuelve a Gemini 3, que exige `thought_signature` en el
+  historial de herramientas, pero `_requires_thought_signatures()` del plugin
+  los detecta por nombre y devuelve False. La llamada muere con 400 al segundo
+  turno. Usa el id explícito: `gemini-3-flash-preview`. Los modelos 2.5 ya
+  fueron retirados por Google.
 - La búsqueda de conocimiento es léxica, no semántica: no salva sinónimos lejanos
   ("carro" contra "estacionamiento"). Por eso la FAQ prioritaria viaja completa
   en el prompt y la búsqueda cubre solo la cola larga.

@@ -15,6 +15,8 @@ export type Negocio = {
   voz_id: string | null;
   tts_proveedor: ProveedorTts;
   tts_ajustes: TtsAjustes;
+  llm_proveedor: ProveedorLlm;
+  llm_modelo: string | null;
   instrucciones_extra: string | null;
   slot_granularidad_min: number;
   anticipacion_min: number;
@@ -119,13 +121,17 @@ export type Membresia = {
   rol: Rol;
 };
 
-export type ProveedorTts = "elevenlabs" | "cartesia";
+export type ProveedorTts = "azure" | "elevenlabs" | "deepgram" | "cartesia";
+export type ProveedorLlm = "openai" | "google" | "anthropic";
 
 export type TtsAjustes = {
   estabilidad?: number;
   similitud?: number;
-  estilo?: number;
+  estilo?: number | string;
   velocidad?: number;
+  prosodia?: { rate?: number | string };
+  intensidad?: number;
+  modelo?: string;
 };
 
 export type PlantillaVertical = {
@@ -266,26 +272,134 @@ export function etiquetasRecurso(vertical: Vertical): { recurso: string; ejemplo
   return ETIQUETAS_RECURSO[vertical] ?? { recurso: "Recurso", ejemplos: "Sala A, Taller 1" };
 }
 
-export const AJUSTES_TTS: Record<
-  ProveedorTts,
-  { clave: keyof TtsAjustes; etiqueta: string; ayuda: string; min: number; max: number; paso: number; porDefecto: number }[]
+export type ClaveDeslizador = "estabilidad" | "similitud" | "estilo" | "velocidad";
+
+export type CampoDeslizador = {
+  clave: ClaveDeslizador;
+  etiqueta: string;
+  ayuda: string;
+  min: number;
+  max: number;
+  paso: number;
+  porDefecto: number;
+};
+
+export const AJUSTES_ELEVENLABS: CampoDeslizador[] = [
+  { clave: "estabilidad", etiqueta: "Estabilidad", ayuda: "Bajo varía más la entonación; alto suena parejo y plano.", min: 0, max: 1, paso: 0.05, porDefecto: 0.45 },
+  { clave: "similitud", etiqueta: "Similitud", ayuda: "Qué tanto se apega a la voz original.", min: 0, max: 1, paso: 0.05, porDefecto: 0.8 },
+  { clave: "estilo", etiqueta: "Estilo", ayuda: "Exagera el acento y la intención. Sube la latencia.", min: 0, max: 1, paso: 0.05, porDefecto: 0.15 },
+  { clave: "velocidad", etiqueta: "Velocidad", ayuda: "1.0 es el ritmo natural.", min: 0.7, max: 1.2, paso: 0.05, porDefecto: 1 },
+];
+
+export const VELOCIDAD_AZURE = { min: 0.5, max: 2, paso: 0.01, porDefecto: 1 } as const;
+
+export const PROVEEDORES_TTS: {
+  valor: ProveedorTts;
+  nombre: string;
+  detalle: string;
+  costoHora: number;
+}[] = [
+  { valor: "azure", nombre: "Azure Neural", detalle: "Catálogo mexicano y lo más barato", costoHora: 0.77 },
+  { valor: "deepgram", nombre: "Deepgram Aura", detalle: "Latencia muy baja", costoHora: 1.44 },
+  { valor: "cartesia", nombre: "Cartesia Sonic", detalle: "40 ms al primer audio", costoHora: 1.7 },
+  { valor: "elevenlabs", nombre: "ElevenLabs", detalle: "La más natural, con más control", costoHora: 2.4 },
+];
+
+export const VOCES_AZURE: { id: string; nombre: string; detalle: string }[] = [
+  { id: "es-MX-DaliaNeural", nombre: "Dalia", detalle: "Femenina, cálida y neutra" },
+  { id: "es-MX-JorgeNeural", nombre: "Jorge", detalle: "Masculina, formal" },
+  { id: "es-MX-BeatrizNeural", nombre: "Beatriz", detalle: "Femenina, madura" },
+  { id: "es-MX-CandelaNeural", nombre: "Candela", detalle: "Femenina, enérgica" },
+  { id: "es-MX-CarlotaNeural", nombre: "Carlota", detalle: "Femenina, serena" },
+  { id: "es-MX-CecilioNeural", nombre: "Cecilio", detalle: "Masculina, grave" },
+  { id: "es-MX-GerardoNeural", nombre: "Gerardo", detalle: "Masculina, cercana" },
+  { id: "es-MX-LarissaNeural", nombre: "Larissa", detalle: "Femenina, joven" },
+];
+
+export const FORMATO_VOZ: Record<ProveedorTts, { formato: string; ejemplo: string; donde: string }> = {
+  azure: {
+    formato: "idioma-REGION-NombreNeural",
+    ejemplo: "es-MX-JorgeNeural",
+    donde: "Azure Speech Studio, en la galería de voces.",
+  },
+  elevenlabs: {
+    formato: "20 caracteres alfanuméricos",
+    ejemplo: "MOpELGWw8bqcERsmVMzW",
+    donde: "ElevenLabs, en la voz → Voice ID.",
+  },
+  deepgram: {
+    formato: "aura-2-nombre-idioma",
+    ejemplo: "aura-2-javier-es",
+    donde: "Deepgram, en la lista de modelos Aura.",
+  },
+  cartesia: {
+    formato: "uuid de 36 caracteres",
+    ejemplo: "5c5ad5e7-1020-476b-8b91-fdcbe9cc313c",
+    donde: "Cartesia, en la voz → Copy ID.",
+  },
+};
+
+const UUID = /^[0-9a-f-]{36}$/;
+
+export function vozValida(proveedor: ProveedorTts, vozId: string): boolean {
+  if (proveedor === "azure") return /^[a-z]{2}-[A-Z]{2}-[A-Za-z]+Neural$/.test(vozId);
+  if (proveedor === "deepgram") return /^aura(-2)?-[a-z]+-[a-z]{2}$/.test(vozId);
+  if (proveedor === "cartesia") return UUID.test(vozId);
+  return !UUID.test(vozId);
+}
+
+export function nombreVoz(proveedor: ProveedorTts, vozId: string | null): string {
+  if (!vozId) return "voz por defecto";
+  if (proveedor === "azure") {
+    return VOCES_AZURE.find((v) => v.id === vozId)?.nombre ?? vozId.replace(/^es-MX-|Neural$/g, "");
+  }
+  if (proveedor === "deepgram") {
+    const partes = vozId.split("-");
+    const nombre = partes[partes.length - 2] ?? vozId;
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  }
+  return `${vozId.slice(0, 6)}…`;
+}
+
+export function nombreProveedorTts(proveedor: ProveedorTts): string {
+  return PROVEEDORES_TTS.find((p) => p.valor === proveedor)?.nombre ?? proveedor;
+}
+
+export const PROVEEDORES_LLM: {
+  valor: ProveedorLlm;
+  nombre: string;
+  detalle: string;
+  porDefecto: string;
+}[] = [
+  { valor: "openai", nombre: "OpenAI", detalle: "El más probado en llamadas", porDefecto: "gpt-4.1-mini" },
+  { valor: "google", nombre: "Google Gemini", detalle: "El más rápido y barato", porDefecto: "gemini-2.5-flash" },
+  { valor: "anthropic", nombre: "Anthropic", detalle: "El que mejor sigue instrucciones largas", porDefecto: "claude-haiku-4-5-20251001" },
+];
+
+export const MODELOS_LLM: Record<
+  ProveedorLlm,
+  { id: string; nombre: string; detalle: string; costoMinuto: number }[]
 > = {
-  elevenlabs: [
-    { clave: "estabilidad", etiqueta: "Estabilidad", ayuda: "Bajo varía más la entonación; alto suena parejo y plano.", min: 0, max: 1, paso: 0.05, porDefecto: 0.5 },
-    { clave: "similitud", etiqueta: "Similitud", ayuda: "Qué tanto se apega a la voz original.", min: 0, max: 1, paso: 0.05, porDefecto: 0.75 },
-    { clave: "estilo", etiqueta: "Estilo", ayuda: "Exagera el acento y la intención. Sube la latencia.", min: 0, max: 1, paso: 0.05, porDefecto: 0 },
-    { clave: "velocidad", etiqueta: "Velocidad", ayuda: "1.0 es el ritmo natural.", min: 0.7, max: 1.2, paso: 0.05, porDefecto: 1 },
+  openai: [
+    { id: "gpt-4.1-mini", nombre: "GPT-4.1 mini", detalle: "El equilibrio de siempre", costoMinuto: 0.004 },
+    { id: "gpt-4.1", nombre: "GPT-4.1", detalle: "Más fino, ocho veces más caro", costoMinuto: 0.032 },
   ],
-  cartesia: [
-    { clave: "velocidad", etiqueta: "Velocidad", ayuda: "1.0 es el ritmo natural.", min: 0.7, max: 1.2, paso: 0.05, porDefecto: 1 },
-    { clave: "estilo", etiqueta: "Emoción", ayuda: "Qué tanta carga emocional le pone.", min: 0, max: 1, paso: 0.05, porDefecto: 0.3 },
+  google: [
+    { id: "gemini-3-flash-preview", nombre: "Gemini 3 Flash (preview)", detalle: "Probado en llamada real, muy conciso", costoMinuto: 0.005 },
+  ],
+  anthropic: [
+    { id: "claude-haiku-4-5-20251001", nombre: "Claude Haiku 4.5", detalle: "Rápido y muy obediente", costoMinuto: 0.004 },
   ],
 };
 
-export const PROVEEDORES_TTS: { valor: ProveedorTts; nombre: string; detalle: string }[] = [
-  { valor: "elevenlabs", nombre: "ElevenLabs", detalle: "Más natural, más control" },
-  { valor: "cartesia", nombre: "Cartesia Sonic", detalle: "40 ms al primer audio" },
-];
+export function modeloPorDefecto(proveedor: ProveedorLlm): string {
+  return PROVEEDORES_LLM.find((p) => p.valor === proveedor)?.porDefecto ?? "";
+}
+
+export function nombreModelo(proveedor: ProveedorLlm, modelo: string | null): string {
+  const id = modelo || modeloPorDefecto(proveedor);
+  return MODELOS_LLM[proveedor].find((m) => m.id === id)?.nombre ?? id;
+}
 
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const;
 export const DIAS_CORTOS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
@@ -297,11 +411,4 @@ export const ZONAS_HORARIAS = [
   "America/Chihuahua",
   "America/Hermosillo",
   "America/Tijuana",
-] as const;
-
-export const VOCES = [
-  { id: "5c5ad5e7-1020-476b-8b91-fdcbe9cc313c", nombre: "Daniela", detalle: "Femenina, neutra mexicana" },
-  { id: "846d6cb0-2301-48b6-9683-48f5618ea2f6", nombre: "Mariana", detalle: "Femenina, cálida" },
-  { id: "2deb56b5-0e0a-4ee5-9f77-4a1e6d1f5b4a", nombre: "Sebastián", detalle: "Masculina, formal" },
-  { id: "a0e99841-438c-4a64-b679-ae501e7d6091", nombre: "Rodrigo", detalle: "Masculina, joven" },
 ] as const;

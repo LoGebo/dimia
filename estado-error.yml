@@ -1,0 +1,123 @@
+- generic [ref=f9e90]:
+  - generic [ref=f9e91]:
+    - generic [ref=f9e92]: Nombre del negocio
+    - textbox "Nombre del negocio Así se presenta al contestar." [ref=f9e93]: Taqueria El Buen Pastor
+    - generic [ref=f9e94]: Así se presenta al contestar.
+  - generic [ref=f9e95]:
+    - paragraph [ref=f9e96]: Cerebro
+    - paragraph [ref=f9e97]: Quién razona durante la llamada. Cambiarlo se nota en qué tan bien entiende y en cuánto cuesta.
+    - generic [ref=f9e98]:
+      - generic [ref=f9e99]:
+        - generic [ref=f9e100]: Proveedor
+        - combobox "Proveedor" [ref=f9e101]:
+          - option "OpenAI — El más probado en llamadas"
+          - option "Google Gemini — El más rápido y barato" [selected]
+          - option "Anthropic — El que mejor sigue instrucciones largas"
+      - generic [ref=f9e102]:
+        - generic [ref=f9e103]: Modelo
+        - combobox "Modelo Vacío usa gemini-2.5-flash. Puedes escribir cualquier modelo del proveedor." [ref=f9e104]: gemini-flash-lite-latest
+        - generic [ref=f9e105]: Vacío usa gemini-2.5-flash. Puedes escribir cualquier modelo del proveedor.
+      - list [ref=f9e106]:
+        - listitem [ref=f9e107]:
+          - button "Gemini 2.5 Flash Lo más barato que aguanta llamadas" [ref=f9e108]:
+            - generic [ref=f9e109]: Gemini 2.5 Flash
+            - generic [ref=f9e111]: Lo más barato que aguanta llamadas
+          - generic [ref=f9e112]: ~$0.003/min
+        - listitem [ref=f9e113]:
+          - button "Gemini 3 Flash (preview) Más nuevo, todavía en preview" [ref=f9e114]:
+            - generic [ref=f9e115]: Gemini 3 Flash (preview)
+            - generic [ref=f9e117]: Más nuevo, todavía en preview
+          - generic [ref=f9e118]: ~$0.005/min
+        - listitem [ref=f9e119]:
+          - button "Gemini Flash Lite En uso El más barato, menos preciso" [ref=f9e120]:
+            - generic [ref=f9e121]:
+              - generic [ref=f9e122]: Gemini Flash Lite
+              - generic [ref=f9e123]: En uso
+            - generic [ref=f9e124]: El más barato, menos preciso
+          - generic [ref=f9e125]: ~$0.001/min
+  - generic [ref=f9e126]:
+    - paragraph [ref=f9e127]: Voz
+    - paragraph [ref=f9e128]: Cómo suena al contestar. El precio es por hora de llamada, no por mes.
+    - generic [ref=f9e129]:
+      - generic [ref=f9e130]:
+        - generic [ref=f9e131]: Proveedor
+        - combobox "Proveedor" [ref=f9e132]:
+          - option "Azure Neural — Catálogo mexicano y lo más barato (~$0.77/hora)"
+          - option "Deepgram Aura — Latencia muy baja (~$1.44/hora)"
+          - option "Cartesia Sonic — 40 ms al primer audio (~$1.70/hora)"
+          - option "ElevenLabs — La más natural, con más control (~$2.40/hora)" [selected]
+      - generic [ref=f9e190]:
+        - generic [ref=f9e191]: ID de la voz
+        - textbox "ID de la voz 20 caracteres alfanuméricos. ElevenLabs, en la voz → Voice ID." [ref=f9e192]:
+          - /placeholder: MOpELGWw8bqcERsmVMzW
+          - text: 5c5ad5e7-1020-476b-8b91-fdcbe9cc313c
+        - generic [ref=f9e193]: 20 caracteres alfanuméricos. ElevenLabs, en la voz → Voice ID.
+      - paragraph [ref=f9e230]: "Ese ID no tiene el formato de 20 caracteres alfanuméricos que espera el proveedor. Ejemplo: MOpELGWw8bqcERsmVMzW."
+      - generic [ref=f9e194]:
+        - generic [ref=f9e195]:
+          - generic [ref=f9e196]:
+            - generic [ref=f9e197]: Estabilidad
+            - generic [ref=f9e198]: "0.45"
+          - slider "Estabilidad 0.45 Bajo varía más la entonación; alto suena parejo y plano." [ref=f9e199]: "0.45"
+          - generic [ref=f9e200]: Bajo varía más la entonación; alto suena parejo y plano.
+        - generic [ref=f9e201]:
+          - generic [ref=f9e202]:
+            - generic [ref=f9e203]: Similitud
+            - generic [ref=f9e204]: "0.80"
+          - slider "Similitud 0.80 Qué tanto se apega a la voz original." [ref=f9e205]: "0.8"
+          - generic [ref=f9e206]: Qué tanto se apega a la voz original.
+        - generic [ref=f9e207]:
+          - generic [ref=f9e208]:
+            - generic [ref=f9e209]: Estilo
+            - generic [ref=f9e210]: "0.15"
+          - slider "Estilo 0.15 Exagera el acento y la intención. Sube la latencia." [ref=f9e211]: "0.15"
+          - generic [ref=f9e212]: Exagera el acento y la intención. Sube la latencia.
+        - generic [ref=f9e213]:
+          - generic [ref=f9e214]:
+            - generic [ref=f9e215]: Velocidad
+            - generic [ref=f9e216]: "1.00"
+          - slider "Velocidad 1.00 1.0 es el ritmo natural." [ref=f9e217]: "1"
+          - generic [ref=f9e218]: 1.0 es el ritmo natural.
+      - paragraph [ref=f9e219]: "Al guardar se descartan los ajustes de Azure Neural: no son compatibles y tumbarían la llamada."
+  - generic [ref=f9e143]:
+    - generic [ref=f9e144]: Zona horaria
+    - combobox "Zona horaria" [ref=f9e145]:
+      - option "Mexico City" [selected]
+      - option "Cancun"
+      - option "Monterrey"
+      - option "Chihuahua"
+      - option "Hermosillo"
+      - option "Tijuana"
+  - generic [ref=f9e146]:
+    - generic [ref=f9e147]:
+      - generic [ref=f9e148]: Número de entrada
+      - textbox "Número de entrada El que marca tu cliente." [ref=f9e149]:
+        - /placeholder: +52...
+        - text: "+525510000006"
+      - generic [ref=f9e150]: El que marca tu cliente.
+    - generic [ref=f9e151]:
+      - generic [ref=f9e152]: Transferir a
+      - textbox "Transferir a A dónde pasa las llamadas difíciles." [ref=f9e153]:
+        - /placeholder: +52...
+        - text: "+525599998888"
+      - generic [ref=f9e154]: A dónde pasa las llamadas difíciles.
+  - generic [ref=f9e155]:
+    - generic [ref=f9e156]:
+      - generic [ref=f9e157]: Cada (min)
+      - spinbutton "Cada (min) Salto entre horarios." [ref=f9e158]: "15"
+      - generic [ref=f9e159]: Salto entre horarios.
+    - generic [ref=f9e160]:
+      - generic [ref=f9e161]: Anticipación
+      - spinbutton "Anticipación Mínimo antes de la cita." [active] [ref=f9e162]: "20"
+      - generic [ref=f9e163]: Mínimo antes de la cita.
+    - generic [ref=f9e164]:
+      - generic [ref=f9e165]: Horizonte
+      - spinbutton "Horizonte Días hacia adelante." [ref=f9e166]: "60"
+      - generic [ref=f9e167]: Días hacia adelante.
+  - generic [ref=f9e168]:
+    - generic [ref=f9e169]: Indicaciones del negocio
+    - 'textbox "Indicaciones del negocio Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt." [ref=f9e170]':
+      - /placeholder: "Los martes hay dos por uno.\nSi preguntan por la terraza, di que no se aparta por telefono."
+      - text: "Domicilio solo dentro de la colonia Roma y Condesa. Envio treinta pesos. Pedido minimo doscientos pesos a domicilio. Tiempo normal: treinta minutos."
+    - generic [ref=f9e171]: "Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt."
+  - button "Guardar configuración" [ref=f9e172]

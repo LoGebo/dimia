@@ -1,0 +1,114 @@
+- generic [ref=f11e2]:
+  - complementary [ref=f11e3]:
+    - generic [ref=f11e5]:
+      - combobox [ref=f11e7]:
+        - option "Clinica Dental Sonrisa"
+        - option "Cocina de Humo"
+        - option "Consultoria Vertice"
+        - option "Estudio Marea"
+        - option "Taller Ruiz Automotriz"
+        - option "Taqueria El Buen Pastor" [selected]
+      - generic "Restaurante con pedidos a domicilio" [ref=f11e8]
+    - generic [ref=f11e9]:
+      - paragraph [ref=f11e10]: Número de entrada
+      - paragraph [ref=f11e11]: +52 55 1000 0006
+      - generic [ref=f11e12]: Activo
+    - navigation [ref=f11e15]:
+      - link "Resumen Llamadas y desempeño" [ref=f11e16] [cursor=pointer]:
+        - /url: /resumen
+        - generic [ref=f11e17]: Resumen
+        - generic [ref=f11e18]: Llamadas y desempeño
+      - link "Pedidos Lo que hay que sacar" [ref=f11e19] [cursor=pointer]:
+        - /url: /pedidos
+        - generic [ref=f11e20]: Pedidos
+        - generic [ref=f11e21]: Lo que hay que sacar
+      - link "Recados Quién pidió que le marquen" [ref=f11e22] [cursor=pointer]:
+        - /url: /recados
+        - generic [ref=f11e23]: Recados
+        - generic [ref=f11e24]: Quién pidió que le marquen
+      - link "Horarios Cuándo abres" [ref=f11e25] [cursor=pointer]:
+        - /url: /horarios
+        - generic [ref=f11e26]: Horarios
+        - generic [ref=f11e27]: Cuándo abres
+      - link "Catálogo Lo que ofreces" [ref=f11e28] [cursor=pointer]:
+        - /url: /catalogo
+        - generic [ref=f11e29]: Catálogo
+        - generic [ref=f11e30]: Lo que ofreces
+      - link "Respuestas Qué contesta" [ref=f11e31] [cursor=pointer]:
+        - /url: /conocimiento
+        - generic [ref=f11e32]: Respuestas
+        - generic [ref=f11e33]: Qué contesta
+      - link "Agente Voz y transferencia" [ref=f11e34] [cursor=pointer]:
+        - /url: /agente
+        - generic [ref=f11e35]: Agente
+        - generic [ref=f11e36]: Voz y transferencia
+      - link "Probar Háblale en vivo" [ref=f11e37] [cursor=pointer]:
+        - /url: /probar
+        - generic [ref=f11e38]: Probar
+        - generic [ref=f11e39]: Háblale en vivo
+    - generic [ref=f11e40]:
+      - generic [ref=f11e41]:
+        - generic [ref=f11e42]:
+          - paragraph [ref=f11e43]: gebouai@gmail.com
+          - paragraph [ref=f11e44]: Dueño
+        - button "Cambiar a modo oscuro" [ref=f11e45]
+      - generic [ref=f11e48]:
+        - button "Cerrar sesión" [ref=f11e50]
+        - generic [ref=f11e51]: ·
+        - link "Nuevo negocio" [ref=f11e52] [cursor=pointer]:
+          - /url: /alta
+  - main [ref=f11e53]:
+    - generic [ref=f11e54]:
+      - generic [ref=f11e55]:
+        - generic [ref=f11e56]:
+          - heading "Probar el agente" [level=1] [ref=f11e57]
+          - generic "Restaurante con pedidos a domicilio" [ref=f11e58]
+        - paragraph [ref=f11e59]: Háblale a Taqueria El Buen Pastor desde el navegador. Es el mismo agente que contesta el teléfono.
+      - generic [ref=f11e61]:
+        - generic [ref=f11e62]: 1 servicios
+        - generic [ref=f11e63]: 17 en catálogo
+        - generic [ref=f11e64]: 6 respuestas
+    - generic [ref=f11e65]:
+      - generic [ref=f11e66]:
+        - generic [ref=f11e67]:
+          - generic [ref=f11e68]: Contesta con
+          - generic [ref=f11e69]: Gemini Flash Lite · ElevenLabs MOpELG…
+          - generic [ref=f11e70]: ~$0.041 por minuto
+        - link "Cambiar combinación" [ref=f11e71] [cursor=pointer]:
+          - /url: /agente
+      - generic [ref=f11e72]:
+        - generic [ref=f11e73]:
+          - generic [ref=f11e74]:
+            - generic [ref=f11e75]:
+              - button "Llamar al agente" [ref=f11e76]
+              - generic [ref=f11e77]:
+                - generic [ref=f11e78]:
+                  - paragraph [ref=f11e79]: Último turno
+                  - paragraph [ref=f11e80]: —
+                - generic [ref=f11e81]:
+                  - paragraph [ref=f11e82]: Mediana
+                  - paragraph [ref=f11e83]: —
+            - paragraph [ref=f11e84]: "Contesta el mismo agente que atiende tus llamadas reales, con el menú, los horarios y las respuestas de Taqueria El Buen Pastor. Cada prueba consume crédito de las APIs de voz y de modelo: úsala para demostrar, no para platicar."
+          - generic [ref=f11e85]:
+            - generic [ref=f11e87]:
+              - heading "Conversación" [level=2] [ref=f11e88]
+              - paragraph [ref=f11e89]: "Arranca con: “Taqueria El Buen Pastor, buenas. ¿Que le preparamos?”"
+            - paragraph [ref=f11e90]: Lo que digas y lo que conteste el agente aparece aquí, turno por turno.
+          - generic [ref=f11e91]:
+            - generic [ref=f11e93]:
+              - heading "Lo que hizo el agente" [level=2] [ref=f11e94]
+              - paragraph [ref=f11e95]: Cada renglón es un cambio real en la base, no una animación.
+            - paragraph [ref=f11e96]: Cada vez que el agente use una herramienta, se anota aquí con la hora.
+        - generic [ref=f11e97]:
+          - generic [ref=f11e98]:
+            - generic [ref=f11e100]:
+              - heading "Pedido en curso" [level=2] [ref=f11e101]
+              - paragraph [ref=f11e102]: Leído de Postgres cada dos segundos.
+            - generic [ref=f11e103]:
+              - paragraph [ref=f11e104]: El pedido aparece aquí
+              - paragraph [ref=f11e105]: Conforme el agente agregue cosas, las vas a ver caer una por una con su precio.
+          - generic [ref=f11e106]:
+            - generic [ref=f11e108]:
+              - heading "Bitácora de la llamada" [level=2] [ref=f11e109]
+              - paragraph [ref=f11e110]: Se escribe al colgar.
+            - paragraph [ref=f11e111]: Al colgar se registra aquí la llamada.

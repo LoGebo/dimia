@@ -1,0 +1,231 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - complementary [ref=f9e3]:
+      - generic [ref=f9e5]:
+        - combobox [ref=f9e7]:
+          - option "Clinica Dental Sonrisa"
+          - option "Cocina de Humo"
+          - option "Consultoria Vertice"
+          - option "Estudio Marea"
+          - option "Taller Ruiz Automotriz"
+          - option "Taqueria El Buen Pastor" [selected]
+        - generic "Restaurante con pedidos a domicilio" [ref=f9e8]
+      - generic [ref=f9e9]:
+        - paragraph [ref=f9e10]: Número de entrada
+        - paragraph [ref=f9e11]: +52 55 1000 0006
+        - generic [ref=f9e12]: Activo
+      - navigation [ref=f9e15]:
+        - link "Resumen Llamadas y desempeño" [ref=f9e16] [cursor=pointer]:
+          - /url: /resumen
+          - generic [ref=f9e17]: Resumen
+          - generic [ref=f9e18]: Llamadas y desempeño
+        - link "Pedidos Lo que hay que sacar" [ref=f9e19] [cursor=pointer]:
+          - /url: /pedidos
+          - generic [ref=f9e20]: Pedidos
+          - generic [ref=f9e21]: Lo que hay que sacar
+        - link "Recados Quién pidió que le marquen" [ref=f9e22] [cursor=pointer]:
+          - /url: /recados
+          - generic [ref=f9e23]: Recados
+          - generic [ref=f9e24]: Quién pidió que le marquen
+        - link "Horarios Cuándo abres" [ref=f9e25] [cursor=pointer]:
+          - /url: /horarios
+          - generic [ref=f9e26]: Horarios
+          - generic [ref=f9e27]: Cuándo abres
+        - link "Catálogo Lo que ofreces" [ref=f9e28] [cursor=pointer]:
+          - /url: /catalogo
+          - generic [ref=f9e29]: Catálogo
+          - generic [ref=f9e30]: Lo que ofreces
+        - link "Respuestas Qué contesta" [ref=f9e31] [cursor=pointer]:
+          - /url: /conocimiento
+          - generic [ref=f9e32]: Respuestas
+          - generic [ref=f9e33]: Qué contesta
+        - link "Agente Voz y transferencia" [ref=f9e34] [cursor=pointer]:
+          - /url: /agente
+          - generic [ref=f9e35]: Agente
+          - generic [ref=f9e36]: Voz y transferencia
+        - link "Probar Háblale en vivo" [ref=f9e37] [cursor=pointer]:
+          - /url: /probar
+          - generic [ref=f9e38]: Probar
+          - generic [ref=f9e39]: Háblale en vivo
+      - generic [ref=f9e40]:
+        - generic [ref=f9e41]:
+          - generic [ref=f9e42]:
+            - paragraph [ref=f9e43]: gebouai@gmail.com
+            - paragraph [ref=f9e44]: Dueño
+          - button "Cambiar a modo claro" [ref=f9e187]
+        - generic [ref=f9e48]:
+          - button "Cerrar sesión" [ref=f9e50]
+          - generic [ref=f9e51]: ·
+          - link "Nuevo negocio" [ref=f9e52] [cursor=pointer]:
+            - /url: /alta
+    - main [ref=f9e53]:
+      - generic [ref=f9e55]:
+        - generic [ref=f9e56]:
+          - heading "Agente" [level=1] [ref=f9e57]
+          - generic "Restaurante con pedidos a domicilio" [ref=f9e58]
+        - paragraph [ref=f9e59]: Cómo suena, a dónde transfiere y con qué contexto contesta.
+      - generic [ref=f9e60]:
+        - generic [ref=f9e61]:
+          - generic [ref=f9e62]:
+            - generic [ref=f9e64]:
+              - heading "Listo para contestar" [level=2] [ref=f9e65]
+              - paragraph [ref=f9e66]: Todo configurado.
+            - list [ref=f9e67]:
+              - listitem [ref=f9e68]:
+                - generic [ref=f9e69]: Menú con precio
+                - generic [ref=f9e70]: Listo
+              - listitem [ref=f9e71]:
+                - generic [ref=f9e72]: Horario de la semana
+                - generic [ref=f9e73]: Listo
+              - listitem [ref=f9e74]:
+                - generic [ref=f9e75]: Respuestas frecuentes
+                - generic [ref=f9e76]: Listo
+              - listitem [ref=f9e77]:
+                - generic [ref=f9e78]: Número para transferir
+                - generic [ref=f9e79]: Listo
+              - listitem [ref=f9e80]:
+                - generic [ref=f9e81]: Número de entrada asignado
+                - generic [ref=f9e82]: Listo
+              - listitem [ref=f9e83]:
+                - generic [ref=f9e84]: Catálogo con items disponibles
+                - generic [ref=f9e85]: Listo
+          - generic [ref=f9e86]:
+            - heading "Configuración" [level=2] [ref=f9e89]
+            - generic [ref=f9e90]:
+              - generic [ref=f9e91]:
+                - generic [ref=f9e92]: Nombre del negocio
+                - textbox "Nombre del negocio Así se presenta al contestar." [ref=f9e93]: Taqueria El Buen Pastor
+                - generic [ref=f9e94]: Así se presenta al contestar.
+              - generic [ref=f9e95]:
+                - paragraph [ref=f9e96]: Cerebro
+                - paragraph [ref=f9e97]: Quién razona durante la llamada. Cambiarlo se nota en qué tan bien entiende y en cuánto cuesta.
+                - generic [ref=f9e98]:
+                  - generic [ref=f9e99]:
+                    - generic [ref=f9e100]: Proveedor
+                    - combobox "Proveedor" [ref=f9e101]:
+                      - option "OpenAI — El más probado en llamadas"
+                      - option "Google Gemini — El más rápido y barato" [selected]
+                      - option "Anthropic — El que mejor sigue instrucciones largas"
+                  - generic [ref=f9e102]:
+                    - generic [ref=f9e103]: Modelo
+                    - combobox "Modelo Vacío usa gemini-2.5-flash. Puedes escribir cualquier modelo del proveedor." [ref=f9e104]: gemini-flash-lite-latest
+                    - generic [ref=f9e105]: Vacío usa gemini-2.5-flash. Puedes escribir cualquier modelo del proveedor.
+                  - list [ref=f9e106]:
+                    - listitem [ref=f9e107]:
+                      - button "Gemini 2.5 Flash Lo más barato que aguanta llamadas" [ref=f9e108]:
+                        - generic [ref=f9e109]: Gemini 2.5 Flash
+                        - generic [ref=f9e111]: Lo más barato que aguanta llamadas
+                      - generic [ref=f9e112]: ~$0.003/min
+                    - listitem [ref=f9e113]:
+                      - button "Gemini 3 Flash (preview) Más nuevo, todavía en preview" [ref=f9e114]:
+                        - generic [ref=f9e115]: Gemini 3 Flash (preview)
+                        - generic [ref=f9e117]: Más nuevo, todavía en preview
+                      - generic [ref=f9e118]: ~$0.005/min
+                    - listitem [ref=f9e119]:
+                      - button "Gemini Flash Lite En uso El más barato, menos preciso" [ref=f9e120]:
+                        - generic [ref=f9e121]:
+                          - generic [ref=f9e122]: Gemini Flash Lite
+                          - generic [ref=f9e123]: En uso
+                        - generic [ref=f9e124]: El más barato, menos preciso
+                      - generic [ref=f9e125]: ~$0.001/min
+              - generic [ref=f9e126]:
+                - paragraph [ref=f9e127]: Voz
+                - paragraph [ref=f9e128]: Cómo suena al contestar. El precio es por hora de llamada, no por mes.
+                - generic [ref=f9e129]:
+                  - generic [ref=f9e130]:
+                    - generic [ref=f9e131]: Proveedor
+                    - combobox "Proveedor" [ref=f9e132]:
+                      - option "Azure Neural — Catálogo mexicano y lo más barato (~$0.77/hora)"
+                      - option "Deepgram Aura — Latencia muy baja (~$1.44/hora)"
+                      - option "Cartesia Sonic — 40 ms al primer audio (~$1.70/hora)"
+                      - option "ElevenLabs — La más natural, con más control (~$2.40/hora)" [selected]
+                  - generic [ref=f9e190]:
+                    - generic [ref=f9e191]: ID de la voz
+                    - textbox "ID de la voz 20 caracteres alfanuméricos. ElevenLabs, en la voz → Voice ID." [ref=f9e192]:
+                      - /placeholder: MOpELGWw8bqcERsmVMzW
+                      - text: 5c5ad5e7-1020-476b-8b91-fdcbe9cc313c
+                    - generic [ref=f9e193]: 20 caracteres alfanuméricos. ElevenLabs, en la voz → Voice ID.
+                  - paragraph [ref=f9e230]: "Ese ID no tiene el formato de 20 caracteres alfanuméricos que espera el proveedor. Ejemplo: MOpELGWw8bqcERsmVMzW."
+                  - generic [ref=f9e194]:
+                    - generic [ref=f9e195]:
+                      - generic [ref=f9e196]:
+                        - generic [ref=f9e197]: Estabilidad
+                        - generic [ref=f9e198]: "0.45"
+                      - slider "Estabilidad 0.45 Bajo varía más la entonación; alto suena parejo y plano." [ref=f9e199]: "0.45"
+                      - generic [ref=f9e200]: Bajo varía más la entonación; alto suena parejo y plano.
+                    - generic [ref=f9e201]:
+                      - generic [ref=f9e202]:
+                        - generic [ref=f9e203]: Similitud
+                        - generic [ref=f9e204]: "0.80"
+                      - slider "Similitud 0.80 Qué tanto se apega a la voz original." [ref=f9e205]: "0.8"
+                      - generic [ref=f9e206]: Qué tanto se apega a la voz original.
+                    - generic [ref=f9e207]:
+                      - generic [ref=f9e208]:
+                        - generic [ref=f9e209]: Estilo
+                        - generic [ref=f9e210]: "0.15"
+                      - slider "Estilo 0.15 Exagera el acento y la intención. Sube la latencia." [ref=f9e211]: "0.15"
+                      - generic [ref=f9e212]: Exagera el acento y la intención. Sube la latencia.
+                    - generic [ref=f9e213]:
+                      - generic [ref=f9e214]:
+                        - generic [ref=f9e215]: Velocidad
+                        - generic [ref=f9e216]: "1.00"
+                      - slider "Velocidad 1.00 1.0 es el ritmo natural." [ref=f9e217]: "1"
+                      - generic [ref=f9e218]: 1.0 es el ritmo natural.
+                  - paragraph [ref=f9e219]: "Al guardar se descartan los ajustes de Azure Neural: no son compatibles y tumbarían la llamada."
+              - generic [ref=f9e143]:
+                - generic [ref=f9e144]: Zona horaria
+                - combobox "Zona horaria" [ref=f9e145]:
+                  - option "Mexico City" [selected]
+                  - option "Cancun"
+                  - option "Monterrey"
+                  - option "Chihuahua"
+                  - option "Hermosillo"
+                  - option "Tijuana"
+              - generic [ref=f9e146]:
+                - generic [ref=f9e147]:
+                  - generic [ref=f9e148]: Número de entrada
+                  - textbox "Número de entrada El que marca tu cliente." [ref=f9e149]:
+                    - /placeholder: +52...
+                    - text: "+525510000006"
+                  - generic [ref=f9e150]: El que marca tu cliente.
+                - generic [ref=f9e151]:
+                  - generic [ref=f9e152]: Transferir a
+                  - textbox "Transferir a A dónde pasa las llamadas difíciles." [ref=f9e153]:
+                    - /placeholder: +52...
+                    - text: "+525599998888"
+                  - generic [ref=f9e154]: A dónde pasa las llamadas difíciles.
+              - generic [ref=f9e155]:
+                - generic [ref=f9e156]:
+                  - generic [ref=f9e157]: Cada (min)
+                  - spinbutton "Cada (min) Salto entre horarios." [ref=f9e158]: "15"
+                  - generic [ref=f9e159]: Salto entre horarios.
+                - generic [ref=f9e160]:
+                  - generic [ref=f9e161]: Anticipación
+                  - spinbutton "Anticipación Mínimo antes de la cita." [active] [ref=f9e162]: "20"
+                  - generic [ref=f9e163]: Mínimo antes de la cita.
+                - generic [ref=f9e164]:
+                  - generic [ref=f9e165]: Horizonte
+                  - spinbutton "Horizonte Días hacia adelante." [ref=f9e166]: "60"
+                  - generic [ref=f9e167]: Días hacia adelante.
+              - generic [ref=f9e168]:
+                - generic [ref=f9e169]: Indicaciones del negocio
+                - 'textbox "Indicaciones del negocio Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt." [ref=f9e170]':
+                  - /placeholder: "Los martes hay dos por uno.\nSi preguntan por la terraza, di que no se aparta por telefono."
+                  - text: "Domicilio solo dentro de la colonia Roma y Condesa. Envio treinta pesos. Pedido minimo doscientos pesos a domicilio. Tiempo normal: treinta minutos."
+                - generic [ref=f9e171]: "Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt."
+              - button "Guardar configuración" [ref=f9e172]
+        - generic [ref=f9e173]:
+          - generic [ref=f9e174]:
+            - generic [ref=f9e176]:
+              - heading "Cómo contesta" [level=2] [ref=f9e177]
+              - paragraph [ref=f9e178]: Primera frase de cada llamada.
+            - paragraph [ref=f9e179]: “Taqueria El Buen Pastor, buenas. ¿Que le preparamos?”
+          - generic [ref=f9e180]:
+            - generic [ref=f9e181]:
+              - generic [ref=f9e182]:
+                - heading "Instrucciones que recibe" [level=2] [ref=f9e183]
+                - paragraph [ref=f9e184]: Se arman solas con lo que capturaste. No se editan a mano.
+              - button "Copiar" [ref=f9e185]
+            - generic [ref=f9e186]: "Eres quien contesta el telefono de un negocio en Mexico. Hablas por telefono, no escribes. Todo lo que digas se convierte en voz tal cual. COMO HABLAS - Espanol mexicano natural. Tuteas salvo que la persona hable de usted. - Frases CORTAS. Una idea por frase. - Nunca uses listas, vinetas, asteriscos, emojis ni formato. Solo habla. - Di las horas como se dicen: \"tres y media de la tarde\", jamas \"15:30\". - Di los numeros con letra: \"cuatro personas\", no \"4\". - Deletrea los codigos separando letras: \"A, cuatro, K, nueve\". - Usa muletillas naturales de vez en cuando: \"va\", \"sale\", \"perfecto\", \"dejame ver\", \"ok\". Una cada varios turnos, sin exagerar. - Si algo tarda, avisa: \"dejame checar tantito\". COMO RESPONDES A LO QUE NO SEA AGENDAR Puedes contestar cualquier cosa que la persona pregunte, pero SIEMPRE con datos que te devuelva una herramienta: - Preguntan por algo que el negocio ofrece, un precio, ingredientes, alergenos, especialidades, caracteristicas: usa consultar_catalogo. - Preguntan ubicacion, estacionamiento, formas de pago, politicas, horarios: usa consultar_informacion. - Consulta ANTES de contestar, aunque creas saber la respuesta. Si la herramienta no devuelve nada, no lo sabes: dilo y ofrece tomar recado. - No repitas los datos crudos que devuelve la herramienta. Traducelos a como hablaria una persona. QUE NUNCA HACES - No inventas horarios, precios, servicios, platillos ni disponibilidad. Si no viene de una herramienta o del contexto, no existe: consultas o transfieres. - No prometes nada que no confirmo una herramienta. - No pides ni aceptas datos de tarjeta. Si quieren pagar, les llega un enlace de pago por WhatsApp. - No das consejo medico, legal ni sobre alergias. Eso se transfiere siempre. - No repites la misma frase igual dos veces; varia como lo dices. COMO AGENDAS 1. Averigua que quieren y para cuando. Una pregunta a la vez. 2. Consulta disponibilidad con la herramienta. Ofrece maximo dos o tres opciones, nunca leas una lista larga. 3. Pide el nombre. Confirma como se escribe si suena ambiguo. 4. ANTES de reservar, repite todo: servicio, dia, hora y nombre. 5. Reserva y da el codigo. CUANDO TRANSFIERES (usa transferir_a_humano) - Dos veces seguidas que no entendiste. - Queja, reclamo, o persona molesta. - Alergias, urgencia medica, cualquier tema de salud delicado. - Piden algo fuera de lo que puedes hacer. - Lo piden explicitamente. Al transferir: \"Claro, te paso con alguien del equipo, un segundo.\" Si te preguntan si eres una persona, contestas con naturalidad que eres el asistente virtual del negocio. No lo niegas ni lo escondes. CONTEXTO: restaurante que toma pedidos por telefono, para recoger o a domicilio. - Tono calido y rapido. La gente llama con hambre. - Consulta SIEMPRE el catalogo antes de decir que hay o cuanto cuesta. Nunca inventes un platillo ni un precio. - Agrega cada cosa al pedido conforme te la dicen, una por una. - Si piden algo que no esta, dilo y ofrece lo mas parecido que SI exista. - Anota modificaciones en las notas del item: sin cebolla, extra queso, etc. - Si mencionan alergia, anotala Y avisa que el equipo lo confirma. Nunca asegures que un platillo es seguro. - ANTES de cerrar: repite el pedido completo con el total en voz alta. - Pregunta si es para recoger o a domicilio. Si es domicilio, pide direccion con calle, numero y referencias, y repitesela para confirmar. - El pago va con enlace por WhatsApp o en efectivo al recibir. NUNCA pidas datos de tarjeta por telefono. NEGOCIO: Taqueria El Buen Pastor AHORA MISMO: domingo, 23 de agosto de 2026, 12:01 (hora de America/Mexico_City). Usa esto para entender 'manana', 'el viernes', 'la proxima semana'. SERVICIOS (usa el id exacto al llamar herramientas): - Pedido (id=6f93438f-a753-4763-a1e1-a3bad806e2ea, 30 min) — tambien le dicen: pedido, orden, para llevar INFORMACION DEL NEGOCIO: - Donde estan -> En Alvaro Obregon doscientos diez, colonia Roma Norte. - Cual es el horario -> Todos los dias de once de la manana a once y media de la noche. - Hacen entregas a domicilio -> Si, dentro de Roma y Condesa. El envio cuesta treinta pesos y el pedido minimo es de doscientos. - Cuanto tardan -> El pedido normal esta listo en treinta minutos. En hora pico puede tardar cuarenta y cinco. - Como puedo pagar -> Efectivo al recibir, o le mandamos un enlace de pago por WhatsApp. - Tienen opciones vegetarianas -> Si, el taco de nopal con queso y la quesadilla de champinones. CATALOGO: este negocio tiene informacion de bebidas, especialidades, extras, postres, tacos. Usa consultar_catalogo con esos tipos cuando pregunten por eso. INDICACIONES DEL NEGOCIO: Domicilio solo dentro de la colonia Roma y Condesa. Envio treinta pesos. Pedido minimo doscientos pesos a domicilio. Tiempo normal: treinta minutos. Si no puedes resolver algo, toma recado con tomar_recado: nombre, telefono confirmado repitiendolo, y que necesita. Si te preguntan algo que no esta aqui arriba, di que no tienes ese dato a la mano y ofrece transferir. NO lo inventes."
+  - button "Open Next.js Dev Tools" [ref=f9e225] [cursor=pointer]
+  - alert [ref=f9e229]

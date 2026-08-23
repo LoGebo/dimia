@@ -53,9 +53,6 @@ begin
   select id, v_usuario, 'owner' from tenant
   on conflict do nothing;
 
-  update tenant set voz_id = 'MOpELGWw8bqcERsmVMzW'
-   where voz_id is null and tts_proveedor = 'elevenlabs';
-
   delete from call_log;
   delete from booking;
 
@@ -220,8 +217,25 @@ from (values
 ) as d(vertical, texto)
 where d.vertical = t.vertical;
 
-update tenant set tts_ajustes = '{"estabilidad":0.5,"similitud":0.75,"estilo":0.1,"velocidad":1.0}'::jsonb
-where tts_ajustes = '{}'::jsonb;
+-- ---------- cerebro y voz por giro, para comparar entre llamadas ----------
+update tenant t set
+  llm_proveedor = d.llm_proveedor,
+  llm_modelo    = d.llm_modelo,
+  tts_proveedor = d.tts_proveedor,
+  voz_id        = d.voz_id,
+  tts_ajustes   = d.tts_ajustes::jsonb
+from (values
+  ('clinica',     'openai',    null,                        'azure',      'es-MX-DaliaNeural',    '{"prosodia":{"rate":1.0}}'),
+  ('restaurante', 'google',    'gemini-2.5-flash',          'azure',      'es-MX-JorgeNeural',    '{"prosodia":{"rate":1.08}}'),
+  ('comida',      'google',    'gemini-flash-lite-latest',  'azure',      'es-MX-CandelaNeural',  '{"prosodia":{"rate":1.15}}'),
+  ('salon',       'anthropic', 'claude-haiku-4-5-20251001', 'elevenlabs', 'MOpELGWw8bqcERsmVMzW', '{"estabilidad":0.45,"similitud":0.8,"estilo":0.15,"velocidad":1.0}'),
+  ('taller',      'openai',    'gpt-4.1-mini',              'cartesia',   '5c5ad5e7-1020-476b-8b91-fdcbe9cc313c', '{}'),
+  ('recepcion',   'openai',    null,                        'deepgram',   'aura-2-javier-es',     '{}')
+) as d(vertical, llm_proveedor, llm_modelo, tts_proveedor, voz_id, tts_ajustes)
+where d.vertical = t.vertical;
+
+update tenant set tts_ajustes = '{"prosodia":{"rate":1.0}}'::jsonb
+where tts_proveedor = 'azure' and tts_ajustes = '{}'::jsonb;
 
 -- ---------- pedidos de demo para los giros que los toman ----------
 do $$

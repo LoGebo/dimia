@@ -6,14 +6,20 @@ import { conSesion, elevado } from "@/lib/db";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
 import { contexto, datos, elegirNegocio } from "@/lib/sesion";
 import { siguientePaso } from "@/lib/giro";
-import type {
-  EstadoPedido,
-  Herramienta,
-  ProveedorTts,
-  Regla,
-  ResultadoCatalogo,
-  TtsAjustes,
-  Vertical,
+import {
+  AJUSTES_ELEVENLABS,
+  FORMATO_VOZ,
+  VELOCIDAD_AZURE,
+  nombreProveedorTts,
+  vozValida,
+  type EstadoPedido,
+  type Herramienta,
+  type ProveedorLlm,
+  type ProveedorTts,
+  type Regla,
+  type ResultadoCatalogo,
+  type TtsAjustes,
+  type Vertical,
 } from "@/lib/tipos";
 
 export type Estado = { error?: string; ok?: string };
@@ -111,42 +117,82 @@ export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado
   redirect(siguientePaso(creado.herramientas, "/alta"));
 }
 
-function ajustesTts(fd: FormData): TtsAjustes {
-  const ajustes: TtsAjustes = {};
-  for (const clave of ["estabilidad", "similitud", "estilo", "velocidad"] as const) {
-    const crudo = fd.get(`tts_${clave}`);
-    if (crudo === null || String(crudo).trim() === "") continue;
-    const valor = Number(crudo);
-    if (Number.isFinite(valor)) ajustes[clave] = valor;
+function decimal(fd: FormData, campo: string, min: number, max: number): number | null {
+  const crudo = fd.get(campo);
+  if (crudo === null || String(crudo).trim() === "") return null;
+  const valor = Number(crudo);
+  if (!Number.isFinite(valor)) return null;
+  return Math.min(max, Math.max(min, valor));
+}
+
+function ajustesTts(fd: FormData, proveedor: ProveedorTts): TtsAjustes {
+  if (proveedor === "azure") {
+    const rate = decimal(fd, "tts_rate", VELOCIDAD_AZURE.min, VELOCIDAD_AZURE.max);
+    return rate === null ? {} : { prosodia: { rate } };
   }
-  return ajustes;
+  if (proveedor === "elevenlabs") {
+    const ajustes: TtsAjustes = {};
+    for (const campo of AJUSTES_ELEVENLABS) {
+      const valor = decimal(fd, `tts_${campo.clave}`, campo.min, campo.max);
+      if (valor !== null) ajustes[campo.clave] = valor;
+    }
+    return ajustes;
+  }
+  return {};
+}
+
+function errorLegible(error: unknown, proveedor: ProveedorTts): string {
+  const mensaje = error instanceof Error ? error.message : "";
+  if (/voz_id/.test(mensaje)) {
+    const formato = FORMATO_VOZ[proveedor];
+    const nombre = nombreProveedorTts(proveedor);
+    return `La base rechazó la voz: no tiene el formato de ${nombre} (${formato.formato}). Ejemplo: ${formato.ejemplo}.`;
+  }
+  return "No se pudo guardar la configuración.";
 }
 
 export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
-  const proveedor = (texto(fd, "tts_proveedor") || "elevenlabs") as ProveedorTts;
-  await datos(async (q, id) => {
-    await q(
-      `update tenant set nombre = $2, zona_horaria = $3, telefono_entrada = $4,
-              telefono_escalamiento = $5, voz_id = $6, slot_granularidad_min = $7,
-              anticipacion_min = $8, horizonte_dias = $9, tts_proveedor = $10,
-              tts_ajustes = $11::jsonb, instrucciones_extra = $12
-         where id = $1`,
-      [
-        id,
-        texto(fd, "nombre"),
-        texto(fd, "zona_horaria"),
-        opcional(fd, "telefono_entrada"),
-        opcional(fd, "telefono_escalamiento"),
-        opcional(fd, "voz_id"),
-        numero(fd, "slot_granularidad_min", 15),
-        numero(fd, "anticipacion_min", 60),
-        numero(fd, "horizonte_dias", 60),
-        proveedor,
-        JSON.stringify(ajustesTts(fd)),
-        opcional(fd, "instrucciones_extra"),
-      ],
-    );
-  });
+  const proveedor = (texto(fd, "tts_proveedor") || "azure") as ProveedorTts;
+  const proveedorLlm = (texto(fd, "llm_proveedor") || "openai") as ProveedorLlm;
+  const voz = opcional(fd, "voz_id");
+
+  if (voz && !vozValida(proveedor, voz)) {
+    const formato = FORMATO_VOZ[proveedor];
+    return {
+      error: `"${voz}" no es una voz de ${nombreProveedorTts(proveedor)}. Se espera ${formato.formato}, por ejemplo ${formato.ejemplo}.`,
+    };
+  }
+
+  try {
+    await datos(async (q, id) => {
+      await q(
+        `update tenant set nombre = $2, zona_horaria = $3, telefono_entrada = $4,
+                telefono_escalamiento = $5, voz_id = $6, slot_granularidad_min = $7,
+                anticipacion_min = $8, horizonte_dias = $9, tts_proveedor = $10,
+                tts_ajustes = $11::jsonb, instrucciones_extra = $12,
+                llm_proveedor = $13, llm_modelo = $14
+           where id = $1`,
+        [
+          id,
+          texto(fd, "nombre"),
+          texto(fd, "zona_horaria"),
+          opcional(fd, "telefono_entrada"),
+          opcional(fd, "telefono_escalamiento"),
+          voz,
+          numero(fd, "slot_granularidad_min", 15),
+          numero(fd, "anticipacion_min", 60),
+          numero(fd, "horizonte_dias", 60),
+          proveedor,
+          JSON.stringify(ajustesTts(fd, proveedor)),
+          opcional(fd, "instrucciones_extra"),
+          proveedorLlm,
+          opcional(fd, "llm_modelo"),
+        ],
+      );
+    });
+  } catch (error) {
+    return { error: errorLegible(error, proveedor) };
+  }
   refrescarPanel();
   return { ok: "Configuración guardada." };
 }

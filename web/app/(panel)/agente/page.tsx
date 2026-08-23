@@ -3,7 +3,7 @@ import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
 import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { guardarNegocio } from "@/lib/acciones";
-import { ConfiguracionVoz } from "@/components/voz";
+import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
 import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { construirPrompt, saludo } from "@/lib/prompt";
 import { contexto } from "@/lib/sesion";
@@ -79,6 +79,10 @@ export default async function Agente() {
                   <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta al contestar.">
                     <Entrada name="nombre" defaultValue={config.nombre} required />
                   </Campo>
+                  <ConfiguracionCerebro
+                    proveedor={config.llm_proveedor}
+                    modelo={config.llm_modelo}
+                  />
                   <ConfiguracionVoz
                     proveedor={config.tts_proveedor}
                     vozId={config.voz_id}
@@ -110,7 +114,7 @@ export default async function Agente() {
                       <Entrada name="slot_granularidad_min" type="number" min={5} max={120} step={5} defaultValue={config.slot_granularidad_min} />
                     </Campo>
                     <Campo etiqueta="Anticipación" ayuda="Mínimo antes de la cita.">
-                      <Entrada name="anticipacion_min" type="number" min={0} step={15} defaultValue={config.anticipacion_min} />
+                      <Entrada name="anticipacion_min" type="number" min={0} step={5} defaultValue={config.anticipacion_min} />
                     </Campo>
                     <Campo etiqueta="Horizonte" ayuda="Días hacia adelante.">
                       <Entrada name="horizonte_dias" type="number" min={1} max={365} defaultValue={config.horizonte_dias} />

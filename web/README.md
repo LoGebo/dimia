@@ -98,8 +98,8 @@ resuelve por IPv6. `dev/seed_panel.sql` no se corre aquí.
 | `/servicios` | Recursos y servicios: duración, buffer, precio, alias y quién puede dar cada servicio. |
 | `/catalogo` | `catalogo_item`: platillos, profesionales, propiedades, refacciones. Con toggle de disponibilidad y buscador de prueba. |
 | `/conocimiento` | Las respuestas que el agente puede dar. Lo que no está aquí, se transfiere. |
-| `/probar` | Llamada real al agente desde el navegador, con transcripción, latencia y el pedido o la reserva cayendo en vivo. |
-| `/agente` | Proveedor de voz y sus ajustes, indicaciones propias del negocio, zona horaria, número de transferencia y vista previa del prompt. |
+| `/probar` | Llamada real al agente desde el navegador, con transcripción, latencia y el pedido o la reserva cayendo en vivo. Arriba, la combinación de cerebro y voz que va a contestar. |
+| `/agente` | Cerebro (proveedor y modelo de LLM) y voz (proveedor, voz y velocidad) con su costo, indicaciones propias del negocio, zona horaria, número de transferencia y vista previa del prompt. |
 
 ### La navegación sale del vertical, no de un `if`
 
@@ -185,6 +185,26 @@ de tu última frase final a la primera palabra del agente.
 
 Cada llamada quema crédito de STT, LLM y TTS; la sección lo advierte en la
 tarjeta principal.
+
+### Cerebro y voz, para comparar entre llamadas
+
+`tenant.llm_proveedor` / `llm_modelo` y `tenant.tts_proveedor` / `voz_id` /
+`tts_ajustes` se editan desde `/agente` y los lee `construir_llm()` y
+`construir_tts()` en `agent/agent.py`. El panel muestra el costo aproximado —
+por minuto el modelo, por hora de llamada la voz — para que la decisión se tome
+con el precio a la vista, y `/probar` repite la combinación activa arriba de la
+consola: es lo que permite comparar una llamada contra la siguiente.
+
+**Cambiar de proveedor de voz borra `tts_ajustes`.** Los ajustes de ElevenLabs
+(`estabilidad`, `similitud`…) y los de Azure (`prosodia.rate`) no son
+intercambiables, y mezclarlos tumba la llamada. El formulario solo arma las
+claves del proveedor elegido, así que el guardado siempre deja un objeto
+coherente.
+
+`voz_id` se valida dos veces antes de llegar al trigger
+`tenant_voz_coherente`: en el navegador mientras se escribe y en la Server
+Action. Si aun así el trigger rechaza la fila, el error se traduce al formato
+que esperaba ese proveedor en vez de mostrar el mensaje crudo de Postgres.
 
 ### Vista previa del prompt
 
