@@ -43,6 +43,13 @@ franja de tiempo.
 7. **Nunca datos de tarjeta por voz.** Pago por enlace de WhatsApp/SMS. Meter
    un PAN en la llamada nos pone en alcance PCI completo.
 
+## Un solo worker a la vez
+
+`agent/agent.py` y `demo/worker.py` se registran ambos en LiveKit sin
+`agent_name`, así que los dos aceptan cualquier sala y el cliente escucha dos
+agentes hablando encima. Corre **uno solo**. El panel (`/probar`) usa el de
+producción; `demo/` quedó como demo de ventas y no debe correr en paralelo.
+
 ## Mapa
 
 ```
