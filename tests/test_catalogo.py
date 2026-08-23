@@ -141,3 +141,17 @@ async def test_tenant_trae_config_de_voz(pool, negocio):
         "select tts_proveedor, tts_ajustes from tenant where id = $1", negocio["tenant"]
     )
     assert fila["tts_proveedor"] in ("deepgram", "elevenlabs", "cartesia")
+
+
+@pytest.mark.asyncio
+async def test_busca_por_categoria(pool, catalogo):
+    """Un item nuevo sin alias debe aparecer al preguntar por su categoria."""
+    await pool.execute(
+        """insert into catalogo_item (tenant_id, tipo, nombre, precio)
+           values ($1,'postre','Pastel de tres leches',90)""",
+        catalogo,
+    )
+    filas = await pool.fetch(
+        "select nombre from buscar_catalogo($1,$2,null,5)", catalogo, "que postres tienen"
+    )
+    assert "Pastel de tres leches" in [f["nombre"] for f in filas]
