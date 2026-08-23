@@ -17,6 +17,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proyectos/voz
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +37,9 @@ jobs:
   pruebas:
     name: Pruebas
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proyectos/voz
     timeout-minutes: 20
 
     services:
@@ -93,6 +99,9 @@ jobs:
   imagen:
     name: Imagen del worker
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proyectos/voz
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +111,7 @@ jobs:
       - name: Construir (sin publicar)
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: proyectos/voz
           push: false
           load: false
           cache-from: type=gha
