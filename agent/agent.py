@@ -6,6 +6,7 @@ import json
 import logging
 import time
 import uuid
+from typing import Any
 from datetime import date, datetime
 from datetime import time as dtime
 
@@ -545,14 +546,17 @@ def construir_tts(tenant: Tenant):
     if tenant.tts_proveedor == "azure":
         from livekit.plugins import azure
 
+        extra: dict[str, Any] = {}
+        if ajustes.get("prosodia"):
+            extra["prosody"] = azure.ProsodyConfig(**ajustes["prosodia"])
+        if ajustes.get("estilo"):
+            extra["style"] = ajustes["estilo"]
         return azure.TTS(
             speech_key=cfg.azure_speech_key or None,
             speech_region=cfg.azure_speech_region,
             voice=tenant.voz_id or cfg.azure_voz,
             language="es-MX",
-            prosody=azure.ProsodyConfig(**ajustes["prosodia"])
-            if ajustes.get("prosodia")
-            else None,
+            **extra,
         )
     if tenant.tts_proveedor == "deepgram":
         return deepgram.TTS(
