@@ -155,3 +155,36 @@ async def test_busca_por_categoria(pool, catalogo):
         "select nombre from buscar_catalogo($1,$2,null,5)", catalogo, "que postres tienen"
     )
     assert "Pastel de tres leches" in [f["nombre"] for f in filas]
+
+
+@pytest.mark.parametrize(
+    ("dicho", "esperado"),
+    [
+        ("un alanbre", "Alambre"),
+        ("keso con nopal", "nopal"),
+        ("quiero un volcan", "Volcan"),
+        ("tacos de pastol", "pastor"),
+        ("quiero el peskado", "Pescado"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_aguanta_mala_transcripcion(pool, negocio, dicho, esperado):
+    """El telefono deforma los nombres. Si el agente no encuentra, el cliente
+    cuelga."""
+    tid = negocio["tenant"]
+    await pool.executemany(
+        "insert into catalogo_item (tenant_id, tipo, nombre, precio) values ($1,$2,$3,$4)",
+        [
+            (tid, "especialidad", "Alambre de bistec", 185),
+            (tid, "taco", "Taco de nopal con queso", 26),
+            (tid, "especialidad", "Volcan de suadero", 48),
+            (tid, "taco", "Taco de pastor", 28),
+            (tid, "platillo", "Pescado a la talla", 420),
+        ],
+    )
+    filas = await pool.fetch(
+        "select nombre from buscar_catalogo($1,$2,null,2) where not es_respaldo",
+        tid, dicho,
+    )
+    assert filas, f"'{dicho}' no encontro nada"
+    assert esperado.lower() in filas[0]["nombre"].lower()

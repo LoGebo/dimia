@@ -219,6 +219,34 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
+    async def terminos_del_negocio(self, tenant_id: uuid.UUID, limite: int = 90) -> list[str]:
+        filas = await self.pool.fetch(
+            """select nombre, alias from catalogo_item
+               where tenant_id = $1 and disponible
+               union all
+               select nombre, alias from service
+               where tenant_id = $1 and activo
+               union all
+               select nombre, '[]'::jsonb from resource
+               where tenant_id = $1 and activo""",
+            tenant_id,
+        )
+        terminos: list[str] = []
+        for f in filas:
+            terminos.append(f["nombre"])
+            crudo = f["alias"]
+            if isinstance(crudo, str):
+                crudo = json.loads(crudo)
+            terminos.extend(str(a) for a in (crudo or []))
+        vistos: set[str] = set()
+        unicos = []
+        for termino in terminos:
+            clave = termino.strip().lower()
+            if clave and clave not in vistos and len(clave) > 2:
+                vistos.add(clave)
+                unicos.append(termino.strip())
+        return unicos[:limite]
+
     async def servicios(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(
             """select id, nombre, alias, duracion_min, precio

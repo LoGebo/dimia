@@ -621,12 +621,13 @@ async def entrypoint(ctx: JobContext) -> None:
         await ctx.room.disconnect()
         return
 
-    servicios, faq, plantilla, tipos, horario = await asyncio.gather(
+    servicios, faq, plantilla, tipos, horario, terminos = await asyncio.gather(
         agenda.servicios(tenant.id),
         agenda.faq(tenant.id),
         agenda.plantilla_vertical(tenant.vertical),
         agenda.tipos_de_catalogo(tenant.id),
         agenda.horario_semanal(tenant.id),
+        agenda.terminos_del_negocio(tenant.id),
     )
     recepcionista = Recepcionista(tenant, servicios, faq, plantilla, tipos, horario)
     recepcionista.telefono = llamante
@@ -640,6 +641,7 @@ async def entrypoint(ctx: JobContext) -> None:
             punctuate=True,
             filler_words=True,
             numerals=False,
+            keyterms=terminos,
         ),
         llm=construir_llm(),
         tts=construir_tts(tenant),
