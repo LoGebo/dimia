@@ -9,10 +9,9 @@ on:
     paths:
       - "sitio/web/**"
       - ".github/workflows/sitio.yml"
+  # En los PR corre siempre: es el check obligatorio para poder mezclar a main,
+  # y un check que nunca reporta deja el PR bloqueado para siempre.
   pull_request:
-    paths:
-      - "sitio/web/**"
-      - ".github/workflows/sitio.yml"
   workflow_dispatch:
 
 concurrency:
