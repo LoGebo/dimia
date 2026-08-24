@@ -1,0 +1,192 @@
+.columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(40px, 6vw, 96px);
+}
+
+.izquierda {
+  flex: 1 1 440px;
+  min-width: 0;
+}
+
+.logotipo {
+  display: block;
+  width: min(360px, 58vw);
+  height: auto;
+  margin: 0 0 34px;
+}
+
+.titular {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(30px, 4vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.014em;
+  margin: 0 0 40px;
+  color: var(--hueso);
+  max-width: 20ch;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-top: 1px solid var(--linea);
+  padding-top: 32px;
+  max-width: 46ch;
+}
+
+.rotuloDato {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--acero-2);
+  margin: 0 0 10px;
+}
+
+.telefono {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  color: var(--hueso);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.notaTelefono {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--acero);
+  margin: 4px 0 0;
+}
+
+.correo {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 16px;
+  color: var(--acento);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.correo:hover {
+  color: var(--hueso);
+}
+
+/* ── formulario ── */
+
+.derecha {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.etiqueta {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--acero-2);
+}
+
+.entrada,
+.entradaMono {
+  background: var(--panel);
+  border: 1px solid var(--linea-2);
+  color: var(--hueso);
+  font-size: 16px;
+  padding: 14px 16px;
+  min-height: 48px;
+  width: 100%;
+  transition: border-color 150ms ease-out;
+}
+
+.entrada {
+  font-family: var(--fuente-sans), Arial, sans-serif;
+}
+
+.entradaMono {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+}
+
+.entrada:hover,
+.entradaMono:hover {
+  border-color: var(--acero-2);
+}
+
+.entrada:focus,
+.entradaMono:focus {
+  border-color: var(--acento);
+  outline: none;
+}
+
+.entrada:invalid:not(:placeholder-shown),
+.entradaMono:invalid:not(:placeholder-shown) {
+  border-color: var(--critico);
+}
+
+.trampa {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.boton {
+  background: var(--acento);
+  color: #0b0f17;
+  border: 0;
+  font-family: var(--fuente-sans), Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  min-height: 48px;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: background 150ms ease-out;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--hueso);
+}
+
+.boton:disabled {
+  background: var(--linea-2);
+  color: var(--acero);
+  cursor: progress;
+}
+
+.aviso {
+  margin-top: 22px;
+  border-left: 2px solid var(--alerta);
+  padding: 0 0 0 20px;
+}
+
+.avisoTexto {
+  font-size: 15px;
+  line-height: 1.62;
+  color: var(--hueso);
+  margin: 0;
+}
+
+.avisoTexto a {
+  color: var(--acento);
+}

@@ -1,0 +1,138 @@
+.contenedor {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: clamp(56px, 7vw, 104px) var(--margen);
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 44px;
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid var(--linea);
+  color: var(--acero);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 150ms ease-out, color 150ms ease-out;
+}
+
+.control:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+.ventana {
+  overflow: hidden;
+  border-top: 1px solid var(--linea);
+  border-bottom: 1px solid var(--linea);
+}
+
+.pista {
+  display: flex;
+  transition: transform 560ms var(--curva);
+}
+
+.pagina {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(50%, 150px), 1fr));
+}
+
+.celda {
+  height: 132px;
+  border-right: 1px solid var(--linea);
+  padding: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.celda:last-child {
+  border-right: 0;
+}
+
+.logo {
+  max-width: 100%;
+  max-height: 28px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.55;
+  filter: grayscale(1) brightness(1.6);
+  transition: opacity 150ms ease-out;
+}
+
+.logo:hover {
+  opacity: 1;
+}
+
+.marcador {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--acero-2);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.pie {
+  margin-top: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nota {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--acero-2);
+  margin: 0;
+  max-width: 64ch;
+}
+
+.puntos {
+  display: flex;
+  gap: 6px;
+}
+
+.botonPunto {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.punto {
+  width: 7px;
+  height: 7px;
+  background: var(--linea-2);
+  display: block;
+  transition: background 200ms ease-out;
+}
+
+.punto[data-activo="1"] {
+  background: var(--acento);
+}

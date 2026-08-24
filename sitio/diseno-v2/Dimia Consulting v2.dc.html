@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dimia Consulting — Donde el dato decide</title>
+<link rel="icon" href="marca/favicon.svg">
+<script src="./image-slot.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap">
+<style>
+  html, body { margin:0; padding:0; background:#0b0f17; color:#eef1f7; overflow-x:clip; }
+  * { box-sizing:border-box; border-radius:0 !important; }
+  a { color:#eef1f7; text-decoration:none; }
+  a:hover { color:#6e9bf5; }
+  :focus-visible { outline:2px solid #6e9bf5; outline-offset:3px; }
+  @keyframes revelaMarca { from { clip-path:inset(0 100% 0 0); opacity:.4 } to { clip-path:inset(0 0 0 0); opacity:1 } }
+  @keyframes sube { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+  @keyframes creceFilete { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+  @keyframes respira { 0%,100% { opacity:0 } 45%,55% { opacity:1 } }
+  @keyframes deriva { 0% { opacity:0; transform:translateY(-14px) } 40%,60% { opacity:1; transform:none } 100% { opacity:0; transform:translateY(14px) } }
+  @keyframes viaja { 0% { transform:translateY(-6vh); opacity:0 } 12% { opacity:1 } 84% { opacity:1 } 100% { transform:translateY(104vh); opacity:0 } }
+  @keyframes barrido { 0% { transform:translateY(-10vh); opacity:0 } 30%,70% { opacity:1 } 100% { transform:translateY(110vh); opacity:0 } }
+  @keyframes cuenta { 0%,100% { opacity:.28 } 50% { opacity:1 } }
+  @keyframes celda { 0%,100% { background-color:#0b0f17 } 50% { background-color:#182131 } }
+  @keyframes celdaAzul { 0%,100% { background-color:#0b0f17 } 50% { background-color:#1e2c48 } }
+  @keyframes marquesina { from { transform:translateX(0) } to { transform:translateX(-50%) } }
+  @keyframes latido { 0%,100% { opacity:1 } 50% { opacity:.28 } }
+  @media (prefers-reduced-motion: reduce) {
+    [data-anim] { animation:none !important; opacity:1 !important; transform:none !important; clip-path:none !important }
+    [data-reveal] { opacity:1 !important; transform:none !important }
+  }
+</style>
+</helmet>
+
+<div style="background:#0b0f17;color:#eef1f7;font-family:Archivo,ui-sans-serif,'Helvetica Neue',Arial,sans-serif">
+
+  <header style="position:fixed;top:0;left:0;right:0;z-index:60;background:rgba(11,15,23,{{ navFondo }});border-bottom:1px solid {{ navFilete }};transition:background 220ms ease-out,border-color 220ms ease-out">
+    <div style="max-width:1440px;margin:0 auto;padding:0 clamp(20px,4vw,64px);height:{{ navAlto }};display:flex;align-items:center;gap:32px;transition:height 220ms cubic-bezier(.2,.7,.3,1)">
+      <a href="#inicio" aria-label="Dimia Consulting" style="display:flex;align-items:center;height:44px">
+        <svg width="30" height="30" viewBox="0 0 100 100" role="img" aria-label="Dimia Consulting">
+          <rect x="25" y="42" width="17" height="44" fill="#eef1f7"></rect>
+          <rect x="25" y="16" width="17" height="17" fill="#6e9bf5"></rect>
+          <rect x="58" y="42" width="17" height="44" fill="#eef1f7"></rect>
+          <rect x="58" y="16" width="17" height="17" fill="#eef1f7"></rect>
+        </svg>
+      </a>
+      <sc-if value="{{ esMovil }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+          <a href="#contacto" style="display:flex;align-items:center;height:44px;padding:0 18px;border:1px solid #2f3a4d;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#eef1f7;white-space:nowrap" style-hover="background:#6e9bf5;border-color:#6e9bf5;color:#0b0f17">Agendar</a>
+          <button type="button" onClick="{{ alternarMenu }}" aria-label="Abrir menú" aria-expanded="{{ menuAbierto }}" style="width:44px;height:44px;background:transparent;border:1px solid #2f3a4d;cursor:pointer;display:flex;align-items:center;justify-content:center">
+            <span style="display:grid;grid-template-columns:6px 6px;gap:4px">
+              <i style="width:6px;height:6px;background:#6e9bf5;display:block"></i>
+              <i style="width:6px;height:6px;background:#eef1f7;display:block"></i>
+              <i style="width:6px;height:6px;background:#eef1f7;display:block"></i>
+              <i style="width:6px;height:6px;background:#eef1f7;display:block"></i>
+            </span>
+          </button>
+        </div>
+      </sc-if>
+      <nav style="display:{{ navDisplay }};align-items:center;gap:clamp(14px,2vw,32px);margin-left:auto">
+        <a href="#practica" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#97a2b5;display:flex;align-items:center;height:44px" style-hover="color:#eef1f7">Práctica</a>
+        <a href="#metodo" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#97a2b5;display:flex;align-items:center;height:44px" style-hover="color:#eef1f7">Método</a>
+        <a href="#productos" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#97a2b5;display:flex;align-items:center;height:44px" style-hover="color:#eef1f7">Productos</a>
+        <a href="#casos" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#97a2b5;display:flex;align-items:center;height:44px" style-hover="color:#eef1f7">Casos</a>
+        <a href="#firma" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#97a2b5;display:flex;align-items:center;height:44px" style-hover="color:#eef1f7">Firma</a>
+        <a href="#contacto" style="display:flex;align-items:center;gap:10px;height:44px;padding:0 20px;border:1px solid #2f3a4d;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#eef1f7;white-space:nowrap;transition:background 150ms ease-out,border-color 150ms ease-out" style-hover="background:#6e9bf5;border-color:#6e9bf5;color:#0b0f17">Agendar<svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></a>
+      </nav>
+    </div>
+  </header>
+
+  <sc-if value="{{ menuVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:55;background:#0b0f17;padding:100px clamp(20px,6vw,40px) 40px;display:flex;flex-direction:column;gap:6px">
+      <a href="#practica" onClick="{{ cerrarMenu }}" style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:32px;line-height:1.2;letter-spacing:-.012em;color:#eef1f7;padding:14px 0;border-bottom:1px solid #212a3a">Práctica</a>
+      <a href="#metodo" onClick="{{ cerrarMenu }}" style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:32px;line-height:1.2;letter-spacing:-.012em;color:#eef1f7;padding:14px 0;border-bottom:1px solid #212a3a">Método</a>
+      <a href="#productos" onClick="{{ cerrarMenu }}" style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:32px;line-height:1.2;letter-spacing:-.012em;color:#eef1f7;padding:14px 0;border-bottom:1px solid #212a3a">Productos</a>
+      <a href="#casos" onClick="{{ cerrarMenu }}" style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:32px;line-height:1.2;letter-spacing:-.012em;color:#eef1f7;padding:14px 0;border-bottom:1px solid #212a3a">Casos</a>
+      <a href="#firma" onClick="{{ cerrarMenu }}" style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:32px;line-height:1.2;letter-spacing:-.012em;color:#eef1f7;padding:14px 0;border-bottom:1px solid #212a3a">Firma</a>
+      <a href="#contacto" onClick="{{ cerrarMenu }}" style="margin-top:24px;display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 22px;background:#6e9bf5;color:#0b0f17;font-size:15px;font-weight:600">Agendar una demostración<svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></a>
+      <p style="margin:auto 0 0;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">hola@dimia.mx · [ +52 55 0000 0000 ]</p>
+    </div>
+  </sc-if>
+
+  <section id="inicio" style="position:relative;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid #212a3a">
+    <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none">
+      <div style="position:absolute;top:0;right:0;bottom:0;width:min(76%,1120px);display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(7,1fr);gap:1px;background:#0f151f;mask-image:linear-gradient(100deg, transparent 2%, rgba(0,0,0,.5) 30%, #000 76%);-webkit-mask-image:linear-gradient(100deg, transparent 2%, rgba(0,0,0,.5) 30%, #000 76%)">
+        <div data-anim="1" style="animation:celda 24s ease-in-out 18s infinite"></div>
+        <div data-anim="1" style="animation:celda 13s ease-in-out 6s infinite"></div>
+        <div data-anim="1" style="animation:celda 20s ease-in-out 17s infinite"></div>
+        <div data-anim="1" style="animation:celda 27s ease-in-out 5s infinite"></div>
+        <div data-anim="1" style="animation:celda 16s ease-in-out 16s infinite"></div>
+        <div data-anim="1" style="animation:celda 23s ease-in-out 4s infinite"></div>
+        <div data-anim="1" style="animation:celda 12s ease-in-out 15s infinite"></div>
+        <div data-anim="1" style="animation:celda 19s ease-in-out 3s infinite"></div>
+        <div data-anim="1" style="animation:celda 26s ease-in-out 14s infinite"></div>
+        <div data-anim="1" style="animation:celda 15s ease-in-out 2s infinite"></div>
+        <div data-anim="1" style="animation:celda 29s ease-in-out 2s infinite"></div>
+        <div data-anim="1" style="animation:celda 18s ease-in-out 13s infinite"></div>
+        <div data-anim="1" style="animation:celdaAzul 25s ease-in-out 1s infinite"></div>
+        <div data-anim="1" style="animation:celda 14s ease-in-out 12s infinite"></div>
+        <div data-anim="1" style="animation:celda 21s ease-in-out 0s infinite"></div>
+        <div data-anim="1" style="animation:celda 28s ease-in-out 11s infinite"></div>
+        <div data-anim="1" style="animation:celda 17s ease-in-out 22s infinite"></div>
+        <div data-anim="1" style="animation:celda 24s ease-in-out 10s infinite"></div>
+        <div data-anim="1" style="animation:celda 13s ease-in-out 21s infinite"></div>
+        <div data-anim="1" style="animation:celda 20s ease-in-out 9s infinite"></div>
+        <div data-anim="1" style="animation:celda 16s ease-in-out 9s infinite"></div>
+        <div data-anim="1" style="animation:celda 23s ease-in-out 20s infinite"></div>
+        <div data-anim="1" style="animation:celda 12s ease-in-out 8s infinite"></div>
+        <div data-anim="1" style="animation:celda 19s ease-in-out 19s infinite"></div>
+        <div data-anim="1" style="animation:celda 26s ease-in-out 7s infinite"></div>
+        <div data-anim="1" style="animation:celda 15s ease-in-out 18s infinite"></div>
+        <div data-anim="1" style="animation:celda 22s ease-in-out 6s infinite"></div>
+        <div data-anim="1" style="animation:celda 29s ease-in-out 17s infinite"></div>
+        <div data-anim="1" style="animation:celda 18s ease-in-out 5s infinite"></div>
+        <div data-anim="1" style="animation:celdaAzul 25s ease-in-out 16s infinite"></div>
+        <div data-anim="1" style="animation:celda 21s ease-in-out 16s infinite"></div>
+        <div data-anim="1" style="animation:celda 28s ease-in-out 4s infinite"></div>
+        <div data-anim="1" style="animation:celda 17s ease-in-out 15s infinite"></div>
+        <div data-anim="1" style="animation:celda 24s ease-in-out 3s infinite"></div>
+        <div data-anim="1" style="animation:celda 13s ease-in-out 14s infinite"></div>
+        <div data-anim="1" style="animation:celda 20s ease-in-out 2s infinite"></div>
+        <div data-anim="1" style="animation:celda 27s ease-in-out 13s infinite"></div>
+        <div data-anim="1" style="animation:celdaAzul 16s ease-in-out 1s infinite"></div>
+        <div data-anim="1" style="animation:celda 23s ease-in-out 12s infinite"></div>
+        <div data-anim="1" style="animation:celda 12s ease-in-out 0s infinite"></div>
+        <div data-anim="1" style="animation:celda 26s ease-in-out 0s infinite"></div>
+        <div data-anim="1" style="animation:celda 15s ease-in-out 11s infinite"></div>
+        <div data-anim="1" style="animation:celda 22s ease-in-out 22s infinite"></div>
+        <div data-anim="1" style="animation:celda 29s ease-in-out 10s infinite"></div>
+        <div data-anim="1" style="animation:celda 18s ease-in-out 21s infinite"></div>
+        <div data-anim="1" style="animation:celda 25s ease-in-out 9s infinite"></div>
+        <div data-anim="1" style="animation:celda 14s ease-in-out 20s infinite"></div>
+        <div data-anim="1" style="animation:celda 21s ease-in-out 8s infinite"></div>
+        <div data-anim="1" style="animation:celda 28s ease-in-out 19s infinite"></div>
+        <div data-anim="1" style="animation:celda 17s ease-in-out 7s infinite"></div>
+        <div data-anim="1" style="animation:celda 13s ease-in-out 7s infinite"></div>
+        <div data-anim="1" style="animation:celda 20s ease-in-out 18s infinite"></div>
+        <div data-anim="1" style="animation:celda 27s ease-in-out 6s infinite"></div>
+        <div data-anim="1" style="animation:celda 16s ease-in-out 17s infinite"></div>
+        <div data-anim="1" style="animation:celdaAzul 23s ease-in-out 5s infinite"></div>
+        <div data-anim="1" style="animation:celda 12s ease-in-out 16s infinite"></div>
+        <div data-anim="1" style="animation:celda 19s ease-in-out 4s infinite"></div>
+        <div data-anim="1" style="animation:celda 26s ease-in-out 15s infinite"></div>
+        <div data-anim="1" style="animation:celda 15s ease-in-out 3s infinite"></div>
+        <div data-anim="1" style="animation:celda 22s ease-in-out 14s infinite"></div>
+        <div data-anim="1" style="animation:celda 18s ease-in-out 14s infinite"></div>
+        <div data-anim="1" style="animation:celda 25s ease-in-out 2s infinite"></div>
+        <div data-anim="1" style="animation:celda 14s ease-in-out 13s infinite"></div>
+        <div data-anim="1" style="animation:celda 21s ease-in-out 1s infinite"></div>
+        <div data-anim="1" style="animation:celda 28s ease-in-out 12s infinite"></div>
+        <div data-anim="1" style="animation:celda 17s ease-in-out 0s infinite"></div>
+        <div data-anim="1" style="animation:celda 24s ease-in-out 11s infinite"></div>
+        <div data-anim="1" style="animation:celda 13s ease-in-out 22s infinite"></div>
+        <div data-anim="1" style="animation:celda 20s ease-in-out 10s infinite"></div>
+        <div data-anim="1" style="animation:celda 27s ease-in-out 21s infinite"></div>
+      </div>
+    </div>
+
+    <div style="position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;max-width:1440px;width:100%;margin:0 auto;padding:clamp(120px,15vh,190px) clamp(20px,4vw,64px) clamp(40px,6vh,64px)">
+      <img data-anim="1" src="marca/lockup-tinta.svg" alt="Dimia Consulting" style="display:block;width:min(560px,72vw);height:auto;margin:0 0 clamp(44px,7vh,80px);animation:revelaMarca 1100ms cubic-bezier(.2,.7,.3,1) 200ms both">
+
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(32px,5vw,88px);align-items:flex-end">
+        <h1 data-anim="1" style="flex:1 1 560px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(32px,4.6vw,68px);line-height:1.04;letter-spacing:-.014em;text-wrap:balance;margin:0;color:#eef1f7;animation:sube 800ms cubic-bezier(.2,.7,.3,1) 700ms both">El punto donde el dato deja de informar y empieza a decidir.</h1>
+        <div data-anim="1" style="flex:1 1 340px;min-width:0;animation:sube 800ms cubic-bezier(.2,.7,.3,1) 900ms both">
+          <p style="font-size:17px;line-height:1.62;color:#97a2b5;margin:0 0 28px;max-width:44ch">Diseñamos, construimos y <strong style="font-weight:600;color:#eef1f7">operamos</strong> los sistemas con los que una empresa decide: datos confiables, inteligencia artificial aplicada, automatización y medición contra ingreso real.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:14px">
+            <a href="#contacto" style="display:flex;align-items:center;min-height:48px;padding:0 26px;background:#6e9bf5;color:#0b0f17;font-size:15px;font-weight:600;letter-spacing:-.01em;transition:background 150ms ease-out" style-hover="background:#eef1f7;color:#0b0f17">Agendar una demostración</a>
+            <a href="#practica" style="display:flex;align-items:center;gap:12px;min-height:48px;padding:0 4px;font-size:15px;font-weight:600;letter-spacing:-.01em;color:#eef1f7;border-bottom:1px solid #2f3a4d" style-hover="color:#6e9bf5;border-color:#6e9bf5">Ver cómo funciona<svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-anim="1" style="position:relative;animation:sube 800ms cubic-bezier(.2,.7,.3,1) 1100ms both">
+      <div style="max-width:1440px;margin:0 auto;padding:0 clamp(20px,4vw,64px) 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px">
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#66718a;margin:0">Datos · Inteligencia artificial · Automatización · Operación</p>
+        <span data-anim="1" aria-hidden="true" style="width:1px;height:38px;background:#2f3a4d;display:block;animation:cuenta 3.4s ease-in-out infinite"></span>
+      </div>
+    </div>
+  </section>
+
+  <section style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:12px 0 0">La firma</p>
+        <div style="flex:1 1 560px;min-width:0">
+          <p data-reveal="1" style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(24px,2.9vw,44px);line-height:1.2;letter-spacing:-.012em;color:#eef1f7;margin:0;max-width:34ch">Contestamos lo que su negocio no alcanza a contestar: la pregunta operativa, la del tablero y la de la llamada de las nueve de la noche.</p>
+          <p data-reveal="1" style="font-size:17.5px;line-height:1.62;color:#97a2b5;margin:34px 0 0;max-width:62ch">Somos una consultora boutique. Trabajamos con dueños y directores de empresas mexicanas que ya tienen operación y datos, pero no un sistema que los use. Entramos por el problema, no por la herramienta, y nos quedamos operando lo que instalamos.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:clamp(52px,7vw,104px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:1px;background:#212a3a">
+        <div data-reveal="1" style="background:#0b0f17;padding:clamp(28px,3vw,44px) clamp(24px,2.6vw,40px) clamp(28px,3vw,44px) 0">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 20px">Diseñamos</p>
+          <p style="font-size:16.5px;line-height:1.6;color:#eef1f7;margin:0;max-width:32ch">Definimos qué decisión hay que resolver y con qué dato se sostiene.</p>
+        </div>
+        <div data-reveal="1" style="background:#0b0f17;padding:clamp(28px,3vw,44px) clamp(24px,2.6vw,40px)">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 20px">Construimos</p>
+          <p style="font-size:16.5px;line-height:1.6;color:#eef1f7;margin:0;max-width:32ch">Bases, integraciones, automatizaciones y producto, en producción.</p>
+        </div>
+        <div data-reveal="1" style="background:#0b0f17;padding:clamp(28px,3vw,44px) 0 clamp(28px,3vw,44px) clamp(24px,2.6vw,40px)">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 20px">Operamos</p>
+          <p style="font-size:16.5px;line-height:1.6;color:#eef1f7;margin:0;max-width:32ch">Respondemos por el funcionamiento diario y por la métrica acordada.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="practica" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px);align-items:flex-end;margin-bottom:clamp(48px,6vw,88px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0">Práctica</p>
+        <h2 style="flex:1 1 460px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(26px,3vw,46px);line-height:1.1;letter-spacing:-.012em;margin:0;color:#eef1f7;max-width:26ch">Cinco frentes, un solo sistema<i style="display:inline-block;width:.17em;height:.17em;background:#6e9bf5;margin-left:.2em;vertical-align:baseline"></i></h2>
+      </div>
+
+      <div style="border-top:1px solid #212a3a">
+        <sc-for list="{{ practica }}" as="p" hint-placeholder-count="5">
+          <div style="border-bottom:1px solid #212a3a">
+            <button type="button" onClick="{{ p.alternar }}" aria-expanded="{{ p.expandido }}" style="width:100%;text-align:left;background:transparent;border:0;cursor:pointer;font-family:Archivo,Arial,sans-serif;padding:clamp(24px,2.6vw,38px) 0;display:flex;flex-wrap:wrap;gap:16px clamp(24px,4vw,72px);align-items:baseline" style-hover="background:#0e141f">
+              <span style="flex:0 0 auto;width:44px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;letter-spacing:.14em;color:{{ p.colorIndice }};padding-left:2px">{{ p.indice }}</span>
+              <span style="flex:1 1 300px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(22px,2.4vw,34px);line-height:1.14;letter-spacing:-.012em;color:#eef1f7">{{ p.titulo }}</span>
+              <span style="flex:1 1 260px;min-width:0;font-size:15.5px;line-height:1.6;color:#97a2b5;max-width:40ch">{{ p.resumen }}</span>
+              <span style="flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;justify-content:flex-end;color:{{ p.colorIndice }}">
+                <i style="width:11px;height:1px;background:currentColor;display:block"></i>
+                <i style="width:1px;height:11px;background:currentColor;display:block;margin-left:-6px;transform:scaleY({{ p.escalaCruz }});transition:transform 260ms cubic-bezier(.2,.7,.3,1)"></i>
+              </span>
+            </button>
+            <div style="display:grid;grid-template-rows:{{ p.filas }};transition:grid-template-rows 320ms cubic-bezier(.2,.7,.3,1)">
+              <div style="overflow:hidden">
+                <div style="display:flex;flex-wrap:wrap;gap:clamp(24px,4vw,72px);padding:0 0 clamp(32px,3.4vw,48px) 60px">
+                  <div style="flex:1 1 380px;min-width:0">
+                    <p style="font-size:16.5px;line-height:1.62;color:#eef1f7;margin:0;max-width:52ch">{{ p.detalle }}</p>
+                    <a href="#contacto" style="display:inline-flex;align-items:center;gap:12px;min-height:44px;margin-top:22px;font-size:14px;font-weight:600;color:#6e9bf5" style-hover="color:#eef1f7">Hablar de este frente<svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></a>
+                  </div>
+                  <ul style="flex:1 1 280px;min-width:0;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px">
+                    <sc-for list="{{ p.puntos }}" as="pt" hint-placeholder-count="3">
+                      <li style="display:flex;gap:14px;align-items:baseline"><i style="width:6px;height:6px;background:#2f3a4d;display:block;flex:0 0 auto"></i><span style="font-size:15.5px;line-height:1.55;color:#97a2b5">{{ pt }}</span></li>
+                    </sc-for>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="metodo" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px);align-items:flex-end;margin-bottom:clamp(48px,6vw,88px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0">Método</p>
+        <h2 style="flex:1 1 460px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(26px,3vw,46px);line-height:1.1;letter-spacing:-.012em;text-wrap:balance;margin:0;color:#eef1f7;max-width:26ch">Cuatro etapas, en este orden<i style="display:inline-block;width:.17em;height:.17em;background:#6e9bf5;margin-left:.2em;vertical-align:baseline"></i></h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:clamp(28px,3vw,48px)">
+        <div data-reveal="1" style="border-top:1px solid #6e9bf5;padding-top:26px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;letter-spacing:.16em;color:#6e9bf5;margin:0 0 24px">01 · Diagnóstico</p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#66718a;margin:0 0 16px">2 semanas</p>
+          <p style="font-size:16px;line-height:1.62;color:#97a2b5;margin:0;max-width:34ch">Levantamos la operación real y dónde se pierde el ingreso. Salimos con hoja de ruta y métrica acordada.</p>
+        </div>
+        <div data-reveal="1" style="border-top:1px solid #212a3a;padding-top:26px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;letter-spacing:.16em;color:#eef1f7;margin:0 0 24px">02 · Piloto</p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#66718a;margin:0 0 16px">4 semanas</p>
+          <p style="font-size:16px;line-height:1.62;color:#97a2b5;margin:0;max-width:34ch">Un tramo acotado en producción, con la métrica definida antes de empezar.</p>
+        </div>
+        <div data-reveal="1" style="border-top:1px solid #212a3a;padding-top:26px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;letter-spacing:.16em;color:#eef1f7;margin:0 0 24px">03 · Operación</p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#66718a;margin:0 0 16px">Continuo</p>
+          <p style="font-size:16px;line-height:1.62;color:#97a2b5;margin:0;max-width:34ch">Operamos el sistema y respondemos por su funcionamiento diario.</p>
+        </div>
+        <div data-reveal="1" style="border-top:1px solid #212a3a;padding-top:26px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;letter-spacing:.16em;color:#eef1f7;margin:0 0 24px">04 · Escala</p>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#66718a;margin:0 0 16px">Continuo</p>
+          <p style="font-size:16px;line-height:1.62;color:#97a2b5;margin:0;max-width:34ch">Se extiende a más procesos, sucursales y fuentes con la misma base.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <sc-if value="{{ verCarrusel }}" hint-placeholder-val="{{ true }}">
+    <section aria-label="Confían en Dimia" style="border-bottom:1px solid #212a3a">
+      <div style="max-width:1440px;margin:0 auto;padding:clamp(56px,7vw,104px) clamp(20px,4vw,64px)">
+        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between;margin-bottom:44px">
+          <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0">Confían en Dimia</p>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button type="button" onClick="{{ pagAnterior }}" aria-label="Anterior" style="width:44px;height:44px;background:transparent;border:1px solid #212a3a;color:#97a2b5;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 150ms ease-out,color 150ms ease-out" style-hover="border-color:#6e9bf5;color:#6e9bf5"><svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true" style="transform:scaleX(-1)"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+            <button type="button" onClick="{{ pagSiguiente }}" aria-label="Siguiente" style="width:44px;height:44px;background:transparent;border:1px solid #212a3a;color:#97a2b5;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 150ms ease-out,color 150ms ease-out" style-hover="border-color:#6e9bf5;color:#6e9bf5"><svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+          </div>
+        </div>
+        <div style="overflow:hidden;border-top:1px solid #212a3a;border-bottom:1px solid #212a3a">
+          <div style="display:flex;transform:{{ pistaLogos }};transition:transform 560ms cubic-bezier(.2,.7,.3,1)">
+            <div style="flex:0 0 100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(50%,150px),1fr))">
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-1" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-2" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-3" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-4" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;padding:26px"><image-slot id="dimia-logo-5" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+            </div>
+            <div style="flex:0 0 100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(50%,150px),1fr))">
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-6" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-7" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-8" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;border-right:1px solid #212a3a;padding:26px"><image-slot id="dimia-logo-9" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+              <div style="height:132px;padding:26px"><image-slot id="dimia-logo-10" shape="rect" fit="contain" placeholder="[ logotipo autorizado ]" style="width:100%;height:100%"></image-slot></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:26px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6;color:#66718a;margin:0;max-width:64ch">Consultorios · Restaurantes · Clínicas · Salones · Despachos. Los logotipos se publican solo con autorización por escrito.</p>
+          <div style="display:flex;gap:6px">
+            <button type="button" onClick="{{ irPagina0 }}" aria-label="Página 1" style="width:32px;height:32px;background:transparent;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center"><i style="width:7px;height:7px;background:{{ colorPunto0 }};display:block;transition:background 200ms ease-out"></i></button>
+            <button type="button" onClick="{{ irPagina1 }}" aria-label="Página 2" style="width:32px;height:32px;background:transparent;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center"><i style="width:7px;height:7px;background:{{ colorPunto1 }};display:block;transition:background 200ms ease-out"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+
+  <section id="productos" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px);align-items:flex-end;margin-bottom:clamp(48px,6vw,88px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0">Productos</p>
+        <h2 style="flex:1 1 460px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(26px,3vw,46px);line-height:1.1;letter-spacing:-.012em;text-wrap:balance;margin:0;color:#eef1f7;max-width:28ch">Lo que ya opera con clientes, empaquetado<i style="display:inline-block;width:.17em;height:.17em;background:#6e9bf5;margin-left:.2em;vertical-align:baseline"></i></h2>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(32px,4vw,72px);align-items:flex-start">
+        <div style="flex:1 1 420px;min-width:0">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+            <i style="width:7px;height:7px;background:#3fb68b;display:block"></i>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#3fb68b">En operación</span>
+          </div>
+          <h3 style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(26px,2.8vw,40px);line-height:1.1;letter-spacing:-.012em;margin:0 0 22px;color:#eef1f7">Agente de voz Dimia</h3>
+          <p style="font-size:17.5px;line-height:1.62;color:#97a2b5;margin:0 0 34px;max-width:50ch">Un número que contesta 24/7, entiende, agenda en firme y avisa por WhatsApp. La cita queda escrita antes de colgar.</p>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:flex;flex-wrap:wrap;gap:12px 32px;padding:18px 0;border-top:1px solid #212a3a"><span style="flex:0 0 150px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Qué resuelve</span><span style="flex:1 1 240px;font-size:16px;color:#eef1f7;line-height:1.6">La llamada que nadie alcanza a contestar</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px 32px;padding:18px 0;border-top:1px solid #212a3a"><span style="flex:0 0 150px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Para quién</span><span style="flex:1 1 240px;font-size:16px;color:#eef1f7;line-height:1.6">Negocios con agenda y volumen telefónico</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px 32px;padding:18px 0;border-top:1px solid #212a3a;border-bottom:1px solid #212a3a"><span style="flex:0 0 150px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Integra con</span><span style="flex:1 1 240px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:#97a2b5;line-height:1.6">Telefonía SIP · WhatsApp · Calendario · CRM</span></div>
+          </div>
+          <a href="#contacto" style="display:inline-flex;align-items:center;gap:12px;min-height:48px;margin-top:30px;padding:0 24px;background:#6e9bf5;color:#0b0f17;font-size:15px;font-weight:600;transition:background 150ms ease-out" style-hover="background:#eef1f7;color:#0b0f17">Solicitar demostración<svg width="14" height="10" viewBox="0 0 14 10" aria-hidden="true"><path d="M0 5h12M9 1l4 4-4 4" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></a>
+        </div>
+        <div data-reveal="1" style="flex:1 1 360px;min-width:0;border:1px solid #212a3a;background:#111723">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:1px solid #212a3a">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a">Línea principal</span>
+            <sc-if value="{{ esEspera }}" hint-placeholder-val="{{ true }}">
+              <span style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#97a2b5"><i style="width:7px;height:7px;background:#66718a;display:block"></i>En espera</span>
+            </sc-if>
+            <sc-if value="{{ esLlamada }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#6e9bf5"><i data-anim="1" style="width:7px;height:7px;background:#6e9bf5;display:block;animation:latido 1.9s ease-in-out infinite"></i>En llamada</span>
+            </sc-if>
+            <sc-if value="{{ esConfirmada }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#3fb68b"><i style="width:7px;height:7px;background:#3fb68b;display:block"></i>Confirmada</span>
+            </sc-if>
+          </div>
+          <div style="padding:26px 20px;border-bottom:1px solid #212a3a;display:flex;align-items:flex-end;justify-content:space-between;gap:20px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:clamp(30px,4vw,40px);line-height:1;color:#eef1f7">{{ reloj }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px;color:#66718a">{{ folio }}</span>
+          </div>
+          <div style="padding:6px 0;min-height:216px">
+            <sc-for list="{{ bitacora }}" as="ev" hint-placeholder-count="4">
+              <div style="display:flex;gap:14px;align-items:baseline;padding:10px 20px;border-bottom:1px solid #161d2b">
+                <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12px;color:#66718a;flex:0 0 auto">{{ ev.t }}</span>
+                <i style="width:6px;height:6px;background:#2f3a4d;flex:0 0 auto;display:block"></i>
+                <span style="font-size:14.5px;line-height:1.45;color:#eef1f7">{{ ev.texto }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin:0;padding:14px 20px;background:#161d2b;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#66718a">Secuencia de demostración</p>
+        </div>
+      </div>
+      <div style="margin-top:clamp(40px,4vw,64px)">
+        <div style="border-top:1px solid #212a3a;padding:22px 0;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+          <span style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:22px;color:#66718a">[ Nombre del producto ]</span>
+          <span style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#e0a838"><i style="width:7px;height:7px;background:#e0a838;display:block"></i>Próximamente</span>
+        </div>
+        <div style="border-top:1px solid #212a3a;border-bottom:1px solid #212a3a;padding:22px 0;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+          <span style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:22px;color:#66718a">[ Nombre del producto ]</span>
+          <span style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#e0a838"><i style="width:7px;height:7px;background:#e0a838;display:block"></i>Próximamente</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="garantia" style="background:#f2f4f8;color:#0b0f17">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#a8853f;margin:12px 0 0">La garantía</p>
+        <div style="flex:1 1 520px;min-width:0">
+          <h2 style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(28px,3.4vw,52px);line-height:1.06;letter-spacing:-.014em;text-wrap:balance;margin:0 0 24px;color:#0b0f17;max-width:26ch">Dos citas encimadas son imposibles por diseño<i style="display:inline-block;width:.17em;height:.17em;background:#1f47c4;margin-left:.2em;vertical-align:baseline"></i></h2>
+          <p style="font-size:17.5px;line-height:1.62;color:#3f4a5c;max-width:58ch;margin:0">La disponibilidad no se calcula en la conversación: la decide la base. Si el horario ya está tomado, la reserva se rechaza y el agente ofrece el siguiente hueco en la misma llamada.</p>
+        </div>
+      </div>
+      <div style="margin-top:clamp(52px,7vw,104px);display:flex;flex-wrap:wrap;gap:clamp(32px,5vw,88px)">
+        <div data-reveal="1" style="flex:1 1 280px;min-width:0">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 30px">Ruta de una reserva</p>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:flex;gap:18px;align-items:flex-start"><div style="display:flex;flex-direction:column;align-items:center;flex:0 0 auto"><i style="width:9px;height:9px;background:#1f47c4;display:block;margin-top:7px"></i><i style="width:1px;height:42px;background:#c9d0dc;display:block"></i></div><p style="font-size:17px;font-weight:600;margin:0;color:#0b0f17">Llamada</p></div>
+            <div style="display:flex;gap:18px;align-items:flex-start"><div style="display:flex;flex-direction:column;align-items:center;flex:0 0 auto"><i style="width:9px;height:9px;background:#0b0f17;display:block;margin-top:7px"></i><i style="width:1px;height:42px;background:#c9d0dc;display:block"></i></div><p style="font-size:17px;font-weight:600;margin:0;color:#0b0f17">Consulta de disponibilidad</p></div>
+            <div style="display:flex;gap:18px;align-items:flex-start"><div style="display:flex;flex-direction:column;align-items:center;flex:0 0 auto"><i style="width:9px;height:9px;background:#0b0f17;display:block;margin-top:7px"></i><i style="width:1px;height:42px;background:#c9d0dc;display:block"></i></div><p style="font-size:17px;font-weight:600;margin:0;color:#0b0f17">Restricción de la base</p></div>
+            <div style="display:flex;gap:18px;align-items:flex-start"><div style="display:flex;flex-direction:column;align-items:center;flex:0 0 auto"><i style="width:9px;height:9px;background:#12805c;display:block;margin-top:7px"></i></div><p style="font-size:17px;font-weight:600;margin:0;color:#0b0f17">Reserva confirmada</p></div>
+          </div>
+        </div>
+        <div data-reveal="1" style="flex:1 1 360px;min-width:0">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 30px">Demostración de la colisión</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="background:#1f47c4;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center">
+              <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:17px;color:#ffffff">17:00–17:30</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#c9d6ff">Confirmada</span>
+            </div>
+            <div style="border:1px solid #c4392f;padding:18px 20px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center">
+              <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:17px;color:#c4392f">17:15–17:45</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#c4392f">Rechazada por la base</span>
+            </div>
+          </div>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#3f4a5c;margin:18px 0 0">Se ofrece 17:45 en la misma llamada.</p>
+        </div>
+        <div data-reveal="1" style="flex:1 1 240px;min-width:0;border-left:1px solid #c9d0dc;padding-left:clamp(24px,3vw,40px)">
+          <p style="font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:300;font-size:clamp(22px,2.2vw,30px);line-height:1.24;color:#a8853f;margin:0">«Automatización con garantía, no con buenas intenciones.»</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="casos" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px);align-items:flex-end;margin-bottom:clamp(48px,6vw,88px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0">Casos</p>
+        <h2 style="flex:1 1 460px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(26px,3vw,46px);line-height:1.1;letter-spacing:-.012em;text-wrap:balance;margin:0;color:#eef1f7;max-width:28ch">Lo que quedó registrado, sin adornos<i style="display:inline-block;width:.17em;height:.17em;background:#6e9bf5;margin-left:.2em;vertical-align:baseline"></i></h2>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px)">
+        <div style="flex:1 1 260px;min-width:0;display:flex;flex-direction:column;border-top:1px solid #212a3a">
+          <sc-for list="{{ casos }}" as="c" hint-placeholder-count="4">
+            <button type="button" onClick="{{ c.elegir }}" style="text-align:left;background:{{ c.fondo }};border:0;border-bottom:1px solid #212a3a;border-left:2px solid {{ c.filete }};padding:22px 18px;min-height:44px;cursor:pointer;font-family:Archivo,Arial,sans-serif;display:flex;flex-direction:column;gap:8px;transition:background 200ms ease-out,border-color 200ms ease-out" style-hover="background:#0e141f">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a">{{ c.giro }}</span>
+              <span style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:21px;line-height:1.2;color:#eef1f7">{{ c.titulo }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="flex:1 1 460px;min-width:0">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#c8a45c;margin:0 0 14px">{{ caso.giro }}</p>
+          <h3 style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(24px,2.6vw,36px);line-height:1.1;letter-spacing:-.012em;margin:0 0 34px;color:#eef1f7">{{ caso.titulo }}</h3>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:flex;flex-wrap:wrap;gap:10px 32px;padding:20px 0;border-top:1px solid #212a3a">
+              <span style="flex:0 0 170px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Problema operativo</span>
+              <span style="flex:1 1 300px;font-size:16.5px;line-height:1.62;color:#97a2b5;max-width:54ch">{{ caso.problema }}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px 32px;padding:20px 0;border-top:1px solid #212a3a">
+              <span style="flex:0 0 170px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Qué instaló Dimia</span>
+              <span style="flex:1 1 300px;font-size:16.5px;line-height:1.62;color:#97a2b5;max-width:54ch">{{ caso.instalado }}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px 32px;padding:20px 0;border-top:1px solid #212a3a">
+              <span style="flex:0 0 170px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Resultado</span>
+              <span style="flex:1 1 300px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:15px;color:#eef1f7;max-width:54ch">{{ caso.resultado }}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px 32px;padding:20px 0;border-top:1px solid #212a3a">
+              <span style="flex:0 0 170px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Periodo medido</span>
+              <span style="flex:1 1 300px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:15px;color:#eef1f7;max-width:54ch">{{ caso.periodo }}</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px 32px;padding:20px 0;border-top:1px solid #212a3a">
+              <span style="flex:0 0 170px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#66718a">Integraciones</span>
+              <span style="flex:1 1 300px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:15px;color:#eef1f7;max-width:54ch">{{ caso.integraciones }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="firma" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,72px);align-items:flex-end;margin-bottom:clamp(48px,6vw,88px)">
+        <p style="flex:0 0 190px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0">Firma</p>
+        <h2 style="flex:1 1 460px;min-width:0;font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(26px,3vw,46px);line-height:1.1;letter-spacing:-.012em;text-wrap:balance;margin:0;color:#eef1f7;max-width:26ch">Dos socios responden por cada sistema<i style="display:inline-block;width:.17em;height:.17em;background:#6e9bf5;margin-left:.2em;vertical-align:baseline"></i></h2>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(32px,4vw,72px)">
+        <div data-reveal="1" style="flex:1 1 320px;min-width:0">
+          <div style="height:260px;background:#111723;border:1px solid #212a3a;display:flex;align-items:flex-end;padding:26px">
+            <span style="font-family:Archivo,Arial,sans-serif;font-weight:800;font-size:clamp(48px,5vw,72px);letter-spacing:-.03em;line-height:.9;color:#6e9bf5">RD</span>
+          </div>
+          <h3 style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:26px;line-height:1.14;letter-spacing:-.012em;margin:26px 0 8px;color:#eef1f7">Rogelio Díaz Alanís</h3>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 16px">Socio · Operaciones</p>
+          <p style="font-size:16px;line-height:1.62;color:#97a2b5;margin:0;max-width:36ch">[ Trayectoria verificable por confirmar ]</p>
+        </div>
+        <div data-reveal="1" style="flex:1 1 320px;min-width:0">
+          <div style="height:260px;background:#111723;border:1px solid #212a3a;display:flex;align-items:flex-end;padding:26px">
+            <span style="font-family:Archivo,Arial,sans-serif;font-weight:800;font-size:clamp(48px,5vw,72px);letter-spacing:-.03em;line-height:.9;color:#eef1f7">JM</span>
+          </div>
+          <h3 style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:26px;line-height:1.14;letter-spacing:-.012em;margin:26px 0 8px;color:#eef1f7">Jesús Daniel Martínez García</h3>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 16px">Socio · Tecnología</p>
+          <p style="font-size:16px;line-height:1.62;color:#97a2b5;margin:0;max-width:36ch">[ Trayectoria verificable por confirmar ]</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" style="border-bottom:1px solid #212a3a">
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(72px,11vw,168px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(40px,6vw,96px)">
+        <div style="flex:1 1 440px;min-width:0">
+          <img src="marca/logotipo-tinta.svg" alt="Dimia" style="display:block;width:min(360px,58vw);height:auto;margin:0 0 34px">
+          <h2 style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(30px,4vw,56px);line-height:1.04;letter-spacing:-.014em;margin:0 0 40px;color:#eef1f7;max-width:20ch">Donde el dato decide.</h2>
+          <div style="display:flex;flex-direction:column;gap:24px;border-top:1px solid #212a3a;padding-top:32px;max-width:46ch">
+            <div>
+              <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 10px">Teléfono</p>
+              <p style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:19px;color:#eef1f7;margin:0 0 8px">[ +52 55 0000 0000 ]</p>
+              <p style="font-size:14.5px;line-height:1.6;color:#97a2b5;margin:0">Este número contesta con el agente de voz de Dimia.</p>
+            </div>
+            <div>
+              <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 10px">Correo</p>
+              <a href="mailto:hola@dimia.mx" style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#6e9bf5;display:inline-flex;align-items:center;min-height:44px" style-hover="color:#eef1f7">hola@dimia.mx</a>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1 1 380px;min-width:0">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#c8a45c;margin:0 0 28px">Agendar una demostración</p>
+          <form onSubmit="{{ enviar }}" style="display:flex;flex-direction:column;gap:22px">
+            <label style="display:flex;flex-direction:column;gap:9px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a">Nombre</span>
+              <input name="nombre" type="text" required="required" autoComplete="name" style="background:#111723;border:1px solid #2f3a4d;color:#eef1f7;font-family:Archivo,Arial,sans-serif;font-size:16px;padding:14px 16px;min-height:48px;width:100%;transition:border-color 150ms ease-out" style-focus="border-color:#6e9bf5;outline:none" style-hover="border-color:#66718a"></input>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:9px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a">Empresa</span>
+              <input name="empresa" type="text" required="required" autoComplete="organization" style="background:#111723;border:1px solid #2f3a4d;color:#eef1f7;font-family:Archivo,Arial,sans-serif;font-size:16px;padding:14px 16px;min-height:48px;width:100%;transition:border-color 150ms ease-out" style-focus="border-color:#6e9bf5;outline:none" style-hover="border-color:#66718a"></input>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:9px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a">Teléfono o correo</span>
+              <input name="contacto" type="text" required="required" style="background:#111723;border:1px solid #2f3a4d;color:#eef1f7;font-family:'IBM Plex Mono',monospace;font-size:16px;padding:14px 16px;min-height:48px;width:100%;transition:border-color 150ms ease-out" style-focus="border-color:#6e9bf5;outline:none" style-hover="border-color:#66718a"></input>
+            </label>
+            <button type="submit" style="background:#6e9bf5;color:#0b0f17;border:0;font-family:Archivo,Arial,sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em;min-height:48px;padding:0 24px;cursor:pointer;transition:background 150ms ease-out" style-hover="background:#eef1f7">{{ textoBoton }}</button>
+          </form>
+          <sc-if value="{{ formAviso }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:22px;border-left:2px solid #e0a838;padding:0 0 0 20px">
+              <p style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#e0a838;margin:0 0 10px"><i style="width:7px;height:7px;background:#e0a838;display:block"></i>Pendiente</p>
+              <p style="font-size:15px;line-height:1.62;color:#eef1f7;margin:0">El formulario aún no está conectado. Escriba a <a href="mailto:hola@dimia.mx" style="color:#6e9bf5">hola@dimia.mx</a> o marque al [ +52 55 0000 0000 ] y le agendamos la demostración.</p>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div style="max-width:1440px;margin:0 auto;padding:clamp(52px,6vw,88px) clamp(20px,4vw,64px)">
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(32px,4vw,72px)">
+        <div style="flex:1 1 380px;min-width:0">
+          <svg width="34" height="34" viewBox="0 0 100 100" role="img" aria-label="Dimia Consulting">
+            <rect x="25" y="42" width="17" height="44" fill="#eef1f7"></rect>
+            <rect x="25" y="16" width="17" height="17" fill="#6e9bf5"></rect>
+            <rect x="58" y="42" width="17" height="44" fill="#eef1f7"></rect>
+            <rect x="58" y="16" width="17" height="17" fill="#eef1f7"></rect>
+          </svg>
+          <p style="font-family:Newsreader,Georgia,serif;font-weight:300;font-size:clamp(20px,2.2vw,28px);line-height:1.2;letter-spacing:-.012em;color:#eef1f7;margin:28px 0 0;max-width:32ch">Sistemas de decisión para empresas que ya no alcanzan a contestar.</p>
+        </div>
+        <div style="flex:0 1 200px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 18px">Firma</p>
+          <div style="display:flex;flex-direction:column">
+            <a href="#practica" style="font-size:15px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">Práctica</a>
+            <a href="#metodo" style="font-size:15px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">Método</a>
+            <a href="#productos" style="font-size:15px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">Productos</a>
+            <a href="#casos" style="font-size:15px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">Casos</a>
+          </div>
+        </div>
+        <div style="flex:0 1 220px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#66718a;margin:0 0 18px">Contacto</p>
+          <div style="display:flex;flex-direction:column">
+            <a href="mailto:hola@dimia.mx" style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">hola@dimia.mx</a>
+            <span style="font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:14px;color:#97a2b5;display:flex;align-items:center;min-height:38px">[ +52 55 0000 0000 ]</span>
+            <a href="https://www.linkedin.com/" style="font-size:15px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">LinkedIn</a>
+            <a href="https://dimia.mx" style="font-size:15px;color:#97a2b5;display:flex;align-items:center;min-height:38px" style-hover="color:#eef1f7">dimia.mx</a>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:clamp(40px,5vw,72px);padding-top:26px;border-top:1px solid #212a3a;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:#66718a;margin:0">© 2026 Dimia Consulting · Ciudad de México · <a href="#contacto" style="color:#66718a" style-hover="color:#eef1f7">Aviso de privacidad</a></p>
+        <i style="width:12px;height:12px;background:#6e9bf5;display:block"></i>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/dc" data-dc-script data-props='{"mostrarCarrusel":{"editor":"boolean","default":true,"tsType":"boolean","section":"Secciones"}}'>
+class Component extends DCLogic {
+  state = { navAlto: 92, abierto: 0, fase: 'espera', ms: 0, bitacora: [], folio: '—', caso: 0, form: 'reposo', ancho: 1440, menu: false, pagina: 0 };
+
+  PRACTICA = [
+    {
+      indice: '01', titulo: 'Estrategia y arquitectura de decisión',
+      resumen: 'Qué decide el negocio, con qué dato y en qué momento.',
+      detalle: 'Levantamos la operación real, identificamos las decisiones que hoy se toman a ciegas y definimos la arquitectura mínima que las sostiene. El entregable es una hoja de ruta con secuencia, costo y responsable, no un diagnóstico para archivar.',
+      puntos: ['Mapa de decisiones y datos faltantes', 'Hoja de ruta por etapas medibles', 'Caso de negocio con supuestos abiertos']
+    },
+    {
+      indice: '02', titulo: 'Datos e infraestructura analítica',
+      resumen: 'Bases confiables y tableros que un dueño puede leer solo.',
+      detalle: 'Consolidamos fuentes dispersas en una base única con reglas explícitas, y construimos los tableros que la dirección usa para decidir sin que nadie se los explique.',
+      puntos: ['Integración de fuentes y limpieza', 'Modelo de datos documentado', 'Tableros de operación y dirección']
+    },
+    {
+      indice: '03', titulo: 'Inteligencia artificial aplicada',
+      resumen: 'El método, no el argumento. Se justifica por lo que resuelve.',
+      detalle: 'Aplicamos modelos donde hay un tramo repetitivo, un texto que nadie lee o una conversación que nadie alcanza a atender. Cada uso queda acotado, evaluado y con salida auditable.',
+      puntos: ['Agentes de voz y atención conversacional', 'Clasificación y extracción documental', 'Evaluación y control de calidad del modelo']
+    },
+    {
+      indice: '04', titulo: 'Automatización de operaciones',
+      resumen: 'El tramo mecánico, ejecutado y auditado.',
+      detalle: 'Confirmaciones, recordatorios, cobranza, seguimiento, altas y reportes. Automatizamos el tramo mecánico y dejamos cada acción con registro, responsable y reversa.',
+      puntos: ['Flujos con registro por acción', 'Integración con sistemas existentes', 'Alertas por excepción, no por volumen']
+    },
+    {
+      indice: '05', titulo: 'Medición contra ingreso',
+      resumen: 'Qué acción produjo cada oportunidad y cuánto valió.',
+      detalle: 'Conectamos campañas, llamadas y oportunidades con el ingreso facturado. La conversación deja de ser sobre clics y pasa a ser sobre pesos.',
+      puntos: ['Origen registrado por oportunidad', 'Conciliación con facturación', 'Reporte único para dirección']
+    }
+  ];
+
+  PASOS = [
+    { d: 900,  fase: 'espera',     texto: 'Llamada entrante · número no registrado' },
+    { d: 800,  fase: 'llamada',    texto: 'Contesta el agente de voz' },
+    { d: 1100, fase: 'llamada',    texto: 'Intención detectada · reservar mesa' },
+    { d: 1100, fase: 'llamada',    texto: 'Consulta de disponibilidad en la base' },
+    { d: 1200, fase: 'llamada',    texto: 'Propone jueves 4 · 18:30 · 4 personas' },
+    { d: 1200, fase: 'llamada',    texto: 'Escribe la reserva #A-2291', folio: '#A-2291' },
+    { d: 900,  fase: 'confirmada', texto: 'Reserva confirmada en 00:42' },
+    { d: 1300, fase: 'confirmada', texto: 'Aviso por WhatsApp preparado' },
+    { d: 2800, fase: 'reinicio',   texto: null }
+  ];
+
+  CASOS = [
+    {
+      giro: 'Restaurantes', titulo: '[ Nombre del cliente autorizado ]',
+      problema: 'Las llamadas de reserva entraban en horas de servicio y nadie podía contestarlas. La agenda vivía en una libreta y se encimaban mesas.',
+      instalado: 'Agente de voz en el número principal, base de reservas con restricción de traslape y aviso por WhatsApp al comensal.',
+      resultado: '[ Resultado por confirmar ]', periodo: '[ Periodo medido ]',
+      integraciones: 'Telefonía SIP · WhatsApp · Calendario'
+    },
+    {
+      giro: 'Consultorios', titulo: '[ Nombre del cliente autorizado ]',
+      problema: 'Una recepción atendía teléfono, pacientes y confirmaciones al mismo tiempo. Las citas fuera de horario se perdían.',
+      instalado: 'Atención telefónica continua, confirmación y recordatorio automáticos, y expediente de cada llamada.',
+      resultado: '[ Resultado por confirmar ]', periodo: '[ Periodo medido ]',
+      integraciones: 'Telefonía SIP · WhatsApp · CRM'
+    },
+    {
+      giro: 'Clínicas', titulo: '[ Nombre del cliente autorizado ]',
+      problema: 'Tres sucursales con agendas separadas y sin visibilidad conjunta de la ocupación.',
+      instalado: 'Base única de disponibilidad, ruteo por sucursal y tablero de ocupación para dirección.',
+      resultado: '[ Resultado por confirmar ]', periodo: '[ Periodo medido ]',
+      integraciones: 'Calendario · Base de datos · Tablero'
+    },
+    {
+      giro: 'Empresas de servicios', titulo: '[ Nombre del cliente autorizado ]',
+      problema: 'Las campañas generaban llamadas, pero nadie sabía cuáles terminaban en venta.',
+      instalado: 'Registro de origen por llamada y conciliación con el ingreso facturado.',
+      resultado: '[ Resultado por confirmar ]', periodo: '[ Periodo medido ]',
+      integraciones: 'CRM · Facturación · Analítica'
+    }
+  ];
+
+  componentDidMount() {
+    document.documentElement.lang = 'es-MX';
+    this._onResize = () => {
+      if (window.innerWidth !== this.state.ancho) this.setState({ ancho: window.innerWidth });
+    };
+    this._onResize();
+    window.addEventListener('resize', this._onResize);
+    this._onScroll = () => {
+      const alto = window.scrollY > 40 ? 68 : 92;
+      if (alto !== this.state.navAlto) this.setState({ navAlto: alto });
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+
+    this._reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (this._reduce) {
+      this.setState({
+        fase: 'confirmada', ms: 42000, folio: '#A-2291',
+        bitacora: this.PASOS.filter(p => p.texto).map((p, i) => ({ t: this.fmt(i * 5200), texto: p.texto }))
+      });
+    } else {
+      this.correr(0);
+      this._tick = setInterval(() => {
+        if (this.state.fase === 'llamada') this.setState(s => ({ ms: s.ms + 760 }));
+      }, 100);
+      this.observar();
+    }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this._tick);
+    clearTimeout(this._to);
+    window.removeEventListener('scroll', this._onScroll);
+    window.removeEventListener('resize', this._onResize);
+    if (this._io) this._io.disconnect();
+  }
+
+  observar() {
+    if (!('IntersectionObserver' in window)) return;
+    this._io = new IntersectionObserver(entradas => {
+      entradas.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.style.transition = 'opacity 620ms cubic-bezier(.2,.7,.3,1), transform 620ms cubic-bezier(.2,.7,.3,1)';
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'none';
+        this._io.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -10% 0px' });
+    const preparar = () => {
+      document.querySelectorAll('[data-reveal]:not([data-listo])').forEach(el => {
+        el.setAttribute('data-listo', '1');
+        const hermanos = Array.from(el.parentElement.querySelectorAll(':scope > [data-reveal]'));
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(16px)';
+        el.style.transitionDelay = Math.min(hermanos.indexOf(el), 4) * 90 + 'ms';
+        this._io.observe(el);
+      });
+    };
+    setTimeout(preparar, 80);
+    setTimeout(preparar, 900);
+  }
+
+  fmt(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  correr(i) {
+    const paso = this.PASOS[i % this.PASOS.length];
+    this._to = setTimeout(() => {
+      if (paso.fase === 'reinicio') {
+        this.setState({ fase: 'espera', ms: 0, bitacora: [], folio: '—' });
+      } else {
+        this.setState(s => {
+          const ms = paso.fase === 'confirmada' && s.fase !== 'confirmada' ? 42000 : s.ms;
+          return {
+            fase: paso.fase, ms, folio: paso.folio || s.folio,
+            bitacora: [...s.bitacora, { t: this.fmt(ms), texto: paso.texto }].slice(-6)
+          };
+        });
+      }
+      this.correr(i + 1);
+    }, paso.d);
+  }
+
+  enviar = (e) => {
+    e.preventDefault();
+    if (this.state.form === 'enviando') return;
+    this.setState({ form: 'enviando' });
+    setTimeout(() => this.setState({ form: 'aviso' }), 1100);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const movil = s.ancho < 1000;
+    return {
+      esMovil: movil,
+      navDisplay: movil ? 'none' : 'flex',
+      menuVisible: movil && s.menu,
+      menuAbierto: s.menu ? 'true' : 'false',
+      alternarMenu: () => this.setState({ menu: !s.menu }),
+      cerrarMenu: () => this.setState({ menu: false }),
+      verCarrusel: this.props.mostrarCarrusel ?? true,
+      pistaLogos: 'translateX(-' + s.pagina * 100 + '%)',
+      pagAnterior: () => this.setState({ pagina: s.pagina === 0 ? 1 : 0 }),
+      pagSiguiente: () => this.setState({ pagina: s.pagina === 1 ? 0 : 1 }),
+      colorPunto0: s.pagina === 0 ? '#6e9bf5' : '#2f3a4d',
+      colorPunto1: s.pagina === 1 ? '#6e9bf5' : '#2f3a4d',
+      irPagina0: () => this.setState({ pagina: 0 }),
+      irPagina1: () => this.setState({ pagina: 1 }),
+      navAlto: s.navAlto + 'px',
+      navFondo: s.navAlto === 92 ? '0' : '.94',
+      navFilete: s.navAlto === 92 ? 'transparent' : '#212a3a',
+      practica: this.PRACTICA.map((p, i) => ({
+        indice: p.indice, titulo: p.titulo, resumen: p.resumen, detalle: p.detalle, puntos: p.puntos,
+        expandido: i === s.abierto ? 'true' : 'false',
+        filas: i === s.abierto ? '1fr' : '0fr',
+        escalaCruz: i === s.abierto ? 0 : 1,
+        colorIndice: i === s.abierto ? '#6e9bf5' : '#66718a',
+        alternar: () => this.setState({ abierto: s.abierto === i ? -1 : i })
+      })),
+      casos: this.CASOS.map((c, i) => ({
+        giro: c.giro, titulo: c.titulo,
+        fondo: i === s.caso ? '#111723' : 'transparent',
+        filete: i === s.caso ? '#6e9bf5' : 'transparent',
+        elegir: () => this.setState({ caso: i })
+      })),
+      caso: this.CASOS[s.caso],
+      reloj: this.fmt(s.ms),
+      folio: s.folio,
+      bitacora: s.bitacora,
+      esEspera: s.fase === 'espera',
+      esLlamada: s.fase === 'llamada',
+      esConfirmada: s.fase === 'confirmada',
+      enviar: this.enviar,
+      textoBoton: s.form === 'enviando' ? 'Enviando…' : s.form === 'aviso' ? 'Reintentar envío' : 'Agendar una demostración',
+      formAviso: s.form === 'aviso'
+    };
+  }
+}
+</script>
+</body>
+</html>

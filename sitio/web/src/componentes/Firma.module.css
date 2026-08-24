@@ -1,0 +1,71 @@
+.entrada {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(28px, 4vw, 72px);
+}
+
+.entrada > p:first-child {
+  margin-top: 12px;
+}
+
+.texto {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+
+.declaracion {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(24px, 2.9vw, 44px);
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  color: var(--hueso);
+  margin: 0;
+  max-width: 34ch;
+}
+
+.cuerpo {
+  font-size: 17.5px;
+  line-height: 1.62;
+  color: var(--acero);
+  margin: 34px 0 0;
+  max-width: 62ch;
+}
+
+.pilares {
+  margin-top: clamp(52px, 7vw, 104px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1px;
+  background: var(--linea);
+}
+
+.pilar {
+  background: var(--tinta);
+  padding: clamp(28px, 3vw, 44px) clamp(24px, 2.6vw, 40px);
+}
+
+.pilar:first-child {
+  padding-left: 0;
+}
+
+.pilar:last-child {
+  padding-right: 0;
+}
+
+.pilarRotulo {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--acero-2);
+  margin: 0 0 20px;
+}
+
+.pilarTexto {
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--hueso);
+  margin: 0;
+  max-width: 32ch;
+}

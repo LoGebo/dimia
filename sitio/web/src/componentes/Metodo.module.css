@@ -1,0 +1,47 @@
+.etapas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: clamp(28px, 3vw, 48px);
+}
+
+.etapa {
+  border-top: 1px solid var(--linea);
+  padding-top: 26px;
+}
+
+.etapa[data-primera="1"] {
+  border-top-color: var(--acento);
+}
+
+.indice {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--hueso);
+  margin: 0 0 24px;
+}
+
+.indice[data-primera="1"] {
+  color: var(--acento);
+}
+
+.duracion {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acero-2);
+  margin: 0 0 16px;
+}
+
+.texto {
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--acero);
+  margin: 0;
+  max-width: 34ch;
+}

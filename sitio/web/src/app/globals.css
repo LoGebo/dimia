@@ -1,0 +1,156 @@
+/* Tokens de marca Dimia — la fuente es marca/BRANDING.md */
+:root {
+  --tinta: #0b0f17;
+  --panel: #111723;
+  --panel-2: #161d2b;
+  --linea: #212a3a;
+  --linea-2: #2f3a4d;
+  --hueso: #eef1f7;
+  --acero: #97a2b5;
+  --acero-2: #66718a;
+  --acento: #6e9bf5;
+  --acento-hondo: #1f47c4;
+  --laton: #c8a45c;
+  --laton-papel: #a8853f;
+  --papel: #f2f4f8;
+  --bueno: #3fb68b;
+  --alerta: #e0a838;
+  --critico: #e2685c;
+
+  /* superficie clara */
+  --papel-tinta: #0b0f17;
+  --papel-tinta-2: #3f4a5c;
+  --papel-linea: #c9d0dc;
+  --papel-bueno: #12805c;
+  --papel-critico: #c4392f;
+
+  --ancho: 1440px;
+  --margen: clamp(20px, 4vw, 64px);
+  --seccion: clamp(72px, 11vw, 168px);
+
+  --curva: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-radius: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 92px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--tinta);
+  color: var(--hueso);
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--fuente-sans), ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--hueso);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--acento);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input {
+  font: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--acento);
+  color: #08111f;
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 3px;
+}
+
+/* ── animaciones ─────────────────────────────────────────── */
+
+@keyframes revelaMarca {
+  from { clip-path: inset(0 100% 0 0); opacity: 0.4; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes sube {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes cuenta {
+  0%, 100% { opacity: 0.28; }
+  50%      { opacity: 1; }
+}
+
+@keyframes celda {
+  0%, 100% { background-color: #0b0f17; }
+  50%      { background-color: #182131; }
+}
+
+@keyframes celdaAzul {
+  0%, 100% { background-color: #0b0f17; }
+  50%      { background-color: #1e2c48; }
+}
+
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.28; }
+}
+
+/* Revelado al entrar en pantalla.
+   Solo se esconde cuando el script confirmó que puede revelarlo:
+   sin JS, con error o con movimiento reducido, el contenido se ve. */
+html[data-revelado="1"] [data-revelar] {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+html[data-revelado="1"] [data-revelar][data-visible="1"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 620ms var(--curva),
+    transform 620ms var(--curva);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  [data-anima],
+  [data-revelar] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    transition: none !important;
+  }
+}

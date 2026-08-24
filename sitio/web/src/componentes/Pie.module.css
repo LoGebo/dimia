@@ -1,0 +1,107 @@
+.pie {
+  background: var(--tinta);
+}
+
+.contenedor {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: clamp(52px, 6vw, 88px) var(--margen);
+}
+
+.columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(32px, 4vw, 72px);
+}
+
+.declaracion {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.frase {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(20px, 2.2vw, 28px);
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  color: var(--hueso);
+  margin: 28px 0 0;
+  max-width: 32ch;
+}
+
+.enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px 72px;
+}
+
+.grupo {
+  flex: 0 1 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.rotulo {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--acero-2);
+  margin: 0 0 18px;
+}
+
+.enlace,
+.enlaceMono {
+  font-size: 15px;
+  color: var(--acero);
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  transition: color 150ms ease-out;
+}
+
+.enlaceMono {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+.enlace:hover,
+.enlaceMono:hover {
+  color: var(--hueso);
+}
+
+.cierre {
+  margin-top: clamp(40px, 5vw, 72px);
+  padding-top: 26px;
+  border-top: 1px solid var(--linea);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.legal {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--acero-2);
+  margin: 0;
+}
+
+.legalEnlace {
+  color: var(--acero-2);
+}
+
+.legalEnlace:hover {
+  color: var(--hueso);
+}
+
+.remate {
+  width: 12px;
+  height: 12px;
+  background: var(--acento);
+  display: block;
+}

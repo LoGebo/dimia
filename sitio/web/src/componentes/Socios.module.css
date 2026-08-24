@@ -1,0 +1,59 @@
+.socios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(32px, 4vw, 72px);
+}
+
+.socio {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.retrato {
+  height: 260px;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  display: flex;
+  align-items: flex-end;
+  padding: 26px;
+}
+
+.iniciales {
+  font-family: var(--fuente-sans), Arial, sans-serif;
+  font-weight: 800;
+  font-size: clamp(48px, 5vw, 72px);
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+  color: var(--hueso);
+}
+
+.iniciales[data-acento="1"] {
+  color: var(--acento);
+}
+
+.nombre {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: 26px;
+  line-height: 1.14;
+  letter-spacing: -0.012em;
+  margin: 26px 0 8px;
+  color: var(--hueso);
+}
+
+.cargo {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--acero-2);
+  margin: 0 0 16px;
+}
+
+.trayectoria {
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--acero);
+  margin: 0;
+  max-width: 36ch;
+}
