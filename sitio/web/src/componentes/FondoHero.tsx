@@ -36,17 +36,6 @@ const CELDAS = Array.from({ length: TOTAL }, (_, i) => {
   };
 });
 
-/* Cuadros sueltos que van a la deriva por detrás de la retícula.
-   Lentos y tenues: dan movimiento continuo sin robarle atención al texto. */
-const DERIVA = Array.from({ length: 14 }, (_, i) => ({
-  izquierda: `${(i * 71) % 96}%`,
-  arriba: `${(i * 37) % 88}%`,
-  lado: 4 + ((i * 5) % 6),
-  duracion: 26 + ((i * 9) % 30),
-  retraso: -((i * 13) % 26),
-  azul: i % 6 === 2,
-}));
-
 /* Los que viajan hacia abajo: filetes de un píxel y un cuadrado azul. */
 const VIAJEROS = [
   { izquierda: "18%", duracion: 15, retraso: 0, cuadro: false },
@@ -77,23 +66,6 @@ export function FondoHero({ variante = "a" }: { variante?: Fondo }) {
           />
         ))}
       </div>
-
-      {DERIVA.map((d, i) => (
-        <span
-          key={`deriva-${i}`}
-          data-anima="1"
-          className={css.deriva}
-          data-azul={d.azul ? "1" : undefined}
-          style={{
-            left: d.izquierda,
-            top: d.arriba,
-            width: d.lado,
-            height: d.lado,
-            animationDuration: `${d.duracion}s`,
-            animationDelay: `${d.retraso}s`,
-          }}
-        />
-      ))}
 
       {barrido &&
         VIAJEROS.map((v, i) => (
