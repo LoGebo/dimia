@@ -43,6 +43,7 @@ export function AvanceListo({ avance }: { avance: Avance }) {
           </Link>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12px] text-tinta-3">Falta</span>
             {faltantes.slice(0, 3).map((r) => (
               <Link
                 key={r.clave}
@@ -50,7 +51,7 @@ export function AvanceListo({ avance }: { avance: Avance }) {
                 title={r.ayuda}
                 className="border border-linea px-2.5 py-1 text-[12px] text-tinta-2 transition hover:border-acento hover:text-acento"
               >
-                {r.nombre}
+                {r.nombre} →
               </Link>
             ))}
             {faltantes.length > 3 ? (
