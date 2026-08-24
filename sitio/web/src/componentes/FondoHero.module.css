@@ -25,15 +25,6 @@
   85%      { background-color: #111009; }
 }
 
-/* Cuadros sueltos: cruzan en diagonal, lento, y vuelven a entrar. */
-@keyframes deriva {
-  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
-  12%  { opacity: 0.5; }
-  50%  { transform: translate3d(26px, -34px, 0); opacity: 0.85; }
-  88%  { opacity: 0.4; }
-  100% { transform: translate3d(52px, -68px, 0); opacity: 0; }
-}
-
 /* La onda: la celda se enciende y se apaga. El retraso por posición
    la hace cruzar en diagonal. */
 @keyframes ondaCelda {
@@ -93,17 +84,6 @@
 
 .celdaOnda[data-azul="1"] {
   animation-name: ondaCeldaAzul;
-}
-
-.deriva {
-  position: absolute;
-  background: #212a3a;
-  animation: deriva linear infinite;
-}
-
-.deriva[data-azul="1"] {
-  background: var(--acento);
-  opacity: 0.35;
 }
 
 /* Filete de un píxel que recorre la altura del hero. */
@@ -176,15 +156,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .celda,
-  .deriva,
   .celdaOnda,
   .viajeroFilete,
   .viajeroCuadro {
     animation: none;
   }
   .viajeroFilete,
-  .viajeroCuadro,
-  .deriva {
+  .viajeroCuadro {
     display: none;
   }
 }
