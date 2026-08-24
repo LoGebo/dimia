@@ -2,7 +2,7 @@ import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
 import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { guardarNegocio, guardarPrompt } from "@/lib/acciones";
+import { guardarNegocio, guardarPrompt, guardarSaludo } from "@/lib/acciones";
 import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
 import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { baseDeFabrica, construirPrompt, saludo, saludoDelGiro } from "@/lib/prompt";
@@ -123,17 +123,6 @@ export default async function Agente() {
                     </Campo>
                   </div>
                   <Campo
-                    etiqueta="Primera frase de la llamada"
-                    ayuda="Lo primero que oye quien llama. Déjalo vacío para usar el saludo del giro. Escribe {nombre} donde quieras que diga el nombre del negocio."
-                  >
-                    <AreaTexto
-                      name="saludo"
-                      defaultValue={config.saludo ?? ""}
-                      rows={2}
-                      placeholder={saludoDelGiro(plantilla, config.vertical).replaceAll("{nombre}", config.nombre)}
-                    />
-                  </Campo>
-                  <Campo
                     etiqueta="Indicaciones del negocio"
                     ayuda="Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt."
                   >
@@ -153,8 +142,26 @@ export default async function Agente() {
 
         <div className="space-y-4">
           <Tarjeta>
-            <TarjetaCabecera titulo="Cómo contesta" descripcion="Primera frase de cada llamada." />
-            <p className="px-4 py-4 text-[15px] leading-relaxed text-tinta">“{saludo(config, plantilla)}”</p>
+            <TarjetaCabecera
+              titulo="Cómo contesta"
+              descripcion="Primera frase de cada llamada. Vacío usa la del giro."
+              accion={config.saludo?.trim() ? <Insignia tono="alerta">Propio</Insignia> : null}
+            />
+            <p className="border-b border-linea px-4 py-4 text-[15px] leading-relaxed text-tinta">
+              “{saludo(config, plantilla)}”
+            </p>
+            <Formulario accion={guardarSaludo} className="space-y-3 px-4 py-4">
+              <AreaTexto
+                name="saludo"
+                defaultValue={config.saludo ?? ""}
+                rows={2}
+                placeholder={saludoDelGiro(plantilla, config.vertical).replaceAll("{nombre}", config.nombre)}
+              />
+              <p className="text-[12px] text-tinta-3">
+                Puedes escribir <code className="font-mono">{"{nombre}"}</code> y se sustituye por el nombre del negocio.
+              </p>
+              <BotonEnviar>Guardar saludo</BotonEnviar>
+            </Formulario>
           </Tarjeta>
 
           <Tarjeta>

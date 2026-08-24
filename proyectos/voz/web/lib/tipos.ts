@@ -19,6 +19,7 @@ export type Negocio = {
   llm_modelo: string | null;
   instrucciones_extra: string | null;
   prompt_base: string | null;
+  tipos_catalogo: string[];
   saludo: string | null;
   slot_granularidad_min: number;
   anticipacion_min: number;

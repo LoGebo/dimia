@@ -170,7 +170,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
                 telefono_escalamiento = $5, voz_id = $6, slot_granularidad_min = $7,
                 anticipacion_min = $8, horizonte_dias = $9, tts_proveedor = $10,
                 tts_ajustes = $11::jsonb, instrucciones_extra = $12,
-                llm_proveedor = $13, llm_modelo = $14, saludo = $15
+                llm_proveedor = $13, llm_modelo = $14
            where id = $1`,
         [
           id,
@@ -187,7 +187,6 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
           opcional(fd, "instrucciones_extra"),
           proveedorLlm,
           opcional(fd, "llm_modelo"),
-          opcional(fd, "saludo"),
         ],
       );
     });
@@ -196,6 +195,69 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
   }
   refrescarPanel();
   return { ok: "Configuración guardada." };
+}
+
+/** La primera frase de cada llamada. Vacío usa la de la plantilla del vertical. */
+export async function guardarSaludo(_previo: Estado, fd: FormData): Promise<Estado> {
+  const propio = opcional(fd, "saludo");
+  try {
+    await datos(async (q, id) => {
+      await q("update tenant set saludo = $2 where id = $1", [id, propio]);
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: propio ? "Saludo guardado." : "Saludo de fábrica restaurado." };
+}
+
+/** Crea un grupo del catálogo. El nombre se guarda en minúscula, sin espacios. */
+export async function agregarGrupoCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
+  const crudo = texto(fd, "grupo").trim().toLowerCase();
+  const grupo = crudo.replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
+  if (!grupo) return { error: "El grupo necesita un nombre." };
+  try {
+    await datos(async (q, id) => {
+      await q(
+        `update tenant
+            set tipos_catalogo = (select array_agg(distinct t)
+                                    from unnest(tipos_catalogo || array[$2]) as t)
+          where id = $1`,
+        [id, grupo],
+      );
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: `Grupo "${grupo}" agregado.` };
+}
+
+/** Quita un grupo. Solo si ya no tiene items: si los tiene, se avisa. */
+export async function quitarGrupoCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
+  const grupo = texto(fd, "grupo");
+  try {
+    let conItems = 0;
+    await datos(async (q, id) => {
+      const filas = await q<{ total: string }>(
+        "select count(*)::text as total from catalogo_item where tenant_id = $1 and tipo = $2",
+        [id, grupo],
+      );
+      conItems = Number(filas[0]?.total ?? 0);
+      if (conItems > 0) return;
+      await q("update tenant set tipos_catalogo = array_remove(tipos_catalogo, $2) where id = $1", [
+        id,
+        grupo,
+      ]);
+    });
+    if (conItems > 0) {
+      return { error: `"${grupo}" todavía tiene ${conItems} items. Muévelos o bórralos primero.` };
+    }
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: "Grupo quitado." };
 }
 
 /**
