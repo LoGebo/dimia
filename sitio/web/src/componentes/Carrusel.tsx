@@ -15,12 +15,14 @@ export function Carrusel() {
     paginas.push(CLIENTES.slice(i, i + POR_PAGINA));
   }
   const total = Math.max(paginas.length, 1);
+  const navegable = total > 1;
 
   return (
     <section aria-label="Confían en Dimia" className={ui.seccion}>
       <div className={css.contenedor}>
         <div className={css.barra}>
           <p data-revelar className={ui.rotulo}>Confían en Dimia</p>
+          {navegable ? (
           <div className={css.controles}>
             <button
               type="button"
@@ -39,6 +41,7 @@ export function Carrusel() {
               <Flecha />
             </button>
           </div>
+          ) : null}
         </div>
 
         <div data-revelar className={css.ventana}>
@@ -62,6 +65,7 @@ export function Carrusel() {
 
         <div className={css.pie}>
           <p className={css.nota}>{NOTA_CLIENTES}</p>
+          {navegable ? (
           <div className={css.puntos}>
             {paginas.map((_, i) => (
               <button
@@ -76,6 +80,7 @@ export function Carrusel() {
               </button>
             ))}
           </div>
+          ) : null}
         </div>
       </div>
     </section>

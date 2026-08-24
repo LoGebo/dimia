@@ -168,20 +168,18 @@ export type Cliente = { nombre: string; logo: string | null };
 export const MOSTRAR_CARRUSEL = true;
 
 export const CLIENTES: Cliente[] = [
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
+  // El logotipo se muestra en imagen cuando exista el archivo autorizado en
+  // public/clientes/. Sin archivo, el carrusel escribe el nombre: se ve
+  // deliberado, no roto.
+  { nombre: "Arca Continental", logo: null },
+  { nombre: "Heineken", logo: null },
+  { nombre: "Atos", logo: null },
+  { nombre: "Tecnológico de Monterrey", logo: null },
+  { nombre: "Universidad Regiomontana", logo: null },
 ];
 
 export const NOTA_CLIENTES =
-  "Consultorios · Restaurantes · Clínicas · Salones · Despachos. Los logotipos se publican solo con autorización por escrito.";
+  "Corporativos, universidades y negocios con operación telefónica. Cada logotipo se publica con autorización del cliente.";
 
 export const PRODUCTO = {
   estado: "En operación",
