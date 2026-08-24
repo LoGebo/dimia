@@ -19,13 +19,17 @@ create table if not exists usuario_panel (
 
 -- El panel lee esta tabla con conexion elevada, nunca como el usuario de la
 -- sesion: nadie autenticado debe poder leer hashes ajenos ni el propio.
--- anon solo existe en Supabase; en una base local el revoke tronaria.
+-- Los roles authenticated y anon los trae Supabase; una base local o la de
+-- integracion continua puede no tenerlos, y ahi el revoke tronaria.
 do $$
+declare
+  v_rol text;
 begin
-  execute 'revoke all on usuario_panel from authenticated';
-  if exists (select 1 from pg_roles where rolname = 'anon') then
-    execute 'revoke all on usuario_panel from anon';
-  end if;
+  foreach v_rol in array array['authenticated', 'anon'] loop
+    if exists (select 1 from pg_roles where rolname = v_rol) then
+      execute format('revoke all on usuario_panel from %I', v_rol);
+    end if;
+  end loop;
 end $$;
 
 -- Arrastra lo que ya existiera con el nombre viejo, para no perder las cuentas
