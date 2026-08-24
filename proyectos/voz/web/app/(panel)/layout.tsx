@@ -3,15 +3,18 @@ import { contexto } from "@/lib/sesion";
 import { negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
 import { MarcaDimia } from "@/components/marca";
+import { AvanceListo } from "@/components/avance-listo";
 import { Navegacion } from "@/components/navegacion";
 import { SelectorNegocio } from "@/components/selector-negocio";
 import { BotonTema } from "@/components/tema";
 import { Insignia } from "@/components/ui/primitivos";
 import { telefono } from "@/lib/formato";
+import { avance } from "@/lib/listo";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const { membresias, negocioId, usuario, rol, giro } = await contexto();
   const actual = await negocio();
+  const progreso = await avance(giro.herramientas);
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[232px_1fr]">
@@ -51,7 +54,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </aside>
-      <main className="min-w-0">{children}</main>
+      <main className="min-w-0">
+        <AvanceListo avance={progreso} />
+        {children}
+      </main>
     </div>
   );
 }
