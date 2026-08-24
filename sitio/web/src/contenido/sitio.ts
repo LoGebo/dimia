@@ -15,6 +15,14 @@ export const FIRMA = {
   anio: 2026,
 } as const;
 
+/**
+ * Fondo del hero. Se prueban las cuatro en local con ?fondo=a|b|c|d
+ * y se fija aquí la elegida.
+ *   a · Retícula        b · Barrido
+ *   c · Onda            d · Onda y barrido
+ */
+export const FONDO_HERO = "d" as const;
+
 export const NAVEGACION = [
   { href: "#practica", texto: "Práctica" },
   { href: "#metodo", texto: "Método" },
