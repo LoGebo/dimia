@@ -7,10 +7,10 @@ import css from "./FondoHero.module.css";
 export type Fondo = "a" | "b" | "c" | "d";
 
 export const FONDOS: { id: Fondo; nombre: string; nota: string }[] = [
-  { id: "a", nombre: "Retícula", nota: "La actual: celdas que respiran sin patrón." },
-  { id: "b", nombre: "Barrido", nota: "La retícula, más filetes y un cuadrado que descienden." },
-  { id: "c", nombre: "Onda", nota: "Las celdas se encienden en diagonal, como un dato recorriendo." },
-  { id: "d", nombre: "Onda y barrido", nota: "La onda con los viajeros encima. La más viva." },
+  { id: "a", nombre: "Color", nota: "Todas las celdas cambian de color, cada una a su ritmo." },
+  { id: "b", nombre: "Color y barrido", nota: "Lo anterior, más filetes y un cuadrado que descienden." },
+  { id: "c", nombre: "Onda", nota: "Las celdas se encienden en diagonal. Se ve el patrón." },
+  { id: "d", nombre: "Onda y barrido", nota: "La onda con los viajeros encima." },
 ];
 
 const COLUMNAS = 10;
@@ -28,7 +28,8 @@ const CELDAS = Array.from({ length: TOTAL }, (_, i) => {
   return {
     duracion,
     retraso: ((i * 7) % 100) / 100 * duracion,
-    azul: i % 17 === 8,
+    // el tono se reparte con un salto primo: sin franjas ni diagonales
+    tono: (i * 13) % 9 === 4 ? "azul" : (i * 13) % 23 === 7 ? "laton" : undefined,
     // en diagonal: la onda cruza sin dejar hueco entre pasadas
     retrasoOnda: (((columna + renglon) % 12) * 0.35).toFixed(2),
     azulOnda: (columna + renglon) % 7 === 3,
@@ -71,7 +72,8 @@ export function FondoHero({ variante = "a" }: { variante?: Fondo }) {
                 ? { animationDelay: `${c.retrasoOnda}s` }
                 : { animationDuration: `${c.duracion}s`, animationDelay: `${c.retraso.toFixed(2)}s` }
             }
-            data-azul={(onda ? c.azulOnda : c.azul) ? "1" : undefined}
+            data-azul={onda && c.azulOnda ? "1" : undefined}
+            data-tono={onda ? undefined : c.tono}
           />
         ))}
       </div>

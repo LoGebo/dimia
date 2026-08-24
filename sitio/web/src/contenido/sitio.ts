@@ -18,10 +18,10 @@ export const FIRMA = {
 /**
  * Fondo del hero. Se prueban las cuatro en local con ?fondo=a|b|c|d
  * y se fija aquí la elegida.
- *   a · Retícula        b · Barrido
- *   c · Onda            d · Onda y barrido
+ *   a · Color            b · Color y barrido
+ *   c · Onda             d · Onda y barrido
  */
-export const FONDO_HERO = "d" as const;
+export const FONDO_HERO = "b" as const;
 
 export const NAVEGACION = [
   { href: "#practica", texto: "Práctica" },
