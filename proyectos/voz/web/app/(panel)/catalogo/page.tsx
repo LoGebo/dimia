@@ -1,8 +1,9 @@
 import { Encabezado } from "@/components/encabezado";
 import { FormularioItem } from "@/components/item-catalogo";
 import { ProbadorCatalogo } from "@/components/probador-catalogo";
-import { Boton, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { alternarDisponible, eliminarItemCatalogo } from "@/lib/acciones";
+import { BotonEnviar, Formulario } from "@/components/formulario";
+import { Boton, Campo, Entrada, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { agregarGrupoCatalogo, alternarDisponible, eliminarItemCatalogo, quitarGrupoCatalogo } from "@/lib/acciones";
 import { catalogo, negocio, recursos } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
 import { moneda } from "@/lib/formato";
@@ -14,7 +15,8 @@ export default async function Catalogo() {
 
   const sugeridos = TIPOS_POR_VERTICAL[config.vertical] ?? ["paquete"];
   const presentes = [...new Set(items.map((i) => i.tipo))];
-  const tipos = [...new Set([...sugeridos, ...presentes])];
+  const propios = config.tipos_catalogo ?? [];
+  const tipos = [...new Set([...sugeridos, ...propios, ...presentes])];
   const activos = listaRecursos.filter((r) => r.activo);
   const agotados = items.filter((i) => !i.disponible).length;
 
@@ -62,6 +64,38 @@ export default async function Catalogo() {
               </Tarjeta>
             );
           })}
+
+          <Tarjeta>
+            <TarjetaCabecera
+              titulo="Agregar un grupo"
+              descripcion="Un grupo nuevo para acomodar lo que ofreces: postres, extras, promociones."
+            />
+            <Formulario accion={agregarGrupoCatalogo} className="flex flex-wrap items-end gap-3 px-4 py-4" reiniciar>
+              <div className="min-w-0 flex-1">
+                <Campo etiqueta="Nombre del grupo" ayuda="Una palabra en singular: postre, extra, promocion.">
+                  <Entrada name="grupo" placeholder="postre" required />
+                </Campo>
+              </div>
+              <BotonEnviar>Agregar grupo</BotonEnviar>
+            </Formulario>
+            {propios.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2 border-t border-linea px-4 py-3">
+                <span className="etiqueta">Tuyos</span>
+                {propios.map((g) => (
+                  <Formulario key={g} accion={quitarGrupoCatalogo} className="inline-flex">
+                    <input type="hidden" name="grupo" value={g} />
+                    <button
+                      type="submit"
+                      className="border border-linea px-2 py-1 text-[12px] text-tinta-2 transition hover:border-critico hover:text-critico"
+                      title="Quitar el grupo"
+                    >
+                      {etiquetaTipo(g, true)} ×
+                    </button>
+                  </Formulario>
+                ))}
+              </div>
+            ) : null}
+          </Tarjeta>
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-[76px] xl:self-start">
