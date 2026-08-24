@@ -74,7 +74,7 @@ export async function usuarioActual(): Promise<{ id: string; email: string } | n
   const id = token ? verificar(token) : null;
   if (!id) return null;
   const filas = await elevado((q) =>
-    q<{ email: string }>("select email from dev_usuario where id = $1", [id]),
+    q<{ email: string }>("select email from usuario_panel where id = $1", [id]),
   );
   const fila = filas[0];
   return fila ? { id, email: fila.email } : null;
@@ -83,7 +83,7 @@ export async function usuarioActual(): Promise<{ id: string; email: string } | n
 export async function iniciarSesionLocal(email: string, password: string): Promise<string | null> {
   const filas = await elevado((q) =>
     q<{ id: string }>(
-      "select id from dev_usuario where email = lower(trim($1)) and password_hash = crypt($2, password_hash)",
+      "select id from usuario_panel where email = lower(trim($1)) and password_hash = crypt($2, password_hash)",
       [email, password],
     ),
   );
@@ -98,7 +98,7 @@ export async function registrarLocal(email: string, password: string): Promise<s
   await elevado(async (q) => {
     await q("insert into auth.users (id) values ($1)", [id]);
     await q(
-      "insert into dev_usuario (id, email, password_hash) values ($1, lower(trim($2)), crypt($3, gen_salt('bf')))",
+      "insert into usuario_panel (id, email, password_hash) values ($1, lower(trim($2)), crypt($3, gen_salt('bf')))",
       [id, email, password],
     );
   });

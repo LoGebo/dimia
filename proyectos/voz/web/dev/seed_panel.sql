@@ -15,13 +15,8 @@ grant execute on all functions in schema public to authenticated;
 alter default privileges in schema public
   grant select, insert, update, delete on tables to authenticated;
 
-create table if not exists dev_usuario (
-  id            uuid primary key references auth.users(id) on delete cascade,
-  email         text unique not null,
-  password_hash text not null,
-  creado        timestamptz not null default now()
-);
-revoke all on dev_usuario from authenticated;
+-- La tabla la crea la migracion 20260824060000_usuario_del_panel.sql.
+-- Aqui solo se siembra el dueño de demostracion.
 
 do $$
 declare
@@ -45,7 +40,7 @@ declare
     'Luis Fernando Cano','Regina Trevino','Emilio Bautista','Carmen Aguirre','Diego Sandoval'];
 begin
   insert into auth.users (id) values (v_usuario) on conflict do nothing;
-  insert into dev_usuario (id, email, password_hash)
+  insert into usuario_panel (id, email, password_hash)
   values (v_usuario, 'dueno@demo.mx', crypt('demo1234', gen_salt('bf')))
   on conflict (email) do nothing;
 

@@ -53,7 +53,7 @@ npm run dev
 daría hecho:
 
 - el rol `authenticated` y sus permisos sobre las tablas y funciones,
-- la tabla `dev_usuario` (correo + hash bcrypt) que sustituye a `auth.users`,
+- la tabla `usuario_panel` (correo + hash bcrypt) que sustituye a `auth.users`,
 - membresías `owner` del usuario demo sobre todos los tenants,
 - reservas de dos semanas y treinta días de `call_log` para que las métricas
   y la agenda tengan algo que mostrar,
