@@ -93,12 +93,19 @@ export default async function Agente() {
                     </Selector>
                   </Campo>
                   <div className="grid grid-cols-2 gap-3">
+                    <Campo etiqueta="Transferir a" ayuda="A dónde pasa las llamadas difíciles.">
+                      <Entrada
+                        name="telefono_escalamiento"
+                        defaultValue={config.telefono_escalamiento ?? ""}
+                        placeholder="+52..."
+                      />
+                    </Campo>
                   <Campo
                     etiqueta="Número de entrada"
                     ayuda={
                       progreso.puedeActivarLinea
                         ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
-                        : `Se habilita cuando termines lo que falta (${progreso.cumplidos} de ${progreso.total}). Antes de eso el agente contestaría a medias.`
+                        : `Bloqueado hasta terminar lo que falta (${progreso.cumplidos} de ${progreso.total}). Antes de eso el agente contestaría a medias.`
                     }
                   >
                     <Entrada
@@ -108,13 +115,6 @@ export default async function Agente() {
                       disabled={!progreso.puedeActivarLinea && !config.telefono_entrada}
                     />
                   </Campo>
-                    <Campo etiqueta="Transferir a" ayuda="A dónde pasa las llamadas difíciles.">
-                      <Entrada
-                        name="telefono_escalamiento"
-                        defaultValue={config.telefono_escalamiento ?? ""}
-                        placeholder="+52..."
-                      />
-                    </Campo>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <Campo etiqueta="Cada (min)" ayuda="Salto entre horarios.">

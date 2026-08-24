@@ -72,7 +72,7 @@ export function Campo({
 }
 
 const baseCampo =
-  "w-full rounded-md border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20";
+  "w-full rounded-md border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
 
 export function Entrada({ className = "", ...props }: ComponentProps<"input">) {
   return <input {...props} className={`${baseCampo} ${className}`} />;
