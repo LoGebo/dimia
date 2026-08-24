@@ -15,14 +15,14 @@ export function Navegacion({ herramientas }: { herramientas: Herramienta[] }) {
           <Link
             key={s.href}
             href={s.href}
-            className={`rounded-md px-2.5 py-1.5 text-[13px] transition ${
+            className={`border-l-2 px-2.5 py-1.5 text-[13px] transition ${
               activo
-                ? "bg-acento-suave font-medium text-acento"
-                : "text-tinta-2 hover:bg-panel-2 hover:text-tinta"
+                ? "border-acento bg-panel-2 font-medium text-tinta"
+                : "border-transparent text-tinta-2 hover:bg-panel-2 hover:text-tinta"
             }`}
           >
             <span className="block leading-tight">{s.nombre}</span>
-            <span className={`block text-[11px] leading-tight ${activo ? "text-acento/70" : "text-tinta-3"}`}>
+            <span className={`block text-[11px] leading-tight ${activo ? "text-acento" : "text-tinta-3"}`}>
               {s.detalle}
             </span>
           </Link>

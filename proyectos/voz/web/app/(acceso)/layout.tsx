@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IconoDimia } from "@/components/marca";
 import { BotonTema } from "@/components/tema";
 
 export default function AccesoLayout({ children }: { children: React.ReactNode }) {
@@ -10,22 +11,23 @@ export default function AccesoLayout({ children }: { children: React.ReactNode }
           <Marca />
         </div>
         <div className="relative max-w-md">
-          <h1 className="text-[28px] leading-[1.15] font-semibold tracking-tight text-tinta">
+          <h1 className="font-display text-[34px] leading-[1.1] font-light tracking-[-0.012em] text-tinta">
             Tu teléfono contestado, agendado y medido.
+            <i className="cuadrado ml-1.5 align-baseline" aria-hidden="true" />
           </h1>
           <p className="mt-4 text-[13px] leading-relaxed text-tinta-2">
             El agente contesta cada llamada, consulta disponibilidad real y reserva en el momento.
             Aquí controlas qué ofrece, a qué horas y con qué recursos.
           </p>
-          <dl className="mt-8 grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-linea bg-linea">
+          <dl className="mt-8 grid grid-cols-3 gap-px overflow-hidden border border-linea bg-linea">
             {[
               ["< 15 min", "para dar de alta"],
               ["0", "dobles reservas"],
               ["24/7", "sin buzón"],
             ].map(([valor, texto]) => (
               <div key={texto} className="bg-panel px-3 py-3">
-                <dt className="numeros text-[17px] font-semibold text-tinta">{valor}</dt>
-                <dd className="mt-0.5 text-[11px] text-tinta-3">{texto}</dd>
+                <dt className="numeros font-mono text-[19px] text-tinta">{valor}</dt>
+                <dd className="etiqueta mt-1">{texto}</dd>
               </div>
             ))}
           </dl>
@@ -51,11 +53,9 @@ export default function AccesoLayout({ children }: { children: React.ReactNode }
 
 function Marca() {
   return (
-    <Link href="/" className="inline-flex items-center gap-2">
-      <span className="flex h-6 w-6 items-center justify-center rounded bg-acento text-[11px] font-bold text-acento-tinta">
-        A
-      </span>
-      <span className="text-[13px] font-semibold tracking-tight text-tinta">Agenda por voz</span>
+    <Link href="/" className="inline-flex items-center gap-2.5 text-tinta">
+      <IconoDimia tamano={22} />
+      <span className="text-[14px] font-semibold tracking-tight">Dimia Línea</span>
     </Link>
   );
 }
