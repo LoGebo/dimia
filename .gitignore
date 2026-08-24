@@ -14,8 +14,8 @@ node_modules/
 .next/
 .ruff_cache/
 *.egg-info/
-.dev/*
-!.dev/auth_stub.sql
+**/.dev/**
+!**/.dev/auth_stub.sql
 
 # artefactos de herramientas
 .playwright-mcp/
