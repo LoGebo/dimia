@@ -363,7 +363,10 @@ export function ConsolaPrueba({
         </Tarjeta>
 
         <Tarjeta>
-          <TarjetaCabecera titulo="Bitácora de la llamada" descripcion="Se escribe al colgar." />
+          <TarjetaCabecera
+            titulo="Pruebas de esta sesión"
+            descripcion="Cada llamada se registra al colgar. La más reciente, arriba."
+          />
           <LlamadasRegistradas llamadas={estado?.llamadas ?? []} />
         </Tarjeta>
       </div>

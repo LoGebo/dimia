@@ -30,6 +30,8 @@ export default async function Agente() {
     faq: listaFaq,
     plantilla,
     tiposCatalogo: tiposCatalogo.map((t) => etiquetaTipo(t, true).toLowerCase()),
+    catalogo: items,
+    catalogoTotal: items.filter((i) => i.disponible).length,
   });
   const fabrica = baseDeFabrica(config.vertical, plantilla);
   const propio = config.prompt_base?.trim() ?? "";

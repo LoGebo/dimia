@@ -38,11 +38,14 @@ class Recepcionista(Agent):
         plantilla: dict | None = None,
         tipos_catalogo: list[str] | None = None,
         horario: list[dict] | None = None,
+        catalogo: list[dict] | None = None,
+        catalogo_incompleto: bool = False,
     ) -> None:
         super().__init__(
             instructions=prompt_mod.construir(
                 tenant, servicios, faq, plantilla=plantilla,
                 tipos_catalogo=tipos_catalogo, horario=horario,
+                catalogo=catalogo, catalogo_incompleto=catalogo_incompleto,
             )
         )
         self.plantilla = plantilla
@@ -652,15 +655,24 @@ async def entrypoint(ctx: JobContext) -> None:
         await ctx.room.disconnect()
         return
 
-    servicios, faq, plantilla, tipos, horario, terminos = await asyncio.gather(
+    CATALOGO_EN_PROMPT = 80
+    (
+        servicios, faq, plantilla, tipos, horario, terminos, menu, menu_total
+    ) = await asyncio.gather(
         agenda.servicios(tenant.id),
         agenda.faq(tenant.id),
         agenda.plantilla_vertical(tenant.vertical),
         agenda.tipos_de_catalogo(tenant.id),
         agenda.horario_semanal(tenant.id),
         agenda.terminos_del_negocio(tenant.id),
+        agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
+        agenda.catalogo_cuantos(tenant.id),
     )
-    recepcionista = Recepcionista(tenant, servicios, faq, plantilla, tipos, horario)
+    recepcionista = Recepcionista(
+        tenant, servicios, faq, plantilla, tipos, horario,
+        catalogo=menu,
+        catalogo_incompleto=menu_total > len(menu),
+    )
     recepcionista.telefono = llamante
 
     session = AgentSession(
@@ -685,6 +697,32 @@ async def entrypoint(ctx: JobContext) -> None:
         resume_false_interruption=True,
         false_interruption_timeout=1.0,
     )
+
+    # Un solo renglon por turno con el desglose de la latencia. Sin esto, "esta
+    # tardando" no se puede diagnosticar: no se sabe si es el silencio que se
+    # espera, el modelo pensando o la voz tardando en salir.
+    demoras: dict[str, float] = {}
+
+    @session.on("metrics_collected")
+    def _medir(ev) -> None:
+        m = ev.metrics
+        tipo = type(m).__name__
+        if tipo == "EOUMetrics":
+            demoras["silencio"] = m.end_of_utterance_delay
+            demoras["transcripcion"] = m.transcription_delay
+        elif tipo == "LLMMetrics" and not m.cancelled:
+            demoras["modelo"] = m.ttft
+        elif tipo == "TTSMetrics" and not m.cancelled:
+            demoras["voz"] = m.ttfb
+            total = sum(demoras.get(k, 0.0) for k in ("silencio", "modelo", "voz"))
+            log.info(
+                "turno %.0f ms = silencio %.0f + modelo %.0f + voz %.0f",
+                total * 1000,
+                demoras.get("silencio", 0) * 1000,
+                demoras.get("modelo", 0) * 1000,
+                demoras.get("voz", 0) * 1000,
+            )
+            demoras.clear()
 
     await session.start(
         agent=recepcionista,

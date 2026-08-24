@@ -1,4 +1,7 @@
-import type { Faq, Negocio, PlantillaVertical, Servicio } from "@/lib/tipos";
+import type { CatalogoItem, Faq, Negocio, PlantillaVertical, Servicio } from "@/lib/tipos";
+
+/** Tope de items que caben en el prompt. El mismo numero que usa el worker. */
+const CATALOGO_EN_PROMPT = 80;
 
 const BASE = `Eres quien contesta el telefono de un negocio en Mexico. Hablas por telefono,
 no escribes. Todo lo que digas se convierte en voz tal cual.
@@ -29,6 +32,10 @@ que te devuelva una herramienta:
 QUE NUNCA HACES
 - No inventas horarios, precios, servicios, platillos ni disponibilidad. Si no
   viene de una herramienta o del contexto, no existe: consultas o transfieres.
+- NUNCA digas que algo no existe sin haberlo buscado en ese mismo turno. Si te
+  piden algo que no reconoces, por raro que suene, primero consultar_catalogo.
+  Negar de memoria y que si estuviera en el menu es el peor error que puedes
+  cometer: el cliente cuelga.
 - No prometes nada que no confirmo una herramienta.
 - No pides ni aceptas datos de tarjeta. Si quieren pagar, les llega un
   enlace de pago por WhatsApp.
@@ -91,6 +98,10 @@ export type ContextoPrompt = {
   faq: Faq[];
   plantilla: PlantillaVertical | null;
   tiposCatalogo: string[];
+  /** El menu completo. Se inyecta tal cual para que el agente no niegue de memoria. */
+  catalogo?: CatalogoItem[];
+  /** Cuantos items disponibles hay en total, para saber si la lista va recortada. */
+  catalogoTotal?: number;
 };
 
 export function saludoDelGiro(plantilla: PlantillaVertical | null, vertical?: string): string {
@@ -118,6 +129,8 @@ export function construirPrompt({
   faq,
   plantilla,
   tiposCatalogo,
+  catalogo,
+  catalogoTotal,
 }: ContextoPrompt): string {
   const ahora = new Intl.DateTimeFormat("es-MX", {
     weekday: "long",
@@ -156,7 +169,25 @@ export function construirPrompt({
     for (const f of faq) lineas.push(`  - ${f.pregunta} -> ${f.respuesta}`);
   }
 
-  if (tiposCatalogo.length > 0) {
+  const menu = (catalogo ?? []).filter((i) => i.disponible).slice(0, CATALOGO_EN_PROMPT);
+  if (menu.length > 0) {
+    lineas.push("\nMENU (esto SI existe; si te piden algo de esta lista, existe):");
+    for (const i of menu) {
+      const precio = i.precio ? ` $${Math.round(Number(i.precio))}` : "";
+      const alias = i.alias.length > 0 ? ` (tambien: ${i.alias.join(", ")})` : "";
+      lineas.push(`  - ${i.nombre}${precio} [${i.tipo}]${alias}`);
+    }
+    if ((catalogoTotal ?? menu.length) > menu.length) {
+      lineas.push(
+        "  ... hay mas. Esta lista esta recortada: si piden algo que no aparece," +
+          " buscalo con consultar_catalogo antes de decir que no.",
+      );
+    }
+    lineas.push(
+      "  Para ingredientes, alergenos o detalle de un item usa consultar_catalogo." +
+        " Los precios de arriba ya son buenos.",
+    );
+  } else if (tiposCatalogo.length > 0) {
     lineas.push(
       `\nCATALOGO: este negocio tiene informacion de ${tiposCatalogo.join(", ")}.` +
         " Usa consultar_catalogo con esos tipos cuando pregunten por eso.",
