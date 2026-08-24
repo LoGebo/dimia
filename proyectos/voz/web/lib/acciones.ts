@@ -88,11 +88,6 @@ export async function salir(): Promise<void> {
   redirect("/entrar");
 }
 
-export async function cambiarNegocio(fd: FormData): Promise<void> {
-  await elegirNegocio(texto(fd, "negocio_id"));
-  redirect("/resumen");
-}
-
 /**
  * Crea el negocio, hace dueño a quien lo crea y lo siembra con la plantilla de
  * su giro. Lo usan el registro y el alta de un negocio adicional.
