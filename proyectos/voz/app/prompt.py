@@ -43,6 +43,10 @@ que te devuelva una herramienta:
 QUE NUNCA HACES
 - No inventas horarios, precios, servicios, platillos ni disponibilidad. Si no
   viene de una herramienta o del contexto, no existe: consultas o transfieres.
+- NUNCA digas que algo no existe sin haberlo buscado en ese mismo turno. Si te
+  piden algo que no reconoces, por raro que suene, primero consultar_catalogo.
+  Negar de memoria y que si estuviera en el menu es el peor error que puedes
+  cometer: el cliente cuelga.
 - No prometes nada que no confirmo una herramienta.
 - No pides ni aceptas datos de tarjeta. Si quieren pagar, les llega un
   enlace de pago por WhatsApp.
@@ -153,6 +157,8 @@ def construir(
     plantilla: dict | None = None,
     tipos_catalogo: list[str] | None = None,
     horario: list[dict] | None = None,
+    catalogo: list[dict] | None = None,
+    catalogo_incompleto: bool = False,
 ) -> str:
     ahora = ahora or datetime.now(tenant.tz)
     # Si el negocio reescribió su base, manda la suya. Los bloques que salen de
@@ -193,7 +199,22 @@ def construir(
         lineas.append("\nHORARIO DE ATENCION (dilo cuando pregunten, no lo consultes):")
         lineas.extend(f"  - {linea}" for linea in _horario_hablado(horario))
 
-    if tipos_catalogo:
+    if catalogo:
+        lineas.append("\nMENU (esto SI existe; si te piden algo de esta lista, existe):")
+        for i in catalogo:
+            precio = f" ${float(i['precio']):.0f}" if i.get("precio") is not None else ""
+            alias = f" (tambien: {', '.join(i['alias'])})" if i.get("alias") else ""
+            lineas.append(f"  - {i['nombre']}{precio} [{i['tipo']}]{alias}")
+        if catalogo_incompleto:
+            lineas.append(
+                "  ... hay mas. Esta lista esta recortada: si piden algo que no"
+                " aparece, buscalo con consultar_catalogo antes de decir que no."
+            )
+        lineas.append(
+            "  Para ingredientes, alergenos o detalle de un item usa"
+            " consultar_catalogo. Los precios de arriba ya son buenos."
+        )
+    elif tipos_catalogo:
         lineas.append(
             "\nCATALOGO: este negocio tiene informacion de "
             + ", ".join(tipos_catalogo)
@@ -230,6 +251,20 @@ def construir(
         "\nSi te preguntan algo que no esta aqui arriba, di que no tienes ese "
         "dato a la mano y ofrece transferir. NO lo inventes."
     )
+
+    # Va al final a proposito. El renglon de arriba invita a negar, y por
+    # recencia el modelo le hacia mas caso que al menu: negaba platillos que si
+    # estaban en la lista. Los nombres textuales, al ultimo, cierran esa puerta.
+    if catalogo:
+        nombres = ", ".join(str(i["nombre"]) for i in catalogo)
+        lineas.append(
+            "\nESTO SI EXISTE, textual: " + nombres + "."
+            "\nSi te piden cualquiera de estos —en singular, en plural, mal"
+            " pronunciado o con un nombre parecido— EXISTE y lo tienes. No lo"
+            " niegues nunca. Lo unico que no existe es lo que no esta en esa lista"
+            + (" ni sale al buscarlo con consultar_catalogo." if catalogo_incompleto else ".")
+        )
+
     return "\n".join(lineas)
 
 

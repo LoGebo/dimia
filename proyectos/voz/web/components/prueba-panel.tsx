@@ -89,9 +89,15 @@ export function LlamadasRegistradas({ llamadas }: { llamadas: EstadoPrueba["llam
   }
   return (
     <ul className="divide-y divide-linea">
-      {llamadas.map((l) => (
+      {llamadas.map((l, i) => (
         <li key={l.call_id} className="flex items-center gap-2 px-4 py-2">
-          <span className="numeros text-[12px] text-tinta-2">{duracion(l.duracion_seg)}</span>
+          <span className="numeros text-[12px] text-tinta-3">
+            {new Date(l.inicio).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+          </span>
+          <span className="numeros text-[12px] text-tinta-2" title="Duración">
+            {duracion(l.duracion_seg)}
+          </span>
+          {i === 0 ? <Insignia tono="acento">La última</Insignia> : null}
           {l.escalado ? (
             <Insignia tono="alerta">Escaló: {l.motivo_escalamiento ?? "sin motivo"}</Insignia>
           ) : l.resuelto ? (

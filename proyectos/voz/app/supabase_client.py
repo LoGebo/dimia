@@ -152,6 +152,38 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
+    async def catalogo_resumen(
+        self, tenant_id: uuid.UUID, limite: int = 80
+    ) -> list[dict]:
+        """Lo que hay en el menu, para inyectarlo en el prompt.
+
+        Sin esto el modelo contesta "no tenemos eso" de memoria antes de
+        buscarlo, y solo consulta si el cliente insiste. Con el menu a la vista
+        tambien se ahorra un viaje al modelo por cada pregunta de precio.
+        """
+        filas = await self.pool.fetch(
+            """select nombre, tipo, precio, alias
+               from catalogo_item
+               where tenant_id = $1 and disponible
+               order by tipo, nombre
+               limit $2""",
+            tenant_id, limite,
+        )
+        salida = []
+        for f in filas:
+            d = dict(f)
+            # alias puede llegar como texto JSON; sin esto se deletrea letra por letra.
+            if isinstance(d.get("alias"), str):
+                d["alias"] = json.loads(d["alias"])
+            salida.append(d)
+        return salida
+
+    async def catalogo_cuantos(self, tenant_id: uuid.UUID) -> int:
+        return await self.pool.fetchval(
+            "select count(*) from catalogo_item where tenant_id=$1 and disponible",
+            tenant_id,
+        )
+
     async def tipos_de_catalogo(self, tenant_id: uuid.UUID) -> list[str]:
         filas = await self.pool.fetch(
             "select distinct tipo from catalogo_item where tenant_id=$1 and disponible order by tipo",

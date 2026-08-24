@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     deepgram_voz: str = "aura-2-javier-es"
     azure_voz: str = "es-MX-DaliaNeural"
     procesos_precalentados: int = 2
+    # Cuanto se espera, como maximo, a que el cliente termine de hablar. Medido en
+    # llamadas reales: cuando el detector duda, este tope es la mitad del retardo
+    # total del turno. Bajarlo acelera; bajarlo demasiado interrumpe al cliente.
+    espera_maxima_turno: float = 1.8
+    espera_minima_turno: float = 0.25
     cartesia_api_key: str = ""
     elevenlabs_api_key: str = ""
     azure_speech_key: str = ""
