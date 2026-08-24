@@ -251,6 +251,20 @@ def construir(
         "\nSi te preguntan algo que no esta aqui arriba, di que no tienes ese "
         "dato a la mano y ofrece transferir. NO lo inventes."
     )
+
+    # Va al final a proposito. El renglon de arriba invita a negar, y por
+    # recencia el modelo le hacia mas caso que al menu: negaba platillos que si
+    # estaban en la lista. Los nombres textuales, al ultimo, cierran esa puerta.
+    if catalogo:
+        nombres = ", ".join(str(i["nombre"]) for i in catalogo)
+        lineas.append(
+            "\nESTO SI EXISTE, textual: " + nombres + "."
+            "\nSi te piden cualquiera de estos —en singular, en plural, mal"
+            " pronunciado o con un nombre parecido— EXISTE y lo tienes. No lo"
+            " niegues nunca. Lo unico que no existe es lo que no esta en esa lista"
+            + (" ni sale al buscarlo con consultar_catalogo." if catalogo_incompleto else ".")
+        )
+
     return "\n".join(lineas)
 
 

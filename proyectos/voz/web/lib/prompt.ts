@@ -209,5 +209,19 @@ export function construirPrompt({
     "\nSi te preguntan algo que no esta aqui arriba, di que no tienes ese " +
       "dato a la mano y ofrece transferir. NO lo inventes.",
   );
+
+  // Va al final a proposito. El renglon de arriba invita a negar, y por recencia
+  // el modelo le hacia mas caso que al menu: negaba platillos que si estaban.
+  if (menu.length > 0) {
+    const recortado = (catalogoTotal ?? menu.length) > menu.length;
+    lineas.push(
+      `\nESTO SI EXISTE, textual: ${menu.map((i) => i.nombre).join(", ")}.` +
+        "\nSi te piden cualquiera de estos —en singular, en plural, mal" +
+        " pronunciado o con un nombre parecido— EXISTE y lo tienes. No lo" +
+        " niegues nunca. Lo unico que no existe es lo que no esta en esa lista" +
+        (recortado ? " ni sale al buscarlo con consultar_catalogo." : "."),
+    );
+  }
+
   return lineas.join("\n");
 }

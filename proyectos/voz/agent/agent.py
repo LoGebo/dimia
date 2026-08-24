@@ -716,9 +716,11 @@ async def entrypoint(ctx: JobContext) -> None:
             demoras["voz"] = m.ttfb
             total = sum(demoras.get(k, 0.0) for k in ("silencio", "modelo", "voz"))
             log.info(
-                "turno %.0f ms = silencio %.0f + modelo %.0f + voz %.0f",
+                "turno %.0f ms = silencio %.0f (de los cuales transcripcion %.0f)"
+                " + modelo %.0f + voz %.0f",
                 total * 1000,
                 demoras.get("silencio", 0) * 1000,
+                demoras.get("transcripcion", 0) * 1000,
                 demoras.get("modelo", 0) * 1000,
                 demoras.get("voz", 0) * 1000,
             )
