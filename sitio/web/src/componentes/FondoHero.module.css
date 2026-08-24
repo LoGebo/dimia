@@ -96,17 +96,6 @@
   animation: desciende linear infinite;
 }
 
-/* El cuadrado azul: uno solo, y por eso se ve. */
-.viajeroCuadro {
-  position: absolute;
-  top: 0;
-  width: 7px;
-  height: 7px;
-  background: var(--acento);
-  opacity: 0.85;
-  animation: desciende linear infinite;
-}
-
 /* ── selector de pruebas: solo en desarrollo ── */
 
 .selector {
@@ -157,12 +146,10 @@
 @media (prefers-reduced-motion: reduce) {
   .celda,
   .celdaOnda,
-  .viajeroFilete,
-  .viajeroCuadro {
+  .viajeroFilete {
     animation: none;
   }
-  .viajeroFilete,
-  .viajeroCuadro {
+  .viajeroFilete {
     display: none;
   }
 }
