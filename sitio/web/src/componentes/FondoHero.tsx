@@ -36,12 +36,12 @@ const CELDAS = Array.from({ length: TOTAL }, (_, i) => {
   };
 });
 
-/* Los que viajan hacia abajo: filetes de un píxel y un cuadrado azul. */
+/* Filetes de un píxel que recorren la altura del hero. */
 const VIAJEROS = [
-  { izquierda: "18%", duracion: 15, retraso: 0, cuadro: false },
-  { izquierda: "41%", duracion: 21, retraso: 6, cuadro: true },
-  { izquierda: "63%", duracion: 17, retraso: 11, cuadro: false },
-  { izquierda: "86%", duracion: 24, retraso: 3, cuadro: false },
+  { izquierda: "18%", duracion: 15, retraso: 0 },
+  { izquierda: "41%", duracion: 21, retraso: 6 },
+  { izquierda: "63%", duracion: 17, retraso: 11 },
+  { izquierda: "86%", duracion: 24, retraso: 3 },
 ];
 
 export function FondoHero({ variante = "a" }: { variante?: Fondo }) {
@@ -72,7 +72,7 @@ export function FondoHero({ variante = "a" }: { variante?: Fondo }) {
           <div
             key={i}
             data-anima="1"
-            className={v.cuadro ? css.viajeroCuadro : css.viajeroFilete}
+            className={css.viajeroFilete}
             style={{ left: v.izquierda, animationDuration: `${v.duracion}s`, animationDelay: `${v.retraso}s` }}
           />
         ))}
