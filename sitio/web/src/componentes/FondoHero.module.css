@@ -79,6 +79,26 @@
   animation-name: ondaCeldaAzul;
 }
 
+/* En pantalla chica la retícula de 10 × 7 deja celdas altas y flacas, y con
+   tanta división el fondo compite con el titular. Se reduce a 4 × 6 —celdas
+   grandes, casi cuadradas—, baja el contraste y se difumina hacia arriba
+   para que el texto quede sobre tinta limpia. */
+@media (max-width: 760px) {
+  .reticula {
+    width: 100%;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    opacity: 0.55;
+    mask-image: linear-gradient(180deg, transparent 6%, rgba(0, 0, 0, 0.45) 46%, #000 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 6%, rgba(0, 0, 0, 0.45) 46%, #000 100%);
+  }
+
+  /* 4 × 6 = 24: las demás sobran */
+  .reticula > *:nth-child(n + 25) {
+    display: none;
+  }
+}
+
 /* ── selector de pruebas: solo en desarrollo ── */
 
 .selector {
