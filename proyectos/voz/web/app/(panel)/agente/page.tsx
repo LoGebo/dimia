@@ -2,10 +2,10 @@ import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
 import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { guardarNegocio } from "@/lib/acciones";
+import { guardarNegocio, guardarPrompt } from "@/lib/acciones";
 import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
 import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
-import { construirPrompt, saludo, saludoDelGiro } from "@/lib/prompt";
+import { baseDeFabrica, construirPrompt, saludo, saludoDelGiro } from "@/lib/prompt";
 import { contexto } from "@/lib/sesion";
 import { etiquetaTipo, ZONAS_HORARIAS } from "@/lib/tipos";
 
@@ -29,6 +29,8 @@ export default async function Agente() {
     plantilla,
     tiposCatalogo: tiposCatalogo.map((t) => etiquetaTipo(t, true).toLowerCase()),
   });
+  const fabrica = baseDeFabrica(config.vertical, plantilla);
+  const propio = config.prompt_base?.trim() ?? "";
   const agenda = giro.herramientas.includes("agendar");
   const pedidos = giro.herramientas.includes("pedido");
   const revisiones = [
@@ -158,10 +160,41 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Instrucciones que recibe"
-              descripcion="Se arman solas con lo que capturaste. No se editan a mano."
+              descripcion={
+                propio
+                  ? "Reescritas por ti. Vacía el campo para volver a las de fábrica."
+                  : "Las de fábrica. Puedes reescribirlas y el agente usará las tuyas."
+              }
+              accion={
+                <div className="flex items-center gap-2">
+                  {propio ? <Insignia tono="alerta">Propias</Insignia> : null}
+                  <Copiar texto={prompt} />
+                </div>
+              }
+            />
+            <Formulario accion={guardarPrompt} className="space-y-3 px-4 py-4">
+              <AreaTexto
+                name="prompt_base"
+                defaultValue={propio || fabrica}
+                rows={22}
+                className="font-mono text-[11.5px] leading-[1.6]"
+                spellCheck={false}
+              />
+              <p className="text-[12px] text-tinta-3">
+                Aquí van las instrucciones de cómo habla y qué nunca hace. Los servicios, el horario,
+                el catálogo y la fecha se agregan solos con lo que capturaste: no se escriben aquí.
+              </p>
+              <BotonEnviar>Guardar instrucciones</BotonEnviar>
+            </Formulario>
+          </Tarjeta>
+
+          <Tarjeta>
+            <TarjetaCabecera
+              titulo="Lo que recibe el agente"
+              descripcion="Tus instrucciones más los bloques que se arman con tus datos."
               accion={<Copiar texto={prompt} />}
             />
-            <pre className="max-h-[560px] overflow-auto whitespace-pre-wrap px-4 py-4 font-mono text-[11.5px] leading-[1.6] text-tinta-2">
+            <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap px-4 py-4 font-mono text-[11.5px] leading-[1.6] text-tinta-2">
               {prompt}
             </pre>
           </Tarjeta>

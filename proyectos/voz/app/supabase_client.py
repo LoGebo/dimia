@@ -50,6 +50,7 @@ class Tenant:
     llm_proveedor: str = "openai"
     llm_modelo: str | None = None
     saludo: str | None = None
+    prompt_base: str | None = None
 
     @property
     def tz(self) -> ZoneInfo:
@@ -91,7 +92,7 @@ class Agenda:
         fila = await self.pool.fetchrow(
             """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
                       voz_id, tts_proveedor, tts_ajustes, instrucciones_extra,
-                      llm_proveedor, llm_modelo, saludo
+                      llm_proveedor, llm_modelo, saludo, prompt_base
                from tenant where telefono_entrada = $1 and activo""",
             numero,
         )
