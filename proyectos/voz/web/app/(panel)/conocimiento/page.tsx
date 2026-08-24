@@ -1,3 +1,4 @@
+import { BotonPeligro } from "@/components/boton-peligro";
 import { Encabezado } from "@/components/encabezado";
 import { FormularioFaq } from "@/components/faq";
 import { Boton, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
@@ -74,7 +75,7 @@ export default async function Conocimiento() {
                     <FormularioFaq entrada={e} />
                     <form action={eliminarFaq} className="mt-3 border-t border-linea pt-3">
                       <input type="hidden" name="id" value={e.id} />
-                      <Boton variante="peligro">Eliminar respuesta</Boton>
+                      <BotonPeligro>Eliminar respuesta</BotonPeligro>
                     </form>
                   </div>
                 </details>

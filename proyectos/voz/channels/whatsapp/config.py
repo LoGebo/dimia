@@ -10,6 +10,8 @@ class WhatsAppSettings(BaseSettings):
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""
     whatsapp_app_secret: str = ""
+    # Sin firma, el webhook acepta cualquier cuerpo: solo se permite en local.
+    whatsapp_permitir_sin_firma: bool = False
     whatsapp_api_version: str = "v21.0"
     whatsapp_graph_url: str = "https://graph.facebook.com"
 

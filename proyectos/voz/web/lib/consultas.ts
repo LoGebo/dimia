@@ -1,3 +1,5 @@
+import "server-only";
+
 import { datos } from "@/lib/sesion";
 import type {
   CatalogoItem,
