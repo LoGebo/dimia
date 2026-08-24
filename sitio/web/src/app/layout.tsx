@@ -25,7 +25,12 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-const SITIO = process.env.NEXT_PUBLIC_SITIO ?? "https://dimia.mx";
+/* En producción manda NEXT_PUBLIC_SITIO. En una vista previa, la URL de ese
+   despliegue: así el canónico y las tarjetas de Open Graph apuntan a lo que el
+   revisor está viendo, no a producción. */
+const SITIO =
+  process.env.NEXT_PUBLIC_SITIO ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://dimia.mx");
 const DESCRIPCION =
   "Consultora mexicana que diseña, construye y opera sistemas de decisión: datos confiables, inteligencia artificial aplicada, automatización y medición contra ingreso real.";
 
