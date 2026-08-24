@@ -16,7 +16,10 @@ export function Encabezado({
     <header className="sticky top-0 z-20 flex flex-wrap items-end justify-between gap-3 border-b border-linea bg-paper/85 px-6 py-4 backdrop-blur">
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-[17px] font-semibold tracking-tight text-tinta">{titulo}</h1>
+          <h1 className="flex items-baseline gap-1.5 text-[17px] font-semibold tracking-tight text-tinta">
+            {titulo}
+            <i className="cuadrado" aria-hidden="true" />
+          </h1>
           {giro ? <ChipGiro nombre={giro} /> : null}
         </div>
         {descripcion ? <p className="mt-0.5 text-[13px] text-tinta-2">{descripcion}</p> : null}

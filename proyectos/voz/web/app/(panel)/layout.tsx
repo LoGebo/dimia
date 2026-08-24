@@ -2,6 +2,7 @@ import Link from "next/link";
 import { contexto } from "@/lib/sesion";
 import { negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
+import { MarcaDimia } from "@/components/marca";
 import { Navegacion } from "@/components/navegacion";
 import { SelectorNegocio } from "@/components/selector-negocio";
 import { BotonTema } from "@/components/tema";
@@ -15,6 +16,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[232px_1fr]">
       <aside className="flex flex-col border-r border-linea bg-panel lg:sticky lg:top-0 lg:h-screen">
+        <MarcaDimia />
         <div className="border-b border-linea">
           <SelectorNegocio membresias={membresias} activo={negocioId} />
         </div>
