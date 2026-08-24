@@ -16,12 +16,11 @@ export const FIRMA = {
 } as const;
 
 /**
- * Fondo del hero. Se prueban las cuatro en local con ?fondo=a|b|c|d
- * y se fija aquí la elegida.
- *   a · Color            b · Color y barrido
- *   c · Onda             d · Onda y barrido
+ * Fondo del hero. En local se comparan con ?fondo=color|onda.
+ *   color · cada celda recorre su ciclo, sin patrón
+ *   onda  · las celdas se encienden en diagonal
  */
-export const FONDO_HERO = "b" as const;
+export const FONDO_HERO = "color" as const;
 
 export const NAVEGACION = [
   { href: "#practica", texto: "Práctica" },
