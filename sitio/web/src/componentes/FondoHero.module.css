@@ -1,16 +1,28 @@
 /* Keyframes locales a propósito: los CSS Modules renombran la referencia
    y no encontrarían una definición global. */
 
-/* Respiración base de la retícula: ciclo corto para que siempre haya
-   celdas moviéndose. */
-@keyframes respira {
+/* Cada celda recorre su propio ciclo de color. Sin patrón de posición:
+   la retícula cambia entera, no en diagonales. Los cuatro tonos salen de
+   la paleta —tinta, panel, línea, un azul muy bajo y una nota de latón—. */
+@keyframes cicloNeutro {
   0%, 100% { background-color: #0b0f17; }
-  50%      { background-color: #182131; }
+  25%      { background-color: #161d2b; }
+  50%      { background-color: #1d2636; }
+  75%      { background-color: #121926; }
 }
 
-@keyframes respiraAzul {
+@keyframes cicloAzul {
   0%, 100% { background-color: #0b0f17; }
-  50%      { background-color: #1e2c48; }
+  30%      { background-color: #16233c; }
+  55%      { background-color: #1e2c48; }
+  80%      { background-color: #131c2d; }
+}
+
+@keyframes cicloLaton {
+  0%, 100% { background-color: #0b0f17; }
+  35%      { background-color: #15130f; }
+  60%      { background-color: #1c1912; }
+  85%      { background-color: #111009; }
 }
 
 /* Cuadros sueltos: cruzan en diagonal, lento, y vuelven a entrar. */
@@ -64,11 +76,15 @@
 }
 
 .celda {
-  animation: respira ease-in-out infinite;
+  animation: cicloNeutro ease-in-out infinite;
 }
 
-.celda[data-azul="1"] {
-  animation-name: respiraAzul;
+.celda[data-tono="azul"] {
+  animation-name: cicloAzul;
+}
+
+.celda[data-tono="laton"] {
+  animation-name: cicloLaton;
 }
 
 .celdaOnda {
