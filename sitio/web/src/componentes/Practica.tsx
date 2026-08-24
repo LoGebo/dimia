@@ -13,8 +13,8 @@ export function Practica() {
     <section id="practica" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p className={ui.rotulo}>Práctica</p>
-          <h2 className={ui.titulo}>
+          <p data-revelar className={ui.rotulo}>Práctica</p>
+          <h2 data-revelar className={ui.titulo}>
             Cinco frentes, un solo sistema
             <i className={ui.cuadrado} />
           </h2>
@@ -24,7 +24,7 @@ export function Practica() {
           {PRACTICA.map((frente, i) => {
             const activo = i === abierto;
             return (
-              <div key={frente.indice} className={css.fila}>
+              <div key={frente.indice} data-revelar className={css.fila}>
                 <button
                   type="button"
                   onClick={() => setAbierto(activo ? -1 : i)}

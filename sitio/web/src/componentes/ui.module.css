@@ -53,6 +53,18 @@
   vertical-align: baseline;
 }
 
+/* La animación de marca: el titular entra y 200 ms después aterriza su
+   cuadrado. Sin rebote, sin giro. Solo corre cuando el titular se reveló:
+   sin JS o con movimiento reducido, el cuadrado ya está en su sitio. */
+@keyframes aterriza {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+[data-visible="1"] .cuadrado {
+  animation: aterriza 260ms var(--curva) 200ms both;
+}
+
 /* Botones y enlaces */
 .botonPrimario {
   display: inline-flex;

@@ -7,7 +7,7 @@ export function Pie() {
     <footer className={css.pie}>
       <div className={css.contenedor}>
         <div className={css.columnas}>
-          <div className={css.declaracion}>
+          <div data-revelar className={css.declaracion}>
             <IconoDimia tamano={34} />
             <p className={css.frase}>{CIERRE.declaracion}</p>
           </div>
