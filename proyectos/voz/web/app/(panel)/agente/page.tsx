@@ -105,14 +105,13 @@ export default async function Agente() {
                     ayuda={
                       progreso.puedeActivarLinea
                         ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
-                        : `Bloqueado hasta terminar lo que falta (${progreso.cumplidos} de ${progreso.total}). Antes de eso el agente contestaría a medias.`
+                        : `Puedes ponerlo ya, pero te faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}: el agente contestaría sin todo el contexto.`
                     }
                   >
                     <Entrada
                       name="telefono_entrada"
                       defaultValue={config.telefono_entrada ?? ""}
                       placeholder="+52..."
-                      disabled={!progreso.puedeActivarLinea && !config.telefono_entrada}
                     />
                   </Campo>
                   </div>

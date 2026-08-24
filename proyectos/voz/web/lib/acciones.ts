@@ -200,16 +200,15 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
     };
   }
 
-  // El número solo se asigna cuando el negocio está listo: un agente a medio
-  // configurar contestando el teléfono real quema al cliente.
+  // Un agente a medio configurar contestando el teléfono real queda mal con el
+  // cliente, pero la decisión es del dueño: se avisa, no se bloquea.
   const telefonoEntrada = opcional(fd, "telefono_entrada");
+  let aviso: string | undefined;
   if (telefonoEntrada) {
     const { giro } = await contexto();
     const progreso = await avance(giro.herramientas);
-    if (!progreso.puedeActivarLinea && !progreso.tieneNumero) {
-      return {
-        error: `Termina la configuración antes de asignar el número: llevas ${progreso.cumplidos} de ${progreso.total}.`,
-      };
+    if (!progreso.completo) {
+      aviso = `Ojo: el número quedó activo con la configuración a medias (${progreso.cumplidos} de ${progreso.total}). El agente va a contestar sin todo el contexto.`;
     }
   }
 
@@ -244,7 +243,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
     return { error: errorLegible(error, proveedor) };
   }
   refrescarPanel();
-  return { ok: "Configuración guardada." };
+  return { ok: aviso ? `Configuración guardada. ${aviso}` : "Configuración guardada." };
 }
 
 /** La primera frase de cada llamada. Vacío usa la de la plantilla del vertical. */

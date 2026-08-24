@@ -19,3 +19,4 @@ node_modules/
 
 # artefactos de herramientas
 .playwright-mcp/
+**/.next-verificacion/
