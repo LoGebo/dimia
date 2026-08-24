@@ -117,7 +117,14 @@
   min-height: 216px;
 }
 
+/* Cada renglón de la bitácora entra cuando el agente lo escribe. */
+@keyframes entraEvento {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
 .evento {
+  animation: entraEvento 300ms var(--curva) both;
   display: flex;
   gap: 14px;
   align-items: baseline;

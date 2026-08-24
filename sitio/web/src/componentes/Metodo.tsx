@@ -7,8 +7,8 @@ export function Metodo() {
     <section id="metodo" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p className={ui.rotulo}>Método</p>
-          <h2 className={ui.titulo}>
+          <p data-revelar className={ui.rotulo}>Método</p>
+          <h2 data-revelar className={ui.titulo}>
             Cuatro etapas, en este orden
             <i className={ui.cuadrado} />
           </h2>

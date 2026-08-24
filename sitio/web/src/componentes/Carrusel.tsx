@@ -20,7 +20,7 @@ export function Carrusel() {
     <section aria-label="Confían en Dimia" className={ui.seccion}>
       <div className={css.contenedor}>
         <div className={css.barra}>
-          <p className={ui.rotulo}>Confían en Dimia</p>
+          <p data-revelar className={ui.rotulo}>Confían en Dimia</p>
           <div className={css.controles}>
             <button
               type="button"
@@ -41,7 +41,7 @@ export function Carrusel() {
           </div>
         </div>
 
-        <div className={css.ventana}>
+        <div data-revelar className={css.ventana}>
           <div className={css.pista} style={{ transform: `translateX(-${pagina * 100}%)` }}>
             {paginas.map((grupo, i) => (
               <div key={i} className={css.pagina} aria-hidden={i !== pagina}>

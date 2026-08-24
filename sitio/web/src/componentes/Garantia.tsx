@@ -10,11 +10,11 @@ export function Garantia() {
         <div className={css.entrada}>
           <p className={css.rotulo}>{GARANTIA.rotulo}</p>
           <div className={css.texto}>
-            <h2 className={css.titular}>
+            <h2 data-revelar className={css.titular}>
               {GARANTIA.titular}
               <i className={css.cuadrado} />
             </h2>
-            <p className={css.cuerpo}>{GARANTIA.cuerpo}</p>
+            <p data-revelar className={css.cuerpo}>{GARANTIA.cuerpo}</p>
           </div>
         </div>
 

@@ -41,6 +41,7 @@ export function Hero() {
         <div className={css.columnas}>
           <h1 data-anima="1" className={css.titular}>
             {HERO.titular}
+            <i className={css.cuadradoTitular} />
           </h1>
 
           <div data-anima="1" className={css.derecha}>

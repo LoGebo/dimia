@@ -71,7 +71,7 @@ export function Contacto() {
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={css.columnas}>
-          <div className={css.izquierda}>
+          <div data-revelar className={css.izquierda}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/marca/logotipo-tinta.svg"
@@ -99,7 +99,7 @@ export function Contacto() {
             </div>
           </div>
 
-          <div className={css.derecha}>
+          <div data-revelar className={css.derecha}>
             <p className={ui.rotulo} style={{ flex: "none", marginBottom: 28 }}>
               Agendar una demostración
             </p>

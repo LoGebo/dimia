@@ -7,8 +7,8 @@ export function Socios() {
     <section id="firma" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p className={ui.rotulo}>Firma</p>
-          <h2 className={ui.titulo}>
+          <p data-revelar className={ui.rotulo}>Firma</p>
+          <h2 data-revelar className={ui.titulo}>
             Dos socios responden por cada sistema
             <i className={ui.cuadrado} />
           </h2>

@@ -94,22 +94,11 @@ svg {
   outline-offset: 3px;
 }
 
-/* ── animaciones ─────────────────────────────────────────── */
-
-@keyframes revelaMarca {
-  from { clip-path: inset(0 100% 0 0); opacity: 0.4; }
-  to   { clip-path: inset(0 0 0 0); opacity: 1; }
-}
-
-@keyframes sube {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: none; }
-}
-
-@keyframes cuenta {
-  0%, 100% { opacity: 0.28; }
-  50%      { opacity: 1; }
-}
+/* ── animaciones ───────────────────────────────────────────
+   CUIDADO: los CSS Modules renombran el nombre de la animación al compilar.
+   Una animación usada desde un .module.css necesita sus @keyframes DENTRO de
+   ese módulo, o la referencia apunta a un nombre que no existe y no pasa nada.
+   Aquí solo viven las que se aplican por estilo en línea desde el TSX.        */
 
 @keyframes celda {
   0%, 100% { background-color: #0b0f17; }

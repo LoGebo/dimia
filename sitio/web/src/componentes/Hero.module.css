@@ -1,3 +1,31 @@
+/* Estas keyframes viven aquí a propósito: los CSS Modules renombran la
+   referencia y no encontrarían una definición global. */
+
+@keyframes revelaMarca {
+  from { clip-path: inset(0 100% 0 0); opacity: 0.4; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes sube {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes cuenta {
+  0%, 100% { opacity: 0.28; }
+  50%      { opacity: 1; }
+}
+
+@keyframes aterriza {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes creceFilete {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
 .hero {
   position: relative;
   min-height: 100svh;
@@ -67,6 +95,17 @@
   margin: 0;
   color: var(--hueso);
   animation: sube 800ms var(--curva) 700ms both;
+}
+
+/* Cierra la secuencia de entrada: el cuadrado del titular aterriza. */
+.cuadradoTitular {
+  display: inline-block;
+  width: 0.15em;
+  height: 0.15em;
+  background: var(--acento);
+  margin-left: 0.18em;
+  vertical-align: baseline;
+  animation: aterriza 260ms var(--curva) 1400ms both;
 }
 
 .derecha {

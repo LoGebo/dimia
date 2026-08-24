@@ -20,8 +20,8 @@ export function Productos() {
     <section id="productos" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p className={ui.rotulo}>Productos</p>
-          <h2 className={ui.titulo}>
+          <p data-revelar className={ui.rotulo}>Productos</p>
+          <h2 data-revelar className={ui.titulo}>
             Lo que ya opera con clientes, empaquetado
             <i className={ui.cuadrado} />
           </h2>

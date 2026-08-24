@@ -13,15 +13,15 @@ export function Casos() {
     <section id="casos" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p className={ui.rotulo}>Casos</p>
-          <h2 className={ui.titulo}>
+          <p data-revelar className={ui.rotulo}>Casos</p>
+          <h2 data-revelar className={ui.titulo}>
             Lo que quedó registrado, sin adornos
             <i className={ui.cuadrado} />
           </h2>
         </div>
 
         <div className={css.columnas}>
-          <div className={css.lista} role="tablist" aria-label="Casos">
+          <div data-revelar className={css.lista} role="tablist" aria-label="Casos">
             {CASOS.map((c, i) => (
               <button
                 key={i}
@@ -39,7 +39,7 @@ export function Casos() {
             ))}
           </div>
 
-          <div id="caso-detalle" role="tabpanel" className={css.detalle}>
+          <div id="caso-detalle" role="tabpanel" data-revelar className={css.detalle}>
             <p className={css.detalleGiro}>{caso.giro}</p>
             <h3 className={css.detalleTitulo}>{caso.titulo}</h3>
 
