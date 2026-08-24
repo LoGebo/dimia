@@ -1,0 +1,60 @@
+name: Sitio
+
+# El sitio se despliega solo desde Vercel. Esto es la red que atrapa
+# lo que rompe antes de que llegue a producción.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sitio/web/**"
+      - ".github/workflows/sitio.yml"
+  pull_request:
+    paths:
+      - "sitio/web/**"
+      - ".github/workflows/sitio.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: sitio-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: sitio/web
+
+jobs:
+  verificar:
+    name: Tipos y compilación
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sitio/web/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar tipos
+        run: npm run typecheck
+
+      - name: Compilar
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITIO: https://dimia.mx
+
+      - name: Vigilar el peso del JS inicial
+        run: |
+          # El presupuesto es 150 kB de First Load JS en la portada.
+          # Si se pasa, algo entró que no debía: revisar antes de subirlo.
+          PESO=$(du -sk .next/static/chunks | cut -f1)
+          echo "chunks estáticos: ${PESO} kB"
+          if [ "$PESO" -gt 1500 ]; then
+            echo "::warning::Los chunks pesan ${PESO} kB. Revisa qué se agregó."
+          fi

@@ -19,6 +19,13 @@ el método; el argumento es el resultado verificable.
 | [`sitio/`](sitio/) | El sitio `dimia.mx`: prompts de construcción y el prototipo actual. |
 | [`proyectos/voz/`](proyectos/voz/) | El motor de agendamiento por voz. Es el producto insignia y ya opera. |
 | [`CLAUDE.md`](CLAUDE.md) | Contexto para los agentes: reglas de marca, voz y convenciones. |
+| [`CONTRIBUIR.md`](CONTRIBUIR.md) | Ramas, despliegue y qué corre solo. Léelo antes del primer PR. |
+
+## En línea
+
+**[dimia.mx](https://dimia.mx)** — desplegado desde `sitio/web` con Vercel.
+Cada merge a `main` que toque esa carpeta sale a producción; cada rama y cada PR
+levantan su propia vista previa. El detalle, en [`CONTRIBUIR.md`](CONTRIBUIR.md).
 
 ## Socios
 

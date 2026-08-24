@@ -1,9 +1,18 @@
 name: CI
 
+# Solo corre cuando cambia el motor de voz: un cambio en marca/ o sitio/
+# no tiene por qué levantar un Postgres.
+
 on:
   push:
     branches: [main]
+    paths:
+      - "proyectos/voz/**"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "proyectos/voz/**"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
 
 concurrency:
