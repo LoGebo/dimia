@@ -168,17 +168,20 @@ export type Cliente = { nombre: string; logo: string | null };
 export const MOSTRAR_CARRUSEL = true;
 
 export const CLIENTES: Cliente[] = [
-  // Los archivos viven en public/clientes/. El carrusel los pinta en hueso a una
-  // sola tinta: en color chocarian entre si y con el azul de la marca.
-  { nombre: "Arca Continental", logo: "/clientes/arca-continental.svg" },
-  { nombre: "Heineken", logo: "/clientes/heineken.svg" },
-  { nombre: "Atos", logo: "/clientes/atos.png" },
-  { nombre: "Tecnológico de Monterrey", logo: "/clientes/tec-de-monterrey.svg" },
-  { nombre: "Universidad Regiomontana", logo: "/clientes/u-erre.png" },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "[ logotipo autorizado ]", logo: null },
 ];
 
 export const NOTA_CLIENTES =
-  "Corporativos, universidades y negocios con operación telefónica. Cada logotipo se publica con autorización del cliente.";
+  "Consultorios · Restaurantes · Clínicas · Salones · Despachos. Los logotipos se publican solo con autorización por escrito.";
 
 export const PRODUCTO = {
   estado: "En operación",
