@@ -141,9 +141,9 @@ function ajustesTts(fd: FormData, proveedor: ProveedorTts): TtsAjustes {
   return {};
 }
 
-function errorLegible(error: unknown, proveedor: ProveedorTts): string {
+function errorLegible(error: unknown, proveedor?: ProveedorTts): string {
   const mensaje = error instanceof Error ? error.message : "";
-  if (/voz_id/.test(mensaje)) {
+  if (proveedor && /voz_id/.test(mensaje)) {
     const formato = FORMATO_VOZ[proveedor];
     const nombre = nombreProveedorTts(proveedor);
     return `La base rechazó la voz: no tiene el formato de ${nombre} (${formato.formato}). Ejemplo: ${formato.ejemplo}.`;
@@ -196,6 +196,24 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
   }
   refrescarPanel();
   return { ok: "Configuración guardada." };
+}
+
+/**
+ * Reescribe las instrucciones base del agente. Vacío vuelve a las de fábrica.
+ * Los bloques que salen de los datos —servicios, horarios, catálogo, fecha—
+ * se siguen generando aparte: aquí solo vive el texto de instrucciones.
+ */
+export async function guardarPrompt(_previo: Estado, fd: FormData): Promise<Estado> {
+  const propio = opcional(fd, "prompt_base");
+  try {
+    await datos(async (q, id) => {
+      await q("update tenant set prompt_base = $2 where id = $1", [id, propio]);
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: propio ? "Instrucciones guardadas." : "Instrucciones de fábrica restauradas." };
 }
 
 export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {

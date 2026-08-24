@@ -103,6 +103,15 @@ export function saludo(negocio: Negocio, plantilla: PlantillaVertical | null): s
   return patron.replaceAll("{nombre}", negocio.nombre);
 }
 
+/** Las instrucciones de fábrica: la base común más la plantilla del vertical. */
+export function baseDeFabrica(
+  vertical: string,
+  plantilla: PlantillaVertical | null,
+): string {
+  const instrucciones = plantilla?.instrucciones ?? PLANTILLAS[vertical] ?? PLANTILLAS.generico!;
+  return `${BASE}\n${instrucciones}`;
+}
+
 export function construirPrompt({
   negocio,
   servicios,
@@ -121,8 +130,12 @@ export function construirPrompt({
     timeZone: negocio.zona_horaria,
   }).format(new Date());
 
-  const instrucciones = plantilla?.instrucciones ?? PLANTILLAS[negocio.vertical] ?? PLANTILLAS.generico!;
-  const lineas = [BASE, instrucciones, `\nNEGOCIO: ${negocio.nombre}`];
+  // Si el negocio reescribió su base, manda la suya. Los bloques que salen de
+  // los datos se generan igual: no se congelan dentro del texto editado.
+  const base = negocio.prompt_base?.trim()
+    ? [negocio.prompt_base.trim()]
+    : [BASE, plantilla?.instrucciones ?? PLANTILLAS[negocio.vertical] ?? PLANTILLAS.generico!];
+  const lineas = [...base, `\nNEGOCIO: ${negocio.nombre}`];
   lineas.push(
     `AHORA MISMO: ${ahora} (hora de ${negocio.zona_horaria}).` +
       " Usa esto para entender 'manana', 'el viernes', 'la proxima semana'.",

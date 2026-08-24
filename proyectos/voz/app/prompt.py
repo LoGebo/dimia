@@ -155,12 +155,18 @@ def construir(
     horario: list[dict] | None = None,
 ) -> str:
     ahora = ahora or datetime.now(tenant.tz)
-    instrucciones = (
-        plantilla["instrucciones"]
-        if plantilla
-        else PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])
-    )
-    lineas = [BASE, instrucciones]
+    # Si el negocio reescribió su base, manda la suya. Los bloques que salen de
+    # los datos se siguen generando aparte.
+    propio = (tenant.prompt_base or "").strip()
+    if propio:
+        lineas = [propio]
+    else:
+        instrucciones = (
+            plantilla["instrucciones"]
+            if plantilla
+            else PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])
+        )
+        lineas = [BASE, instrucciones]
 
     lineas.append(f"\nNEGOCIO: {tenant.nombre}")
     lineas.append(
