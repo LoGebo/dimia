@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { conSesion, elevado } from "@/lib/db";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
+import { avance } from "@/lib/listo";
+import { sembrarPlantilla } from "@/lib/plantilla-inicial";
 import { contexto, datos, elegirNegocio } from "@/lib/sesion";
 import { siguientePaso } from "@/lib/giro";
 import {
@@ -61,14 +63,30 @@ export async function entrar(_previo: Estado, fd: FormData): Promise<Estado> {
 export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> {
   const email = texto(fd, "email");
   const password = texto(fd, "password");
+  const nombre = texto(fd, "nombre");
+  const vertical = (texto(fd, "vertical") || "generico") as Vertical;
+
   if (!email.includes("@")) return { error: "Escribe un correo válido." };
   if (password.length < 8) return { error: "La contraseña necesita al menos 8 caracteres." };
+  if (!nombre) return { error: "Ponle nombre a tu negocio." };
+
+  let usuarioId: string;
   try {
-    await registrarLocal(email, password);
+    usuarioId = await registrarLocal(email, password);
   } catch {
     return { error: "Ese correo ya está registrado." };
   }
-  redirect("/alta");
+
+  // El negocio se crea aquí mismo: una sola pantalla para empezar, y el panel
+  // se abre con la plantilla del giro ya puesta.
+  const creado = await crearNegocio(usuarioId, {
+    nombre,
+    vertical,
+    zonaHoraria: "America/Mexico_City",
+    telefonoEscalamiento: null,
+  });
+  await elegirNegocio(creado.id);
+  redirect("/resumen");
 }
 
 export async function salir(): Promise<void> {
@@ -81,40 +99,58 @@ export async function cambiarNegocio(fd: FormData): Promise<void> {
   redirect("/resumen");
 }
 
-export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
-  const usuario = await usuarioActual();
-  if (!usuario) redirect("/entrar");
-  const nombre = texto(fd, "nombre");
-  if (!nombre) return { error: "Ponle nombre al negocio." };
-  const vertical = (texto(fd, "vertical") || "generico") as Vertical;
-
-  const creado = await elevado(async (q) => {
+/**
+ * Crea el negocio, hace dueño a quien lo crea y lo siembra con la plantilla de
+ * su giro. Lo usan el registro y el alta de un negocio adicional.
+ */
+async function crearNegocio(
+  usuarioId: string,
+  datos: { nombre: string; vertical: Vertical; zonaHoraria: string; telefonoEscalamiento: string | null },
+): Promise<{ id: string; herramientas: Herramienta[] }> {
+  return elevado(async (q) => {
     const plantillas = await q<{ herramientas: Herramienta[] }>(
       "select herramientas from vertical_template where clave = $1",
-      [vertical],
+      [datos.vertical],
     );
     const herramientas = plantillas[0]?.herramientas ?? ["agendar", "recado"];
-    const rapido = herramientas.includes("pedido") || vertical === "restaurante";
+    const rapido = herramientas.includes("pedido") || datos.vertical === "restaurante";
     const filas = await q<{ id: string }>(
       `insert into tenant (nombre, vertical, zona_horaria, telefono_escalamiento,
                            slot_granularidad_min, anticipacion_min)
        values ($1, $2, $3, $4, $5, $6) returning id`,
       [
-        nombre,
-        vertical,
-        texto(fd, "zona_horaria") || "America/Mexico_City",
-        opcional(fd, "telefono_escalamiento"),
+        datos.nombre,
+        datos.vertical,
+        datos.zonaHoraria,
+        datos.telefonoEscalamiento,
         rapido ? 15 : 30,
         rapido ? 60 : 120,
       ],
     );
     const id = filas[0]!.id;
-    await q("insert into tenant_member (tenant_id, user_id, rol) values ($1, $2, 'owner')", [id, usuario.id]);
+    await q("insert into tenant_member (tenant_id, user_id, rol) values ($1, $2, 'owner')", [id, usuarioId]);
+    // Nace con lo típico de su giro, marcado como sugerido: se edita, no se
+    // crea desde cero. Va en la misma transacción que el alta.
+    await sembrarPlantilla(q, id, datos.vertical);
     return { id, herramientas };
+  });
+}
+
+export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
+  const usuario = await usuarioActual();
+  if (!usuario) redirect("/entrar");
+  const nombre = texto(fd, "nombre");
+  if (!nombre) return { error: "Ponle nombre al negocio." };
+
+  const creado = await crearNegocio(usuario.id, {
+    nombre,
+    vertical: (texto(fd, "vertical") || "generico") as Vertical,
+    zonaHoraria: texto(fd, "zona_horaria") || "America/Mexico_City",
+    telefonoEscalamiento: opcional(fd, "telefono_escalamiento"),
   });
 
   await elegirNegocio(creado.id);
-  redirect(siguientePaso(creado.herramientas, "/alta"));
+  redirect("/resumen");
 }
 
 function decimal(fd: FormData, campo: string, min: number, max: number): number | null {
@@ -170,6 +206,19 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
     };
   }
 
+  // El número solo se asigna cuando el negocio está listo: un agente a medio
+  // configurar contestando el teléfono real quema al cliente.
+  const telefonoEntrada = opcional(fd, "telefono_entrada");
+  if (telefonoEntrada) {
+    const { giro } = await contexto();
+    const progreso = await avance(giro.herramientas);
+    if (!progreso.puedeActivarLinea && !progreso.tieneNumero) {
+      return {
+        error: `Termina la configuración antes de asignar el número: llevas ${progreso.cumplidos} de ${progreso.total}.`,
+      };
+    }
+  }
+
   try {
     await datos(async (q, id) => {
       await q(
@@ -183,7 +232,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
           id,
           texto(fd, "nombre"),
           texto(fd, "zona_horaria"),
-          opcional(fd, "telefono_entrada"),
+          telefonoEntrada,
           opcional(fd, "telefono_escalamiento"),
           voz,
           numero(fd, "slot_granularidad_min", 15),

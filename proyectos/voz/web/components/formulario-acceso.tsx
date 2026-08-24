@@ -6,11 +6,26 @@ import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { entrar, registrar, type Estado } from "@/lib/acciones";
 import { Aviso, Boton, Campo, Entrada } from "@/components/ui/primitivos";
+import type { Herramienta, PlantillaVertical } from "@/lib/tipos";
 
 type Modo = "entrar" | "registro";
 
-export function FormularioAcceso({ modo, supabase }: { modo: Modo; supabase: boolean }) {
-  return supabase ? <ConSupabase modo={modo} /> : <ConPostgres modo={modo} />;
+function queHace(herramientas: Herramienta[]): string {
+  if (herramientas.includes("pedido")) return "Toma pedidos y los cobra";
+  if (herramientas.includes("agendar")) return "Aparta horarios en la agenda";
+  return "Contesta y toma recado";
+}
+
+export function FormularioAcceso({
+  modo,
+  supabase,
+  plantillas = [],
+}: {
+  modo: Modo;
+  supabase: boolean;
+  plantillas?: PlantillaVertical[];
+}) {
+  return supabase ? <ConSupabase modo={modo} /> : <ConPostgres modo={modo} plantillas={plantillas} />;
 }
 
 function Encabezado({ modo }: { modo: Modo }) {
@@ -50,7 +65,7 @@ function Pie({ modo }: { modo: Modo }) {
   );
 }
 
-function ConPostgres({ modo }: { modo: Modo }) {
+function ConPostgres({ modo, plantillas }: { modo: Modo; plantillas: PlantillaVertical[] }) {
   const inicial: Estado = {};
   const [estado, accion, pendiente] = useActionState(modo === "entrar" ? entrar : registrar, inicial);
   return (
@@ -68,9 +83,34 @@ function ConPostgres({ modo }: { modo: Modo }) {
             required
           />
         </Campo>
+        {modo === "registro" ? (
+          <>
+            <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta el agente al contestar.">
+              <Entrada name="nombre" required placeholder="Clínica Dental Sonrisa" />
+            </Campo>
+            <fieldset>
+              <legend className="mb-1.5 text-xs font-medium text-tinta-2">Giro</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {plantillas.map((p, i) => (
+                  <label
+                    key={p.clave}
+                    className="cursor-pointer border border-linea bg-panel px-3 py-2.5 transition has-checked:border-acento has-checked:bg-acento-suave"
+                  >
+                    <input type="radio" name="vertical" value={p.clave} defaultChecked={i === 0} className="sr-only" />
+                    <span className="block text-[13px] font-medium text-tinta">{p.nombre}</span>
+                    <span className="mt-0.5 block text-[11px] text-tinta-3">{queHace(p.herramientas)}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-[11.5px] text-tinta-3">
+                Tu negocio arranca con lo típico de su giro ya capturado. Lo revisas y lo ajustas.
+              </p>
+            </fieldset>
+          </>
+        ) : null}
         {estado.error ? <Aviso tono="error">{estado.error}</Aviso> : null}
         <Boton variante="solido" className="w-full" disabled={pendiente}>
-          {pendiente ? "Un momento…" : modo === "entrar" ? "Entrar" : "Crear cuenta"}
+          {pendiente ? "Un momento…" : modo === "entrar" ? "Entrar" : "Crear cuenta y empezar"}
         </Boton>
       </div>
       <Pie modo={modo} />

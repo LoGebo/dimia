@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
@@ -6,6 +7,7 @@ import { guardarNegocio, guardarPrompt, guardarSaludo } from "@/lib/acciones";
 import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
 import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { baseDeFabrica, construirPrompt, saludo, saludoDelGiro } from "@/lib/prompt";
+import { avance } from "@/lib/listo";
 import { contexto } from "@/lib/sesion";
 import { etiquetaTipo, ZONAS_HORARIAS } from "@/lib/tipos";
 
@@ -33,23 +35,7 @@ export default async function Agente() {
   const propio = config.prompt_base?.trim() ?? "";
   const agenda = giro.herramientas.includes("agendar");
   const pedidos = giro.herramientas.includes("pedido");
-  const revisiones = [
-    ...(agenda
-      ? [
-          { nombre: "Recursos dados de alta", listo: listaRecursos.some((r) => r.activo) },
-          { nombre: "Al menos un servicio activo", listo: listaServicios.some((s) => s.activo) },
-        ]
-      : []),
-    ...(pedidos ? [{ nombre: "Menú con precio", listo: items.some((i) => i.disponible && i.precio) }] : []),
-    ...(agenda || pedidos
-      ? [{ nombre: "Horario de la semana", listo: listaReglas.some((r) => r.tipo === "disponible") }]
-      : []),
-    { nombre: "Respuestas frecuentes", listo: listaFaq.length >= 3 },
-    { nombre: "Número para transferir", listo: !!config.telefono_escalamiento },
-    { nombre: "Número de entrada asignado", listo: !!config.telefono_entrada },
-    { nombre: "Catálogo con items disponibles", listo: items.some((i) => i.disponible) },
-  ];
-  const pendientes = revisiones.filter((r) => !r.listo).length;
+  const progreso = await avance(giro.herramientas);
 
   return (
     <>
@@ -63,12 +49,19 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Listo para contestar"
-              descripcion={pendientes === 0 ? "Todo configurado." : `${pendientes} cosas por resolver.`}
+              descripcion={
+                progreso.completo
+                  ? "Todo en su lugar."
+                  : `Faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`
+              }
             />
             <ul className="divide-y divide-linea">
-              {revisiones.map((r) => (
-                <li key={r.nombre} className="flex items-center justify-between gap-3 px-4 py-2">
-                  <span className="text-[13px] text-tinta-2">{r.nombre}</span>
+              {progreso.requisitos.map((r) => (
+                <li key={r.clave} className="flex items-center justify-between gap-3 px-4 py-2">
+                  <Link href={r.ruta} className="min-w-0 text-[13px] text-tinta-2 transition hover:text-tinta">
+                    {r.nombre}
+                    <span className="block text-[11.5px] text-tinta-3">{r.ayuda}</span>
+                  </Link>
                   {r.listo ? <Insignia tono="bueno">Listo</Insignia> : <Insignia tono="alerta">Falta</Insignia>}
                 </li>
               ))}
@@ -100,9 +93,21 @@ export default async function Agente() {
                     </Selector>
                   </Campo>
                   <div className="grid grid-cols-2 gap-3">
-                    <Campo etiqueta="Número de entrada" ayuda="El que marca tu cliente.">
-                      <Entrada name="telefono_entrada" defaultValue={config.telefono_entrada ?? ""} placeholder="+52..." />
-                    </Campo>
+                  <Campo
+                    etiqueta="Número de entrada"
+                    ayuda={
+                      progreso.puedeActivarLinea
+                        ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
+                        : `Se habilita cuando termines lo que falta (${progreso.cumplidos} de ${progreso.total}). Antes de eso el agente contestaría a medias.`
+                    }
+                  >
+                    <Entrada
+                      name="telefono_entrada"
+                      defaultValue={config.telefono_entrada ?? ""}
+                      placeholder="+52..."
+                      disabled={!progreso.puedeActivarLinea && !config.telefono_entrada}
+                    />
+                  </Campo>
                     <Campo etiqueta="Transferir a" ayuda="A dónde pasa las llamadas difíciles.">
                       <Entrada
                         name="telefono_escalamiento"
