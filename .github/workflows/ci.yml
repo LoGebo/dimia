@@ -68,6 +68,16 @@ jobs:
 
     env:
       PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+      # Llaves de relleno: las pruebas de TTS solo construyen el cliente de cada
+      # proveedor, nunca llaman a su API. Sin ellas los constructores revientan.
+      AZURE_SPEECH_KEY: prueba
+      AZURE_SPEECH_REGION: eastus
+      DEEPGRAM_API_KEY: prueba
+      ELEVENLABS_API_KEY: prueba
+      CARTESIA_API_KEY: prueba
+      OPENAI_API_KEY: prueba
+      ANTHROPIC_API_KEY: prueba
+      GOOGLE_API_KEY: prueba
       PGPASSWORD: postgres
 
     steps:

@@ -1,10 +1,26 @@
+import "server-only";
+
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { elevado } from "@/lib/db";
 
 const COOKIE_SESION = "agenda_sesion";
-const secreto = process.env.SESION_SECRETO ?? "desarrollo-local-inseguro";
+
+/**
+ * Firma de la cookie de sesión en modo local. Sin secreto propio cualquiera
+ * podría fabricar una sesión válida, así que en producción se exige.
+ */
+function secretoDeSesion(): string {
+  const propio = process.env.SESION_SECRETO;
+  if (propio && propio.length >= 16) return propio;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Falta SESION_SECRETO (32 bytes aleatorios). Sin él, la sesión del panel se puede falsificar.",
+    );
+  }
+  return "desarrollo-local-inseguro";
+}
 
 export function modoSupabase(): boolean {
   return (
@@ -14,7 +30,7 @@ export function modoSupabase(): boolean {
 }
 
 function firmar(valor: string): string {
-  return createHmac("sha256", secreto).update(valor).digest("base64url");
+  return createHmac("sha256", secretoDeSesion()).update(valor).digest("base64url");
 }
 
 function verificar(token: string): string | null {

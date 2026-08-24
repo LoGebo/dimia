@@ -1,3 +1,5 @@
+import "server-only";
+
 import { Pool, type PoolClient } from "pg";
 
 const dsn = process.env.PG_DSN;

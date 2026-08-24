@@ -1,6 +1,7 @@
 import { Encabezado } from "@/components/encabezado";
 import { FormularioItem } from "@/components/item-catalogo";
 import { ProbadorCatalogo } from "@/components/probador-catalogo";
+import { BotonPeligro } from "@/components/boton-peligro";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Boton, Campo, Entrada, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { agregarGrupoCatalogo, alternarDisponible, eliminarItemCatalogo, quitarGrupoCatalogo } from "@/lib/acciones";
@@ -157,7 +158,7 @@ function FilaItem({
           <FormularioItem item={item} tipos={tipos} recursos={recursos} />
           <form action={eliminarItemCatalogo} className="mt-3 border-t border-linea pt-3">
             <input type="hidden" name="id" value={item.id} />
-            <Boton variante="peligro">Eliminar del catálogo</Boton>
+            <BotonPeligro>Eliminar del catálogo</BotonPeligro>
           </form>
         </div>
       </details>

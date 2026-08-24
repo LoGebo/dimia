@@ -148,7 +148,14 @@ function errorLegible(error: unknown, proveedor?: ProveedorTts): string {
     const nombre = nombreProveedorTts(proveedor);
     return `La base rechazó la voz: no tiene el formato de ${nombre} (${formato.formato}). Ejemplo: ${formato.ejemplo}.`;
   }
-  return "No se pudo guardar la configuración.";
+  // El número de entrada es único: dos negocios no pueden compartirlo.
+  if (/telefono_entrada/.test(mensaje) && /duplicate|unique/i.test(mensaje)) {
+    return "Ese número de entrada ya está asignado a otro negocio.";
+  }
+  if (/statement timeout|timeout/i.test(mensaje)) {
+    return "La base tardó demasiado en responder. Intenta de nuevo.";
+  }
+  return "No se pudo guardar.";
 }
 
 export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -335,7 +342,9 @@ export async function alternarDisponible(fd: FormData): Promise<void> {
 }
 
 export async function eliminarItemCatalogo(fd: FormData): Promise<void> {
-  await datos((q) => q("delete from catalogo_item where id = $1", [texto(fd, "id")]));
+  await datos((q, negocioId) =>
+    q("delete from catalogo_item where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+  );
   refrescarPanel();
 }
 
@@ -472,7 +481,9 @@ export async function guardarExcepcion(_previo: Estado, fd: FormData): Promise<E
 }
 
 export async function eliminarRegla(fd: FormData): Promise<void> {
-  await datos((q) => q("delete from schedule_rule where id = $1", [texto(fd, "id")]));
+  await datos((q, negocioId) =>
+    q("delete from schedule_rule where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+  );
   refrescarPanel();
 }
 
@@ -501,7 +512,9 @@ export async function guardarFaq(_previo: Estado, fd: FormData): Promise<Estado>
 }
 
 export async function eliminarFaq(fd: FormData): Promise<void> {
-  await datos((q) => q("delete from knowledge where id = $1", [texto(fd, "id")]));
+  await datos((q, negocioId) =>
+    q("delete from knowledge where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+  );
   refrescarPanel();
 }
 

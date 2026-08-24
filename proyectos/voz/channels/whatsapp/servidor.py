@@ -78,10 +78,19 @@ async def recibir(
     request: Request, tareas: BackgroundTasks
 ) -> Response | dict[str, Any]:
     crudo = await request.body()
+    cfg = request.app.state.cfg
+    # Sin app_secret la firma no se puede comprobar y cualquiera podria inyectar
+    # mensajes. Se rechaza salvo que se pida explicitamente para desarrollo.
+    if not cfg.whatsapp_app_secret and not cfg.whatsapp_permitir_sin_firma:
+        log.error(
+            "webhook rechazado: falta WHATSAPP_APP_SECRET. "
+            "Para desarrollo, WHATSAPP_PERMITIR_SIN_FIRMA=true."
+        )
+        return Response(status_code=401)
     if not firma_valida(
         crudo,
         request.headers.get("x-hub-signature-256"),
-        request.app.state.cfg.whatsapp_app_secret,
+        cfg.whatsapp_app_secret,
     ):
         return Response(status_code=401)
 

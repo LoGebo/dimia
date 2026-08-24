@@ -1,3 +1,4 @@
+import { BotonPeligro } from "@/components/boton-peligro";
 import { Encabezado } from "@/components/encabezado";
 import { EditorHorario } from "@/components/editor-horario";
 import { BotonEnviar, Formulario } from "@/components/formulario";
@@ -79,7 +80,7 @@ export default async function Horarios() {
                     </span>
                     <form action={eliminarRegla} className="ml-auto">
                       <input type="hidden" name="id" value={r.id} />
-                      <Boton variante="peligro">Quitar</Boton>
+                      <BotonPeligro etiqueta="Sí, quitar">Quitar</BotonPeligro>
                     </form>
                   </li>
                 ))}
