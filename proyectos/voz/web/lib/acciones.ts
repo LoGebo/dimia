@@ -33,21 +33,15 @@ const numero = (fd: FormData, campo: string, porDefecto = 0): number => {
 };
 const opcional = (fd: FormData, campo: string): string | null => texto(fd, campo) || null;
 
+/**
+ * Refresca el panel entero después de una acción.
+ *
+ * Tiene que ser "layout", no la lista de páginas: la barra de avance vive en el
+ * armazón y con el modo por omisión se quedaba con el conteo viejo hasta que
+ * alguien recargaba a mano.
+ */
 function refrescarPanel(): void {
-  for (const ruta of [
-    "/resumen",
-    "/agenda",
-    "/pedidos",
-    "/recados",
-    "/horarios",
-    "/servicios",
-    "/catalogo",
-    "/conocimiento",
-    "/agente",
-    "/probar",
-  ]) {
-    revalidatePath(ruta);
-  }
+  revalidatePath("/", "layout");
 }
 
 export async function entrar(_previo: Estado, fd: FormData): Promise<Estado> {
