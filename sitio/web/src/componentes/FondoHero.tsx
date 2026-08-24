@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import { FONDO_HERO } from "@/contenido/sitio";
 import css from "./FondoHero.module.css";
 
-export type Fondo = "a" | "b" | "c" | "d";
+export type Fondo = "color" | "onda";
 
 export const FONDOS: { id: Fondo; nombre: string; nota: string }[] = [
-  { id: "a", nombre: "Color", nota: "Todas las celdas cambian de color, cada una a su ritmo." },
-  { id: "b", nombre: "Color y barrido", nota: "Lo anterior, más filetes y un cuadrado que descienden." },
-  { id: "c", nombre: "Onda", nota: "Las celdas se encienden en diagonal. Se ve el patrón." },
-  { id: "d", nombre: "Onda y barrido", nota: "La onda con los viajeros encima." },
+  { id: "color", nombre: "Color", nota: "Todas las celdas cambian de color, cada una a su ritmo." },
+  { id: "onda", nombre: "Onda", nota: "Las celdas se encienden en diagonal. Se ve el patrón." },
 ];
 
 const COLUMNAS = 10;
@@ -36,17 +34,8 @@ const CELDAS = Array.from({ length: TOTAL }, (_, i) => {
   };
 });
 
-/* Filetes de un píxel que recorren la altura del hero. */
-const VIAJEROS = [
-  { izquierda: "18%", duracion: 15, retraso: 0 },
-  { izquierda: "41%", duracion: 21, retraso: 6 },
-  { izquierda: "63%", duracion: 17, retraso: 11 },
-  { izquierda: "86%", duracion: 24, retraso: 3 },
-];
-
-export function FondoHero({ variante = "a" }: { variante?: Fondo }) {
-  const onda = variante === "c" || variante === "d";
-  const barrido = variante === "b" || variante === "d";
+export function FondoHero({ variante = "color" }: { variante?: Fondo }) {
+  const onda = variante === "onda";
 
   return (
     <div aria-hidden="true" className={css.fondo}>
@@ -66,16 +55,6 @@ export function FondoHero({ variante = "a" }: { variante?: Fondo }) {
           />
         ))}
       </div>
-
-      {barrido &&
-        VIAJEROS.map((v, i) => (
-          <div
-            key={i}
-            data-anima="1"
-            className={css.viajeroFilete}
-            style={{ left: v.izquierda, animationDuration: `${v.duracion}s`, animationDelay: `${v.retraso}s` }}
-          />
-        ))}
     </div>
   );
 }
@@ -87,7 +66,7 @@ export function useFondoDePrueba(): Fondo {
   useEffect(() => {
     const leer = () => {
       const valor = new URLSearchParams(window.location.search).get("fondo");
-      if (valor && ["a", "b", "c", "d"].includes(valor)) setFondo(valor as Fondo);
+      if (valor === "color" || valor === "onda") setFondo(valor);
       else setFondo(FONDO_HERO);
     };
     leer();
