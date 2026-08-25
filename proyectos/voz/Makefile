@@ -71,6 +71,10 @@ dev:
 consola:
 	$(PY) -m agent.agent console
 
+# Vacia la cola de mensajes salientes. Proceso aparte del worker de voz.
+despachador:
+	$(PY) -m app.despachador
+
 imagen:
 	docker build -t $(IMAGEN):$(ETIQUETA) .
 

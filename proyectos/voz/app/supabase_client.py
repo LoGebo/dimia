@@ -152,6 +152,28 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
+    async def outbox_reclamar(self, limite: int = 25) -> list[dict]:
+        """Toma las filas que toca mandar y las marca como intentadas.
+
+        El respaldo exponencial se aplica al reclamar, no al fallar: si el
+        proceso muere a medio envio, la fila reaparece sola cuando vence su
+        ventana en vez de quedarse trabada.
+        """
+        filas = await self.pool.fetch("select * from outbox_reclamar($1)", limite)
+        salida = []
+        for f in filas:
+            d = dict(f)
+            if isinstance(d.get("payload"), str):
+                d["payload"] = json.loads(d["payload"])
+            salida.append(d)
+        return salida
+
+    async def outbox_marcar_enviado(self, outbox_id: uuid.UUID) -> None:
+        await self.pool.execute("select outbox_marcar_enviado($1)", outbox_id)
+
+    async def outbox_marcar_error(self, outbox_id: uuid.UUID, error: str) -> None:
+        await self.pool.execute("select outbox_marcar_error($1,$2)", outbox_id, error)
+
     async def mensaje_registrar(
         self,
         tenant_id: uuid.UUID,

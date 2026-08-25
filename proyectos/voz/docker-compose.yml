@@ -7,6 +7,15 @@ services:
     restart: unless-stopped
     command: python -m agent.agent start
 
+  # Vacia la cola de mensajes salientes. Va aparte del agente a proposito: el
+  # worker de voz reparte trabajo por llamada, y la cola tiene que avanzar
+  # aunque nadie este al telefono. Misma imagen, otro comando.
+  despachador:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    command: python -m app.despachador
+
   n8n:
     image: n8nio/n8n:latest
     ports: ["5678:5678"]
