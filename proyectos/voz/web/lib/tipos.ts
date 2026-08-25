@@ -451,3 +451,27 @@ export type Mensaje = {
   herramienta: string | null;
   creado: string;
 };
+
+export type PlantillaMensaje = "confirmacion" | "cancelacion" | "recordatorio" | "pedido";
+export type EstadoEnvio = "pendiente" | "enviado" | "fallido";
+
+export const NOMBRE_PLANTILLA: Record<PlantillaMensaje, string> = {
+  pedido: "Confirmación de pedido",
+  confirmacion: "Confirmación de cita",
+  recordatorio: "Recordatorio de cita",
+  cancelacion: "Cancelación",
+};
+
+export type MensajeSaliente = {
+  id: string;
+  canal: string;
+  destino: string;
+  plantilla: PlantillaMensaje;
+  estado: EstadoEnvio;
+  intentos: number;
+  max_intentos: number;
+  ultimo_error: string | null;
+  disponible_en: string;
+  creado: string;
+  enviado: string | null;
+};

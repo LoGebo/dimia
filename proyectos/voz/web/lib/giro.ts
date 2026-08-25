@@ -21,6 +21,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   if (agenda) lista.push({ href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración" });
 
   lista.push(
+    { href: "/mensajes", nombre: "Mensajes", detalle: "Lo que sale por WhatsApp" },
     { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces" },
     { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta" },
     { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia" },

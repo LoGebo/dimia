@@ -285,3 +285,24 @@ async def test_lo_encolado_hace_mucho_se_descarta_en_vez_de_dispararse():
     assert (tanda.enviados, tanda.vencidos) == (1, 1)
     assert [d for d, _ in mensajero.mandados] == ["+525599998888"]
     assert "vencido" in agenda.errores[0][1]
+
+
+async def test_los_recordatorios_los_encola_el_proceso_no_pg_cron():
+    """pg_cron hay que encenderlo a mano en el tablero; un negocio cuyo dueño
+    no lo hizo se quedaria sin recordatorios sin enterarse."""
+
+    class AgendaConCitas(AgendaFalsa):
+        def __init__(self):
+            super().__init__([])
+            self.ventanas: list[int] = []
+
+        async def encolar_recordatorios(self, ventana_horas: int = 24) -> int:
+            self.ventanas.append(ventana_horas)
+            return 3
+
+    agenda = AgendaConCitas()
+
+    cuantos = await Despachador(agenda, MensajeroFalso()).recordatorios()
+
+    assert cuantos == 3
+    assert agenda.ventanas == [24]
