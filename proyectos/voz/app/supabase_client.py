@@ -152,6 +152,13 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
+    async def tenant_por_red(self, canal: str, cuenta_id: str) -> Tenant | None:
+        """El negocio dueño de una cuenta de Instagram o de una pagina."""
+        tenant_id = await self.pool.fetchval(
+            "select tenant_por_red($1,$2)", canal, cuenta_id
+        )
+        return await self.tenant_por_id(tenant_id) if tenant_id else None
+
     async def encolar_recordatorios(self, ventana_horas: int = 24) -> int:
         """Encola el recordatorio de las citas que caen dentro de la ventana."""
         return await self.pool.fetchval(

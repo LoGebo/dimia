@@ -16,6 +16,14 @@ services:
     restart: unless-stopped
     command: python -m app.despachador
 
+  # Webhook de Instagram Direct y Messenger.
+  social:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    ports: ["8081:8081"]
+    command: uvicorn channels.social.servidor:app --host 0.0.0.0 --port 8081
+
   n8n:
     image: n8nio/n8n:latest
     ports: ["5678:5678"]

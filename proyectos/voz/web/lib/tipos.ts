@@ -12,6 +12,8 @@ export type Negocio = {
   zona_horaria: string;
   telefono_entrada: string | null;
   telefono_escalamiento: string | null;
+  instagram_id: string | null;
+  messenger_page_id: string | null;
   voz_id: string | null;
   tts_proveedor: ProveedorTts;
   tts_ajustes: TtsAjustes;

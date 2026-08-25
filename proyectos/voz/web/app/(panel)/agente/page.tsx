@@ -117,6 +117,28 @@ export default async function Agente() {
                     />
                   </Campo>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Campo
+                      etiqueta="Cuenta de Instagram"
+                      ayuda="El ID de tu cuenta profesional. Sin esto, los mensajes de Instagram no saben de qué negocio son."
+                    >
+                      <Entrada
+                        name="instagram_id"
+                        defaultValue={config.instagram_id ?? ""}
+                        placeholder="1784140..."
+                      />
+                    </Campo>
+                    <Campo
+                      etiqueta="Página de Facebook"
+                      ayuda="El ID de la página que recibe los mensajes de Messenger."
+                    >
+                      <Entrada
+                        name="messenger_page_id"
+                        defaultValue={config.messenger_page_id ?? ""}
+                        placeholder="1020000..."
+                      />
+                    </Campo>
+                  </div>
                   <div className="grid grid-cols-3 gap-3">
                     <Campo etiqueta="Cada (min)" ayuda="Salto entre horarios.">
                       <Entrada name="slot_granularidad_min" type="number" min={5} max={120} step={5} defaultValue={config.slot_granularidad_min} />
