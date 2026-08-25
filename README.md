@@ -27,10 +27,6 @@ el método; el argumento es el resultado verificable.
 Cada merge a `main` que toque esa carpeta sale a producción; cada rama y cada PR
 levantan su propia vista previa. El detalle, en [`CONTRIBUIR.md`](CONTRIBUIR.md).
 
-## Socios
-
-- **Rogelio Díaz Alanís** — Operaciones
-- **Jesús Daniel Martínez García** — Tecnología
 
 ## Arrancar el motor de voz
 
