@@ -5,6 +5,7 @@ Lo que se prueba es lo que Meta nos manda y lo que nosotros le contestamos.
 """
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import hmac
 import json
@@ -115,6 +116,10 @@ class AgendaFalsa:
         self.recurso_id = uuid.uuid4()
         self.reservas: list[dict] = []
         self.resultado_reserva: dict = {"ok": True, "codigo": "A4K9"}
+        self.item_id = uuid.uuid4()
+        self.pedido_id = uuid.uuid4()
+        self.pedido_items: list[dict] = []
+        self.pedido_confirmado: dict | None = None
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
         return self.tenant if numero == NUMERO_NEGOCIO else None
@@ -132,6 +137,59 @@ class AgendaFalsa:
 
     async def faq(self, tenant_id: uuid.UUID, limite: int = 30) -> list[dict]:
         return [{"pregunta": "¿Donde estan?", "respuesta": "Del Valle."}]
+
+    async def buscar_catalogo(
+        self, tenant_id: uuid.UUID, consulta: str | None = None,
+        tipo: str | None = None, limite: int = 8,
+    ) -> list[dict]:
+        if consulta and "gringa" not in consulta.lower():
+            return []
+        return [{
+            "id": self.item_id, "nombre": "Gringa de pastor", "precio": 65,
+            "descripcion": "Con queso", "tipo": "taco", "disponible": True,
+        }]
+
+    async def pedido_abrir(
+        self, tenant_id: uuid.UUID, telefono: str, call_id: str | None = None
+    ) -> uuid.UUID:
+        return self.pedido_id
+
+    async def pedido_agregar(
+        self, tenant_id: uuid.UUID, pedido_id: uuid.UUID, catalogo_id: uuid.UUID,
+        cantidad: int = 1, notas: str | None = None,
+    ) -> dict:
+        self.pedido_items.append(
+            {"nombre": "Gringa de pastor", "cantidad": cantidad, "notas": notas,
+             "subtotal": 65 * cantidad}
+        )
+        total = sum(i["subtotal"] for i in self.pedido_items)
+        return {"ok": True, "nombre": "Gringa de pastor", "total": total}
+
+    async def pedido_resumen(self, tenant_id: uuid.UUID, pedido_id: uuid.UUID) -> dict:
+        return {
+            "items": self.pedido_items,
+            "total": sum(i["subtotal"] for i in self.pedido_items),
+        }
+
+    async def pedido_confirmar(
+        self, tenant_id: uuid.UUID, pedido_id: uuid.UUID, nombre: str,
+        tipo: str = "recoger", direccion: str | None = None, minutos: int = 30,
+    ) -> dict:
+        if tipo == "domicilio" and not direccion:
+            return {"ok": False, "error": "falta_direccion"}
+        self.pedido_confirmado = {"nombre": nombre, "tipo": tipo, "direccion": direccion}
+        return {
+            "ok": True, "codigo": "7QMB", "minutos": minutos,
+            "total": sum(i["subtotal"] for i in self.pedido_items),
+        }
+
+    async def catalogo_resumen(self, tenant_id: uuid.UUID, limite: int = 80) -> list[dict]:
+        return [
+            {"nombre": "Limpieza dental", "tipo": "servicio", "precio": 800, "alias": []}
+        ]
+
+    async def plantilla_vertical(self, vertical: str) -> dict:
+        return {"herramientas": ["agendar", "recado"], "instrucciones": "Agenda citas."}
 
     async def slots_libres(
         self,
@@ -675,3 +733,129 @@ async def test_el_loop_de_herramientas_tiene_tope(tenant, cfg):
     await agente.atender(parse_webhook(_envoltura(_texto("horarios")))[0])
 
     assert len(llm.llamadas) == cfg.llm_max_iteraciones
+
+
+# ---------------------------------------------------------------------------
+# Un pedido completo por WhatsApp.
+#
+# Hasta ahora el canal solo sabia agendar: el mismo negocio tomaba pedidos por
+# telefono y por WhatsApp contestaba que no podia. Estas pruebas fijan que los
+# dos canales hacen lo mismo.
+# ---------------------------------------------------------------------------
+
+
+def _tenant_de_comida(tenant):
+    """Tenant es inmutable a proposito; se clona con el giro cambiado."""
+    return dataclasses.replace(tenant, vertical="restaurante")
+
+
+async def test_whatsapp_toma_un_pedido_completo(tenant, cfg):
+    agenda = AgendaFalsa(_tenant_de_comida(tenant))
+
+    async def plantilla_de_comida(vertical: str) -> dict:
+        return {"herramientas": ["pedido"], "instrucciones": "Toma pedidos."}
+
+    agenda.plantilla_vertical = plantilla_de_comida
+    llm = LLMFalso(
+        [
+            RespuestaFalsa([_uso("consultar_catalogo", {"busqueda": "gringa"})], "tool_use"),
+            RespuestaFalsa(
+                [_uso("agregar_al_pedido",
+                      {"catalogo_id": str(agenda.item_id), "cantidad": 2,
+                       "notas": "sin cebolla"}, "tu_2")],
+                "tool_use",
+            ),
+            RespuestaFalsa(
+                [_uso("cerrar_pedido",
+                      {"tipo": "domicilio", "direccion": "Morelos 12",
+                       "nombre_cliente": "Ana"}, "tu_3")],
+                "tool_use",
+            ),
+            RespuestaFalsa([_texto_bloque("Listo Ana, tu codigo es 7QMB")], "end_turn"),
+        ]
+    )
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(
+        parse_webhook(_envoltura(_texto("quiero dos gringas sin cebolla a domicilio")))[0]
+    )
+
+    assert "7QMB" in salidas[0].texto
+    assert agenda.pedido_items[0]["cantidad"] == 2
+    assert agenda.pedido_items[0]["notas"] == "sin cebolla"
+    assert agenda.pedido_confirmado == {
+        "nombre": "Ana", "tipo": "domicilio", "direccion": "Morelos 12"
+    }
+
+
+async def test_el_giro_decide_las_herramientas_que_ve_el_modelo(tenant, cfg):
+    """Un restaurante no agenda citas y un consultorio no toma pedidos."""
+    agenda = AgendaFalsa(_tenant_de_comida(tenant))
+
+    async def plantilla_de_comida(vertical: str) -> dict:
+        return {"herramientas": ["pedido"], "instrucciones": "Toma pedidos."}
+
+    agenda.plantilla_vertical = plantilla_de_comida
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("¿Que le sirvo?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    await agente.atender(parse_webhook(_envoltura(_texto("hola")))[0])
+
+    nombres = {h["name"] for h in llm.llamadas[0]["tools"]}
+    assert "agregar_al_pedido" in nombres
+    assert "cerrar_pedido" in nombres
+    assert "consultar_catalogo" in nombres
+    assert "reservar" not in nombres
+    assert "escalar_a_humano" in nombres
+
+
+async def test_domicilio_sin_direccion_no_cierra(tenant, cfg):
+    agenda = AgendaFalsa(_tenant_de_comida(tenant))
+    sesion = SesionWhatsApp(tenant_id=tenant.id, telefono="+525598765432")
+    herramientas = Herramientas(
+        agenda, tenant, await agenda.servicios(tenant.id), sesion,
+        herramientas_giro=["pedido"],
+    )
+    await herramientas.ejecutar(
+        "agregar_al_pedido", {"catalogo_id": str(agenda.item_id), "cantidad": 1}
+    )
+
+    respuesta = await herramientas.ejecutar("cerrar_pedido", {"tipo": "domicilio"})
+
+    assert "direccion" in respuesta.lower()
+    assert agenda.pedido_confirmado is None
+
+
+async def test_el_pedido_sobrevive_entre_mensajes(tenant, cfg):
+    """En WhatsApp la conversacion se corta y sigue horas despues."""
+    agenda = AgendaFalsa(_tenant_de_comida(tenant))
+    sesion = SesionWhatsApp(tenant_id=tenant.id, telefono="+525598765432")
+
+    primera = Herramientas(
+        agenda, tenant, [], sesion, herramientas_giro=["pedido"]
+    )
+    await primera.ejecutar("agregar_al_pedido", {"catalogo_id": str(agenda.item_id)})
+
+    # Otro mensaje, otras herramientas, la misma sesion.
+    segunda = Herramientas(
+        agenda, tenant, [], sesion, herramientas_giro=["pedido"]
+    )
+    resumen = await segunda.ejecutar("repetir_pedido", {})
+
+    assert "Gringa de pastor" in resumen
+    assert sesion.pedido_id == agenda.pedido_id
+
+
+async def test_no_niega_sin_buscar_en_el_catalogo(tenant, cfg):
+    """Lo que no esta se dice claro, pero solo despues de buscarlo."""
+    agenda = AgendaFalsa(_tenant_de_comida(tenant))
+    sesion = SesionWhatsApp(tenant_id=tenant.id, telefono="+525598765432")
+    herramientas = Herramientas(
+        agenda, tenant, [], sesion, herramientas_giro=["pedido"]
+    )
+
+    hay = await herramientas.ejecutar("consultar_catalogo", {"busqueda": "gringa"})
+    no_hay = await herramientas.ejecutar("consultar_catalogo", {"busqueda": "sushi"})
+
+    assert "Gringa de pastor" in hay and "$65" in hay
+    assert "no hay nada" in no_hay.lower()

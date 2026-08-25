@@ -167,11 +167,10 @@ def construir(
     if propio:
         lineas = [propio]
     else:
-        instrucciones = (
-            plantilla["instrucciones"]
-            if plantilla
-            else PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])
-        )
+        # La plantilla viene de la base y puede no traer instrucciones: si es
+        # asi se cae a la del giro en vez de tronar a media llamada.
+        respaldo = PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])
+        instrucciones = (plantilla or {}).get("instrucciones") or respaldo
         lineas = [BASE, instrucciones]
 
     lineas.append(f"\nNEGOCIO: {tenant.nombre}")

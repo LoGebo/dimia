@@ -29,6 +29,10 @@ class SesionWhatsApp:
     mensajes: list[Mensaje] = field(default_factory=list)
     opciones: dict[str, OpcionHorario] = field(default_factory=dict)
     escalada: bool = False
+    # El pedido vive en la sesion, no en las herramientas: en WhatsApp la
+    # conversacion se interrumpe y sigue horas despues, y el carrito tiene que
+    # seguir ahi cuando el cliente vuelve a escribir.
+    pedido_id: uuid.UUID | None = None
     ultimo_contacto: float = field(default_factory=time.monotonic)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
