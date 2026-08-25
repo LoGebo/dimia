@@ -1,34 +1,19 @@
-"use client";
-
-import { useRef } from "react";
-import { cambiarNegocio } from "@/lib/acciones";
 import type { Membresia } from "@/lib/tipos";
 
-export function SelectorNegocio({ membresias, activo }: { membresias: Membresia[]; activo: string }) {
-  const formulario = useRef<HTMLFormElement>(null);
-  const actual = membresias.find((m) => m.tenant_id === activo);
-
+/**
+ * El nombre del negocio en el armazón.
+ *
+ * Antes era un selector para saltar entre negocios de la misma cuenta. Se quitó:
+ * una cuenta atiende un negocio. El salto obligaba a que cada pantalla del panel
+ * aguantara un cambio de giro a media navegación —de restaurante a clínica
+ * cambian las secciones, las herramientas y el prompt— y ahí es donde tronaba.
+ */
+export function NombreNegocio({ membresia }: { membresia: Membresia | undefined }) {
+  if (!membresia) return null;
   return (
     <div className="px-3 py-3">
-      {membresias.length === 1 ? (
-        <p className="truncate text-[13px] font-semibold tracking-tight text-tinta">{actual?.nombre}</p>
-      ) : (
-        <form ref={formulario} action={cambiarNegocio}>
-          <select
-            name="negocio_id"
-            defaultValue={activo}
-            onChange={() => formulario.current?.requestSubmit()}
-            className="w-full rounded-md border border-linea bg-panel-2 px-2 py-1.5 text-[13px] font-medium text-tinta outline-none focus:border-acento"
-          >
-            {membresias.map((m) => (
-              <option key={m.tenant_id} value={m.tenant_id}>
-                {m.nombre}
-              </option>
-            ))}
-          </select>
-        </form>
-      )}
-      {actual ? <ChipGiro nombre={actual.vertical_nombre} className="mt-1.5" /> : null}
+      <p className="truncate text-[13px] font-semibold tracking-tight text-tinta">{membresia.nombre}</p>
+      <ChipGiro nombre={membresia.vertical_nombre} className="mt-1.5" />
     </div>
   );
 }

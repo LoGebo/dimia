@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { contexto } from "@/lib/sesion";
 import { negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
 import { MarcaDimia } from "@/components/marca";
 import { AvanceListo } from "@/components/avance-listo";
 import { Navegacion } from "@/components/navegacion";
-import { SelectorNegocio } from "@/components/selector-negocio";
+import { NombreNegocio } from "@/components/selector-negocio";
 import { BotonTema } from "@/components/tema";
 import { Insignia } from "@/components/ui/primitivos";
 import { telefono } from "@/lib/formato";
@@ -21,7 +20,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <aside className="flex flex-col border-r border-linea bg-panel lg:sticky lg:top-0 lg:h-screen">
         <MarcaDimia />
         <div className="border-b border-linea">
-          <SelectorNegocio membresias={membresias} activo={negocioId} />
+          <NombreNegocio membresia={membresias.find((m) => m.tenant_id === negocioId)} />
         </div>
         <div className="border-b border-linea px-3 py-2.5">
           <p className="etiqueta">Número de entrada</p>
@@ -43,15 +42,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             </div>
             <BotonTema />
           </div>
-          <div className="flex items-center gap-2">
-            <form action={salir}>
-              <button className="text-[11px] text-tinta-3 transition hover:text-tinta">Cerrar sesión</button>
-            </form>
-            <span className="text-tinta-3">·</span>
-            <Link href="/alta" className="text-[11px] text-tinta-3 transition hover:text-tinta">
-              Nuevo negocio
-            </Link>
-          </div>
+          <form action={salir}>
+            <button className="text-[11px] text-tinta-3 transition hover:text-tinta">Cerrar sesión</button>
+          </form>
         </div>
       </aside>
       <main className="min-w-0">

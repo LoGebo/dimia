@@ -88,11 +88,6 @@ export async function salir(): Promise<void> {
   redirect("/entrar");
 }
 
-export async function cambiarNegocio(fd: FormData): Promise<void> {
-  await elegirNegocio(texto(fd, "negocio_id"));
-  redirect("/resumen");
-}
-
 /**
  * Crea el negocio, hace dueño a quien lo crea y lo siembra con la plantilla de
  * su giro. Lo usan el registro y el alta de un negocio adicional.
@@ -244,6 +239,14 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
   }
   refrescarPanel();
   return { ok: aviso ? `Configuración guardada. ${aviso}` : "Configuración guardada." };
+}
+
+/** Abrirla es haberla leído: baja el contador del menú. */
+export async function marcarLeida(conversacionId: string): Promise<void> {
+  await datos(async (q, id) => {
+    await q("select conversacion_marcar_leida($1, $2)", [id, conversacionId]);
+  });
+  revalidatePath("/", "layout");
 }
 
 /** La primera frase de cada llamada. Vacío usa la de la plantilla del vertical. */

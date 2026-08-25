@@ -698,6 +698,44 @@ async def entrypoint(ctx: JobContext) -> None:
         false_interruption_timeout=1.0,
     )
 
+    # Cada turno de la llamada queda escrito en el mismo hilo que WhatsApp.
+    # Antes de esto una llamada solo dejaba su duracion: el dueno no podia leer
+    # lo que su agente le habia dicho al cliente.
+    # Sin guardar la referencia, el recolector de basura puede llevarse la
+    # tarea a medio camino y el turno se pierde sin ruido.
+    escrituras: set[asyncio.Task] = set()
+
+    @session.on("conversation_item_added")
+    def _guardar_turno(ev) -> None:
+        item = ev.item
+        rol = getattr(item, "role", None)
+        if rol not in ("user", "assistant"):
+            return
+        contenido = getattr(item, "text_content", None) or ""
+        if not contenido.strip():
+            return
+        tarea = asyncio.create_task(
+            _registrar_turno(
+                autor="cliente" if rol == "user" else "agente",
+                texto=contenido,
+                externo_id=getattr(item, "id", None),
+            )
+        )
+        escrituras.add(tarea)
+        tarea.add_done_callback(escrituras.discard)
+
+    async def _registrar_turno(autor: str, texto: str, externo_id: str | None) -> None:
+        try:
+            await agenda.mensaje_registrar(
+                tenant.id, "llamada", llamante, autor, texto,
+                nombre=None,
+                herramienta=None,
+                externo_id=externo_id,
+                call_id=recepcionista.call_id,
+            )
+        except Exception:
+            log.exception("no se pudo registrar el turno de la llamada")
+
     # Un solo renglon por turno con el desglose de la latencia. Sin esto, "esta
     # tardando" no se puede diagnosticar: no se sabe si es el silencio que se
     # espera, el modelo pensando o la voz tardando en salir.

@@ -46,10 +46,18 @@ def contexto(
     servicios: list[dict],
     faq: list[dict],
     ahora: datetime | None = None,
+    catalogo: list[dict] | None = None,
+    plantilla: dict | None = None,
 ) -> str:
-    return prompt_voz.construir(tenant, servicios, faq, ahora).removeprefix(
-        prompt_voz.BASE
-    )
+    """El contexto del negocio, igual al de la llamada menos la base de voz.
+
+    El menu se inyecta aqui tambien: sin el, el agente de WhatsApp negaba de
+    memoria platillos que si estaban en el catalogo, el mismo error que ya se
+    corrigio en la llamada.
+    """
+    return prompt_voz.construir(
+        tenant, servicios, faq, ahora, plantilla=plantilla, catalogo=catalogo
+    ).removeprefix(prompt_voz.BASE)
 
 
 def construir(
@@ -57,8 +65,10 @@ def construir(
     servicios: list[dict],
     faq: list[dict],
     ahora: datetime | None = None,
+    catalogo: list[dict] | None = None,
+    plantilla: dict | None = None,
 ) -> str:
-    return BASE_TEXTO + contexto(tenant, servicios, faq, ahora)
+    return BASE_TEXTO + contexto(tenant, servicios, faq, ahora, catalogo, plantilla)
 
 
 def bloques_system(
@@ -66,14 +76,23 @@ def bloques_system(
     servicios: list[dict],
     faq: list[dict],
     ahora: datetime | None = None,
+    catalogo: list[dict] | None = None,
+    plantilla: dict | None = None,
 ) -> list[dict]:
+    """La base va en su propio bloque para que Anthropic la cachee.
+
+    El contexto del negocio cambia con cada edicion del panel; la base no.
+    """
     return [
         {
             "type": "text",
             "text": BASE_TEXTO,
             "cache_control": {"type": "ephemeral"},
         },
-        {"type": "text", "text": contexto(tenant, servicios, faq, ahora)},
+        {
+            "type": "text",
+            "text": contexto(tenant, servicios, faq, ahora, catalogo, plantilla),
+        },
     ]
 
 

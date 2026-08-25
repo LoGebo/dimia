@@ -3,6 +3,8 @@ import "server-only";
 import { datos } from "@/lib/sesion";
 import type {
   CatalogoItem,
+  Conversacion,
+  Mensaje,
   Faq,
   Negocio,
   Pedido,
@@ -301,5 +303,64 @@ export function resumenAgendaHoy(dia: string): Promise<ResumenAgendaHoy> {
       [id, dia],
     );
     return filas[0] ?? { confirmadas: 0, canceladas: 0, personas: 0 };
+  });
+}
+
+/**
+ * La bandeja: un renglón por conversación, ordenada por lo más reciente.
+ *
+ * Lee la vista previa denormalizada de `conversacion` a propósito: `mensaje`
+ * crece sin límite y la bandeja se abre en cada carga del panel.
+ */
+export function conversaciones(limite = 50): Promise<Conversacion[]> {
+  return datos((q, id) =>
+    q<Conversacion>(
+      `select id, canal, contacto, contacto_nombre, estado, escalada_en,
+              motivo_escalamiento, ultimo_mensaje, ultimo_mensaje_en,
+              mensajes_sin_leer, booking_id, pedido_id, call_id
+         from conversacion
+        where tenant_id = $1 and estado <> 'cerrada'
+        order by ultimo_mensaje_en desc
+        limit $2`,
+      [id, limite],
+    ),
+  );
+}
+
+export function conversacion(conversacionId: string): Promise<Conversacion | null> {
+  return datos(async (q, id) => {
+    const filas = await q<Conversacion>(
+      `select id, canal, contacto, contacto_nombre, estado, escalada_en,
+              motivo_escalamiento, ultimo_mensaje, ultimo_mensaje_en,
+              mensajes_sin_leer, booking_id, pedido_id, call_id
+         from conversacion where id = $2 and tenant_id = $1`,
+      [id, conversacionId],
+    );
+    return filas[0] ?? null;
+  });
+}
+
+export function mensajes(conversacionId: string, limite = 200): Promise<Mensaje[]> {
+  return datos((q, id) =>
+    q<Mensaje>(
+      `select id, autor, texto, herramienta, creado
+         from mensaje
+        where tenant_id = $1 and conversacion_id = $2
+        order by creado
+        limit $3`,
+      [id, conversacionId, limite],
+    ),
+  );
+}
+
+/** Cuántas conversaciones traen algo sin leer. Alimenta el punto del menú. */
+export function conversacionesSinLeer(): Promise<number> {
+  return datos(async (q, id) => {
+    const filas = await q<{ n: string }>(
+      `select count(*)::text as n from conversacion
+        where tenant_id = $1 and mensajes_sin_leer > 0 and estado <> 'cerrada'`,
+      [id],
+    );
+    return Number(filas[0]?.n ?? 0);
   });
 }

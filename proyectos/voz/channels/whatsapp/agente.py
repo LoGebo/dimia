@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from app.supabase_client import Agenda, Tenant
@@ -11,7 +11,7 @@ from app.supabase_client import agenda as agenda_global
 from channels.whatsapp import plantilla
 from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings
-from channels.whatsapp.herramientas import DEFINICIONES, Herramientas
+from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas, definiciones
 from channels.whatsapp.parser import MensajeEntrante
 from channels.whatsapp.sesion import RegistroSesiones
 
@@ -35,6 +35,11 @@ class ContextoNegocio:
     servicios: list[dict]
     faq: list[dict]
     cargado: float
+    # El menu y el giro llegan igual que en la llamada: WhatsApp y telefono
+    # tienen que saber lo mismo del negocio o el cliente recibe dos versiones.
+    catalogo: list[dict] = field(default_factory=list)
+    plantilla: dict | None = None
+    herramientas_giro: list[str] = field(default_factory=list)
 
 
 def _a_dict(bloque: Any) -> dict[str, Any]:
@@ -68,10 +73,18 @@ class AgenteWhatsApp:
         tenant = await self.agenda.tenant_por_telefono(numero_negocio)
         if tenant is None:
             return None
-        servicios, faq = await asyncio.gather(
-            self.agenda.servicios(tenant.id), self.agenda.faq(tenant.id)
+        servicios, faq, catalogo, plantilla = await asyncio.gather(
+            self.agenda.servicios(tenant.id),
+            self.agenda.faq(tenant.id),
+            self.agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
+            self.agenda.plantilla_vertical(tenant.vertical),
         )
-        contexto = ContextoNegocio(tenant, servicios, faq, time.monotonic())
+        contexto = ContextoNegocio(
+            tenant, servicios, faq, time.monotonic(),
+            catalogo=catalogo,
+            plantilla=plantilla,
+            herramientas_giro=list((plantilla or {}).get("herramientas", [])),
+        )
         self._contextos[numero_negocio] = contexto
         return contexto
 
@@ -89,13 +102,46 @@ class AgenteWhatsApp:
         )
         async with sesion.lock:
             herramientas = Herramientas(
-                self.agenda, contexto.tenant, contexto.servicios, sesion
+                self.agenda, contexto.tenant, contexto.servicios, sesion,
+                herramientas_giro=contexto.herramientas_giro,
             )
             sesion.agregar_usuario(self._texto_usuario(entrante, sesion.opciones))
             sesion.recortar(self.cfg.sesion_max_turnos)
             texto = await self._conversar(contexto, sesion, herramientas)
 
+        await self._registrar(contexto, entrante, herramientas, texto)
         return self._salidas(entrante, contexto.tenant, herramientas, texto)
+
+    async def _registrar(
+        self,
+        contexto: ContextoNegocio,
+        entrante: MensajeEntrante,
+        herramientas: Herramientas,
+        texto: str,
+    ) -> None:
+        """Deja el turno escrito para la bandeja.
+
+        Nunca puede tumbar la respuesta al cliente: si la base falla, el mensaje
+        igual sale y aqui solo queda el registro del fallo.
+        """
+        try:
+            await self.agenda.mensaje_registrar(
+                contexto.tenant.id, "whatsapp", entrante.telefono, "cliente",
+                entrante.texto, entrante.nombre_perfil, None, entrante.mensaje_id,
+            )
+            conversacion = await self.agenda.mensaje_registrar(
+                contexto.tenant.id, "whatsapp", entrante.telefono, "agente",
+                texto, entrante.nombre_perfil, herramientas.ultima_herramienta,
+            )
+            if conversacion and herramientas.escalado_ahora:
+                await self.agenda.conversacion_escalar(
+                    contexto.tenant.id, conversacion, herramientas.motivo_escalamiento or ""
+                )
+        except Exception:
+            log.exception(
+                "no se pudo registrar la conversacion de WhatsApp con %s",
+                entrante.telefono,
+            )
 
     def _texto_usuario(
         self, entrante: MensajeEntrante, opciones: dict[str, Any]
@@ -113,7 +159,8 @@ class AgenteWhatsApp:
         herramientas: Herramientas,
     ) -> str:
         system = plantilla.bloques_system(
-            contexto.tenant, contexto.servicios, contexto.faq
+            contexto.tenant, contexto.servicios, contexto.faq,
+            catalogo=contexto.catalogo, plantilla=contexto.plantilla,
         )
         ultimo_texto = ""
 
@@ -122,7 +169,7 @@ class AgenteWhatsApp:
                 model=self.cfg.llm_model,
                 max_tokens=self.cfg.llm_max_tokens,
                 system=system,
-                tools=DEFINICIONES,
+                tools=definiciones(contexto.herramientas_giro),
                 messages=sesion.mensajes,
             )
             bloques = [_a_dict(bloque) for bloque in respuesta.content]

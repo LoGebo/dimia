@@ -8,7 +8,11 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   const pedidos = herramientas.includes("pedido");
   const recados = herramientas.includes("recado");
 
-  const lista: Seccion[] = [{ href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño" }];
+  const lista: Seccion[] = [
+    { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño" },
+    // Va arriba a proposito: es la pantalla que se abre todos los dias.
+    { href: "/bandeja", nombre: "Bandeja", detalle: "Lo que te dijeron" },
+  ];
 
   if (agenda) lista.push({ href: "/agenda", nombre: "Agenda", detalle: "Reservas del día" });
   if (pedidos) lista.push({ href: "/pedidos", nombre: "Pedidos", detalle: "Lo que hay que sacar" });

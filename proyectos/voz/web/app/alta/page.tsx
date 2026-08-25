@@ -3,10 +3,15 @@ import { AltaNegocio } from "@/components/alta-negocio";
 import { Paso } from "@/components/paso";
 import { Tarjeta } from "@/components/ui/primitivos";
 import { usuarioActual } from "@/lib/auth";
+import { membresias } from "@/lib/sesion";
 import { plantillasPublicas } from "@/lib/plantillas";
 
 export default async function AltaInicio() {
-  if (!(await usuarioActual())) redirect("/entrar");
+  const usuario = await usuarioActual();
+  if (!usuario) redirect("/entrar");
+  // Una cuenta atiende un negocio. Quien ya tiene el suyo no vuelve a darse de
+  // alta: antes esto creaba un segundo negocio y aparecia el selector.
+  if ((await membresias(usuario.id)).length > 0) redirect("/resumen");
   const lista = await plantillasPublicas();
   return (
     <Paso
