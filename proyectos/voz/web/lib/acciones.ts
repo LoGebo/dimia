@@ -241,6 +241,14 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
   return { ok: aviso ? `Configuración guardada. ${aviso}` : "Configuración guardada." };
 }
 
+/** Abrirla es haberla leído: baja el contador del menú. */
+export async function marcarLeida(conversacionId: string): Promise<void> {
+  await datos(async (q, id) => {
+    await q("select conversacion_marcar_leida($1, $2)", [id, conversacionId]);
+  });
+  revalidatePath("/", "layout");
+}
+
 /** La primera frase de cada llamada. Vacío usa la de la plantilla del vertical. */
 export async function guardarSaludo(_previo: Estado, fd: FormData): Promise<Estado> {
   const propio = opcional(fd, "saludo");

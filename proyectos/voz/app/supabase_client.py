@@ -152,6 +152,37 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
+    async def mensaje_registrar(
+        self,
+        tenant_id: uuid.UUID,
+        canal: str,
+        contacto: str,
+        autor: str,
+        texto: str,
+        nombre: str | None = None,
+        herramienta: str | None = None,
+        externo_id: str | None = None,
+        call_id: str | None = None,
+    ) -> uuid.UUID | None:
+        """Deja escrito un turno de conversacion.
+
+        Nunca debe tumbar la conversacion en vivo: si la escritura falla, el
+        cliente igual tiene que recibir su respuesta. Por eso el que llama la
+        ejecuta sin esperar y los errores se registran, no se propagan.
+        """
+        return await self.pool.fetchval(
+            "select mensaje_registrar($1,$2::canal_conversacion,$3,$4::autor_mensaje,$5,$6,$7,$8,$9)",
+            tenant_id, canal, contacto, autor, texto,
+            nombre, herramienta, externo_id, call_id,
+        )
+
+    async def conversacion_escalar(
+        self, tenant_id: uuid.UUID, conversacion_id: uuid.UUID, motivo: str
+    ) -> None:
+        await self.pool.execute(
+            "select conversacion_escalar($1,$2,$3)", tenant_id, conversacion_id, motivo
+        )
+
     async def catalogo_resumen(
         self, tenant_id: uuid.UUID, limite: int = 80
     ) -> list[dict]:

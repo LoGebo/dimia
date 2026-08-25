@@ -109,7 +109,39 @@ class AgenteWhatsApp:
             sesion.recortar(self.cfg.sesion_max_turnos)
             texto = await self._conversar(contexto, sesion, herramientas)
 
+        await self._registrar(contexto, entrante, herramientas, texto)
         return self._salidas(entrante, contexto.tenant, herramientas, texto)
+
+    async def _registrar(
+        self,
+        contexto: ContextoNegocio,
+        entrante: MensajeEntrante,
+        herramientas: Herramientas,
+        texto: str,
+    ) -> None:
+        """Deja el turno escrito para la bandeja.
+
+        Nunca puede tumbar la respuesta al cliente: si la base falla, el mensaje
+        igual sale y aqui solo queda el registro del fallo.
+        """
+        try:
+            await self.agenda.mensaje_registrar(
+                contexto.tenant.id, "whatsapp", entrante.telefono, "cliente",
+                entrante.texto, entrante.nombre_perfil, None, entrante.mensaje_id,
+            )
+            conversacion = await self.agenda.mensaje_registrar(
+                contexto.tenant.id, "whatsapp", entrante.telefono, "agente",
+                texto, entrante.nombre_perfil, herramientas.ultima_herramienta,
+            )
+            if conversacion and herramientas.escalado_ahora:
+                await self.agenda.conversacion_escalar(
+                    contexto.tenant.id, conversacion, herramientas.motivo_escalamiento or ""
+                )
+        except Exception:
+            log.exception(
+                "no se pudo registrar la conversacion de WhatsApp con %s",
+                entrante.telefono,
+            )
 
     def _texto_usuario(
         self, entrante: MensajeEntrante, opciones: dict[str, Any]

@@ -120,6 +120,8 @@ class AgendaFalsa:
         self.pedido_id = uuid.uuid4()
         self.pedido_items: list[dict] = []
         self.pedido_confirmado: dict | None = None
+        self.turnos: list[dict] = []
+        self.escalada_registrada: tuple | None = None
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
         return self.tenant if numero == NUMERO_NEGOCIO else None
@@ -137,6 +139,19 @@ class AgendaFalsa:
 
     async def faq(self, tenant_id: uuid.UUID, limite: int = 30) -> list[dict]:
         return [{"pregunta": "¿Donde estan?", "respuesta": "Del Valle."}]
+
+    async def mensaje_registrar(
+        self, tenant_id, canal, contacto, autor, texto,
+        nombre=None, herramienta=None, externo_id=None, call_id=None,
+    ):
+        self.turnos.append({
+            "canal": canal, "contacto": contacto, "autor": autor, "texto": texto,
+            "herramienta": herramienta, "externo_id": externo_id,
+        })
+        return uuid.UUID(int=1)
+
+    async def conversacion_escalar(self, tenant_id, conversacion_id, motivo):
+        self.escalada_registrada = (conversacion_id, motivo)
 
     async def buscar_catalogo(
         self, tenant_id: uuid.UUID, consulta: str | None = None,
@@ -859,3 +874,74 @@ async def test_no_niega_sin_buscar_en_el_catalogo(tenant, cfg):
 
     assert "Gringa de pastor" in hay and "$65" in hay
     assert "no hay nada" in no_hay.lower()
+
+
+# ---------------------------------------------------------------------------
+# La conversacion queda escrita.
+#
+# Antes vivia en memoria del proceso y se borraba a los treinta minutos: el
+# dueno no podia leer que le habian dicho a su cliente.
+# ---------------------------------------------------------------------------
+
+
+async def test_la_conversacion_queda_registrada(tenant, cfg):
+    agenda = AgendaFalsa(tenant)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Claro, ¿para cuando?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    await agente.atender(parse_webhook(_envoltura(_texto("quiero una cita")))[0])
+
+    assert [t["autor"] for t in agenda.turnos] == ["cliente", "agente"]
+    assert agenda.turnos[0]["texto"] == "quiero una cita"
+    assert agenda.turnos[0]["externo_id"] == "wamid.1"
+    assert agenda.turnos[1]["texto"] == "Claro, ¿para cuando?"
+    assert all(t["canal"] == "whatsapp" for t in agenda.turnos)
+
+
+async def test_se_anota_que_herramienta_uso_el_agente(tenant, cfg):
+    """Sin esto no se puede auditar por que contesto lo que contesto."""
+    agenda = AgendaFalsa(_tenant_de_comida(tenant))
+
+    async def plantilla_de_comida(vertical: str) -> dict:
+        return {"herramientas": ["pedido"], "instrucciones": "Toma pedidos."}
+
+    agenda.plantilla_vertical = plantilla_de_comida
+    llm = LLMFalso([
+        RespuestaFalsa([_uso("consultar_catalogo", {"busqueda": "gringa"})], "tool_use"),
+        RespuestaFalsa([_texto_bloque("Tenemos gringa de pastor a $65.")], "end_turn"),
+    ])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    await agente.atender(parse_webhook(_envoltura(_texto("hay gringas?")))[0])
+
+    assert agenda.turnos[1]["herramienta"] == "consultar_catalogo"
+
+
+async def test_el_escalamiento_marca_el_hilo(tenant, cfg):
+    agenda = AgendaFalsa(tenant)
+    llm = LLMFalso([
+        RespuestaFalsa([_uso("escalar_a_humano", {"motivo": "alergia"})], "tool_use"),
+        RespuestaFalsa([_texto_bloque("Te paso con alguien del equipo.")], "end_turn"),
+    ])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    await agente.atender(parse_webhook(_envoltura(_texto("soy alergico al mani")))[0])
+
+    assert agenda.escalada_registrada is not None
+    assert agenda.escalada_registrada[1] == "alergia"
+
+
+async def test_si_la_base_falla_el_cliente_igual_recibe_respuesta(tenant, cfg):
+    """El registro es para el dueno; la respuesta es para el cliente."""
+    agenda = AgendaFalsa(tenant)
+
+    async def truena(*args, **kwargs):
+        raise RuntimeError("base caida")
+
+    agenda.mensaje_registrar = truena
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Con gusto.")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("hola")))[0])
+
+    assert salidas[0].texto == "Con gusto."

@@ -415,3 +415,39 @@ export const ZONAS_HORARIAS = [
   "America/Hermosillo",
   "America/Tijuana",
 ] as const;
+
+export type CanalConversacion = "whatsapp" | "llamada" | "instagram" | "messenger" | "sms";
+export type EstadoConversacion = "abierta" | "escalada" | "cerrada";
+export type AutorMensaje = "cliente" | "agente" | "equipo" | "sistema";
+
+export const NOMBRE_CANAL: Record<CanalConversacion, string> = {
+  whatsapp: "WhatsApp",
+  llamada: "Llamada",
+  instagram: "Instagram",
+  messenger: "Messenger",
+  sms: "SMS",
+};
+
+export type Conversacion = {
+  id: string;
+  canal: CanalConversacion;
+  contacto: string;
+  contacto_nombre: string | null;
+  estado: EstadoConversacion;
+  escalada_en: string | null;
+  motivo_escalamiento: string | null;
+  ultimo_mensaje: string | null;
+  ultimo_mensaje_en: string;
+  mensajes_sin_leer: number;
+  booking_id: string | null;
+  pedido_id: string | null;
+  call_id: string | null;
+};
+
+export type Mensaje = {
+  id: string;
+  autor: AutorMensaje;
+  texto: string;
+  herramienta: string | null;
+  creado: string;
+};

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { contexto } from "@/lib/sesion";
 import { negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
@@ -43,15 +42,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             </div>
             <BotonTema />
           </div>
-          <div className="flex items-center gap-2">
-            <form action={salir}>
-              <button className="text-[11px] text-tinta-3 transition hover:text-tinta">Cerrar sesión</button>
-            </form>
-            <span className="text-tinta-3">·</span>
-            <Link href="/alta" className="text-[11px] text-tinta-3 transition hover:text-tinta">
-              Nuevo negocio
-            </Link>
-          </div>
+          <form action={salir}>
+            <button className="text-[11px] text-tinta-3 transition hover:text-tinta">Cerrar sesión</button>
+          </form>
         </div>
       </aside>
       <main className="min-w-0">

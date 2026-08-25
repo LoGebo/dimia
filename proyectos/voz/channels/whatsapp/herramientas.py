@@ -241,11 +241,16 @@ class Herramientas:
         self.booking_id: uuid.UUID | None = None
         self.escalado_ahora = False
         self.pedido_cerrado = False
+        self.motivo_escalamiento: str | None = None
+        # La ultima herramienta del turno queda en el registro: es lo que
+        # permite auditar por que el agente contesto lo que contesto.
+        self.ultima_herramienta: str | None = None
 
     async def ejecutar(self, nombre: str, argumentos: dict[str, Any]) -> str:
         manejador = getattr(self, f"_{nombre}", None)
         if manejador is None:
             return "Esa herramienta no existe."
+        self.ultima_herramienta = nombre
         return await manejador(argumentos)
 
     async def _consultar_disponibilidad(self, argumentos: dict[str, Any]) -> str:
@@ -360,6 +365,7 @@ class Herramientas:
         self.escalado_ahora = True
         destino = self.tenant.telefono_escalamiento
         motivo = str(argumentos.get("motivo") or "sin motivo")
+        self.motivo_escalamiento = motivo
         if not destino:
             return (
                 "No hay a quien escalar. Dile que alguien del equipo le escribe "
