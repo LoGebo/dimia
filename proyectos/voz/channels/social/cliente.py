@@ -51,6 +51,14 @@ class ClienteSocial:
     async def enviar_texto(
         self, destino: str, texto: str, canal: CanalSocial = "messenger"
     ) -> str:
+        # El dueno lee este texto en la pantalla de Mensajes: tiene que decirle
+        # que le falta, no un error de la libreria de HTTP.
+        if not self._token(canal):
+            nombre = "Instagram" if canal == "instagram" else "Messenger"
+            raise RuntimeError(
+                f"{nombre} no esta conectado todavia: falta el token de acceso "
+                "de Meta en la configuracion del servidor."
+            )
         url = (
             f"{self.cfg.graph_url}/{self.cfg.api_version}/me/messages"
             f"?access_token={self._token(canal)}"

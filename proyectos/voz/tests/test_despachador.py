@@ -34,6 +34,7 @@ class AgendaFalsa:
         self.filas = filas
         self.enviados: list[uuid.UUID] = []
         self.errores: list[tuple[uuid.UUID, str]] = []
+        self.vencidos: list[tuple[uuid.UUID, str]] = []
 
     async def outbox_reclamar(self, limite: int = 25) -> list[dict[str, Any]]:
         tomadas, self.filas = self.filas[:limite], self.filas[limite:]
@@ -44,6 +45,9 @@ class AgendaFalsa:
 
     async def outbox_marcar_error(self, outbox_id: uuid.UUID, error: str) -> None:
         self.errores.append((outbox_id, error))
+
+    async def outbox_marcar_vencido(self, outbox_id: uuid.UUID, motivo: str) -> None:
+        self.vencidos.append((outbox_id, motivo))
 
 
 class MensajeroFalso:
@@ -166,15 +170,36 @@ async def test_cola_vacia_no_hace_nada():
 
 
 class AgendaReal:
-    """El despachador contra la base de verdad, sin la capa de Supabase."""
+    """El despachador contra la base de verdad, sin la capa de Supabase.
 
-    def __init__(self, pool) -> None:
+    Reclama solo lo del negocio de la prueba. `outbox_reclamar` es global a
+    proposito —el despachador es del sistema, no de un tenant— pero una prueba
+    que vacia la cola compartida marca como enviadas filas de otros negocios y
+    deja la base local mintiendo. Ya paso: costo media hora perseguir un
+    fantasma.
+    """
+
+    def __init__(self, pool, tenant=None) -> None:
         self.pool = pool
+        self.tenant = tenant
 
     async def outbox_reclamar(self, limite: int = 25) -> list[dict[str, Any]]:
         import json as _json
 
-        filas = await self.pool.fetch("select * from outbox_reclamar($1)", limite)
+        filas = await self.pool.fetch(
+            """update outbox o
+                  set intentos = o.intentos + 1,
+                      disponible_en = now() + make_interval(
+                        secs => least(3600, 30 * power(2, o.intentos)::int))
+                where o.id in (
+                  select id from outbox
+                   where estado = 'pendiente' and disponible_en <= now()
+                     and ($2::uuid is null or tenant_id = $2)
+                   order by disponible_en limit $1
+                   for update skip locked)
+             returning o.*""",
+            limite, self.tenant,
+        )
         salida = []
         for f in filas:
             d = dict(f)
@@ -188,6 +213,9 @@ class AgendaReal:
 
     async def outbox_marcar_error(self, outbox_id, error: str) -> None:
         await self.pool.execute("select outbox_marcar_error($1,$2)", outbox_id, error)
+
+    async def outbox_marcar_vencido(self, outbox_id, motivo: str) -> None:
+        await self.pool.execute("select outbox_marcar_vencido($1,$2)", outbox_id, motivo)
 
 
 async def test_cerrar_un_pedido_termina_en_whatsapp(pool, negocio):
@@ -222,13 +250,9 @@ async def test_cerrar_un_pedido_termina_en_whatsapp(pool, negocio):
         )
         assert encolados == 1, "confirmar el pedido debe encolar el mensaje"
 
-    # La cola trae lo de otras pruebas: se vacia hasta encontrar la propia.
     mensajero = MensajeroFalso()
-    despachador = Despachador(AgendaReal(pool), mensajero)
-    for _ in range(20):
-        tanda = await despachador.tanda()
-        if tanda.reclamados == 0 or any(d == "+525511112222" for d, _ in mensajero.mandados):
-            break
+    despachador = Despachador(AgendaReal(pool, tenant), mensajero)
+    tanda = await despachador.tanda()
 
     # La cola es de todos los negocios: el despachador es del sistema, no de
     # un tenant. Se busca el mensaje propio, no el primero que salio.
@@ -284,7 +308,9 @@ async def test_lo_encolado_hace_mucho_se_descarta_en_vez_de_dispararse():
 
     assert (tanda.enviados, tanda.vencidos) == (1, 1)
     assert [d for d, _ in mensajero.mandados] == ["+525599998888"]
-    assert "vencido" in agenda.errores[0][1]
+    # Fallido de una vez, no por la via de los seis reintentos.
+    assert agenda.errores == []
+    assert "vencido" in agenda.vencidos[0][1]
 
 
 async def test_los_recordatorios_los_encola_el_proceso_no_pg_cron():

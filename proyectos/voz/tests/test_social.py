@@ -254,3 +254,17 @@ def test_una_firma_que_no_cuadra_se_rechaza():
     )
 
     assert respuesta.status_code == 401
+
+
+async def test_sin_token_el_error_le_dice_al_dueno_que_le_falta():
+    """Ese texto es el que se lee en la pantalla de Mensajes: tiene que ser
+    accionable, no el error crudo de la libreria de HTTP."""
+    from channels.social.cliente import ClienteSocial
+
+    cliente = ClienteSocial(SocialSettings(instagram_access_token=""))
+
+    with pytest.raises(RuntimeError) as fallo:
+        await cliente.enviar_texto("123", "hola", "instagram")
+
+    assert "Instagram no esta conectado" in str(fallo.value)
+    assert "token" in str(fallo.value)

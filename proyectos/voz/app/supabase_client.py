@@ -187,6 +187,10 @@ class Agenda:
     async def outbox_marcar_error(self, outbox_id: uuid.UUID, error: str) -> None:
         await self.pool.execute("select outbox_marcar_error($1,$2)", outbox_id, error)
 
+    async def outbox_marcar_vencido(self, outbox_id: uuid.UUID, motivo: str) -> None:
+        """Se da por perdido de una vez: reintentarlo solo lo encuentra mas viejo."""
+        await self.pool.execute("select outbox_marcar_vencido($1,$2)", outbox_id, motivo)
+
     async def mensaje_registrar(
         self,
         tenant_id: uuid.UUID,

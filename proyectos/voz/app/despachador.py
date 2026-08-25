@@ -131,7 +131,9 @@ class Despachador:
             creado = fila.get("creado")
             if creado is not None and creado < limite:
                 vencidos += 1
-                await self.agenda.outbox_marcar_error(
+                # Se marca fallido de una vez, no por la via de los reintentos:
+                # cada reintento solo lo encontraria mas viejo.
+                await self.agenda.outbox_marcar_vencido(
                     fila["id"], f"vencido: encolado hace mas de {VENCE_EN_HORAS} h"
                 )
                 continue

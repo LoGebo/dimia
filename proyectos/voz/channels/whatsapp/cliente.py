@@ -66,6 +66,19 @@ class WhatsAppCliente:
             self._http = None
 
     async def _publicar(self, payload: dict[str, Any]) -> str:
+        # Sin credenciales httpx tira "Illegal header value b'Bearer '", que no
+        # le dice nada al dueno del negocio: este texto es el que va a leer en
+        # la pantalla de Mensajes cuando pregunte por que no salio.
+        if not self.cfg.whatsapp_access_token:
+            raise RuntimeError(
+                "WhatsApp no esta conectado todavia: falta el token de acceso "
+                "de Meta en la configuracion del servidor."
+            )
+        if not self.cfg.whatsapp_phone_number_id:
+            raise RuntimeError(
+                "WhatsApp no esta conectado todavia: falta el numero de "
+                "WhatsApp Business en la configuracion del servidor."
+            )
         respuesta = await self.http.post(
             self.cfg.endpoint_mensajes,
             json=payload,
