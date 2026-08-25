@@ -8,10 +8,11 @@ from typing import Any, Protocol
 
 from app.supabase_client import Agenda, Tenant
 from app.supabase_client import agenda as agenda_global
+from channels import nucleo
 from channels.whatsapp import plantilla
 from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings
-from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas, definiciones
+from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
 from channels.whatsapp.parser import MensajeEntrante
 from channels.whatsapp.sesion import RegistroSesiones
 
@@ -119,29 +120,20 @@ class AgenteWhatsApp:
         herramientas: Herramientas,
         texto: str,
     ) -> None:
-        """Deja el turno escrito para la bandeja.
-
-        Nunca puede tumbar la respuesta al cliente: si la base falla, el mensaje
-        igual sale y aqui solo queda el registro del fallo.
-        """
-        try:
-            await self.agenda.mensaje_registrar(
-                contexto.tenant.id, "whatsapp", entrante.telefono, "cliente",
-                entrante.texto, entrante.nombre_perfil, None, entrante.mensaje_id,
-            )
-            conversacion = await self.agenda.mensaje_registrar(
-                contexto.tenant.id, "whatsapp", entrante.telefono, "agente",
-                texto, entrante.nombre_perfil, herramientas.ultima_herramienta,
-            )
-            if conversacion and herramientas.escalado_ahora:
-                await self.agenda.conversacion_escalar(
-                    contexto.tenant.id, conversacion, herramientas.motivo_escalamiento or ""
-                )
-        except Exception:
-            log.exception(
-                "no se pudo registrar la conversacion de WhatsApp con %s",
-                entrante.telefono,
-            )
+        await nucleo.registrar_turno(
+            self.agenda,
+            tenant_id=contexto.tenant.id,
+            canal="whatsapp",
+            contacto=entrante.telefono,
+            entrante=entrante.texto,
+            respuesta=texto,
+            nombre=entrante.nombre_perfil,
+            herramienta=herramientas.ultima_herramienta,
+            externo_id=entrante.mensaje_id,
+            escalado=herramientas.escalado_ahora,
+            motivo=herramientas.motivo_escalamiento,
+            log=log,
+        )
 
     def _texto_usuario(
         self, entrante: MensajeEntrante, opciones: dict[str, Any]
@@ -158,50 +150,19 @@ class AgenteWhatsApp:
         sesion: Any,
         herramientas: Herramientas,
     ) -> str:
-        system = plantilla.bloques_system(
-            contexto.tenant, contexto.servicios, contexto.faq,
-            catalogo=contexto.catalogo, plantilla=contexto.plantilla,
+        return await nucleo.conversar(
+            self.llm,
+            modelo=self.cfg.llm_model,
+            max_tokens=self.cfg.llm_max_tokens,
+            max_iteraciones=self.cfg.llm_max_iteraciones,
+            system=plantilla.bloques_system(
+                contexto.tenant, contexto.servicios, contexto.faq,
+                catalogo=contexto.catalogo, plantilla=contexto.plantilla,
+            ),
+            sesion=sesion,
+            herramientas=herramientas,
+            herramientas_giro=contexto.herramientas_giro,
         )
-        ultimo_texto = ""
-
-        for _ in range(self.cfg.llm_max_iteraciones):
-            respuesta = await self.llm.messages.create(
-                model=self.cfg.llm_model,
-                max_tokens=self.cfg.llm_max_tokens,
-                system=system,
-                tools=definiciones(contexto.herramientas_giro),
-                messages=sesion.mensajes,
-            )
-            bloques = [_a_dict(bloque) for bloque in respuesta.content]
-            sesion.agregar_asistente(bloques)
-
-            texto = " ".join(
-                bloque.get("text", "")
-                for bloque in bloques
-                if bloque.get("type") == "text"
-            ).strip()
-            if texto:
-                ultimo_texto = texto
-
-            llamadas = [b for b in bloques if b.get("type") == "tool_use"]
-            if respuesta.stop_reason != "tool_use" or not llamadas:
-                break
-
-            resultados = []
-            for llamada in llamadas:
-                salida = await herramientas.ejecutar(
-                    llamada.get("name", ""), llamada.get("input", {}) or {}
-                )
-                resultados.append(
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": llamada.get("id", ""),
-                        "content": salida,
-                    }
-                )
-            sesion.agregar_resultados(resultados)
-
-        return ultimo_texto
 
     def _salidas(
         self,

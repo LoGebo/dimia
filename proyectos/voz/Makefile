@@ -75,6 +75,10 @@ consola:
 despachador:
 	$(PY) -m app.despachador
 
+# Webhook de Instagram Direct y Messenger.
+social:
+	$(VENV)/bin/uvicorn channels.social.servidor:app --port 8081
+
 imagen:
 	docker build -t $(IMAGEN):$(ETIQUETA) .
 
