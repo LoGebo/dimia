@@ -5,6 +5,7 @@ import type {
   CatalogoItem,
   Conversacion,
   Mensaje,
+  MensajeSaliente,
   Faq,
   Negocio,
   Pedido,
@@ -363,4 +364,22 @@ export function conversacionesSinLeer(): Promise<number> {
     );
     return Number(filas[0]?.n ?? 0);
   });
+}
+
+/**
+ * Lo que salió y lo que no. La cola es del sistema, pero cada negocio solo ve
+ * lo suyo: RLS filtra por tenant.
+ */
+export function mensajesSalientes(limite = 100): Promise<MensajeSaliente[]> {
+  return datos((q, id) =>
+    q<MensajeSaliente>(
+      `select id, canal, destino, plantilla::text as plantilla, estado::text as estado,
+              intentos, max_intentos, ultimo_error, disponible_en, creado, enviado
+         from outbox
+        where tenant_id = $1
+        order by creado desc
+        limit $2`,
+      [id, limite],
+    ),
+  );
 }

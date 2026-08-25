@@ -31,6 +31,9 @@ POR_VUELTA = 25
 # confirmación de un pedido de la semana pasada. Si la cola estuvo detenida,
 # lo acumulado se descarta en vez de dispararse todo junto al reanudar.
 VENCE_EN_HORAS = 12
+# Cada cuanto se revisa si hay citas por recordar, y con cuanta anticipacion.
+CADA_RECORDATORIO_SEG = 3600
+VENTANA_RECORDATORIO_HORAS = 24
 
 
 class Mensajero(Protocol):
@@ -116,6 +119,7 @@ class Despachador:
         self.agenda = agenda
         self.mensajero = mensajero
         self.por_vuelta = por_vuelta
+        self._ultimo_recordatorio = 0.0
 
     async def tanda(self) -> Tanda:
         """Una vuelta: reclama lo que toca, lo manda y marca el resultado."""
@@ -147,10 +151,27 @@ class Despachador:
 
         return Tanda(len(pendientes), enviados, fallidos, vencidos)
 
+    async def recordatorios(self) -> int:
+        """Encola el recordatorio de las citas de mañana.
+
+        Vive aqui y no en pg_cron a proposito: pg_cron hay que habilitarlo a
+        mano en el tablero de Supabase, y un negocio cuyo dueño no lo encendio
+        se quedaria sin recordatorios sin que nadie se entere. El proceso que
+        ya corre lo hace solo.
+        """
+        return await self.agenda.encolar_recordatorios(VENTANA_RECORDATORIO_HORAS)
+
     async def correr(self, intervalo: float = INTERVALO_SEG) -> None:
         """El ciclo. Nunca muere por un error de una tanda."""
         while True:
             try:
+                ahora = asyncio.get_running_loop().time()
+                if ahora - self._ultimo_recordatorio >= CADA_RECORDATORIO_SEG:
+                    self._ultimo_recordatorio = ahora
+                    cuantos = await self.recordatorios()
+                    if cuantos:
+                        log.info("%d recordatorios encolados", cuantos)
+
                 resultado = await self.tanda()
                 if resultado.reclamados:
                     log.info(

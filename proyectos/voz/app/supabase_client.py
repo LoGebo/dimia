@@ -152,6 +152,12 @@ class Agenda:
         )
         return [dict(f) for f in filas]
 
+    async def encolar_recordatorios(self, ventana_horas: int = 24) -> int:
+        """Encola el recordatorio de las citas que caen dentro de la ventana."""
+        return await self.pool.fetchval(
+            "select encolar_recordatorios($1)", ventana_horas
+        ) or 0
+
     async def outbox_reclamar(self, limite: int = 25) -> list[dict]:
         """Toma las filas que toca mandar y las marca como intentadas.
 
