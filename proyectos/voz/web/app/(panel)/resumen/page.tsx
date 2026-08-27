@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Encabezado, Indicador } from "@/components/encabezado";
+import { Encabezado } from "@/components/encabezado";
+import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { GraficaHoras, GraficaLlamadas, GraficaMotivos } from "@/components/graficas";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import {
@@ -45,13 +46,13 @@ export default async function Resumen({
         descripcion={`${config.nombre} · últimos ${dias} días`}
         giro={giro.nombre}
         acciones={
-          <div className="flex overflow-hidden rounded-md border border-linea bg-panel">
+          <div className="flex border border-linea bg-panel">
             {RANGOS.map((r) => (
               <Link
                 key={r}
                 href={`/resumen?dias=${r}`}
-                className={`px-2.5 py-1 text-xs transition ${
-                  r === dias ? "bg-acento-suave font-medium text-acento" : "text-tinta-2 hover:bg-panel-2"
+                className={`px-2.5 py-1.5 text-[12px] transition ${
+                  r === dias ? "bg-tinta font-medium text-paper" : "text-tinta-2 hover:bg-panel-2"
                 }`}
               >
                 {r} d
@@ -61,25 +62,32 @@ export default async function Resumen({
         }
       />
 
-      <div className="space-y-4 px-6 py-5">
+      <div className="space-y-4 px-5 py-5">
         <Hoy herramientas={giro.herramientas} dia={hoy} />
 
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-linea bg-linea lg:grid-cols-4">
-          <Indicador etiqueta="Llamadas" valor={String(resumen.total)} detalle={`${(resumen.total / dias).toFixed(1)} por día`} />
-          <Indicador
+        <TiraIndicadores>
+          <Cifra
+            etiqueta="Llamadas"
+            valor={String(resumen.total)}
+            glifo={Glifos.llamada}
+            pildora={`${(resumen.total / dias).toFixed(1)} por día`}
+          />
+          <Cifra
             etiqueta="Resueltas sin humano"
             valor={porcentaje(containment)}
-            detalle={`${resumen.resueltas} de ${resumen.total}`}
+            glifo={Glifos.personas}
+            pildora={`${resumen.resueltas} de ${resumen.total}`}
             tono={containment >= 0.75 ? "bueno" : containment >= 0.5 ? "alerta" : "critico"}
           />
-          <Indicador
+          <Cifra
             etiqueta="Escalamiento"
             valor={porcentaje(escalamiento)}
-            detalle={`${resumen.escaladas} pasaron a una persona`}
+            glifo={Glifos.alerta}
+            pildora={`${resumen.escaladas} a una persona`}
             tono={escalamiento <= 0.15 ? "bueno" : escalamiento <= 0.3 ? "alerta" : "critico"}
           />
-          <Indicador etiqueta="Duración promedio" valor={duracion(resumen.duracionPromedio)} detalle="minutos por llamada" />
-        </div>
+          <Cifra etiqueta="Duración promedio" valor={duracion(resumen.duracionPromedio)} unidad="min" glifo={Glifos.reloj} />
+        </TiraIndicadores>
 
         <Tarjeta>
           <TarjetaCabecera
@@ -125,15 +133,16 @@ async function Hoy({ herramientas, dia }: { herramientas: string[]; dia: string 
     const pedidos = await resumenPedidos(dia);
     return (
       <Bloque titulo="Hoy" ruta="/pedidos" enlace="Ver pedidos" columnas={4}>
-        <Indicador etiqueta="Pedidos del día" valor={String(pedidos.total)} detalle={`${pedidos.cancelados} cancelados`} />
-        <Indicador
+        <Cifra etiqueta="Pedidos del día" valor={String(pedidos.total)} glifo={Glifos.personas} pildora={`${pedidos.cancelados} cancelados`} />
+        <Cifra
           etiqueta="Por sacar"
           valor={String(pedidos.abiertos + pedidos.confirmados)}
-          detalle={`${pedidos.entregados} ya salieron`}
+          glifo={Glifos.reloj}
+          pildora={`${pedidos.entregados} ya salieron`}
           tono={pedidos.abiertos + pedidos.confirmados > 0 ? "alerta" : "bueno"}
         />
-        <Indicador etiqueta="Total vendido" valor={moneda(pedidos.vendido)} detalle="confirmados y entregados" />
-        <Indicador etiqueta="Ticket promedio" valor={moneda(pedidos.ticket)} detalle="por pedido cerrado" />
+        <Cifra etiqueta="Total vendido" valor={moneda(pedidos.vendido)} glifo={Glifos.dinero} pildora="confirmados y entregados" />
+        <Cifra etiqueta="Ticket promedio" valor={moneda(pedidos.ticket)} glifo={Glifos.dinero} pildora="por pedido cerrado" />
       </Bloque>
     );
   }
@@ -142,13 +151,14 @@ async function Hoy({ herramientas, dia }: { herramientas: string[]; dia: string 
     const agenda = await resumenAgendaHoy(dia);
     return (
       <Bloque titulo="Hoy" ruta="/agenda" enlace="Ver agenda" columnas={3}>
-        <Indicador etiqueta="Reservas confirmadas" valor={String(agenda.confirmadas)} detalle="para hoy" />
-        <Indicador etiqueta="Personas esperadas" valor={String(agenda.personas)} detalle="suma de las confirmadas" />
-        <Indicador
+        <Cifra etiqueta="Citas confirmadas" valor={String(agenda.confirmadas)} unidad="para hoy" glifo={Glifos.personas} />
+        <Cifra etiqueta="Personas esperadas" valor={String(agenda.personas)} glifo={Glifos.personas} pildora="suma de las confirmadas" />
+        <Cifra
           etiqueta="Canceladas"
           valor={String(agenda.canceladas)}
-          detalle="se liberó el horario"
-          tono={agenda.canceladas > 0 ? "alerta" : undefined}
+          glifo={Glifos.alerta}
+          pildora={agenda.canceladas > 0 ? "horario liberado" : "ninguna"}
+          tono={agenda.canceladas > 0 ? "alerta" : "bueno"}
         />
       </Bloque>
     );
@@ -157,10 +167,11 @@ async function Hoy({ herramientas, dia }: { herramientas: string[]; dia: string 
   const pendientes = await recadosPendientes();
   return (
     <Bloque titulo="Bandeja" ruta="/recados" enlace="Ver recados" columnas={1}>
-      <Indicador
+      <Cifra
         etiqueta="Recados sin atender"
         valor={String(pendientes)}
-        detalle="gente esperando que le marquen"
+        glifo={Glifos.llamada}
+        pildora="esperan que les marquen"
         tono={pendientes > 0 ? "alerta" : "bueno"}
       />
     </Bloque>

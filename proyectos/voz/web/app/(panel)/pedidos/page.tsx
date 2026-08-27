@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Encabezado, Indicador } from "@/components/encabezado";
+import { Encabezado } from "@/components/encabezado";
+import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { Refrescar } from "@/components/refrescar";
 import { TableroPedidos } from "@/components/tablero-pedidos";
 import { Vacio } from "@/components/ui/primitivos";
@@ -53,7 +54,7 @@ export default async function Pedidos({
             <Navegar destino={enlace({ dia: sumarDias(dia, -1) })} etiqueta="‹" />
             <Link
               href={enlace({ dia: hoy })}
-              className="rounded-md border border-linea bg-panel px-2.5 py-1 text-xs text-tinta-2 transition hover:bg-panel-2"
+              className="h-8 border border-linea bg-panel px-2.5 text-[12px] leading-[30px] text-tinta-2 transition hover:bg-panel-2"
             >
               Hoy
             </Link>
@@ -62,33 +63,35 @@ export default async function Pedidos({
         }
       />
 
-      <div className="space-y-4 px-6 py-5">
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-linea bg-linea lg:grid-cols-4">
-          <Indicador etiqueta="Pedidos del día" valor={String(resumen.total)} detalle={`${resumen.cancelados} cancelados`} />
-          <Indicador
+      <div className="space-y-4 px-5 py-5">
+        <TiraIndicadores>
+          <Cifra
+            etiqueta="Pedidos del día"
+            valor={String(resumen.total)}
+            glifo={Glifos.personas}
+            pildora={resumen.cancelados > 0 ? `${resumen.cancelados} cancelados` : undefined}
+            tono="neutro"
+          />
+          <Cifra
             etiqueta="Por sacar"
             valor={String(resumen.abiertos + resumen.confirmados)}
-            detalle={`${resumen.entregados} ya salieron`}
+            glifo={Glifos.reloj}
+            pildora={`${resumen.entregados} ya salieron`}
             tono={resumen.abiertos + resumen.confirmados > 0 ? "alerta" : "bueno"}
           />
-          <Indicador etiqueta="Vendido" valor={moneda(resumen.vendido)} detalle="confirmados y entregados" />
-          <Indicador etiqueta="Ticket promedio" valor={moneda(resumen.ticket)} detalle="por pedido cerrado" />
-        </div>
+          <Cifra etiqueta="Vendido" valor={moneda(resumen.vendido)} glifo={Glifos.dinero} pildora="confirmados y entregados" />
+          <Cifra etiqueta="Ticket promedio" valor={moneda(resumen.ticket)} glifo={Glifos.dinero} pildora="por pedido cerrado" />
+        </TiraIndicadores>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {FILTROS.map((f) => (
-            <Link
-              key={f.valor}
-              href={enlace({ estado: f.valor })}
-              className={`rounded-lg border px-3.5 py-1.5 text-[15px] font-medium transition ${
-                f.valor === filtro
-                  ? "border-acento bg-acento-suave text-acento"
-                  : "border-linea bg-panel text-tinta-2 hover:bg-panel-2"
-              }`}
-            >
+            <Chip key={f.valor} activo={f.valor === filtro} href={enlace({ estado: f.valor })}>
               {f.nombre}
-            </Link>
+            </Chip>
           ))}
+          <span className="numeros ml-auto font-mono text-[11px] text-tinta-3">
+            {visibles.length} de {todos.length} pedidos
+          </span>
         </div>
 
         {visibles.length === 0 ? (
@@ -114,7 +117,7 @@ function Navegar({ destino, etiqueta }: { destino: string; etiqueta: string }) {
   return (
     <Link
       href={destino}
-      className="flex h-[26px] w-7 items-center justify-center rounded-md border border-linea bg-panel text-tinta-2 transition hover:bg-panel-2"
+      className="flex h-8 w-8 items-center justify-center border border-linea bg-panel text-tinta-2 transition hover:bg-panel-2"
     >
       {etiqueta}
     </Link>

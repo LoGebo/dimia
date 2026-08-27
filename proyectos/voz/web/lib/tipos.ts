@@ -68,11 +68,24 @@ export type Reserva = {
   inicio: string;
   fin: string;
   estado: EstadoReserva;
+  llegada: string | null;
+  creado: string;
+  precio: string | null;
   servicio: string;
   recurso: string;
   resource_id: string;
   service_id: string;
 };
+
+/** En qué columna del día va una cita. Se deriva de `estado` y `llegada`. */
+export type PasoCita = "por_llegar" | "en_atencion" | "atendida" | "no_llego" | "cancelada";
+
+export function pasoDe(r: Pick<Reserva, "estado" | "llegada">): PasoCita {
+  if (r.estado === "completada") return "atendida";
+  if (r.estado === "no_asistio") return "no_llego";
+  if (r.estado === "cancelada") return "cancelada";
+  return r.llegada ? "en_atencion" : "por_llegar";
+}
 
 export type Faq = {
   id: string;

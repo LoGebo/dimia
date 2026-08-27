@@ -1,6 +1,13 @@
 import type { Herramienta } from "@/lib/tipos";
 
-export type Seccion = { href: string; nombre: string; detalle: string };
+export type GrupoSeccion = "operacion" | "configuracion" | "agente";
+export type Seccion = { href: string; nombre: string; detalle: string; grupo: GrupoSeccion };
+
+export const NOMBRE_GRUPO: Record<GrupoSeccion, string> = {
+  operacion: "Operación",
+  configuracion: "Configuración",
+  agente: "Agente",
+};
 export type PasoAlta = { href: string; nombre: string };
 
 export function secciones(herramientas: Herramienta[]): Seccion[] {
@@ -9,23 +16,23 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   const recados = herramientas.includes("recado");
 
   const lista: Seccion[] = [
-    { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño" },
+    { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño", grupo: "operacion" },
     // Va arriba a proposito: es la pantalla que se abre todos los dias.
-    { href: "/bandeja", nombre: "Bandeja", detalle: "Lo que te dijeron" },
+    { href: "/bandeja", nombre: "Bandeja", detalle: "Lo que te dijeron", grupo: "operacion" },
   ];
 
-  if (agenda) lista.push({ href: "/agenda", nombre: "Agenda", detalle: "Reservas del día" });
-  if (pedidos) lista.push({ href: "/pedidos", nombre: "Pedidos", detalle: "Lo que hay que sacar" });
-  if (recados) lista.push({ href: "/recados", nombre: "Recados", detalle: "Quién pidió que le marquen" });
-  if (agenda || pedidos) lista.push({ href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres" });
-  if (agenda) lista.push({ href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración" });
+  if (agenda) lista.push({ href: "/agenda", nombre: "Agenda", detalle: "Flujo del día", grupo: "operacion" });
+  if (pedidos) lista.push({ href: "/pedidos", nombre: "Pedidos", detalle: "Lo que hay que sacar", grupo: "operacion" });
+  if (recados) lista.push({ href: "/recados", nombre: "Recados", detalle: "Quién pidió que le marquen", grupo: "operacion" });
+  if (agenda || pedidos) lista.push({ href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres", grupo: "configuracion" });
+  if (agenda) lista.push({ href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración", grupo: "configuracion" });
 
   lista.push(
-    { href: "/mensajes", nombre: "Mensajes", detalle: "Lo que sale por WhatsApp" },
-    { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces" },
-    { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta" },
-    { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia" },
-    { href: "/probar", nombre: "Probar", detalle: "Háblale en vivo" },
+    { href: "/mensajes", nombre: "Mensajes", detalle: "Lo que sale por WhatsApp", grupo: "configuracion" },
+    { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces", grupo: "configuracion" },
+    { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta", grupo: "agente" },
+    { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia", grupo: "agente" },
+    { href: "/probar", nombre: "Probar", detalle: "Háblale en vivo", grupo: "agente" },
   );
 
   return lista;

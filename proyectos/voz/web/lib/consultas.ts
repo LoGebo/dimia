@@ -93,7 +93,8 @@ export function faq(): Promise<Faq[]> {
 
 const SELECT_RESERVA = `
   select b.id, b.codigo, b.cliente_nombre, b.telefono, b.personas, b.notas,
-         b.inicio, b.fin, b.estado, s.nombre as servicio, r.nombre as recurso,
+         b.inicio, b.fin, b.estado, b.llegada, b.creado, s.precio,
+         s.nombre as servicio, r.nombre as recurso,
          b.resource_id, b.service_id
     from booking b
     join service  s on s.id = b.service_id
@@ -287,6 +288,40 @@ export function recadosPendientes(): Promise<number> {
       [id],
     );
     return filas[0]?.total ?? 0;
+  });
+}
+
+/** Cuántas citas confirmadas o atendidas hubo un día. Sirve para comparar contra la semana pasada. */
+export function citasDelDia(dia: string): Promise<number> {
+  return datos(async (q, id) => {
+    const filas = await q<{ n: string }>(
+      `select count(*)::text as n
+         from booking b
+         join tenant t on t.id = b.tenant_id
+        where b.tenant_id = $1
+          and b.estado in ('confirmada','completada')
+          and (b.inicio at time zone t.zona_horaria)::date = $2::date`,
+      [id, dia],
+    );
+    return Number(filas[0]?.n ?? 0);
+  });
+}
+
+/** Los contadores del menú y de la campana: lo que pide atención ahora mismo. */
+export type Contadores = { bandeja: number; pedidos: number; recados: number };
+
+export function contadores(): Promise<Contadores> {
+  return datos(async (q, id) => {
+    const filas = await q<{ bandeja: number; pedidos: number; recados: number }>(
+      `select (select count(*) from conversacion
+                where tenant_id = $1 and mensajes_sin_leer > 0 and estado <> 'cerrada')::int as bandeja,
+              (select count(*) from pedido
+                where tenant_id = $1 and estado in ('abierto','confirmado'))::int as pedidos,
+              (select count(*) from lead
+                where tenant_id = $1 and not atendido)::int as recados`,
+      [id],
+    );
+    return filas[0] ?? { bandeja: 0, pedidos: 0, recados: 0 };
   });
 }
 

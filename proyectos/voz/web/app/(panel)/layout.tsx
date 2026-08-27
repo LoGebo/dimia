@@ -1,56 +1,66 @@
 import { contexto } from "@/lib/sesion";
-import { negocio } from "@/lib/consultas";
+import { contadores, negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
+import { Armazon } from "@/components/armazon";
 import { MarcaDimia } from "@/components/marca";
 import { AvanceListo } from "@/components/avance-listo";
 import { Navegacion } from "@/components/navegacion";
 import { NombreNegocio } from "@/components/selector-negocio";
 import { BotonTema } from "@/components/tema";
-import { Insignia } from "@/components/ui/primitivos";
 import { telefono } from "@/lib/formato";
 import { avance } from "@/lib/listo";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const { membresias, negocioId, usuario, rol, giro } = await contexto();
-  const actual = await negocio();
-  const progreso = await avance(giro.herramientas);
+  const [actual, progreso, avisos] = await Promise.all([negocio(), avance(giro.herramientas), contadores()]);
 
-  return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[232px_1fr]">
-      <aside className="flex flex-col border-r border-linea bg-panel lg:sticky lg:top-0 lg:h-screen">
-        <MarcaDimia />
-        <div className="border-b border-linea">
-          <NombreNegocio membresia={membresias.find((m) => m.tenant_id === negocioId)} />
-        </div>
-        <div className="border-b border-linea px-3 py-2.5">
-          <p className="etiqueta">Número de entrada</p>
-          <p className="numeros mt-1 text-[13px] text-tinta">
+  const menu = (
+    <>
+      <MarcaDimia />
+      <div className="border-b border-linea">
+        <NombreNegocio membresia={membresias.find((m) => m.tenant_id === negocioId)} />
+      </div>
+      <div className="flex items-center justify-between gap-2 border-b border-linea px-3 py-2.5">
+        <div className="min-w-0">
+          <p className="etiqueta">Línea</p>
+          <p className="numeros mt-0.5 truncate font-mono text-[12px] text-tinta">
             {actual.telefono_entrada ? telefono(actual.telefono_entrada) : "sin asignar"}
           </p>
-          <div className="mt-1.5">
-            {actual.activo ? <Insignia tono="bueno">Activo</Insignia> : <Insignia tono="alerta">Pausado</Insignia>}
+        </div>
+        <span
+          className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] uppercase ${
+            actual.activo ? "text-bueno" : "text-alerta"
+          }`}
+        >
+          <i aria-hidden="true" className={`h-1.5 w-1.5 bg-current ${actual.activo ? "late" : ""}`} />
+          {actual.activo ? "Activo" : "Pausado"}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto py-4">
+        <Navegacion
+          herramientas={giro.herramientas}
+          contadores={{ "/bandeja": avisos.bandeja, "/pedidos": avisos.pedidos, "/recados": avisos.recados }}
+        />
+      </div>
+      <div className="border-t border-linea px-3 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-[12px] text-tinta-2">{usuario.email}</p>
+            <p className="text-[11px] text-tinta-3">{rol === "owner" ? "Dueño" : "Equipo"}</p>
           </div>
+          <BotonTema />
         </div>
-        <div className="flex-1 overflow-y-auto py-3">
-          <Navegacion herramientas={giro.herramientas} />
-        </div>
-        <div className="border-t border-linea px-3 py-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-[11px] text-tinta-2">{usuario.email}</p>
-              <p className="text-[11px] text-tinta-3">{rol === "owner" ? "Dueño" : "Equipo"}</p>
-            </div>
-            <BotonTema />
-          </div>
-          <form action={salir}>
-            <button className="text-[11px] text-tinta-3 transition hover:text-tinta">Cerrar sesión</button>
-          </form>
-        </div>
-      </aside>
-      <main className="min-w-0">
-        <AvanceListo avance={progreso} />
-        {children}
-      </main>
-    </div>
+        <form action={salir} className="mt-2">
+          <button className="text-[11px] text-tinta-3 transition hover:text-tinta">Cerrar sesión</button>
+        </form>
+      </div>
+    </>
+  );
+
+  return (
+    <Armazon menu={menu}>
+      <AvanceListo avance={progreso} />
+      {children}
+    </Armazon>
   );
 }

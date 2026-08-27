@@ -574,6 +574,31 @@ export async function cancelarReserva(fd: FormData): Promise<void> {
   refrescarPanel();
 }
 
+export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
+
+/**
+ * Mueve una cita dentro del día. `llego` y `regresar` solo tocan `llegada`,
+ * así la cita sigue confirmada y sigue bloqueando su horario mientras se atiende.
+ */
+export async function moverCita(fd: FormData): Promise<void> {
+  const paso = texto(fd, "paso") as PasoFlujo;
+  const cambios: Record<PasoFlujo, string> = {
+    llego: "llegada = now()",
+    regresar: "llegada = null",
+    atendida: "estado = 'completada', llegada = coalesce(llegada, now())",
+    no_llego: "estado = 'no_asistio'",
+  };
+  const cambio = cambios[paso];
+  if (!cambio) return;
+  await datos((q, negocioId) =>
+    q(`update booking set ${cambio} where id = $2 and tenant_id = $1 and estado = 'confirmada'`, [
+      negocioId,
+      texto(fd, "id"),
+    ]),
+  );
+  refrescarPanel();
+}
+
 export type Slot = { inicio: string; fin: string; resource_id: string; resource_nombre: string };
 
 export async function slotsLibres(servicioId: string, dia: string, personas: number): Promise<Slot[]> {

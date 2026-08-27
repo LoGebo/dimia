@@ -46,7 +46,7 @@ export default async function Agente() {
         descripcion="Cómo suena, a dónde transfiere y con qué contexto contesta."
         giro={giro.nombre}
       />
-      <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,420px)_1fr]">
+      <div className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,420px)_1fr]">
         <div className="space-y-4">
           <Tarjeta>
             <TarjetaCabecera
