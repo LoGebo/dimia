@@ -625,6 +625,28 @@ export async function cancelarReserva(fd: FormData): Promise<void> {
   refrescarPanel();
 }
 
+export async function guardarCliente(_previo: Estado, fd: FormData): Promise<Estado> {
+  const id = texto(fd, "id");
+  const etiquetas = texto(fd, "etiquetas")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  try {
+    await datos((q, negocioId) =>
+      q(
+        `update cliente
+            set nombre = $3, correo = $4, notas = $5, etiquetas = $6::text[], actualizado = now()
+          where id = $2 and tenant_id = $1`,
+        [negocioId, id, opcional(fd, "nombre"), opcional(fd, "correo"), opcional(fd, "notas"), etiquetas],
+      ),
+    );
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: "Cliente guardado." };
+}
+
 export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
 
 /**

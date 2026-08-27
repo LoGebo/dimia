@@ -69,6 +69,7 @@ export type Reserva = {
   fin: string;
   estado: EstadoReserva;
   llegada: string | null;
+  cliente_id: string | null;
   creado: string;
   precio: string | null;
   servicio: string;
@@ -126,6 +127,59 @@ export type Recado = {
   campos: Record<string, unknown>;
   atendido: boolean;
   creado: string;
+};
+
+export type Cliente = {
+  id: string;
+  nombre: string | null;
+  telefono: string | null;
+  correo: string | null;
+  notas: string | null;
+  origen: string | null;
+  etiquetas: string[];
+  primer_contacto: string;
+  ultimo_contacto: string;
+};
+
+export type ClienteResumen = Cliente & {
+  citas: number;
+  atendidas: number;
+  no_asistio: number;
+  pedidos: number;
+  gastado: string;
+  recados_pendientes: number;
+};
+
+export type Evento = {
+  id: number;
+  cliente_id: string | null;
+  tipo: string;
+  entidad: string;
+  entidad_id: string | null;
+  datos: Record<string, unknown>;
+  autor: "agente" | "equipo" | "cliente" | "sistema";
+  creado: string;
+};
+
+export const NOMBRE_EVENTO: Record<string, string> = {
+  "cita.creada": "Agendó una cita",
+  "cita.confirmada": "Cita confirmada",
+  "cita.cancelada": "Canceló la cita",
+  "cita.atendida": "Cita atendida",
+  "cita.no_asistio": "No llegó a la cita",
+  "cita.llegada": "Llegó a la cita",
+  "cita.movida": "Movió la cita",
+  "pedido.abierto": "Empezó un pedido",
+  "pedido.confirmado": "Pedido a cocina",
+  "pedido.entregado": "Pedido entregado",
+  "pedido.cancelado": "Pedido cancelado",
+  "recado.creado": "Dejó un recado",
+  "recado.atendido": "Recado atendido",
+  "conversacion.abierta": "Empezó a escribir",
+  "conversacion.escalada": "Pidió una persona",
+  "conversacion.cerrada": "Conversación cerrada",
+  "llamada.terminada": "Llamó",
+  "pago.registrado": "Pagó",
 };
 
 export type Rol = "owner" | "staff";

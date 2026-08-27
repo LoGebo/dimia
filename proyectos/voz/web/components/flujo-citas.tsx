@@ -202,7 +202,13 @@ function Tarjeta({
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-tinta" title={r.cliente_nombre}>
-              {nombreCorto(r.cliente_nombre)}
+              {r.cliente_id ? (
+                <Link href={`/clientes/${r.cliente_id}`} className="transition hover:text-acento">
+                  {nombreCorto(r.cliente_nombre)}
+                </Link>
+              ) : (
+                nombreCorto(r.cliente_nombre)
+              )}
             </p>
             <p className="truncate text-[12px] text-tinta-2">
               {r.servicio}

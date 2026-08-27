@@ -19,6 +19,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
     { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño", grupo: "operacion" },
     // Va arriba a proposito: es la pantalla que se abre todos los dias.
     { href: "/bandeja", nombre: "Bandeja", detalle: "Lo que te dijeron", grupo: "operacion" },
+    { href: "/clientes", nombre: "Clientes", detalle: "Quién es quién", grupo: "operacion" },
   ];
 
   if (agenda) lista.push({ href: "/agenda", nombre: "Agenda", detalle: "Flujo del día", grupo: "operacion" });

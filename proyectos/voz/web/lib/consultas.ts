@@ -3,6 +3,9 @@ import "server-only";
 import { datos } from "@/lib/sesion";
 import type {
   CatalogoItem,
+  Cliente,
+  ClienteResumen,
+  Evento,
   Conversacion,
   Mensaje,
   MensajeSaliente,
@@ -93,7 +96,7 @@ export function faq(): Promise<Faq[]> {
 
 const SELECT_RESERVA = `
   select b.id, b.codigo, b.cliente_nombre, b.telefono, b.personas, b.notas,
-         b.inicio, b.fin, b.estado, b.llegada, b.creado, s.precio,
+         b.inicio, b.fin, b.estado, b.llegada, b.cliente_id, b.creado, s.precio,
          s.nombre as servicio, r.nombre as recurso,
          b.resource_id, b.service_id
     from booking b
@@ -413,6 +416,122 @@ export function mensajesSalientes(limite = 100): Promise<MensajeSaliente[]> {
          from outbox
         where tenant_id = $1
         order by creado desc
+        limit $2`,
+      [id, limite],
+    ),
+  );
+}
+
+// ---------------------------------------------------------------
+// Clientes: la memoria del negocio.
+// ---------------------------------------------------------------
+
+export type SegmentoCliente = "todos" | "nuevos" | "frecuentes" | "inactivos" | "faltan";
+
+const SELECT_CLIENTE = `
+  select c.id, c.nombre, c.telefono, c.correo, c.notas, c.origen, c.etiquetas,
+         c.primer_contacto, c.ultimo_contacto,
+         (select count(*) from booking b where b.cliente_id = c.id and b.estado in ('confirmada','completada'))::int as citas,
+         (select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada')::int as atendidas,
+         (select count(*) from booking b where b.cliente_id = c.id and b.estado = 'no_asistio')::int as no_asistio,
+         (select count(*) from pedido p where p.cliente_id = c.id and p.estado in ('confirmado','entregado'))::int as pedidos,
+         coalesce((select sum(public.pedido_total(p.id)) from pedido p where p.cliente_id = c.id and p.estado in ('confirmado','entregado')), 0)::text as gastado,
+         (select count(*) from lead l where l.cliente_id = c.id and not l.atendido)::int as recados_pendientes
+    from cliente c`;
+
+export function clientes(segmento: SegmentoCliente, busqueda = "", limite = 200): Promise<ClienteResumen[]> {
+  const condiciones: Record<SegmentoCliente, string> = {
+    todos: "true",
+    nuevos: "c.primer_contacto >= now() - interval '30 days'",
+    frecuentes: "(select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada') >= 3",
+    inactivos: "c.ultimo_contacto < now() - interval '90 days'",
+    faltan: "(select count(*) from booking b where b.cliente_id = c.id and b.estado = 'no_asistio') >= 1",
+  };
+  const termino = busqueda.trim();
+  return datos((q, id) =>
+    q<ClienteResumen>(
+      `${SELECT_CLIENTE}
+        where c.tenant_id = $1
+          and ${condiciones[segmento]}
+          and ($2 = '' or c.nombre ilike '%' || $2 || '%'
+               or regexp_replace(coalesce(c.telefono,''), '\\D', '', 'g') like '%' || regexp_replace($2, '\\D', '', 'g') || '%')
+        order by c.ultimo_contacto desc
+        limit $3`,
+      [id, termino, limite],
+    ),
+  );
+}
+
+export function cliente(clienteId: string): Promise<ClienteResumen | null> {
+  return datos(async (q, id) => {
+    const filas = await q<ClienteResumen>(`${SELECT_CLIENTE} where c.tenant_id = $1 and c.id = $2`, [id, clienteId]);
+    return filas[0] ?? null;
+  });
+}
+
+export function eventosDeCliente(clienteId: string, limite = 100): Promise<Evento[]> {
+  return datos((q, id) =>
+    q<Evento>(
+      `select id, cliente_id, tipo, entidad, entidad_id, datos, autor, creado
+         from evento
+        where tenant_id = $1 and cliente_id = $2
+        order by creado desc
+        limit $3`,
+      [id, clienteId, limite],
+    ),
+  );
+}
+
+export function reservasDeCliente(clienteId: string, limite = 30): Promise<Reserva[]> {
+  return datos((q, id) =>
+    q<Reserva>(`${SELECT_RESERVA} where b.tenant_id = $1 and b.cliente_id = $2 order by b.inicio desc limit $3`, [
+      id,
+      clienteId,
+      limite,
+    ]),
+  );
+}
+
+export function conversacionesDeCliente(clienteId: string): Promise<Conversacion[]> {
+  return datos((q, id) =>
+    q<Conversacion>(
+      `select id, canal, contacto, contacto_nombre, estado, escalada_en,
+              motivo_escalamiento, ultimo_mensaje, ultimo_mensaje_en,
+              mensajes_sin_leer, booking_id, pedido_id, call_id
+         from conversacion
+        where tenant_id = $1 and cliente_id = $2
+        order by ultimo_mensaje_en desc
+        limit 20`,
+      [id, clienteId],
+    ),
+  );
+}
+
+export type ResumenClientes = { total: number; nuevos30: number; inactivos90: number; faltan: number };
+
+export function resumenClientes(): Promise<ResumenClientes> {
+  return datos(async (q, id) => {
+    const filas = await q<ResumenClientes>(
+      `select count(*)::int as total,
+              count(*) filter (where primer_contacto >= now() - interval '30 days')::int as nuevos30,
+              count(*) filter (where ultimo_contacto < now() - interval '90 days')::int as inactivos90,
+              (select count(distinct cliente_id) from booking b where b.tenant_id = $1 and b.estado = 'no_asistio')::int as faltan
+         from cliente where tenant_id = $1`,
+      [id],
+    );
+    return filas[0] ?? { total: 0, nuevos30: 0, inactivos90: 0, faltan: 0 };
+  });
+}
+
+export function eventosRecientes(limite = 40): Promise<(Evento & { cliente_nombre: string | null; cliente_telefono: string | null })[]> {
+  return datos((q, id) =>
+    q(
+      `select e.id, e.cliente_id, e.tipo, e.entidad, e.entidad_id, e.datos, e.autor, e.creado,
+              c.nombre as cliente_nombre, c.telefono as cliente_telefono
+         from evento e
+         left join cliente c on c.id = e.cliente_id
+        where e.tenant_id = $1
+        order by e.creado desc
         limit $2`,
       [id, limite],
     ),

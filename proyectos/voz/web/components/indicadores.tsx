@@ -14,7 +14,7 @@ export function TiraIndicadores({ children }: { children: ReactNode }) {
   return (
     <section
       aria-label="Cifras del día"
-      className="grid grid-cols-1 gap-px border border-linea bg-linea sm:grid-cols-2 xl:grid-cols-4"
+      className="grid grid-cols-1 gap-px border border-linea bg-linea sm:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]"
     >
       {children}
     </section>

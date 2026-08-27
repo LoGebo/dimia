@@ -35,6 +35,7 @@ export async function conSesion<T>(userId: string, fn: (q: Consulta) => Promise<
   try {
     await cliente.query("begin");
     await cliente.query("set local role authenticated");
+    await cliente.query("select set_config('app.autor', 'equipo', true)");
     await cliente.query("select set_config('request.jwt.claim.sub', $1, true)", [userId]);
     await cliente.query("select set_config('request.jwt.claims', $1, true)", [
       JSON.stringify({ sub: userId, role: "authenticated" }),
