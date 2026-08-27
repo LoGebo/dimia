@@ -142,6 +142,10 @@ tramo alto — pero es trabajo de tuning, no sale gratis del stack.
 
 ---
 
+## Modelo de datos
+
+Cliente, eventos, cobros, campañas, equipo y reseñas: [`MODELO.md`](MODELO.md).
+
 ## Costos
 
 | Concepto | USD/min |

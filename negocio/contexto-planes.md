@@ -259,9 +259,24 @@ por WhatsApp mediante cola (outbox). Instagram y Messenger contestan corto con e
   solo se activa cuando el negocio cumple los requisitos (recursos, servicios, horario,
   respuestas, número para transferir). Hasta entonces el menú dice «Sin línea».
 
+**Memoria del negocio (27 de agosto de 2026):** ver `proyectos/voz/MODELO.md`.
+- Clientes unificados por teléfono e identidades por canal, con ficha y línea de tiempo.
+- Eventos append-only de todo lo que pasa (citas, pedidos, recados, mensajes, llamadas, pagos,
+  campañas, reseñas), con autor.
+- Cobros reales por cita y pedido (efectivo, tarjeta, transferencia, enlace), pendientes y
+  cobranza por WhatsApp; el negocio elige pasarela, sin integrar aún.
+- Cierre de cada llamada y conversación: motivo, resultado y resumen, escritos al colgar con
+  una pasada del modelo fuera del camino en vivo.
+- Campañas: recuperar a quien faltó, inactivos, recordatorio de pago, reseña, promoción; por
+  WhatsApp o por llamada saliente del agente (requiere troncal de salida en Telnyx/LiveKit).
+- Equipo: personas con comisión, ausencias y producción; reseñas 1–5 por WhatsApp; líneas por
+  campaña con atribución de origen; existencias por item que se apagan en cero.
+
 **Lo que no existe todavía** (no prometerlo en el plan sin fecha):
 - Cobro automático de la mensualidad y medición de minutos consumidos por negocio en el panel
   `[ pendiente: contador de minutos por tenant para facturar ]`.
-- Pago por enlace dentro de la llamada.
+- Integración de pasarela (Mercado Pago, Stripe, Clip): el modelo está listo, falta el adaptador.
+- Troncal de salida configurado en producción para campañas por llamada.
 - Aviso de privacidad y consentimiento de grabación (LFPDPPP).
 - Medición real de tokens por conversación de texto.
+- El asistente de insights (chat) sobre la memoria.

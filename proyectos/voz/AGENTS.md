@@ -54,6 +54,7 @@ producción; `demo/` quedó como demo de ventas y no debe correr en paralelo.
 
 ```
 supabase/migrations/   esquema, RLS, motor. Fuente de verdad del dominio.
+MODELO.md              la memoria del negocio: cliente, evento, pago, campaña. Leelo antes de escribir datos.
 supabase/seed.sql      clínica y restaurante de demo. Plantilla de alta.
 app/prompt.py          plantilla del vertical + config del tenant + FAQ
 app/supabase_client.py cliente asyncpg sobre las RPC
