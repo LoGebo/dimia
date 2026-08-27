@@ -75,6 +75,10 @@ consola:
 despachador:
 	$(PY) -m app.despachador
 
+# Webhook de WhatsApp Cloud API. Meta necesita una URL publica: en local, ngrok http 8080.
+whatsapp:
+	$(VENV)/bin/uvicorn channels.whatsapp.servidor:app --port 8080
+
 # Webhook de Instagram Direct y Messenger.
 social:
 	$(VENV)/bin/uvicorn channels.social.servidor:app --port 8081
