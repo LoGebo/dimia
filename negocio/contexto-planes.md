@@ -227,3 +227,41 @@ Recomendación: no cobrar texto por unidad. Poner un tope generoso por plan
 (por ejemplo 300 / 1,000 / 3,000 conversaciones al mes) solo para que el plan
 grande se vea más grande, y medir tokens reales el primer mes para confirmar
 el costo.
+
+---
+
+## 9. Estado del producto al 26 de agosto de 2026
+
+Lo que ya existe y se puede prometer en un plan. Rama `dev`.
+
+**Motor de voz** (`proyectos/voz`): agente LiveKit con Telnyx (SIP), Deepgram (STT),
+Cartesia / Azure / ElevenLabs / Deepgram Aura (TTS) y OpenAI / Anthropic / Google (LLM),
+elegibles por negocio desde el panel con su costo a la vista. Reservas con exclusión por
+traslape en Postgres; pedidos con catálogo y total; recados. Confirmaciones y recordatorios
+por WhatsApp mediante cola (outbox). Instagram y Messenger contestan corto con el mismo motor.
+
+**Panel** (`proyectos/voz/web`, Next 15 + Supabase o Postgres directo):
+- Agenda como tablero del día: por llegar → en atención → atendidas / sin atender, con hora
+  de llegada, retrasos, cifras del día, filtros por recurso y nueva cita desde el panel.
+- Bandeja de conversaciones por canal, pedidos (tablero de cocina), recados, resumen de
+  llamadas (volumen, resolución sin humano, escalamiento, horas pico), horarios, servicios y
+  recursos, catálogo con atributos por giro, respuestas frecuentes, configuración del agente
+  (voz, modelo, saludo, instrucciones, transferencia, número de entrada), probador en vivo.
+- Búsqueda global (Cmd+K), menú con contadores, tema claro y oscuro.
+
+**Alta y registro:**
+- Giros de fábrica: consultorio o clínica, restaurante, restaurante con pedidos a domicilio,
+  salón o barbería, taller, inmobiliaria, recepción o call center. Cada uno siembra recursos,
+  servicios, horario y respuestas típicas.
+- Giro propio: el dueño escribe el nombre del giro, marca qué hace el agente (agenda, pedidos,
+  recados) y describe el negocio en dos líneas; se guarda como plantilla propia.
+- Candados: el formulario no se envía hasta capturar lo obligatorio; el número de entrada
+  solo se activa cuando el negocio cumple los requisitos (recursos, servicios, horario,
+  respuestas, número para transferir). Hasta entonces el menú dice «Sin línea».
+
+**Lo que no existe todavía** (no prometerlo en el plan sin fecha):
+- Cobro automático de la mensualidad y medición de minutos consumidos por negocio en el panel
+  `[ pendiente: contador de minutos por tenant para facturar ]`.
+- Pago por enlace dentro de la llamada.
+- Aviso de privacidad y consentimiento de grabación (LFPDPPP).
+- Medición real de tokens por conversación de texto.
