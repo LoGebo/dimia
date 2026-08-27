@@ -15,7 +15,7 @@ export default function NoEncontrado() {
           La dirección está mal escrita o la sección cambió de lugar.
         </p>
         <Link
-          href="/resumen"
+          href="/hoy"
           className="mt-7 inline-flex min-h-[44px] items-center bg-acento px-5 text-[14px] font-semibold text-acento-tinta transition hover:opacity-90"
         >
           Ir al resumen

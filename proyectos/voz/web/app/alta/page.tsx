@@ -11,7 +11,7 @@ export default async function AltaInicio() {
   if (!usuario) redirect("/entrar");
   // Una cuenta atiende un negocio. Quien ya tiene el suyo no vuelve a darse de
   // alta: antes esto creaba un segundo negocio y aparecia el selector.
-  if ((await membresias(usuario.id)).length > 0) redirect("/resumen");
+  if ((await membresias(usuario.id)).length > 0) redirect("/hoy");
   const lista = await plantillasPublicas();
   return (
     <Paso

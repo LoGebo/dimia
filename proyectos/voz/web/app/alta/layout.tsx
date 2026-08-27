@@ -17,7 +17,7 @@ export default async function AltaLayout({ children }: { children: React.ReactNo
             <span className="text-[13px] font-semibold tracking-tight text-tinta">Alta de negocio</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/resumen" className="text-[11px] text-tinta-3 transition hover:text-tinta">
+            <Link href="/hoy" className="text-[11px] text-tinta-3 transition hover:text-tinta">
               Salir al panel
             </Link>
             <BotonTema />

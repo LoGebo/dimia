@@ -42,8 +42,8 @@ export default async function Agente() {
   return (
     <>
       <Encabezado
-        titulo="Agente"
-        descripcion="Cómo suena, a dónde transfiere y con qué contexto contesta."
+        titulo="Negocio y agente"
+        descripcion="Los datos del negocio, cómo suena el agente y a dónde pasa las llamadas que no resuelve."
         giro={giro.nombre}
       />
       <div className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,420px)_1fr]">

@@ -74,7 +74,7 @@ export async function giroOpcional(): Promise<Giro | null> {
 
 export async function exigirSeccion(href: string): Promise<Giro> {
   const { giro } = await contexto();
-  if (!permiteSeccion(giro.herramientas, href)) redirect("/resumen");
+  if (!permiteSeccion(giro.herramientas, href)) redirect("/hoy");
   return giro;
 }
 

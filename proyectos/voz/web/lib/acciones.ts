@@ -52,7 +52,7 @@ export async function entrar(_previo: Estado, fd: FormData): Promise<Estado> {
   if (modoSupabase()) return { error: "En modo Supabase el acceso se hace desde el formulario del cliente." };
   const id = await iniciarSesionLocal(email, password);
   if (!id) return { error: "Correo o contraseña incorrectos." };
-  redirect("/resumen");
+  redirect("/hoy");
 }
 
 export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -83,7 +83,7 @@ export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> 
     telefonoEscalamiento: null,
   });
   await elegirNegocio(creado.id);
-  redirect("/resumen");
+  redirect("/hoy");
 }
 
 export async function salir(): Promise<void> {
@@ -188,7 +188,7 @@ export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado
   });
 
   await elegirNegocio(creado.id);
-  redirect("/resumen");
+  redirect("/hoy");
 }
 
 function decimal(fd: FormData, campo: string, min: number, max: number): number | null {

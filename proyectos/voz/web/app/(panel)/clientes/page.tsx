@@ -31,7 +31,7 @@ export default async function Clientes({
     <>
       <Encabezado
         titulo="Clientes"
-        descripcion="Cada persona que llamó, escribió o reservó, con todo lo que pasó con ella."
+        descripcion="Cada persona que llamó o escribió. Entra a una para ver todo lo que pasó con ella."
         giro={giro.nombre}
         acciones={
           <form action="/clientes" className="flex items-center gap-1">

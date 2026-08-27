@@ -45,7 +45,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           >
             Reintentar
           </button>
-          <a href="/resumen" className="min-h-[44px] px-2 text-[14px] text-tinta-2 transition hover:text-tinta">
+          <a href="/hoy" className="min-h-[44px] px-2 text-[14px] text-tinta-2 transition hover:text-tinta">
             Ir al resumen
           </a>
         </div>

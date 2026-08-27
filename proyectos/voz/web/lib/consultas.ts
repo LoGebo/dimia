@@ -724,3 +724,37 @@ export function lineas(): Promise<Linea[]> {
     q<Linea>("select id, telefono, etiqueta, campana_id, activo from linea where tenant_id = $1 order by creado", [id]),
   );
 }
+
+// ---------------------------------------------------------------
+// Hoy: lo que necesita atención ahora mismo
+// ---------------------------------------------------------------
+
+export type AlertasHoy = {
+  retrasadas: number;
+  escaladas: number;
+  recados: number;
+  cobros_pendientes: number;
+  cobros_monto: string;
+  campanas_contestaron: number;
+  por_cobrar_atendidas: number;
+};
+
+export function alertasHoy(): Promise<AlertasHoy> {
+  return datos(async (q, id) => {
+    const filas = await q<AlertasHoy>(
+      `select
+         (select count(*) from booking b where b.tenant_id = $1 and b.estado = 'confirmada' and b.llegada is null
+             and b.inicio < now() - interval '15 minutes' and b.inicio > now() - interval '12 hours')::int as retrasadas,
+         (select count(*) from conversacion c where c.tenant_id = $1 and c.estado = 'escalada')::int as escaladas,
+         (select count(*) from lead l where l.tenant_id = $1 and not l.atendido)::int as recados,
+         (select count(*) from pago g where g.tenant_id = $1 and g.estado = 'pendiente')::int as cobros_pendientes,
+         (select coalesce(sum(monto), 0)::text from pago g where g.tenant_id = $1 and g.estado = 'pendiente') as cobros_monto,
+         (select count(*) from campana_contacto cc where cc.tenant_id = $1 and cc.estado = 'contestado' and cc.actualizado >= now() - interval '24 hours')::int as campanas_contestaron,
+         (select count(*) from booking b join tenant t on t.id = b.tenant_id
+           where b.tenant_id = $1 and b.estado = 'completada' and (b.inicio at time zone t.zona_horaria)::date = (now() at time zone t.zona_horaria)::date
+             and not exists (select 1 from pago g where g.booking_id = b.id and g.estado <> 'cancelado'))::int as por_cobrar_atendidas`,
+      [id],
+    );
+    return filas[0] ?? { retrasadas: 0, escaladas: 0, recados: 0, cobros_pendientes: 0, cobros_monto: "0", campanas_contestaron: 0, por_cobrar_atendidas: 0 };
+  });
+}

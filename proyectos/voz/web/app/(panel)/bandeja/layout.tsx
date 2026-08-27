@@ -15,12 +15,12 @@ export default async function BandejaLayout({ children }: { children: React.Reac
   return (
     <>
       <Encabezado
-        titulo="Bandeja"
-        descripcion="Todo lo que le dijeron a tu agente, por teléfono y por WhatsApp."
+        titulo="Mensajes"
+        descripcion="Cada conversación que atendió el agente. Ábrela para leerla; si pidió una persona, te toca a ti."
         giro={giro.nombre}
       />
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr]">
-        <aside className="border-r border-linea lg:h-[calc(100vh-65px)] lg:overflow-y-auto">
+        <aside className="border-r border-linea lg:h-[calc(100vh-108px)] lg:overflow-y-auto">
           {hilos.length === 0 ? (
             <Vacio
               titulo="Todavía no hay conversaciones"

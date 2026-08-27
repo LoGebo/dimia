@@ -39,7 +39,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <div className="flex-1 overflow-y-auto py-4">
         <Navegacion
           herramientas={giro.herramientas}
-          contadores={{ "/bandeja": avisos.bandeja, "/pedidos": avisos.pedidos, "/recados": avisos.recados }}
+          contadores={{ "/bandeja": avisos.bandeja + avisos.recados, "/hoy": avisos.pedidos }}
         />
       </div>
       <div className="border-t border-linea px-3 py-3">

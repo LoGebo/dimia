@@ -32,8 +32,8 @@ export default async function Mensajes() {
   return (
     <>
       <Encabezado
-        titulo="Mensajes"
-        descripcion="Lo que tu agente le manda al cliente por WhatsApp después de colgar."
+        titulo="Avisos"
+        descripcion="Confirmaciones, recordatorios y avisos que el agente manda solo por WhatsApp. Aquí ves si salieron."
         giro={giro.nombre}
       />
 

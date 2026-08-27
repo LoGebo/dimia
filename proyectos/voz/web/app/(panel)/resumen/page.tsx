@@ -48,7 +48,7 @@ export default async function Resumen({
   return (
     <>
       <Encabezado
-        titulo="Resumen"
+        titulo="Informe"
         descripcion={`${config.nombre} · últimos ${dias} días`}
         giro={giro.nombre}
         acciones={

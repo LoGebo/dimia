@@ -1,49 +1,60 @@
 import type { Herramienta } from "@/lib/tipos";
 
-export type GrupoSeccion = "operacion" | "configuracion" | "agente";
-export type Seccion = { href: string; nombre: string; detalle: string; grupo: GrupoSeccion };
-
-export const NOMBRE_GRUPO: Record<GrupoSeccion, string> = {
-  operacion: "Operación",
-  configuracion: "Configuración",
-  agente: "Agente",
-};
 export type PasoAlta = { href: string; nombre: string };
+export type Pestana = { href: string; nombre: string };
+export type Seccion = { href: string; nombre: string; detalle: string; pestanas: Pestana[] };
 
+/**
+ * Cinco lugares, con nombres de a pie. Cada uno agrupa pantallas como pestañas;
+ * el menú no crece aunque el producto crezca.
+ */
 export function secciones(herramientas: Herramienta[]): Seccion[] {
   const agenda = herramientas.includes("agendar");
   const pedidos = herramientas.includes("pedido");
   const recados = herramientas.includes("recado");
 
-  const lista: Seccion[] = [
-    { href: "/resumen", nombre: "Resumen", detalle: "Llamadas y desempeño", grupo: "operacion" },
-    // Va arriba a proposito: es la pantalla que se abre todos los dias.
-    { href: "/bandeja", nombre: "Bandeja", detalle: "Lo que te dijeron", grupo: "operacion" },
-    { href: "/clientes", nombre: "Clientes", detalle: "Quién es quién", grupo: "operacion" },
+  const hoy: Pestana[] = [{ href: "/hoy", nombre: "Hoy" }];
+  if (agenda) hoy.push({ href: "/agenda", nombre: "Agenda completa" });
+  if (pedidos) hoy.push({ href: "/pedidos", nombre: "Pedidos" });
+
+  const mensajes: Pestana[] = [{ href: "/bandeja", nombre: "Conversaciones" }];
+  if (recados) mensajes.push({ href: "/recados", nombre: "Recados" });
+
+  const clientes: Pestana[] = [
+    { href: "/clientes", nombre: "Clientes" },
+    { href: "/campanas", nombre: "Campañas" },
   ];
 
-  if (agenda) lista.push({ href: "/agenda", nombre: "Agenda", detalle: "Flujo del día", grupo: "operacion" });
-  if (pedidos) lista.push({ href: "/pedidos", nombre: "Pedidos", detalle: "Lo que hay que sacar", grupo: "operacion" });
-  if (recados) lista.push({ href: "/recados", nombre: "Recados", detalle: "Quién pidió que le marquen", grupo: "operacion" });
-  if (agenda || pedidos) lista.push({ href: "/cobros", nombre: "Cobros", detalle: "Lo que entró de verdad", grupo: "operacion" });
-  lista.push({ href: "/campanas", nombre: "Campañas", detalle: "Recuperar y avisar", grupo: "operacion" });
-  if (agenda || pedidos) lista.push({ href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres", grupo: "configuracion" });
-  if (agenda) lista.push({ href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración", grupo: "configuracion" });
-  if (agenda) lista.push({ href: "/equipo", nombre: "Equipo", detalle: "Quién atiende y qué produce", grupo: "configuracion" });
+  const dinero: Pestana[] = [];
+  if (agenda || pedidos) dinero.push({ href: "/cobros", nombre: "Cobros" });
+  dinero.push({ href: "/resumen", nombre: "Informe" });
 
-  lista.push(
-    { href: "/mensajes", nombre: "Mensajes", detalle: "Lo que sale por WhatsApp", grupo: "configuracion" },
-    { href: "/catalogo", nombre: "Catálogo", detalle: "Lo que ofreces", grupo: "configuracion" },
-    { href: "/conocimiento", nombre: "Respuestas", detalle: "Qué contesta", grupo: "agente" },
-    { href: "/agente", nombre: "Agente", detalle: "Voz y transferencia", grupo: "agente" },
-    { href: "/probar", nombre: "Probar", detalle: "Háblale en vivo", grupo: "agente" },
+  const ajustes: Pestana[] = [{ href: "/agente", nombre: "Negocio y agente" }];
+  if (agenda || pedidos) ajustes.push({ href: "/horarios", nombre: "Horarios" });
+  if (agenda) ajustes.push({ href: "/servicios", nombre: "Servicios" }, { href: "/equipo", nombre: "Equipo" });
+  ajustes.push(
+    { href: "/catalogo", nombre: "Catálogo" },
+    { href: "/conocimiento", nombre: "Respuestas" },
+    { href: "/mensajes", nombre: "Avisos" },
+    { href: "/probar", nombre: "Probar" },
   );
 
-  return lista;
+  return [
+    { href: "/hoy", nombre: "Hoy", detalle: "Lo que pasa ahora", pestanas: hoy },
+    { href: "/bandeja", nombre: "Mensajes", detalle: "Lo que te dijeron", pestanas: mensajes },
+    { href: "/clientes", nombre: "Clientes", detalle: "Quién es quién", pestanas: clientes },
+    { href: dinero[0]!.href, nombre: "Dinero", detalle: "Lo que entra", pestanas: dinero },
+    { href: "/agente", nombre: "Ajustes", detalle: "Cómo trabaja el negocio", pestanas: ajustes },
+  ];
+}
+
+/** La sección a la que pertenece una ruta, para el menú y las pestañas. */
+export function seccionDe(herramientas: Herramienta[], ruta: string): Seccion | undefined {
+  return secciones(herramientas).find((s) => s.pestanas.some((p) => ruta === p.href || ruta.startsWith(`${p.href}/`)));
 }
 
 export function rutasPanel(herramientas: Herramienta[]): string[] {
-  return secciones(herramientas).map((s) => s.href);
+  return secciones(herramientas).flatMap((s) => s.pestanas.map((p) => p.href));
 }
 
 export function permiteSeccion(herramientas: Herramienta[], href: string): boolean {

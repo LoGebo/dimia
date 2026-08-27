@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BotonMenu } from "@/components/armazon";
 import { BuscadorGlobal } from "@/components/buscador-global";
 import { ChipGiro } from "@/components/selector-negocio";
+import { Pestanas } from "@/components/pestanas";
 import { contadores } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
 
@@ -77,6 +78,7 @@ export async function Encabezado({
           </span>
         </div>
       </div>
+      <Pestanas herramientas={giroActual.herramientas} />
     </header>
   );
 }

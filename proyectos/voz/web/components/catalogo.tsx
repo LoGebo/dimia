@@ -100,7 +100,7 @@ export function FormularioServicio({
             <Campo etiqueta="Duración (min)">
               <Entrada name="duracion_min" type="number" min={5} step={5} defaultValue={servicio?.duracion_min ?? 30} required />
             </Campo>
-            <Campo etiqueta="Buffer (min)" ayuda="Limpieza entre citas.">
+            <Campo etiqueta="Entre citas (min)" ayuda="Tiempo libre que se deja después de cada una.">
               <Entrada name="buffer_min" type="number" min={0} step={5} defaultValue={servicio?.buffer_min ?? 0} />
             </Campo>
             <Campo etiqueta="Precio (MXN)">
