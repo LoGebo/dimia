@@ -4,7 +4,7 @@ import { Encabezado } from "@/components/encabezado";
 import { GraficaLlamadas } from "@/components/graficas";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { MINUTOS_TOLERANCIA, minutosDesde, minutosLegibles } from "@/components/flujo-citas";
+import { MINUTOS_TOLERANCIA, iniciales, minutosDesde, minutosLegibles } from "@/components/flujo-citas";
 import {
   alertasHoy,
   conversaciones,
@@ -49,6 +49,8 @@ export default async function Hoy() {
     !agenda && !pedidos ? recados(true) : Promise.resolve([]),
   ]);
   const ahora = Date.now();
+  const horaLocal = Number(new Intl.DateTimeFormat("es-MX", { hour: "numeric", hour12: false, timeZone: zona }).format(new Date()));
+  const saludo = horaLocal < 12 ? "Buenos días" : horaLocal < 19 ? "Buenas tardes" : "Buenas noches";
   const delDia = reservas.filter((r) => isoDia(new Date(r.inicio), zona) === hoy);
   const citasHoy = delDia.filter((r) => r.estado === "confirmada" || r.estado === "completada");
   const atendidas = delDia.filter((r) => r.estado === "completada").length;
@@ -70,7 +72,7 @@ export default async function Hoy() {
 
   return (
     <>
-      <Encabezado titulo="Hoy" descripcion={`${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · cómo va el día de un vistazo.`} giro={giro.nombre} />
+      <Encabezado titulo="Hoy" descripcion={`${saludo}. ${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · así va el día.`} giro={giro.nombre} />
       <div className="space-y-4 px-5 py-5">
         {avisos.length > 0 ? (
           <section aria-label="Necesita atención" className="border border-linea bg-panel">
@@ -81,7 +83,12 @@ export default async function Hoy() {
             <ul className="divide-y divide-linea">
               {avisos.map((a) => (
                 <li key={a.texto}>
-                  <Link href={a.href} className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-panel-2">
+                  <Link
+                    href={a.href}
+                    className={`flex items-center gap-3 border-l-[3px] px-4 py-2.5 transition hover:bg-panel-2 ${
+                      a.tono === "critico" ? "border-critico" : a.tono === "alerta" ? "border-alerta" : "border-acento"
+                    }`}
+                  >
                     <Insignia tono={a.tono}>{a.tono === "critico" ? "Urgente" : a.tono === "alerta" ? "Pendiente" : "Novedad"}</Insignia>
                     <span className="flex-1 text-[13px] text-tinta">{a.texto}</span>
                     <span className="text-[12px] text-tinta-3">Ver →</span>
@@ -144,8 +151,11 @@ export default async function Hoy() {
                     const faltan = -minutosDesde(r.inicio, ahora);
                     const retraso = faltan < 0 ? -faltan : 0;
                     return (
-                      <li key={r.id} className="flex items-center gap-4 px-4 py-2.5">
-                        <span className="numeros w-[76px] font-mono text-[13px] font-medium text-tinta">{hora(r.inicio, zona)}</span>
+                      <li key={r.id} className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-panel-2">
+                        <span className="numeros w-[72px] font-mono text-[12.5px] font-medium text-tinta">{hora(r.inicio, zona)}</span>
+                        <span aria-hidden="true" className="flex h-8 w-8 flex-none items-center justify-center bg-acento-suave font-mono text-[10.5px] font-medium text-acento">
+                          {iniciales(r.cliente_nombre)}
+                        </span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[13px] font-medium text-tinta">
                             {r.cliente_id ? <Link href={`/clientes/${r.cliente_id}`} className="transition hover:text-acento">{r.cliente_nombre}</Link> : r.cliente_nombre}
@@ -175,8 +185,8 @@ export default async function Hoy() {
               ) : (
                 <ul className="divide-y divide-linea">
                   {porSacar.slice(0, 6).map((p) => (
-                    <li key={p.id} className="flex items-center gap-4 px-4 py-2.5">
-                      <span className="numeros w-[64px] font-mono text-[14px] font-bold tracking-wider text-tinta">{p.codigo}</span>
+                    <li key={p.id} className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-panel-2">
+                      <span className="numeros flex h-8 min-w-[56px] items-center justify-center bg-tinta px-2 font-mono text-[12px] font-bold tracking-wider text-paper">{p.codigo}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13px] font-medium text-tinta">{p.cliente_nombre ?? "Sin nombre"}</p>
                         <p className="truncate text-[11.5px] text-tinta-3">{p.items.length} {p.items.length === 1 ? "cosa" : "cosas"} · {moneda(p.total)}</p>

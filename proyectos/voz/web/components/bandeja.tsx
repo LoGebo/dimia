@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Insignia } from "@/components/ui/primitivos";
 import { telefono as formatearTelefono } from "@/lib/formato";
+import { iniciales } from "@/components/flujo-citas";
 import { NOMBRE_CANAL, NOMBRE_RESULTADO, type Conversacion } from "@/lib/tipos";
 
 /**
@@ -36,10 +37,19 @@ export function RenglonConversacion({
     <Link
       href={`/bandeja/${c.id}`}
       aria-current={activa ? "page" : undefined}
-      className={`block border-b border-linea px-4 py-3 transition hover:bg-panel-2 ${
+      className={`flex gap-3 border-b border-linea px-4 py-3 transition hover:bg-panel-2 ${
         activa ? "bg-panel-2" : ""
       }`}
     >
+      <span
+        aria-hidden="true"
+        className={`mt-0.5 flex h-8 w-8 flex-none items-center justify-center font-mono text-[10.5px] font-medium ${
+          sinLeer ? "bg-acento text-acento-tinta" : "bg-acento-suave text-acento"
+        }`}
+      >
+        {iniciales(nombreDe(c))}
+      </span>
+      <div className="min-w-0 flex-1">
       <div className="flex items-baseline justify-between gap-2">
         <span
           className={`truncate text-[13px] tracking-tight ${
@@ -66,6 +76,7 @@ export function RenglonConversacion({
         {c.resultado && c.resultado !== "sin_resultado" ? (
           <span className="text-[10px] text-tinta-3">{NOMBRE_RESULTADO[c.resultado]}</span>
         ) : null}
+      </div>
       </div>
     </Link>
   );

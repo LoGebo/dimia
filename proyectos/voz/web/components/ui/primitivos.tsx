@@ -41,10 +41,10 @@ export function TarjetaCabecera({
   accion?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-linea px-4 py-3">
+    <div className="flex items-start justify-between gap-4 border-b border-linea px-4 py-3.5">
       <div className="min-w-0">
-        <h2 className="text-[13px] font-semibold tracking-tight text-tinta">{titulo}</h2>
-        {descripcion ? <p className="mt-0.5 text-xs text-tinta-3">{descripcion}</p> : null}
+        <h2 className="text-[13.5px] font-semibold tracking-tight text-tinta">{titulo}</h2>
+        {descripcion ? <p className="mt-0.5 text-[12px] text-tinta-3">{descripcion}</p> : null}
       </div>
       {accion}
     </div>

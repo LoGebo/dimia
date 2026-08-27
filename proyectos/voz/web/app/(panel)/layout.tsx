@@ -17,10 +17,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const menu = (
     <>
       <MarcaDimia />
-      <div className="border-b border-linea">
+      <div className="mx-3 mt-3 bg-panel-2 px-3 pt-3 pb-2.5">
         <NombreNegocio membresia={membresias.find((m) => m.tenant_id === negocioId)} />
-      </div>
-      <div className="flex items-center justify-between gap-2 border-b border-linea px-3 py-2.5">
+      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-linea pt-2.5">
         <div className="min-w-0">
           <p className="etiqueta">Línea</p>
           <p className="numeros mt-0.5 truncate font-mono text-[12px] text-tinta">
@@ -35,6 +34,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <i aria-hidden="true" className={`h-1.5 w-1.5 bg-current ${actual.activo && actual.telefono_entrada ? "late" : ""}`} />
           {!actual.telefono_entrada ? "Sin línea" : actual.activo ? "Activo" : "Pausado"}
         </span>
+      </div>
       </div>
       <div className="flex-1 overflow-y-auto py-4">
         <Navegacion

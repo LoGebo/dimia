@@ -37,25 +37,20 @@ export function Cifra({
   glifo?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3.5 bg-panel px-4 py-3.5">
-      <span
-        aria-hidden="true"
-        className="flex h-10 w-10 flex-none items-center justify-center border border-linea bg-panel-2 text-tinta-2"
-      >
+    <div className="flex items-start gap-3.5 bg-panel px-5 py-4">
+      <span aria-hidden="true" className="mt-0.5 flex h-9 w-9 flex-none items-center justify-center bg-acento-suave text-acento">
         {glifo ?? <i className="h-2 w-2 bg-acento" />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] text-tinta-3">{etiqueta}</p>
-        <p className="mt-0.5 flex items-baseline gap-1.5">
-          <span className="numeros font-mono text-[24px] leading-none font-medium tracking-tight text-tinta">
-            {valor}
-          </span>
-          {unidad ? <span className="text-[13px] text-tinta-2">{unidad}</span> : null}
+        <p className="text-[12px] leading-tight text-tinta-2">{etiqueta}</p>
+        <p className="mt-1.5 flex items-baseline gap-1.5">
+          <span className="numeros text-[28px] leading-none font-semibold tracking-[-0.02em] text-tinta">{valor}</span>
+          {unidad ? <span className="text-[12.5px] text-tinta-3">{unidad}</span> : null}
         </p>
+        {pildora ? (
+          <span className={`numeros mt-2 inline-block px-1.5 py-0.5 font-mono text-[10.5px] ${PILDORA[tono]}`}>{pildora}</span>
+        ) : null}
       </div>
-      {pildora ? (
-        <span className={`numeros flex-none px-2 py-1 font-mono text-[11px] ${PILDORA[tono]}`}>{pildora}</span>
-      ) : null}
     </div>
   );
 }
