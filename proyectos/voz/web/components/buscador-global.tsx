@@ -37,7 +37,7 @@ export function BuscadorGlobal({ destino, valor = "" }: { destino: string; valor
         defaultValue={valor}
         placeholder="Buscar cita"
         aria-label="Buscar cita por código, teléfono o nombre"
-        className="h-8 w-56 border border-linea bg-panel-2 pr-12 pl-8 text-[13px] text-tinta outline-none placeholder:text-tinta-3 focus:border-acento focus:bg-panel"
+        className="h-9 w-60 bg-pozo pr-12 pl-8 text-[13px] text-tinta outline-none placeholder:text-tinta-3 focus:bg-panel focus:ring-1 focus:ring-acento"
       />
       <kbd className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 font-mono text-[10px] text-tinta-3">
         ⌘K

@@ -46,13 +46,13 @@ export default async function Resumen({
         descripcion={`${config.nombre} · últimos ${dias} días`}
         giro={giro.nombre}
         acciones={
-          <div className="flex border border-linea bg-panel">
+          <div className="flex bg-pozo p-0.5">
             {RANGOS.map((r) => (
               <Link
                 key={r}
                 href={`/resumen?dias=${r}`}
-                className={`px-2.5 py-1.5 text-[12px] transition ${
-                  r === dias ? "bg-tinta font-medium text-paper" : "text-tinta-2 hover:bg-panel-2"
+                className={`px-3 py-1.5 text-[12px] transition ${
+                  r === dias ? "bg-panel font-medium text-tinta" : "text-tinta-2 hover:text-tinta"
                 }`}
               >
                 {r} d
@@ -180,8 +180,8 @@ async function Hoy({ herramientas, dia }: { herramientas: string[]; dia: string 
 
 const REJILLA: Record<number, string> = {
   1: "grid-cols-1",
-  3: "grid-cols-2 lg:grid-cols-3",
-  4: "grid-cols-2 lg:grid-cols-4",
+  3: "sm:grid-cols-3",
+  4: "sm:grid-cols-2 xl:grid-cols-4",
 };
 
 function Bloque({
@@ -207,7 +207,9 @@ function Bloque({
           </Link>
         }
       />
-      <div className={`grid gap-px bg-linea ${REJILLA[columnas] ?? REJILLA[4]}`}>{children}</div>
+      <div className={`grid grid-cols-1 border-t border-linea [&>*+*]:border-l [&>*+*]:border-linea max-sm:[&>*+*]:border-l-0 ${REJILLA[columnas] ?? REJILLA[4]}`}>
+        {children}
+      </div>
     </Tarjeta>
   );
 }

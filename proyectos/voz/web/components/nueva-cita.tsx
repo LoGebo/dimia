@@ -31,7 +31,7 @@ export function NuevaCita({
           type="button"
           onClick={() => setAbierto(true)}
           disabled={servicios.length === 0}
-          className="h-8 w-full text-[12px] font-medium text-tinta-3 transition hover:bg-panel hover:text-tinta disabled:opacity-40"
+          className="h-8 w-full text-[12px] font-medium text-tinta-3 transition hover:text-tinta disabled:opacity-40"
         >
           + Agregar cita
         </button>

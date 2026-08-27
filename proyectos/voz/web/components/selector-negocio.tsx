@@ -11,7 +11,7 @@ import type { Membresia } from "@/lib/tipos";
 export function NombreNegocio({ membresia }: { membresia: Membresia | undefined }) {
   if (!membresia) return null;
   return (
-    <div className="px-4 py-3.5">
+    <div className="px-5 py-2">
       <p className="truncate text-[13px] font-semibold tracking-tight text-tinta">{membresia.nombre}</p>
       <ChipGiro nombre={membresia.vertical_nombre} className="mt-1.5" />
     </div>

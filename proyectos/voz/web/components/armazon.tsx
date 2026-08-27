@@ -32,19 +32,21 @@ export function Armazon({ menu, children }: { menu: ReactNode; children: ReactNo
 
   return (
     <Contexto.Provider value={{ abierta, alternar }}>
-      <div
-        className={`grid min-h-screen grid-cols-1 transition-[grid-template-columns] duration-150 ${
-          abierta ? "lg:grid-cols-[256px_1fr]" : "lg:grid-cols-[0px_1fr]"
-        }`}
-      >
-        <aside
-          className={`flex flex-col overflow-hidden border-r border-linea bg-panel lg:sticky lg:top-0 lg:h-screen ${
-            abierta ? "" : "hidden lg:flex lg:border-r-0"
+      <div className="min-h-screen bg-fondo p-2.5 max-md:p-0">
+        <div
+          className={`grid min-h-[calc(100vh-20px)] grid-cols-1 bg-marco transition-[grid-template-columns] duration-150 max-md:min-h-screen ${
+            abierta ? "lg:grid-cols-[248px_1fr]" : "lg:grid-cols-[0px_1fr]"
           }`}
         >
-          {menu}
-        </aside>
-        <main className="flex min-w-0 flex-col">{children}</main>
+          <aside
+            className={`flex flex-col overflow-hidden bg-marco lg:sticky lg:top-2.5 lg:h-[calc(100vh-20px)] ${
+              abierta ? "" : "hidden lg:flex"
+            }`}
+          >
+            {menu}
+          </aside>
+          <main className="flex min-w-0 flex-col">{children}</main>
+        </div>
       </div>
     </Contexto.Provider>
   );
@@ -58,7 +60,7 @@ export function BotonMenu() {
       onClick={alternar}
       aria-label={abierta ? "Plegar menú" : "Mostrar menú"}
       aria-pressed={!abierta}
-      className="flex h-8 w-8 items-center justify-center border border-linea text-tinta-3 transition hover:bg-panel-2 hover:text-tinta"
+      className="flex h-8 w-8 items-center justify-center text-tinta-3 transition hover:bg-pozo hover:text-tinta"
     >
       <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4">
         <rect x="2" y="3" width="12" height="10" />

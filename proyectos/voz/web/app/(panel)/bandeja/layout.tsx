@@ -21,7 +21,7 @@ export default async function BandejaLayout({ children }: { children: React.Reac
         compacto
       />
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr]">
-        <aside className="border-r border-linea lg:h-[calc(100vh-53px)] lg:overflow-y-auto">
+        <aside className="border-r border-linea lg:h-[calc(100vh-96px)] lg:overflow-y-auto">
           {hilos.length === 0 ? (
             <Vacio
               titulo="Todavía no hay conversaciones"

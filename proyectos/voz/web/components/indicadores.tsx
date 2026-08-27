@@ -14,7 +14,7 @@ export function TiraIndicadores({ children }: { children: ReactNode }) {
   return (
     <section
       aria-label="Cifras del día"
-      className="grid grid-cols-1 gap-px border border-linea bg-linea sm:grid-cols-2 xl:grid-cols-4"
+      className="grid grid-cols-1 bg-panel sm:grid-cols-2 xl:grid-cols-4 [&>*+*]:border-l [&>*+*]:border-linea max-sm:[&>*+*]:border-l-0"
     >
       {children}
     </section>
@@ -37,17 +37,17 @@ export function Cifra({
   glifo?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-4 bg-panel px-5 py-5">
+    <div className="flex items-center gap-3.5 px-5 py-4">
       <span
         aria-hidden="true"
-        className="flex h-11 w-11 flex-none items-center justify-center border border-linea bg-panel-2 text-tinta-2"
+        className="flex h-10 w-10 flex-none items-center justify-center bg-tinta text-paper"
       >
         {glifo ?? <i className="h-2 w-2 bg-acento" />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] leading-tight text-tinta-3">{etiqueta}</p>
+        <p className="text-[12px] leading-tight text-tinta-2">{etiqueta}</p>
         <p className="mt-0.5 flex items-baseline gap-1.5">
-          <span className="numeros font-mono text-[24px] leading-none font-medium tracking-tight text-tinta">
+          <span className="numeros text-[24px] leading-none font-semibold tracking-tight text-tinta">
             {valor}
           </span>
           {unidad ? <span className="text-[13px] text-tinta-2">{unidad}</span> : null}
@@ -117,17 +117,15 @@ export function Chip({
     <a
       href={href}
       aria-pressed={activo}
-      className={`inline-flex h-8 items-center gap-1.5 border px-3 text-[12.5px] font-medium transition ${
-        activo
-          ? "border-tinta bg-tinta text-paper"
-          : "border-linea bg-panel text-tinta-2 hover:border-linea-fuerte hover:text-tinta"
+      className={`inline-flex h-8 items-center gap-1.5 px-3 text-[12.5px] font-medium transition ${
+        activo ? "bg-tinta text-paper" : "bg-pozo text-tinta-2 hover:bg-panel-2 hover:text-tinta"
       }`}
     >
       {children}
       {conteo !== undefined ? (
         <span
           className={`numeros px-1 font-mono text-[10px] leading-4 ${
-            activo ? "bg-paper/15 text-paper" : "bg-panel-2 text-tinta-3"
+            activo ? "bg-paper/15 text-paper" : "bg-panel text-tinta-3"
           }`}
         >
           {conteo}

@@ -20,13 +20,13 @@ export function Navegacion({
   const lista = secciones(herramientas);
 
   return (
-    <nav className="flex flex-col gap-6 px-4">
+    <nav className="flex flex-col gap-5 px-3">
       {ORDEN.map((grupo) => {
         const propias = lista.filter((s) => s.grupo === grupo);
         if (propias.length === 0) return null;
         return (
           <div key={grupo}>
-            <p className="etiqueta mb-2 px-2.5 text-laton">{NOMBRE_GRUPO[grupo]}</p>
+            <p className="mb-1 px-3 text-[12px] text-tinta-3">{NOMBRE_GRUPO[grupo]}</p>
             <ul className="flex flex-col gap-px">
               {propias.map((s) => {
                 const activo = ruta === s.href || ruta.startsWith(`${s.href}/`);
@@ -37,10 +37,10 @@ export function Navegacion({
                       href={s.href}
                       aria-current={activo ? "page" : undefined}
                       title={s.detalle}
-                      className={`group flex h-10 items-center gap-3 px-2.5 text-[13.5px] transition ${
+                      className={`group flex h-10 items-center gap-3 px-3 text-[13.5px] transition ${
                         activo
                           ? "bg-acento font-semibold text-acento-tinta"
-                          : "text-tinta-2 hover:bg-panel-2 hover:text-tinta"
+                          : "text-tinta-2 hover:bg-pozo hover:text-tinta"
                       }`}
                     >
                       <i
@@ -53,7 +53,7 @@ export function Navegacion({
                       {n > 0 ? (
                         <span
                           className={`numeros px-1.5 py-px font-mono text-[11px] ${
-                            activo ? "bg-acento-tinta/15 text-acento-tinta" : "bg-panel-2 text-tinta-2"
+                            activo ? "bg-acento-tinta/15 text-acento-tinta" : "bg-pozo text-tinta-2"
                           }`}
                         >
                           {n}

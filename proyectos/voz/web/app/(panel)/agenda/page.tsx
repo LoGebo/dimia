@@ -97,13 +97,13 @@ export default async function Agenda({
 
   const navegacion = (
     <>
-      <div className="flex border border-linea bg-panel">
+      <div className="flex bg-pozo p-0.5">
         {(["dia", "semana"] as const).map((v) => (
           <Link
             key={v}
             href={enlace({ vista: v })}
-            className={`px-2.5 py-1.5 text-[12px] transition ${
-              v === vista ? "bg-tinta font-medium text-paper" : "text-tinta-2 hover:bg-panel-2"
+            className={`px-3 py-1.5 text-[12px] transition ${
+              v === vista ? "bg-panel font-medium text-tinta" : "text-tinta-2 hover:text-tinta"
             }`}
           >
             {v === "dia" ? "Día" : "Semana"}
@@ -114,7 +114,7 @@ export default async function Agenda({
         <Navegar destino={enlace({ dia: sumarDias(dia, vista === "dia" ? -1 : -7) })} etiqueta="‹" />
         <Link
           href={enlace({ dia: hoy })}
-          className="h-8 border border-linea bg-panel px-2.5 text-[12px] leading-[30px] text-tinta-2 transition hover:bg-panel-2"
+          className="h-8 bg-pozo px-3 text-[12px] leading-8 text-tinta-2 transition hover:text-tinta"
         >
           Hoy
         </Link>
@@ -306,7 +306,7 @@ export default async function Agenda({
         </div>
 
         {delDia.length === 0 ? (
-          <div className="border border-linea bg-panel">
+          <div className="bg-panel">
             <Vacio
               titulo="Día libre"
               detalle="No hay citas para esta fecha. Cuando el agente agende una por teléfono, aparece aquí sola."
@@ -350,7 +350,7 @@ function Navegar({ destino, etiqueta }: { destino: string; etiqueta: string }) {
   return (
     <Link
       href={destino}
-      className="flex h-8 w-8 items-center justify-center border border-linea bg-panel text-tinta-2 transition hover:bg-panel-2"
+      className="flex h-8 w-8 items-center justify-center bg-pozo text-tinta-2 transition hover:text-tinta"
     >
       {etiqueta}
     </Link>
