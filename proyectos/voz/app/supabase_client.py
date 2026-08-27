@@ -93,7 +93,8 @@ class Agenda:
             """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
                       voz_id, tts_proveedor, tts_ajustes, instrucciones_extra,
                       llm_proveedor, llm_modelo, saludo, prompt_base
-               from tenant where telefono_entrada = $1 and activo""",
+               from tenant where activo
+                 and id = (select tenant_id from public.tenant_por_numero($1))""",
             numero,
         )
         if not fila:
@@ -239,6 +240,19 @@ class Agenda:
             "select public.contacto_cerrar($1, 'conversacion', $2, $3, $4::resultado_contacto, $5)",
             tenant_id, conversacion_id, motivo, resultado, resumen,
         )
+
+    async def origen_por_numero(self, numero: str) -> str | None:
+        """La etiqueta de la linea marcada, si el numero es de una campaña."""
+        return await self.pool.fetchval(
+            "select origen from public.tenant_por_numero($1)", numero
+        )
+
+    async def cliente_atribuir(self, tenant_id: uuid.UUID, telefono: str, origen: str) -> None:
+        await self.pool.execute("select public.cliente_atribuir($1, $2, $3)", tenant_id, telefono, origen)
+
+    async def resena_responder(self, tenant_id: uuid.UUID, telefono: str, texto: str) -> dict:
+        crudo = await self.pool.fetchval("select public.resena_responder($1, $2, $3)", tenant_id, telefono, texto)
+        return json.loads(crudo) if isinstance(crudo, str) else dict(crudo or {})
 
     async def campana_encolar(self, limite: int = 50) -> int:
         return await self.pool.fetchval("select public.campana_encolar($1)", limite) or 0

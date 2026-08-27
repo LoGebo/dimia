@@ -74,9 +74,12 @@ export function FormularioItem({
         <Entrada name="alias" defaultValue={item?.alias.join(", ")} placeholder="pastor, al pastor" />
       </Campo>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <Campo etiqueta="Precio (MXN)">
           <Entrada name="precio" type="number" min={0} step={5} defaultValue={item?.precio ?? ""} placeholder="opcional" />
+        </Campo>
+        <Campo etiqueta="Existencias" ayuda="Vacío = sin control. Baja con cada pedido; en cero se apaga solo.">
+          <Entrada name="existencias" type="number" min={0} defaultValue={item?.existencias ?? ""} placeholder="sin control" />
         </Campo>
         <Campo etiqueta="Orden" ayuda="Menor aparece antes.">
           <Entrada name="orden" type="number" defaultValue={item?.orden ?? 0} />

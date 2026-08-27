@@ -661,6 +661,14 @@ async def entrypoint(ctx: JobContext) -> None:
         llamante = str(saliente.get("telefono") or llamante)
     elif marcado:
         tenant = await agenda.tenant_por_telefono(marcado)
+        # Si marcaron a una linea de campaña, esa es la procedencia del cliente.
+        if tenant is not None and llamante and llamante.startswith("+"):
+            try:
+                origen = await agenda.origen_por_numero(marcado)
+                if origen:
+                    await agenda.cliente_atribuir(tenant.id, llamante, origen)
+            except Exception:
+                log.exception("no se pudo atribuir el origen")
     else:
         tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
         if tenant_id:

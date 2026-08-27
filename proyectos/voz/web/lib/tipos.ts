@@ -22,6 +22,10 @@ export type Negocio = {
   instrucciones_extra: string | null;
   prompt_base: string | null;
   tipos_catalogo: string[];
+  pago_proveedor: string;
+  resena_activa: boolean;
+  resena_url: string | null;
+  resena_espera_min: number;
   saludo: string | null;
   slot_granularidad_min: number;
   anticipacion_min: number;
@@ -219,6 +223,7 @@ export const NOMBRE_EVENTO: Record<string, string> = {
   "campana.sin_respuesta": "No contestó la campaña",
   "campana.rechazo": "Pidió que no le llamen",
   "campana.fallido": "No se pudo contactar",
+  "resena.recibida": "Dejó una calificación",
 };
 
 export type MetodoPago = "efectivo" | "tarjeta" | "transferencia" | "enlace" | "otro";
@@ -312,6 +317,10 @@ export type CampanaContacto = {
   booking_id: string | null;
 };
 
+export type ResenaResumen = { resource_id: string | null; nombre: string; total: number; promedio: string; bajas: number };
+export type OrigenResumen = { origen: string; clientes: number; citas: number; cobrado: string };
+export type Linea = { id: string; telefono: string; etiqueta: string; campana_id: string | null; activo: boolean };
+
 export type Rol = "owner" | "staff";
 
 export type Membresia = {
@@ -354,6 +363,7 @@ export type CatalogoItem = {
   atributos: Record<string, unknown>;
   resource_id: string | null;
   disponible: boolean;
+  existencias: number | null;
   orden: number;
 };
 

@@ -406,6 +406,7 @@ export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promis
   const id = opcional(fd, "id");
   const precio = texto(fd, "precio") ? numero(fd, "precio") : null;
   const recurso = opcional(fd, "resource_id");
+  const existencias = texto(fd, "existencias") ? Math.max(0, Math.round(numero(fd, "existencias", 0))) : null;
 
   try {
     await datos(async (q, negocioId) => {
@@ -413,16 +414,16 @@ export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promis
         await q(
           `update catalogo_item
               set tipo = $2, nombre = $3, descripcion = $4, precio = $5,
-                  alias = $6::jsonb, atributos = $7::jsonb, resource_id = $8, orden = $9
+                  alias = $6::jsonb, atributos = $7::jsonb, resource_id = $8, orden = $9, existencias = $10
             where id = $1`,
-          [id, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden")],
+          [id, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden"), existencias],
         );
       } else {
         await q(
           `insert into catalogo_item
-             (tenant_id, tipo, nombre, descripcion, precio, alias, atributos, resource_id, orden)
-           values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)`,
-          [negocioId, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden")],
+           (tenant_id, tipo, nombre, descripcion, precio, alias, atributos, resource_id, orden, existencias)
+           values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)`,
+          [negocioId, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden"), existencias],
         );
       }
     });
@@ -806,6 +807,50 @@ export async function excluirContacto(fd: FormData): Promise<void> {
     ]),
   );
   refrescarPanel();
+}
+
+/** Un número de entrada extra ligado a una campaña: quien marque ahí queda atribuido. */
+export async function guardarLinea(_previo: Estado, fd: FormData): Promise<Estado> {
+  const tel = texto(fd, "telefono").replace(/[^\d+]/g, "");
+  const etiqueta = texto(fd, "etiqueta");
+  if (!/^\+\d{10,15}$/.test(tel)) return { error: "El número va en formato +52 y diez dígitos." };
+  if (!etiqueta) return { error: "Ponle etiqueta: de dónde viene quien marca ahí." };
+  try {
+    await datos((q, negocioId) =>
+      q("insert into linea (tenant_id, telefono, etiqueta, campana_id) values ($1, $2, $3, $4)", [
+        negocioId,
+        tel,
+        etiqueta,
+        opcional(fd, "campana_id"),
+      ]),
+    );
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : "";
+    return { error: /unique|duplicate/i.test(mensaje) ? "Ese número ya está registrado." : errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: "Línea agregada." };
+}
+
+export async function eliminarLinea(fd: FormData): Promise<void> {
+  await datos((q, negocioId) => q("delete from linea where id = $2 and tenant_id = $1", [negocioId, texto(fd, "id")]));
+  refrescarPanel();
+}
+
+export async function guardarResenas(_previo: Estado, fd: FormData): Promise<Estado> {
+  const espera = Math.max(15, Math.min(1440, numero(fd, "resena_espera_min", 120)));
+  const url = opcional(fd, "resena_url");
+  if (url && !/^https?:\/\//.test(url)) return { error: "La liga debe empezar con https://" };
+  await datos((q, negocioId) =>
+    q("update tenant set resena_activa = $2, resena_url = $3, resena_espera_min = $4 where id = $1", [
+      negocioId,
+      fd.get("resena_activa") === "on",
+      url,
+      espera,
+    ]),
+  );
+  refrescarPanel();
+  return { ok: "Reseñas guardadas." };
 }
 
 export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";

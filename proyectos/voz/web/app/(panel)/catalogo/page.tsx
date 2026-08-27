@@ -147,6 +147,9 @@ function FilaItem({
               <span className="block truncate text-[11px] text-tinta-3">{item.alias.join(", ")}</span>
             ) : null}
           </span>
+          {item.existencias !== null && item.disponible ? (
+            <span className={`numeros font-mono text-[11px] ${item.existencias <= 3 ? "text-alerta" : "text-tinta-3"}`}>{item.existencias} en existencia</span>
+          ) : null}
           {item.disponible ? null : <Insignia tono="alerta">Se acabó</Insignia>}
           <span className="numeros text-[12px] text-tinta-2">{moneda(item.precio)}</span>
           <span className="text-[11px] text-tinta-3 group-open:text-acento">

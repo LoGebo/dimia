@@ -96,6 +96,19 @@ def redactar(plantilla: str, payload: dict) -> str:
             + "Si algo está mal, respóndenos por aquí."
         )
 
+    if plantilla == "resena":
+        return (
+            f"{saludo or 'Hola, '}gracias por venir a *{negocio}*. "
+            "¿Cómo te fue del 1 al 5? Responde solo con el número."
+        )
+
+    if plantilla == "pago":
+        return (
+            f"{saludo or 'Hola, '}tienes un pago pendiente con *{negocio}*: "
+            f"{payload.get('concepto', 'servicio')} por {_pesos(payload.get('monto'))}.\n"
+            f"Puedes pagar aquí: {payload.get('enlace_url', '')}"
+        )
+
     if plantilla == "campana":
         # El texto ya viene redactado por campana_redactar, con nombre y negocio.
         return str(payload.get("mensaje") or "").strip()

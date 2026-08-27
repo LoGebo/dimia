@@ -98,6 +98,12 @@ class AgenteWhatsApp:
         if not entrante.soportado:
             return [SalidaTexto(destino=entrante.wa_id, texto=NO_SOPORTADO)]
 
+        # Un numero solo, despues de haberle preguntado como le fue, es la
+        # reseña. No hace falta el modelo para eso.
+        resena = await self._resena(contexto.tenant.id, entrante)
+        if resena is not None:
+            return resena
+
         sesion = self.registro.obtener(
             contexto.tenant.id, entrante.telefono, entrante.nombre_perfil
         )
@@ -112,6 +118,27 @@ class AgenteWhatsApp:
 
         await self._registrar(contexto, entrante, herramientas, texto)
         return self._salidas(entrante, contexto.tenant, herramientas, texto)
+
+    async def _resena(self, tenant_id: Any, entrante: MensajeEntrante) -> list[Salida] | None:
+        texto = (entrante.texto or "").strip()
+        if len(texto) > 2 or not texto.isdigit():
+            return None
+        try:
+            resultado = await self.agenda.resena_responder(tenant_id, entrante.telefono, texto)
+        except Exception:
+            log.exception("no se pudo registrar la reseña")
+            return None
+        if not resultado.get("ok"):
+            return None
+        calificacion = int(resultado.get("calificacion", 0))
+        url = resultado.get("resena_url")
+        if calificacion >= 4 and url:
+            respuesta = f"¡Gracias! Nos ayudaría mucho que lo compartieras aquí: {url}"
+        elif calificacion >= 4:
+            respuesta = "¡Gracias! Nos da gusto que te haya ido bien."
+        else:
+            respuesta = "Gracias por decirlo. Lo vamos a revisar y, si quieres contarnos qué pasó, aquí te leemos."
+        return [SalidaTexto(destino=entrante.wa_id, texto=respuesta)]
 
     async def _registrar(
         self,

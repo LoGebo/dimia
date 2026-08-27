@@ -4,6 +4,8 @@ import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { GraficaHoras, GraficaLlamadas, GraficaMotivos } from "@/components/graficas";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import {
+  clientesPorOrigen,
+  resenasResumen,
   llamadasPorDia,
   llamadasPorHora,
   motivosEscalamiento,
@@ -27,13 +29,17 @@ export default async function Resumen({
   const dias = RANGOS.find((r) => String(r) === parametros.dias) ?? 14;
   const { giro } = await contexto();
 
-  const [config, resumen, porDia, motivos, porHora] = await Promise.all([
+  const [config, resumen, porDia, motivos, porHora, resenas, origenes] = await Promise.all([
     negocio(),
     resumenLlamadas(dias),
     llamadasPorDia(dias),
     motivosEscalamiento(dias),
     llamadasPorHora(dias),
+    resenasResumen(dias),
+    clientesPorOrigen(dias),
   ]);
+  const totalResenas = resenas.reduce((s, r) => s + r.total, 0);
+  const promedioGeneral = totalResenas > 0 ? resenas.reduce((s, r) => s + Number(r.promedio) * r.total, 0) / totalResenas : 0;
 
   const hoy = isoDia(new Date(), config.zona_horaria);
   const containment = resumen.total > 0 ? resumen.resueltas / resumen.total : 0;
@@ -120,6 +126,58 @@ export default async function Resumen({
               <Vacio titulo="Sin datos de horario" />
             ) : (
               <GraficaHoras datos={porHora} />
+            )}
+          </Tarjeta>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Tarjeta>
+            <TarjetaCabecera
+              titulo="Cómo les fue"
+              descripcion={totalResenas > 0 ? `${totalResenas} calificaciones · promedio ${promedioGeneral.toFixed(1)} de 5` : "Se pregunta por WhatsApp después de cada cita atendida."}
+            />
+            {resenas.length === 0 ? (
+              <Vacio titulo="Sin calificaciones todavía" detalle="Activa las reseñas en Agente y pon tu liga de Google." />
+            ) : (
+              <ul className="divide-y divide-linea">
+                {resenas.map((r) => (
+                  <li key={r.resource_id ?? "sin"} className="flex items-center gap-3 px-4 py-2.5">
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-tinta">{r.nombre}</span>
+                    <span className="numeros font-mono text-[12px] text-tinta-3">{r.total}</span>
+                    <span className={`numeros font-mono text-[14px] font-medium ${Number(r.promedio) >= 4 ? "text-bueno" : Number(r.promedio) >= 3 ? "text-alerta" : "text-critico"}`}>
+                      {Number(r.promedio).toFixed(1)}
+                    </span>
+                    {r.bajas > 0 ? <span className="bg-critico/12 px-1.5 py-0.5 font-mono text-[10px] text-critico">{r.bajas} bajas</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Tarjeta>
+          <Tarjeta>
+            <TarjetaCabecera titulo="De dónde vienen" descripcion="Clientes nuevos del periodo según el número al que marcaron o el canal por el que escribieron." />
+            {origenes.length === 0 ? (
+              <Vacio titulo="Sin clientes nuevos en el periodo" />
+            ) : (
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-b border-linea">
+                    <th className="etiqueta px-4 py-2 text-left font-normal">Origen</th>
+                    <th className="etiqueta px-4 py-2 text-right font-normal">Clientes</th>
+                    <th className="etiqueta px-4 py-2 text-right font-normal">Citas</th>
+                    <th className="etiqueta px-4 py-2 text-right font-normal">Cobrado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-linea">
+                  {origenes.map((o) => (
+                    <tr key={o.origen}>
+                      <td className="px-4 py-2 text-tinta">{o.origen}</td>
+                      <td className="numeros px-4 py-2 text-right font-mono">{o.clientes}</td>
+                      <td className="numeros px-4 py-2 text-right font-mono">{o.citas}</td>
+                      <td className="numeros px-4 py-2 text-right font-mono">{moneda(o.cobrado)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </Tarjeta>
         </div>

@@ -7,6 +7,9 @@ import type {
   CampanaContacto,
   CatalogoItem,
   Cliente,
+  Linea,
+  OrigenResumen,
+  ResenaResumen,
   ClienteResumen,
   Evento,
   Conversacion,
@@ -49,7 +52,7 @@ export async function plantillaActual(vertical: string): Promise<PlantillaVertic
 export function catalogo(): Promise<CatalogoItem[]> {
   return datos((q, id) =>
     q<CatalogoItem>(
-      `select id, tipo, nombre, descripcion, precio, alias, atributos,
+      `select id, tipo, nombre, descripcion, precio, alias, atributos, existencias,
               resource_id, disponible, orden
          from catalogo_item where tenant_id = $1
         order by tipo, orden, nombre`,
@@ -697,5 +700,27 @@ export function ausencias(): Promise<Ausencia[]> {
         order by fecha, resource_id`,
       [id],
     ),
+  );
+}
+
+// ---------------------------------------------------------------
+// Reseñas, origen y líneas
+// ---------------------------------------------------------------
+
+export function resenasResumen(dias: number): Promise<ResenaResumen[]> {
+  return datos((q, id) =>
+    q<ResenaResumen>(`select resource_id, nombre, total, promedio::text as promedio, bajas from public.resenas_resumen($1, $2)`, [id, dias]),
+  );
+}
+
+export function clientesPorOrigen(dias: number): Promise<OrigenResumen[]> {
+  return datos((q, id) =>
+    q<OrigenResumen>(`select origen, clientes, citas, cobrado::text as cobrado from public.clientes_por_origen($1, $2)`, [id, dias]),
+  );
+}
+
+export function lineas(): Promise<Linea[]> {
+  return datos((q, id) =>
+    q<Linea>("select id, telefono, etiqueta, campana_id, activo from linea where tenant_id = $1 order by creado", [id]),
   );
 }

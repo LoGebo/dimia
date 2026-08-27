@@ -3,9 +3,9 @@ import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
 import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { guardarNegocio, guardarPrompt, guardarSaludo } from "@/lib/acciones";
+import { eliminarLinea, guardarLinea, guardarNegocio, guardarPrompt, guardarResenas, guardarSaludo } from "@/lib/acciones";
 import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
-import { catalogo, faq, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
+import { campanas, catalogo, faq, lineas, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { baseDeFabrica, construirPrompt, saludo, saludoDelGiro } from "@/lib/prompt";
 import { avance } from "@/lib/listo";
 import { contexto } from "@/lib/sesion";
@@ -21,7 +21,7 @@ export default async function Agente() {
     reglas(),
     catalogo(),
   ]);
-  const plantilla = await plantillaActual(config.vertical);
+  const [plantilla, listaLineas, listaCampanas] = await Promise.all([plantillaActual(config.vertical), lineas(), campanas()]);
 
   const tiposCatalogo = [...new Set(items.filter((i) => i.disponible).map((i) => i.tipo))];
   const prompt = construirPrompt({
@@ -165,6 +165,66 @@ export default async function Agente() {
                   <BotonEnviar>
                     Guardar configuración
                   </BotonEnviar>
+            </Formulario>
+          </Tarjeta>
+
+          <Tarjeta>
+            <TarjetaCabecera titulo="Reseñas" descripcion="Después de cada cita atendida, el agente pregunta por WhatsApp cómo le fue." />
+            <Formulario accion={guardarResenas} className="space-y-3 px-4 py-4">
+              <label className="flex items-center gap-2 text-[13px] text-tinta">
+                <input type="checkbox" name="resena_activa" defaultChecked={config.resena_activa} className="h-3.5 w-3.5 accent-[var(--acento)]" />
+                Preguntar cómo le fue
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <Campo etiqueta="Esperar (min)" ayuda="Después de marcar atendida.">
+                  <Entrada name="resena_espera_min" type="number" min={15} max={1440} step={15} defaultValue={config.resena_espera_min} />
+                </Campo>
+                <Campo etiqueta="Liga de Google" ayuda="A quien califique 4 o 5 se le manda.">
+                  <Entrada name="resena_url" type="url" defaultValue={config.resena_url ?? ""} placeholder="https://g.page/r/..." />
+                </Campo>
+              </div>
+              <BotonEnviar>Guardar reseñas</BotonEnviar>
+            </Formulario>
+          </Tarjeta>
+
+          <Tarjeta>
+            <TarjetaCabecera titulo="Líneas por campaña" descripcion="Un número extra por anuncio. Quien marque ahí queda atribuido a ese origen." />
+            {listaLineas.length > 0 ? (
+              <ul className="divide-y divide-linea border-b border-linea">
+                {listaLineas.map((l) => (
+                  <li key={l.id} className="flex items-center gap-3 px-4 py-2">
+                    <span className="numeros font-mono text-[12px] text-tinta">{l.telefono}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12px] text-tinta-2">{l.etiqueta}</span>
+                    <form action={eliminarLinea}>
+                      <input type="hidden" name="id" value={l.id} />
+                      <button className="text-[11px] text-tinta-3 transition hover:text-critico">Quitar</button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <Formulario accion={guardarLinea} className="space-y-3 px-4 py-4" reiniciar>
+              <div className="grid grid-cols-2 gap-3">
+                <Campo etiqueta="Número" ayuda="E.164, con +52.">
+                  <Entrada name="telefono" placeholder="+5255..." required />
+                </Campo>
+                <Campo etiqueta="Origen" ayuda="Anuncio, volante, Google.">
+                  <Entrada name="etiqueta" placeholder="anuncio facebook" required />
+                </Campo>
+              </div>
+              {listaCampanas.length > 0 ? (
+                <Campo etiqueta="Campaña" ayuda="Opcional, para ligar el número a una campaña.">
+                  <Selector name="campana_id" defaultValue="">
+                    <option value="">Ninguna</option>
+                    {listaCampanas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </Selector>
+                </Campo>
+              ) : null}
+              <BotonEnviar>Agregar línea</BotonEnviar>
             </Formulario>
           </Tarjeta>
         </div>
