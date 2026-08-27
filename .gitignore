@@ -22,3 +22,5 @@ node_modules/
 **/.next-verificacion/
 .vercel
 .venv-pruebas/
+**/supabase/.temp/
+**/supabase/.branches/
