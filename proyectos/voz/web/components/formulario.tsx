@@ -31,14 +31,16 @@ export function BotonEnviar({
   children,
   pendienteTexto = "Guardando…",
   className = "",
+  disabled = false,
 }: {
   children: ReactNode;
   pendienteTexto?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
-    <Boton variante="solido" type="submit" disabled={pending} className={className}>
+    <Boton variante="solido" type="submit" disabled={pending || disabled} className={className}>
       {pending ? pendienteTexto : children}
     </Boton>
   );

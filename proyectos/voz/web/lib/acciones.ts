@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { conSesion, elevado } from "@/lib/db";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
 import { avance } from "@/lib/listo";
+import { negocio } from "@/lib/consultas";
 import { sembrarPlantilla } from "@/lib/plantilla-inicial";
 import { contexto, datos, elegirNegocio } from "@/lib/sesion";
 import { siguientePaso } from "@/lib/giro";
@@ -58,11 +59,13 @@ export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> 
   const email = texto(fd, "email");
   const password = texto(fd, "password");
   const nombre = texto(fd, "nombre");
-  const vertical = (texto(fd, "vertical") || "generico") as Vertical;
+  const elegido = texto(fd, "vertical") || "generico";
 
   if (!email.includes("@")) return { error: "Escribe un correo válido." };
   if (password.length < 8) return { error: "La contraseña necesita al menos 8 caracteres." };
   if (!nombre) return { error: "Ponle nombre a tu negocio." };
+  if (elegido === "propio" && !texto(fd, "giro_nombre")) return { error: "Ponle nombre al giro." };
+  const vertical: Vertical = elegido === "propio" ? await crearGiroPropio(fd) : elegido;
 
   let usuarioId: string;
   try {
@@ -125,15 +128,61 @@ async function crearNegocio(
   });
 }
 
+const HERRAMIENTAS_VALIDAS: Herramienta[] = ["agendar", "pedido", "recado"];
+
+/**
+ * Un giro que no está en el catálogo se guarda como plantilla propia del
+ * negocio: el motor la lee igual que a las de fábrica, el menú de alta no la
+ * muestra. La clave lleva un sufijo aleatorio para que dos negocios con el
+ * mismo giro no choquen.
+ */
+async function crearGiroPropio(fd: FormData): Promise<Vertical> {
+  const nombre = texto(fd, "giro_nombre");
+  const elegidas = fd
+    .getAll("giro_herramientas")
+    .map(String)
+    .filter((h): h is Herramienta => HERRAMIENTAS_VALIDAS.includes(h as Herramienta));
+  const herramientas: Herramienta[] = elegidas.length > 0 ? elegidas : ["recado"];
+  const descripcion = texto(fd, "giro_instrucciones");
+  const base = nombre
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 24);
+  const clave = `propio_${base || "giro"}_${Math.random().toString(36).slice(2, 8)}`;
+  const instrucciones = [
+    `CONTEXTO: ${nombre.toLowerCase()}.`,
+    descripcion ? `- ${descripcion}` : null,
+    herramientas.includes("agendar") ? "- Agenda solo en horarios que devuelva la herramienta de disponibilidad." : null,
+    herramientas.includes("pedido") ? "- Consulta el catalogo antes de decir que hay o cuanto cuesta." : null,
+    "- Lo que no puedas resolver, toma recado o transfiere.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  await elevado((q) =>
+    q(
+      `insert into vertical_template (clave, nombre, instrucciones, saludo, herramientas, activo, propio)
+       values ($1, $2, $3, $4, $5::jsonb, true, true)`,
+      [clave, nombre, instrucciones, "{nombre}, buen dia. ¿En que le puedo ayudar?", JSON.stringify(herramientas)],
+    ),
+  );
+  return clave;
+}
+
 export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/entrar");
   const nombre = texto(fd, "nombre");
   if (!nombre) return { error: "Ponle nombre al negocio." };
+  const elegido = texto(fd, "vertical") || "generico";
+  if (elegido === "propio" && !texto(fd, "giro_nombre")) return { error: "Ponle nombre al giro." };
+  const vertical: Vertical = elegido === "propio" ? await crearGiroPropio(fd) : elegido;
 
   const creado = await crearNegocio(usuario.id, {
     nombre,
-    vertical: (texto(fd, "vertical") || "generico") as Vertical,
+    vertical,
     zonaHoraria: texto(fd, "zona_horaria") || "America/Mexico_City",
     telefonoEscalamiento: opcional(fd, "telefono_escalamiento"),
   });
@@ -195,15 +244,17 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
     };
   }
 
-  // Un agente a medio configurar contestando el teléfono real queda mal con el
-  // cliente, pero la decisión es del dueño: se avisa, no se bloquea.
+  // Candado: el número de entrada solo se guarda cuando el negocio está
+  // completo. Un agente a medias contestando el teléfono real queda mal con
+  // el cliente, y el dueño no siempre lee el aviso.
   const telefonoEntrada = opcional(fd, "telefono_entrada");
-  let aviso: string | undefined;
   if (telefonoEntrada) {
     const { giro } = await contexto();
     const progreso = await avance(giro.herramientas);
-    if (!progreso.completo) {
-      aviso = `Ojo: el número quedó activo con la configuración a medias (${progreso.cumplidos} de ${progreso.total}). El agente va a contestar sin todo el contexto.`;
+    const previo = await negocio();
+    if (!progreso.completo && telefonoEntrada !== previo.telefono_entrada) {
+      const faltan = progreso.requisitos.filter((r) => !r.listo).map((r) => r.nombre.toLowerCase());
+      return { error: `El número de entrada se activa cuando todo está listo. Falta: ${faltan.join(", ")}.` };
     }
   }
 
@@ -241,7 +292,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
     return { error: errorLegible(error, proveedor) };
   }
   refrescarPanel();
-  return { ok: aviso ? `Configuración guardada. ${aviso}` : "Configuración guardada." };
+  return { ok: "Configuración guardada." };
 }
 
 /** Abrirla es haberla leído: baja el contador del menú. */

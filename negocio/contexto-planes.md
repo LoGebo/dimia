@@ -202,3 +202,28 @@ utilidad bruta al mes `[ recalcular cuando se fijen precios ]`.
 | Infraestructura (VPS, LiveKit, Fly) | `proyectos/voz/deploy/*.md` |
 | Propuesta de planes con tablas completas | `negocio/planes.md` |
 | Posicionamiento y servicios | `negocio/posicionamiento.md`, `negocio/servicios.md` |
+
+---
+
+## 8. Canales de texto: WhatsApp, Instagram, Messenger
+
+Los planes cobran minutos de llamada. Los canales de texto usan el mismo motor
+(`channels/nucleo.py`) pero sin transcripción, sin voz y sin SIP: solo el modelo.
+
+| Concepto | Costo | Nota |
+|---|---|---|
+| Modelo por conversación de texto (~10 turnos, prompt cacheado) | ≈ 0.005–0.01 USD ≈ 0.10–0.20 MXN | Mismo orden que una llamada de 3 min en tokens, sin los 0.030 USD de voz y transcripción `[ medir con tokens reales ]` |
+| Conversación que inicia el cliente por WhatsApp (ventana de 24 h) | `[ confirmar con Meta ]` | Meta dejó de cobrar las conversaciones de servicio en 2023; verificar vigencia en México |
+| Plantilla de utilidad por WhatsApp (recordatorio, confirmación) | `[ confirmar con Meta ]` | Supuesto de trabajo: 0.65 MXN por conversación |
+| Instagram y Messenger | 0 por mensaje | Solo requiere la cuenta profesional y la página |
+| Modelo Premium (GPT-4.1) por conversación de texto | ≈ 0.04–0.08 USD ≈ 0.7–1.4 MXN | Ocho veces el modelo base |
+
+Lectura: una conversación de texto cuesta entre 5 y 10 veces menos que una llamada
+promedio (1.54 MXN). Por eso los planes la incluyen sin contarla; el único costo con
+peso real son las plantillas de WhatsApp que manda Dimia (recordatorios), y ese ya
+está en el margen neto como 2 conversaciones por cita.
+
+Recomendación: no cobrar texto por unidad. Poner un tope generoso por plan
+(por ejemplo 300 / 1,000 / 3,000 conversaciones al mes) solo para que el plan
+grande se vea más grande, y medir tokens reales el primer mes para confirmar
+el costo.

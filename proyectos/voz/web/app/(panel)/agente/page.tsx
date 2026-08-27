@@ -105,15 +105,16 @@ export default async function Agente() {
                   <Campo
                     etiqueta="Número de entrada"
                     ayuda={
-                      progreso.puedeActivarLinea
+                      progreso.puedeActivarLinea || config.telefono_entrada
                         ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
-                        : `Puedes ponerlo ya, pero te faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}: el agente contestaría sin todo el contexto.`
+                        : `Se desbloquea cuando esté todo listo: faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`
                     }
                   >
                     <Entrada
                       name="telefono_entrada"
                       defaultValue={config.telefono_entrada ?? ""}
-                      placeholder="+52..."
+                      placeholder={progreso.puedeActivarLinea || config.telefono_entrada ? "+52..." : "Con candado"}
+                      disabled={!progreso.puedeActivarLinea && !config.telefono_entrada}
                     />
                   </Campo>
                   </div>

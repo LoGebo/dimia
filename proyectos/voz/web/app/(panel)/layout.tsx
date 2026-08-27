@@ -29,11 +29,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         </div>
         <span
           className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] uppercase ${
-            actual.activo ? "text-bueno" : "text-alerta"
+            !actual.telefono_entrada ? "text-tinta-3" : actual.activo ? "text-bueno" : "text-alerta"
           }`}
         >
-          <i aria-hidden="true" className={`h-1.5 w-1.5 bg-current ${actual.activo ? "late" : ""}`} />
-          {actual.activo ? "Activo" : "Pausado"}
+          <i aria-hidden="true" className={`h-1.5 w-1.5 bg-current ${actual.activo && actual.telefono_entrada ? "late" : ""}`} />
+          {!actual.telefono_entrada ? "Sin línea" : actual.activo ? "Activo" : "Pausado"}
         </span>
       </div>
       <div className="flex-1 overflow-y-auto py-4">

@@ -1,60 +1,59 @@
 "use client";
 
+import { useState } from "react";
 import { BotonEnviar, Formulario } from "@/components/formulario";
-import { Boton, Campo, Entrada, Selector } from "@/components/ui/primitivos";
+import { SelectorGiro, type EstadoGiro } from "@/components/selector-giro";
+import { Campo, Entrada, Selector } from "@/components/ui/primitivos";
 import { altaNegocio } from "@/lib/acciones";
-import { ZONAS_HORARIAS, type Herramienta, type PlantillaVertical } from "@/lib/tipos";
+import { ZONAS_HORARIAS, type PlantillaVertical } from "@/lib/tipos";
 
-function queHace(herramientas: Herramienta[]): string {
-  if (herramientas.includes("pedido")) return "Toma pedidos y los cobra";
-  if (herramientas.includes("agendar")) return "Aparta horarios en la agenda";
-  return "Contesta y toma recado";
-}
-
+/**
+ * El alta se cierra con candado: el botón no se activa hasta que lo obligatorio
+ * está capturado. Así nadie manda el formulario para enterarse de qué faltaba.
+ */
 export function AltaNegocio({ plantillas }: { plantillas: PlantillaVertical[] }) {
+  const [nombre, setNombre] = useState("");
+  const [giro, setGiro] = useState<EstadoGiro>({ giro: plantillas[0]?.clave ?? "propio", propio: false, faltantes: [] });
+
+  const faltantes = [...(nombre.trim() ? [] : ["el nombre del negocio"]), ...giro.faltantes];
+  const listo = faltantes.length === 0;
+
   return (
     <Formulario accion={altaNegocio} className="space-y-4">
-          <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta el agente al contestar.">
-            <Entrada name="nombre" required placeholder="Clínica Dental Sonrisa" autoFocus />
-          </Campo>
-          <fieldset>
-            <legend className="mb-1.5 text-xs font-medium text-tinta-2">Giro</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {plantillas.map((p, i) => (
-                <label
-                  key={p.clave}
-                  className="cursor-pointer rounded-lg border border-linea bg-panel px-3 py-2.5 transition has-checked:border-acento has-checked:bg-acento-suave"
-                >
-                  <input
-                    type="radio"
-                    name="vertical"
-                    value={p.clave}
-                    defaultChecked={i === 0}
-                    className="sr-only"
-                  />
-                  <span className="block text-[13px] font-medium text-tinta">{p.nombre}</span>
-                  <span className="mt-0.5 block text-[11px] text-tinta-3">{queHace(p.herramientas)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Campo etiqueta="Zona horaria">
-              <Selector name="zona_horaria" defaultValue="America/Mexico_City">
-                {ZONAS_HORARIAS.map((z) => (
-                  <option key={z} value={z}>
-                    {z.replace("America/", "").replace("_", " ")}
-                  </option>
-                ))}
-              </Selector>
-            </Campo>
-            <Campo etiqueta="Número para transferir" ayuda="A dónde pasa las llamadas que no resuelve.">
-              <Entrada name="telefono_escalamiento" placeholder="+52 55 1234 5678" />
-            </Campo>
-          </div>
-          <BotonEnviar>
-            "Crear negocio"
-          </BotonEnviar>
+      <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta el agente al contestar.">
+        <Entrada
+          name="nombre"
+          required
+          placeholder="Clínica Dental Sonrisa"
+          autoFocus
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+        />
+      </Campo>
+
+      <SelectorGiro plantillas={plantillas} onCambio={setGiro} />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Campo etiqueta="Zona horaria">
+          <Selector name="zona_horaria" defaultValue="America/Mexico_City">
+            {ZONAS_HORARIAS.map((z) => (
+              <option key={z} value={z}>
+                {z.replace("America/", "").replace("_", " ")}
+              </option>
+            ))}
+          </Selector>
+        </Campo>
+        <Campo etiqueta="Número para transferir" ayuda="A dónde pasa las llamadas que no resuelve.">
+          <Entrada name="telefono_escalamiento" placeholder="+52 55 1234 5678" />
+        </Campo>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-linea pt-4">
+        <BotonEnviar disabled={!listo}>Crear negocio</BotonEnviar>
+        <p className="text-[12px] text-tinta-3">
+          {listo ? "Después configuras horarios, servicios y respuestas en el panel." : `Falta ${faltantes.join(" y ")}.`}
+        </p>
+      </div>
     </Formulario>
   );
 }
