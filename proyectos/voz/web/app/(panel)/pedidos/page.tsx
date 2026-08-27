@@ -54,7 +54,7 @@ export default async function Pedidos({
             <Navegar destino={enlace({ dia: sumarDias(dia, -1) })} etiqueta="‹" />
             <Link
               href={enlace({ dia: hoy })}
-              className="h-8 bg-pozo px-3 text-[12px] leading-8 text-tinta-2 transition hover:text-tinta"
+              className="h-8 border border-linea bg-panel px-2.5 text-[12px] leading-[30px] text-tinta-2 transition hover:bg-panel-2"
             >
               Hoy
             </Link>
@@ -95,7 +95,7 @@ export default async function Pedidos({
         </div>
 
         {visibles.length === 0 ? (
-          <div className="bg-panel">
+          <div className="rounded-lg border border-linea bg-panel">
             <Vacio
               titulo="Nada aquí"
               detalle={
@@ -117,7 +117,7 @@ function Navegar({ destino, etiqueta }: { destino: string; etiqueta: string }) {
   return (
     <Link
       href={destino}
-      className="flex h-8 w-8 items-center justify-center bg-pozo text-tinta-2 transition hover:text-tinta"
+      className="flex h-8 w-8 items-center justify-center border border-linea bg-panel text-tinta-2 transition hover:bg-panel-2"
     >
       {etiqueta}
     </Link>

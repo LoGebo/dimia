@@ -4,8 +4,8 @@ type Variante = "solido" | "contorno" | "fantasma" | "peligro";
 
 const variantes: Record<Variante, string> = {
   solido: "bg-acento text-acento-tinta hover:brightness-110 border-transparent",
-  contorno: "bg-pozo text-tinta border-transparent hover:bg-panel-2",
-  fantasma: "bg-transparent text-tinta-2 border-transparent hover:bg-pozo hover:text-tinta",
+  contorno: "bg-panel text-tinta border-linea-fuerte hover:bg-panel-2",
+  fantasma: "bg-transparent text-tinta-2 border-transparent hover:bg-panel-2 hover:text-tinta",
   peligro: "bg-transparent text-critico border-transparent hover:bg-critico/10",
 };
 
@@ -26,7 +26,7 @@ export function Tarjeta({ className = "", ...props }: ComponentProps<"div">) {
   return (
     <div
       {...props}
-      className={`bg-panel ${className}`}
+      className={`border border-linea bg-panel ${className}`}
     />
   );
 }
@@ -72,7 +72,7 @@ export function Campo({
 }
 
 const baseCampo =
-  "w-full border border-transparent bg-pozo px-3 py-2 text-[13.5px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
+  "w-full border border-linea bg-panel-2 px-3 py-2 text-[13.5px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
 
 export function Entrada({ className = "", ...props }: ComponentProps<"input">) {
   return <input {...props} className={`${baseCampo} ${className}`} />;
@@ -94,7 +94,7 @@ export function Insignia({
   children: ReactNode;
 }) {
   const tonos = {
-    neutro: "border-transparent text-tinta-2 bg-pozo",
+    neutro: "border-linea text-tinta-2 bg-panel-2",
     bueno: "border-bueno/30 text-bueno bg-bueno/10",
     alerta: "border-alerta/30 text-alerta bg-alerta/10",
     critico: "border-critico/30 text-critico bg-critico/10",

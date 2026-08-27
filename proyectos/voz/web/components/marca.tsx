@@ -13,7 +13,7 @@ export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
 /** Cabecera de la barra lateral: la marca y el nombre del producto. */
 export function MarcaDimia() {
   return (
-    <div className="flex items-center gap-3 px-5 pt-5 pb-3 text-tinta">
+    <div className="flex items-center gap-3 border-b border-linea px-4 py-4 text-tinta">
       <IconoDimia />
       <div className="min-w-0 leading-tight">
         <p className="text-[14px] font-semibold tracking-tight">Dimia Línea</p>
