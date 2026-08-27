@@ -25,6 +25,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   if (agenda) lista.push({ href: "/agenda", nombre: "Agenda", detalle: "Flujo del día", grupo: "operacion" });
   if (pedidos) lista.push({ href: "/pedidos", nombre: "Pedidos", detalle: "Lo que hay que sacar", grupo: "operacion" });
   if (recados) lista.push({ href: "/recados", nombre: "Recados", detalle: "Quién pidió que le marquen", grupo: "operacion" });
+  if (agenda || pedidos) lista.push({ href: "/cobros", nombre: "Cobros", detalle: "Lo que entró de verdad", grupo: "operacion" });
   if (agenda || pedidos) lista.push({ href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres", grupo: "configuracion" });
   if (agenda) lista.push({ href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración", grupo: "configuracion" });
 

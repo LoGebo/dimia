@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Insignia } from "@/components/ui/primitivos";
 import { telefono as formatearTelefono } from "@/lib/formato";
-import { NOMBRE_CANAL, type Conversacion } from "@/lib/tipos";
+import { NOMBRE_CANAL, NOMBRE_RESULTADO, type Conversacion } from "@/lib/tipos";
 
 /**
  * Cuánto hace, en corto. En una bandeja lo que importa es "hace cuánto",
@@ -63,6 +63,9 @@ export function RenglonConversacion({
           <Insignia tono="alerta">Pidió una persona</Insignia>
         ) : null}
         {sinLeer ? <Insignia tono="acento">{c.mensajes_sin_leer} sin leer</Insignia> : null}
+        {c.resultado && c.resultado !== "sin_resultado" ? (
+          <span className="text-[10px] text-tinta-3">{NOMBRE_RESULTADO[c.resultado]}</span>
+        ) : null}
       </div>
     </Link>
   );

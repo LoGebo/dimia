@@ -11,6 +11,7 @@ import type {
   MensajeSaliente,
   Faq,
   Negocio,
+  Pago,
   Pedido,
   PlantillaVertical,
   Recado,
@@ -354,8 +355,8 @@ export function resumenAgendaHoy(dia: string): Promise<ResumenAgendaHoy> {
 export function conversaciones(limite = 50): Promise<Conversacion[]> {
   return datos((q, id) =>
     q<Conversacion>(
-      `select id, canal, contacto, contacto_nombre, estado, escalada_en,
-              motivo_escalamiento, ultimo_mensaje, ultimo_mensaje_en,
+      `select id, canal, contacto, contacto_nombre, cliente_id, estado, escalada_en,
+              motivo_escalamiento, motivo, resultado, resumen, ultimo_mensaje, ultimo_mensaje_en,
               mensajes_sin_leer, booking_id, pedido_id, call_id
          from conversacion
         where tenant_id = $1 and estado <> 'cerrada'
@@ -369,8 +370,8 @@ export function conversaciones(limite = 50): Promise<Conversacion[]> {
 export function conversacion(conversacionId: string): Promise<Conversacion | null> {
   return datos(async (q, id) => {
     const filas = await q<Conversacion>(
-      `select id, canal, contacto, contacto_nombre, estado, escalada_en,
-              motivo_escalamiento, ultimo_mensaje, ultimo_mensaje_en,
+      `select id, canal, contacto, contacto_nombre, cliente_id, estado, escalada_en,
+              motivo_escalamiento, motivo, resultado, resumen, ultimo_mensaje, ultimo_mensaje_en,
               mensajes_sin_leer, booking_id, pedido_id, call_id
          from conversacion where id = $2 and tenant_id = $1`,
       [id, conversacionId],
@@ -435,7 +436,7 @@ const SELECT_CLIENTE = `
          (select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada')::int as atendidas,
          (select count(*) from booking b where b.cliente_id = c.id and b.estado = 'no_asistio')::int as no_asistio,
          (select count(*) from pedido p where p.cliente_id = c.id and p.estado in ('confirmado','entregado'))::int as pedidos,
-         coalesce((select sum(public.pedido_total(p.id)) from pedido p where p.cliente_id = c.id and p.estado in ('confirmado','entregado')), 0)::text as gastado,
+         coalesce((select sum(g.monto) from pago g where g.cliente_id = c.id and g.estado = 'pagado'), 0)::text as gastado,
          (select count(*) from lead l where l.cliente_id = c.id and not l.atendido)::int as recados_pendientes
     from cliente c`;
 
@@ -495,8 +496,8 @@ export function reservasDeCliente(clienteId: string, limite = 30): Promise<Reser
 export function conversacionesDeCliente(clienteId: string): Promise<Conversacion[]> {
   return datos((q, id) =>
     q<Conversacion>(
-      `select id, canal, contacto, contacto_nombre, estado, escalada_en,
-              motivo_escalamiento, ultimo_mensaje, ultimo_mensaje_en,
+      `select id, canal, contacto, contacto_nombre, cliente_id, estado, escalada_en,
+              motivo_escalamiento, motivo, resultado, resumen, ultimo_mensaje, ultimo_mensaje_en,
               mensajes_sin_leer, booking_id, pedido_id, call_id
          from conversacion
         where tenant_id = $1 and cliente_id = $2
@@ -536,4 +537,76 @@ export function eventosRecientes(limite = 40): Promise<(Evento & { cliente_nombr
       [id, limite],
     ),
   );
+}
+
+// ---------------------------------------------------------------
+// Cobros
+// ---------------------------------------------------------------
+
+const SELECT_PAGO = `
+  select g.id, g.cliente_id, c.nombre as cliente_nombre, g.booking_id, g.pedido_id, g.concepto,
+         g.monto::text as monto, g.metodo, g.estado, g.proveedor, g.enlace_url, g.referencia_externa,
+         g.notas, g.pagado_en, g.creado
+    from pago g
+    left join cliente c on c.id = g.cliente_id`;
+
+export function pagosDelDia(dia: string): Promise<Pago[]> {
+  return datos((q, id) =>
+    q<Pago>(
+      `${SELECT_PAGO}
+        join tenant t on t.id = g.tenant_id
+       where g.tenant_id = $1
+         and (coalesce(g.pagado_en, g.creado) at time zone t.zona_horaria)::date = $2::date
+       order by coalesce(g.pagado_en, g.creado) desc`,
+      [id, dia],
+    ),
+  );
+}
+
+export function pagosPendientes(): Promise<Pago[]> {
+  return datos((q, id) =>
+    q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.estado = 'pendiente' order by g.creado desc limit 100`, [id]),
+  );
+}
+
+export function pagosDeCliente(clienteId: string): Promise<Pago[]> {
+  return datos((q, id) =>
+    q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.cliente_id = $2 order by g.creado desc limit 50`, [id, clienteId]),
+  );
+}
+
+export function pagosDeReservas(ids: string[]): Promise<Pago[]> {
+  if (ids.length === 0) return Promise.resolve([]);
+  return datos((q, id) =>
+    q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.booking_id = any($2::uuid[]) and g.estado <> 'cancelado'`, [id, ids]),
+  );
+}
+
+export function pagosDePedidos(ids: string[]): Promise<Pago[]> {
+  if (ids.length === 0) return Promise.resolve([]);
+  return datos((q, id) =>
+    q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.pedido_id = any($2::uuid[]) and g.estado <> 'cancelado'`, [id, ids]),
+  );
+}
+
+export type ResumenCobros = { cobrado: string; operaciones: number; pendiente: string; por_metodo: { metodo: string; monto: string }[] };
+
+export function resumenCobros(dia: string): Promise<ResumenCobros> {
+  return datos(async (q, id) => {
+    const filas = await q<{ cobrado: string; operaciones: number; pendiente: string; por_metodo: { metodo: string; monto: string }[] | null }>(
+      `with del_dia as (
+         select g.* from pago g join tenant t on t.id = g.tenant_id
+          where g.tenant_id = $1 and (coalesce(g.pagado_en, g.creado) at time zone t.zona_horaria)::date = $2::date
+       )
+       select coalesce(sum(monto) filter (where estado = 'pagado'), 0)::text as cobrado,
+              count(*) filter (where estado = 'pagado')::int as operaciones,
+              (select coalesce(sum(monto), 0)::text from pago where tenant_id = $1 and estado = 'pendiente') as pendiente,
+              (select jsonb_agg(jsonb_build_object('metodo', metodo, 'monto', total::text) order by total desc)
+                 from (select metodo, sum(monto) as total from del_dia where estado = 'pagado' group by metodo) m) as por_metodo
+         from del_dia`,
+      [id, dia],
+    );
+    const f = filas[0];
+    return { cobrado: f?.cobrado ?? "0", operaciones: f?.operaciones ?? 0, pendiente: f?.pendiente ?? "0", por_metodo: f?.por_metodo ?? [] };
+  });
 }

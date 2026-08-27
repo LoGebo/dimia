@@ -4,7 +4,7 @@ import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { Refrescar } from "@/components/refrescar";
 import { TableroPedidos } from "@/components/tablero-pedidos";
 import { Vacio } from "@/components/ui/primitivos";
-import { negocio, pedidosDelDia, resumenPedidos } from "@/lib/consultas";
+import { negocio, pagosDePedidos, pedidosDelDia, resumenPedidos } from "@/lib/consultas";
 import { fechaLarga, isoDia, moneda, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import type { EstadoPedido } from "@/lib/tipos";
@@ -31,6 +31,8 @@ export default async function Pedidos({
   const filtro = FILTROS.find((f) => f.valor === parametros.estado)?.valor ?? "pendientes";
 
   const [todos, resumen] = await Promise.all([pedidosDelDia(dia), resumenPedidos(dia)]);
+  const pagos = await pagosDePedidos(todos.map((p) => p.id));
+  const cobrados = new Map(pagos.filter((p) => p.estado === "pagado" && p.pedido_id).map((p) => [p.pedido_id!, p.monto]));
 
   const visibles =
     filtro === "todos"
@@ -106,7 +108,7 @@ export default async function Pedidos({
             />
           </div>
         ) : (
-          <TableroPedidos pedidos={visibles} zona={config.zona_horaria} />
+          <TableroPedidos pedidos={visibles} zona={config.zona_horaria} cobrados={cobrados} />
         )}
       </div>
     </>

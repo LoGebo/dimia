@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cancelarReserva, moverCita, type PasoFlujo } from "@/lib/acciones";
+import { Cobrar } from "@/components/cobrar";
 import { Reagendar } from "@/components/reagendar";
 import { hora, moneda, telefono } from "@/lib/formato";
 import { pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
@@ -42,12 +43,15 @@ export function FlujoCitas({
   zona,
   ahora,
   nuevaCita,
+  cobradas = new Map(),
 }: {
   columnas: Columna[];
   reservas: Reserva[];
   zona: string;
   ahora: number;
   nuevaCita?: React.ReactNode;
+  /** booking_id → monto cobrado, para no cobrar dos veces. */
+  cobradas?: Map<string, string>;
 }) {
   const destino = new Map<PasoCita, PasoCita>();
   for (const c of columnas) for (const p of c.incluye ?? [c.paso]) destino.set(p, c.paso);
@@ -82,11 +86,11 @@ export function FlujoCitas({
                 </span>
               </header>
 
-              {c.paso === "atendida" ? <ResumenAtendidas lista={lista} total={reservas} /> : null}
+              {c.paso === "atendida" ? <ResumenAtendidas lista={lista} total={reservas} cobradas={cobradas} /> : null}
 
               <ul className="flex flex-1 flex-col gap-2 px-2 pb-2">
                 {lista.map((r) => (
-                  <Tarjeta key={r.id} reserva={r} paso={pasoDe(r)} zona={zona} ahora={ahora} />
+                  <Tarjeta key={r.id} reserva={r} paso={pasoDe(r)} zona={zona} ahora={ahora} cobrado={cobradas.get(r.id) ?? null} />
                 ))}
                 {lista.length === 0 ? (
                   <li className="px-2 py-6 text-center text-[12px] text-tinta-3">Nada aquí todavía.</li>
@@ -104,10 +108,10 @@ export function FlujoCitas({
   );
 }
 
-function ResumenAtendidas({ lista, total }: { lista: Reserva[]; total: Reserva[] }) {
+function ResumenAtendidas({ lista, total, cobradas }: { lista: Reserva[]; total: Reserva[]; cobradas: Map<string, string> }) {
   const personas = lista.reduce((s, r) => s + r.personas, 0);
-  const ingreso = lista.reduce((s, r) => s + Number(r.precio ?? 0), 0);
-  const conPrecio = lista.filter((r) => r.precio !== null).length;
+  const ingreso = lista.reduce((s, r) => s + Number(cobradas.get(r.id) ?? 0), 0);
+  const conPrecio = lista.filter((r) => cobradas.has(r.id)).length;
   const esperadas = total.filter((r) => r.estado === "confirmada" || r.estado === "completada").length;
   const avance = esperadas > 0 ? Math.round((lista.length / esperadas) * 100) : 0;
 
@@ -124,7 +128,7 @@ function ResumenAtendidas({ lista, total }: { lista: Reserva[]; total: Reserva[]
           <dd className="numeros font-mono font-medium text-tinta">{personas}</dd>
         </div>
         <div className="flex justify-between gap-2">
-          <dt className="text-tinta-2">Ingreso de lista</dt>
+          <dt className="text-tinta-2">Cobrado</dt>
           <dd className="numeros font-mono font-medium text-tinta">
             {conPrecio > 0 ? moneda(ingreso) : "—"}
           </dd>
@@ -143,11 +147,13 @@ function Tarjeta({
   paso,
   zona,
   ahora,
+  cobrado,
 }: {
   reserva: Reserva;
   paso: PasoCita;
   zona: string;
   ahora: number;
+  cobrado: string | null;
 }) {
   const desdeInicio = minutosDesde(r.inicio, ahora);
   const retraso = paso === "por_llegar" && desdeInicio > 0 ? desdeInicio : 0;
@@ -271,9 +277,14 @@ function Tarjeta({
           </>
         ) : null}
         {paso === "atendida" ? (
-          <span className="px-2 py-1 text-[11px] text-tinta-3">
-            Entró {r.llegada ? hora(r.llegada, zona) : "—"}
-          </span>
+          <>
+            {cobrado ? (
+              <span className="numeros px-2 py-1 font-mono text-[11px] text-bueno">Cobrado {moneda(cobrado)}</span>
+            ) : (
+              <Cobrar bookingId={r.id} concepto={`${r.servicio} · ${r.cliente_nombre}`} montoSugerido={r.precio} compacto />
+            )}
+            <span className="ml-auto px-2 py-1 text-[11px] text-tinta-3">Entró {r.llegada ? hora(r.llegada, zona) : "—"}</span>
+          </>
         ) : null}
         {apagada ? (
           <Link

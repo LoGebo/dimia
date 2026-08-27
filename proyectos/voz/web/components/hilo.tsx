@@ -2,7 +2,7 @@ import Link from "next/link";
 import { nombreDe } from "@/components/bandeja";
 import { Insignia } from "@/components/ui/primitivos";
 import { telefono as formatearTelefono } from "@/lib/formato";
-import { NOMBRE_CANAL, type Conversacion, type Mensaje } from "@/lib/tipos";
+import { NOMBRE_CANAL, NOMBRE_RESULTADO, type Conversacion, type Mensaje } from "@/lib/tipos";
 
 // Lo que entra a la izquierda, lo que sale a la derecha: es como se lee
 // cualquier bandeja, y el dueño ya tiene esa costumbre de su propio WhatsApp.
@@ -67,6 +67,14 @@ export function Hilo({
           {c.contacto.startsWith("+") ? (
             <p className="numeros mt-0.5 text-[12px] text-tinta-3">
               {formatearTelefono(c.contacto)}
+              {c.cliente_id ? (
+                <>
+                  {" · "}
+                  <Link href={`/clientes/${c.cliente_id}`} className="text-acento hover:underline">
+                    Ver cliente
+                  </Link>
+                </>
+              ) : null}
             </p>
           ) : null}
         </div>
@@ -85,6 +93,17 @@ export function Hilo({
           ) : null}
         </div>
       </header>
+
+      {c.resumen || c.motivo ? (
+        <section aria-label="Qué pasó" className="border-b border-linea bg-panel-2 px-6 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="etiqueta">Qué pasó</span>
+            {c.resultado ? <Insignia tono={c.resultado === "sin_resultado" ? "neutro" : c.resultado === "transferida" ? "alerta" : "bueno"}>{NOMBRE_RESULTADO[c.resultado]}</Insignia> : null}
+            {c.motivo ? <span className="text-[12px] text-tinta-2">{c.motivo}</span> : null}
+          </div>
+          {c.resumen ? <p className="mt-1.5 max-w-3xl text-[13px] leading-relaxed text-tinta">{c.resumen}</p> : null}
+        </section>
+      ) : null}
 
       {c.estado === "escalada" && c.motivo_escalamiento ? (
         <p className="border-b border-alerta/25 bg-alerta/10 px-6 py-2 text-[12px] text-tinta">

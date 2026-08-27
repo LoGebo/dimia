@@ -222,6 +222,39 @@ class Agenda:
             "select conversacion_escalar($1,$2,$3)", tenant_id, conversacion_id, motivo
         )
 
+    async def llamada_cerrar(
+        self, tenant_id: uuid.UUID, call_id: str, motivo: str, resultado: str, resumen: str
+    ) -> None:
+        await self.pool.execute(
+            """select public.contacto_cerrar($1, 'call_log', c.id, $3, $4::resultado_contacto, $5)
+                 from call_log c where c.tenant_id = $1 and c.call_id = $2""",
+            tenant_id, call_id, motivo, resultado, resumen,
+        )
+
+    async def conversacion_cerrar(
+        self, tenant_id: uuid.UUID, conversacion_id: uuid.UUID,
+        motivo: str, resultado: str, resumen: str,
+    ) -> None:
+        await self.pool.execute(
+            "select public.contacto_cerrar($1, 'conversacion', $2, $3, $4::resultado_contacto, $5)",
+            tenant_id, conversacion_id, motivo, resultado, resumen,
+        )
+
+    async def conversaciones_por_resumir(self, inactiva_min: int = 120, limite: int = 20) -> list[dict]:
+        filas = await self.pool.fetch(
+            "select id, tenant_id, canal from public.conversaciones_por_resumir($1, $2)",
+            inactiva_min, limite,
+        )
+        return [dict(f) for f in filas]
+
+    async def turnos_de_conversacion(self, conversacion_id: uuid.UUID, limite: int = 80) -> list[dict]:
+        filas = await self.pool.fetch(
+            """select autor::text as autor, texto from mensaje
+                where conversacion_id = $1 order by creado limit $2""",
+            conversacion_id, limite,
+        )
+        return [dict(f) for f in filas]
+
     async def catalogo_resumen(
         self, tenant_id: uuid.UUID, limite: int = 80
     ) -> list[dict]:

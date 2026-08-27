@@ -1,3 +1,4 @@
+import { Cobrar } from "@/components/cobrar";
 import { cambiarEstadoPedido } from "@/lib/acciones";
 import { hora, moneda, telefono } from "@/lib/formato";
 import type { EstadoPedido, Pedido, TipoPedido } from "@/lib/tipos";
@@ -17,18 +18,18 @@ const TIPOS: Record<TipoPedido, string> = {
   local: "Para comer aquí",
 };
 
-export function TableroPedidos({ pedidos, zona }: { pedidos: Pedido[]; zona: string }) {
+export function TableroPedidos({ pedidos, zona, cobrados = new Map() }: { pedidos: Pedido[]; zona: string; cobrados?: Map<string, string> }) {
   const ahora = Date.now();
   return (
     <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
       {pedidos.map((p) => (
-        <TarjetaPedido key={p.id} pedido={p} zona={zona} ahora={ahora} />
+        <TarjetaPedido key={p.id} pedido={p} zona={zona} ahora={ahora} cobrado={cobrados.get(p.id) ?? null} />
       ))}
     </div>
   );
 }
 
-function TarjetaPedido({ pedido, zona, ahora }: { pedido: Pedido; zona: string; ahora: number }) {
+function TarjetaPedido({ pedido, zona, ahora, cobrado }: { pedido: Pedido; zona: string; ahora: number; cobrado: string | null }) {
   const minutos = Math.max(0, Math.round((ahora - new Date(pedido.creado).getTime()) / 60000));
   const pendiente = pedido.estado === "abierto" || pedido.estado === "confirmado";
   const nuevo = pendiente && minutos < MINUTOS_NUEVO;
@@ -101,8 +102,8 @@ function TarjetaPedido({ pedido, zona, ahora }: { pedido: Pedido; zona: string; 
       ) : null}
 
       <div className="flex items-center justify-between gap-3 border-t border-linea bg-panel-2 px-4 py-3">
-        <span className="etiqueta">Total</span>
-        <span className="numeros text-[26px] leading-none font-bold text-tinta">{moneda(pedido.total)}</span>
+        <span className="etiqueta">{cobrado ? "Cobrado" : "Total"}</span>
+        <span className={`numeros text-[26px] leading-none font-bold ${cobrado ? "text-bueno" : "text-tinta"}`}>{moneda(cobrado ?? pedido.total)}</span>
       </div>
 
       <div className="flex flex-wrap gap-2 border-t border-linea px-4 py-3">
@@ -115,6 +116,9 @@ function TarjetaPedido({ pedido, zona, ahora }: { pedido: Pedido; zona: string; 
           <BotonEstado id={pedido.id} estado="entregado" tono="bueno">
             Marcar entregado
           </BotonEstado>
+        ) : null}
+        {pedido.estado !== "cancelado" && !cobrado ? (
+          <Cobrar pedidoId={pedido.id} concepto={`Pedido ${pedido.codigo}`} montoSugerido={pedido.total} etiqueta="Cobrar" />
         ) : null}
         {pendiente ? (
           <BotonEstado id={pedido.id} estado="cancelado" tono="critico">

@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
+from app.cierre import resumir
 from app.supabase_client import Agenda
 
 log = logging.getLogger("despachador")
@@ -34,6 +35,10 @@ VENCE_EN_HORAS = 12
 # Cada cuanto se revisa si hay citas por recordar, y con cuanta anticipacion.
 CADA_RECORDATORIO_SEG = 3600
 VENTANA_RECORDATORIO_HORAS = 24
+# Una conversacion de texto se da por terminada cuando lleva dos horas sin
+# mensajes; ahi se escribe su cierre.
+CADA_CIERRE_SEG = 600
+CONVERSACION_FRIA_MIN = 120
 
 
 class Mensajero(Protocol):
@@ -115,11 +120,14 @@ class Despachador:
         agenda: Agenda,
         mensajero: Mensajero,
         por_vuelta: int = POR_VUELTA,
+        llm: object | None = None,
     ) -> None:
         self.agenda = agenda
         self.mensajero = mensajero
         self.por_vuelta = por_vuelta
+        self.llm = llm
         self._ultimo_recordatorio = 0.0
+        self._ultimo_cierre = 0.0
 
     async def tanda(self) -> Tanda:
         """Una vuelta: reclama lo que toca, lo manda y marca el resultado."""
@@ -163,6 +171,25 @@ class Despachador:
         """
         return await self.agenda.encolar_recordatorios(VENTANA_RECORDATORIO_HORAS)
 
+    async def cierres(self) -> int:
+        """Escribe motivo, resultado y resumen de las conversaciones frias."""
+        if self.llm is None:
+            return 0
+        cerradas = 0
+        for fila in await self.agenda.conversaciones_por_resumir(CONVERSACION_FRIA_MIN):
+            turnos = await self.agenda.turnos_de_conversacion(fila["id"])
+            cierre = await resumir(self.llm, turnos)
+            if cierre is None:
+                # Sin nada que leer no hay cierre, pero tampoco se vuelve a intentar.
+                cierre_vacio = ("sin motivo claro", "sin_resultado", "")
+                await self.agenda.conversacion_cerrar(fila["tenant_id"], fila["id"], *cierre_vacio)
+                continue
+            await self.agenda.conversacion_cerrar(
+                fila["tenant_id"], fila["id"], cierre.motivo, cierre.resultado, cierre.resumen
+            )
+            cerradas += 1
+        return cerradas
+
     async def correr(self, intervalo: float = INTERVALO_SEG) -> None:
         """El ciclo. Nunca muere por un error de una tanda."""
         while True:
@@ -173,6 +200,12 @@ class Despachador:
                     cuantos = await self.recordatorios()
                     if cuantos:
                         log.info("%d recordatorios encolados", cuantos)
+
+                if ahora - self._ultimo_cierre >= CADA_CIERRE_SEG:
+                    self._ultimo_cierre = ahora
+                    cerradas = await self.cierres()
+                    if cerradas:
+                        log.info("%d conversaciones cerradas con resumen", cerradas)
 
                 resultado = await self.tanda()
                 if resultado.reclamados:
@@ -196,11 +229,16 @@ async def _principal() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    from anthropic import AsyncAnthropic
+
+    from app.config import settings
+
     await agenda.conectar()
     cliente = WhatsAppCliente()
+    llm = AsyncAnthropic(api_key=settings().anthropic_api_key or None)
     try:
         log.info("despachador arriba, revisando la cola cada %ds", INTERVALO_SEG)
-        await Despachador(agenda, cliente).correr()
+        await Despachador(agenda, cliente, llm=llm).correr()
     finally:
         await cliente.cerrar()
         await agenda.cerrar()

@@ -647,6 +647,54 @@ export async function guardarCliente(_previo: Estado, fd: FormData): Promise<Est
   return { ok: "Cliente guardado." };
 }
 
+const METODOS_PAGO = ["efectivo", "tarjeta", "transferencia", "enlace", "otro"];
+
+/** Registra lo que de verdad se cobró por una cita o un pedido. */
+export async function registrarPago(_previo: Estado, fd: FormData): Promise<Estado> {
+  const monto = numero(fd, "monto", -1);
+  if (monto < 0) return { error: "Escribe el monto." };
+  const metodo = texto(fd, "metodo");
+  if (!METODOS_PAGO.includes(metodo)) return { error: "Elige cómo se pagó." };
+  const pendiente = fd.get("pendiente") === "1";
+  try {
+    await datos((q, negocioId) =>
+      q(
+        `insert into pago (tenant_id, booking_id, pedido_id, concepto, monto, metodo, estado, enlace_url, referencia_externa, notas)
+         values ($1, $2, $3, $4, $5, $6::pago_metodo, $7::pago_estado, $8, $9, $10)`,
+        [
+          negocioId,
+          opcional(fd, "booking_id"),
+          opcional(fd, "pedido_id"),
+          texto(fd, "concepto") || "Cobro",
+          monto,
+          metodo,
+          pendiente ? "pendiente" : "pagado",
+          opcional(fd, "enlace_url"),
+          opcional(fd, "referencia"),
+          opcional(fd, "notas"),
+        ],
+      ),
+    );
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  return { ok: pendiente ? "Cobro pendiente registrado." : "Cobro registrado." };
+}
+
+export async function cambiarEstadoPago(fd: FormData): Promise<void> {
+  const estado = texto(fd, "estado");
+  if (!["pagado", "cancelado", "reembolsado"].includes(estado)) return;
+  await datos((q, negocioId) =>
+    q(
+      `update pago set estado = $3::pago_estado, pagado_en = case when $3 = 'pagado' then now() else pagado_en end, actualizado = now()
+        where id = $2 and tenant_id = $1`,
+      [negocioId, texto(fd, "id"), estado],
+    ),
+  );
+  refrescarPanel();
+}
+
 export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
 
 /**

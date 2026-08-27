@@ -179,7 +179,41 @@ export const NOMBRE_EVENTO: Record<string, string> = {
   "conversacion.escalada": "Pidió una persona",
   "conversacion.cerrada": "Conversación cerrada",
   "llamada.terminada": "Llamó",
+  "llamada.resumida": "Cierre de la llamada",
+  "conversacion.resumida": "Cierre de la conversación",
   "pago.registrado": "Pagó",
+  "pago.pendiente": "Cobro pendiente",
+  "pago.cancelado": "Cobro cancelado",
+  "pago.reembolsado": "Reembolso",
+};
+
+export type MetodoPago = "efectivo" | "tarjeta" | "transferencia" | "enlace" | "otro";
+export type EstadoPago = "pendiente" | "pagado" | "cancelado" | "reembolsado";
+
+export const NOMBRE_METODO: Record<MetodoPago, string> = {
+  efectivo: "Efectivo",
+  tarjeta: "Tarjeta",
+  transferencia: "Transferencia",
+  enlace: "Enlace de pago",
+  otro: "Otro",
+};
+
+export type Pago = {
+  id: string;
+  cliente_id: string | null;
+  cliente_nombre: string | null;
+  booking_id: string | null;
+  pedido_id: string | null;
+  concepto: string;
+  monto: string;
+  metodo: MetodoPago;
+  estado: EstadoPago;
+  proveedor: string | null;
+  enlace_url: string | null;
+  referencia_externa: string | null;
+  notas: string | null;
+  pagado_en: string | null;
+  creado: string;
 };
 
 export type Rol = "owner" | "staff";
@@ -497,14 +531,32 @@ export const NOMBRE_CANAL: Record<CanalConversacion, string> = {
   sms: "SMS",
 };
 
+export type ResultadoContacto =
+  | "cita" | "cambio_cita" | "cancelacion" | "pedido" | "recado" | "informacion" | "transferida" | "sin_resultado";
+
+export const NOMBRE_RESULTADO: Record<ResultadoContacto, string> = {
+  cita: "Agendó",
+  cambio_cita: "Cambió su cita",
+  cancelacion: "Canceló",
+  pedido: "Pidió",
+  recado: "Dejó recado",
+  informacion: "Solo preguntó",
+  transferida: "Pasó a una persona",
+  sin_resultado: "Sin resultado",
+};
+
 export type Conversacion = {
   id: string;
   canal: CanalConversacion;
   contacto: string;
   contacto_nombre: string | null;
+  cliente_id: string | null;
   estado: EstadoConversacion;
   escalada_en: string | null;
   motivo_escalamiento: string | null;
+  motivo: string | null;
+  resultado: ResultadoContacto | null;
+  resumen: string | null;
   ultimo_mensaje: string | null;
   ultimo_mensaje_en: string;
   mensajes_sin_leer: number;

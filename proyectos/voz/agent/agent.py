@@ -704,6 +704,8 @@ async def entrypoint(ctx: JobContext) -> None:
     # Sin guardar la referencia, el recolector de basura puede llevarse la
     # tarea a medio camino y el turno se pierde sin ruido.
     escrituras: set[asyncio.Task] = set()
+    # La transcripcion en memoria: con ella se escribe el cierre al colgar.
+    turnos: list[dict] = []
 
     @session.on("conversation_item_added")
     def _guardar_turno(ev) -> None:
@@ -714,6 +716,7 @@ async def entrypoint(ctx: JobContext) -> None:
         contenido = getattr(item, "text_content", None) or ""
         if not contenido.strip():
             return
+        turnos.append({"autor": "cliente" if rol == "user" else "agente", "texto": contenido})
         tarea = asyncio.create_task(
             _registrar_turno(
                 autor="cliente" if rol == "user" else "agente",
@@ -787,9 +790,24 @@ async def entrypoint(ctx: JobContext) -> None:
                 escalado=recepcionista.escalado,
                 motivo=recepcionista.motivo_escalamiento,
                 booking_id=recepcionista.booking_id,
+                transcripcion=turnos,
             )
         except Exception:
             log.exception("no se pudo registrar la llamada")
+            return
+        # Ya colgo: una sola pasada del modelo para dejar escrito por que llamo
+        # y en que termino. Fuera del camino en vivo, por eso va aqui.
+        try:
+            from anthropic import AsyncAnthropic
+            from app.cierre import resumir
+
+            cierre = await resumir(AsyncAnthropic(api_key=cfg.anthropic_api_key or None), turnos)
+            if cierre:
+                await agenda.llamada_cerrar(
+                    tenant.id, recepcionista.call_id, cierre.motivo, cierre.resultado, cierre.resumen
+                )
+        except Exception:
+            log.exception("no se pudo cerrar la llamada")
 
     ctx.add_shutdown_callback(al_colgar)
 

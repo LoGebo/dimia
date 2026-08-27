@@ -7,7 +7,7 @@ import { NuevaCita } from "@/components/nueva-cita";
 import { OcupacionSemanal } from "@/components/graficas";
 import { Refrescar } from "@/components/refrescar";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { buscarReservas, citasDelDia, negocio, recursos, reservasEntre, servicios } from "@/lib/consultas";
+import { buscarReservas, citasDelDia, negocio, pagosDeReservas, recursos, reservasEntre, servicios } from "@/lib/consultas";
 import { fechaLarga, hora, isoDia, lunesDe, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import { DIAS, pasoDe, type Reserva } from "@/lib/tipos";
@@ -161,6 +161,8 @@ export default async function Agenda({
 
   const ahora = Date.now();
   const delDia = enDia(dia);
+  const pagos = await pagosDeReservas(delDia.map((r) => r.id));
+  const cobradas = new Map(pagos.filter((p) => p.estado === "pagado" && p.booking_id).map((p) => [p.booking_id!, p.monto]));
   const filtro = (FILTROS.find((f) => f.valor === parametros.filtro)?.valor ?? "todas") as Filtro;
   const orden: Orden = parametros.orden === "espera" ? "espera" : "hora";
   const recursoActivo = listaRecursos.find((r) => r.id === parametros.recurso)?.id;
@@ -317,6 +319,7 @@ export default async function Agenda({
             reservas={visibles}
             zona={config.zona_horaria}
             ahora={ahora}
+            cobradas={cobradas}
             nuevaCita={
               <NuevaCita
                 servicios={listaServicios.filter((s) => s.activo)}
