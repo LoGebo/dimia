@@ -23,7 +23,7 @@ export default async function Catalogo() {
         descripcion="Qué puede reservar el agente, cuánto dura y con quién."
         giro={giro.nombre}
       />
-      <div className="grid gap-4 px-5 py-5 lg:grid-cols-2">
+      <div className="contenido !grid gap-6 lg:grid-cols-2">
         <Tarjeta>
           <TarjetaCabecera
             titulo={`${vertical.recurso}es`}

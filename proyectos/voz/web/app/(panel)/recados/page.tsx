@@ -46,7 +46,7 @@ export default async function Recados({
         }
       />
 
-      <div className="px-5 py-5">
+      <div className="contenido">
         <Tarjeta>
           <TarjetaCabecera
             titulo={`${pendientes} sin atender`}

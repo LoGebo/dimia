@@ -37,15 +37,15 @@ export function Cifra({
   glifo?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3.5 bg-panel px-4 py-3.5">
+    <div className="flex items-center gap-4 bg-panel px-5 py-5">
       <span
         aria-hidden="true"
-        className="flex h-10 w-10 flex-none items-center justify-center border border-linea bg-panel-2 text-tinta-2"
+        className="flex h-11 w-11 flex-none items-center justify-center border border-linea bg-panel-2 text-tinta-2"
       >
         {glifo ?? <i className="h-2 w-2 bg-acento" />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] text-tinta-3">{etiqueta}</p>
+        <p className="text-[12px] leading-tight text-tinta-3">{etiqueta}</p>
         <p className="mt-0.5 flex items-baseline gap-1.5">
           <span className="numeros font-mono text-[24px] leading-none font-medium tracking-tight text-tinta">
             {valor}
@@ -117,7 +117,7 @@ export function Chip({
     <a
       href={href}
       aria-pressed={activo}
-      className={`inline-flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition ${
+      className={`inline-flex h-8 items-center gap-1.5 border px-3 text-[12.5px] font-medium transition ${
         activo
           ? "border-tinta bg-tinta text-paper"
           : "border-linea bg-panel text-tinta-2 hover:border-linea-fuerte hover:text-tinta"

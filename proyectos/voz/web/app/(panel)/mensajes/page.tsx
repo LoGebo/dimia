@@ -53,7 +53,7 @@ export default async function Mensajes() {
         />
       </div>
 
-      <div className="px-5 py-5">
+      <div className="contenido">
         {lista.length === 0 ? (
           <Vacio
             titulo="Todavía no sale ningún mensaje"

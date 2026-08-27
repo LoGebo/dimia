@@ -63,7 +63,7 @@ export default async function Pedidos({
         }
       />
 
-      <div className="space-y-4 px-5 py-5">
+      <div className="contenido">
         <TiraIndicadores>
           <Cifra
             etiqueta="Pedidos del día"

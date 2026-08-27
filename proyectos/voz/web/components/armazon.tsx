@@ -34,7 +34,7 @@ export function Armazon({ menu, children }: { menu: ReactNode; children: ReactNo
     <Contexto.Provider value={{ abierta, alternar }}>
       <div
         className={`grid min-h-screen grid-cols-1 transition-[grid-template-columns] duration-150 ${
-          abierta ? "lg:grid-cols-[236px_1fr]" : "lg:grid-cols-[0px_1fr]"
+          abierta ? "lg:grid-cols-[256px_1fr]" : "lg:grid-cols-[0px_1fr]"
         }`}
       >
         <aside

@@ -32,7 +32,7 @@ export default async function Catalogo() {
         }
       />
 
-      <div className="grid gap-4 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="contenido !grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-4">
           {tipos.map((tipo) => {
             const delTipo = items.filter((i) => i.tipo === tipo);

@@ -6,7 +6,7 @@ import { pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
 
 export const MINUTOS_TOLERANCIA = 15;
 
-export type Columna = { paso: PasoCita; incluye?: PasoCita[]; nombre: string; pista: string; tono?: "bueno" };
+export type Columna = { paso: PasoCita; incluye?: PasoCita[]; nombre: string; pista: string; tono?: "bueno" | "acento" | "neutro" };
 
 export function minutosLegibles(min: number): string {
   if (min < 60) return `${min} min`;
@@ -58,22 +58,26 @@ export function FlujoCitas({
   }
 
   return (
-    <div className="-mx-5 overflow-x-auto px-5 pb-2">
-      <div className="grid min-w-[960px] auto-cols-fr grid-flow-col gap-3">
+    <div className="-mx-8 overflow-x-auto px-8 pb-2 max-md:-mx-4 max-md:px-4">
+      <div className="grid min-w-[980px] auto-cols-fr grid-flow-col gap-4">
         {columnas.map((c) => {
           const lista = porPaso.get(c.paso) ?? [];
           return (
             <section
               key={c.paso}
               aria-label={c.nombre}
-              className={`flex min-h-[420px] flex-col border ${
-                c.tono === "bueno" ? "border-bueno/30 bg-bueno/[0.04]" : "border-linea bg-panel-2/60"
-              }`}
+              className={`flex min-h-[440px] flex-col border ${
+                c.tono === "bueno" ? "border-bueno/25" : "border-linea"
+              } bg-panel-2/50`}
             >
-              <header className="flex items-baseline justify-between gap-2 px-3 pt-3 pb-2">
-                <h2 className="flex items-center gap-2 text-[13px] font-semibold text-tinta">
+              <header
+                className={`flex items-baseline justify-between gap-2 px-4 py-3 ${
+                  c.tono === "bueno" ? "bg-bueno/[0.08]" : c.tono === "acento" ? "bg-acento/[0.08]" : "bg-panel-2"
+                }`}
+              >
+                <h2 className="flex items-center gap-2 text-[13.5px] font-semibold text-tinta">
                   {c.nombre}
-                  <span className="numeros bg-panel px-1.5 font-mono text-[11px] font-normal text-tinta-2">
+                  <span className="numeros bg-panel px-1.5 py-px font-mono text-[11px] font-normal text-tinta-2">
                     {lista.length}
                   </span>
                 </h2>
@@ -84,7 +88,7 @@ export function FlujoCitas({
 
               {c.paso === "atendida" ? <ResumenAtendidas lista={lista} total={reservas} /> : null}
 
-              <ul className="flex flex-1 flex-col gap-2 px-2 pb-2">
+              <ul className="flex flex-1 flex-col gap-3 px-3 pt-3 pb-3">
                 {lista.map((r) => (
                   <Tarjeta key={r.id} reserva={r} paso={pasoDe(r)} zona={zona} ahora={ahora} />
                 ))}
@@ -94,7 +98,7 @@ export function FlujoCitas({
               </ul>
 
               {c.paso === "por_llegar" && nuevaCita ? (
-                <div className="border-t border-linea/60 px-2 py-2">{nuevaCita}</div>
+                <div className="border-t border-linea/60 px-3 py-2">{nuevaCita}</div>
               ) : null}
             </section>
           );
@@ -112,7 +116,7 @@ function ResumenAtendidas({ lista, total }: { lista: Reserva[]; total: Reserva[]
   const avance = esperadas > 0 ? Math.round((lista.length / esperadas) * 100) : 0;
 
   return (
-    <div className="mx-2 mb-2 border border-bueno/30 bg-panel px-3 py-3">
+    <div className="mx-3 mt-3 border border-bueno/30 bg-panel px-4 py-4">
       <p className="text-[12px] font-semibold text-tinta">Hoy hasta ahora</p>
       <dl className="mt-2 space-y-1.5 text-[12px]">
         <div className="flex justify-between gap-2">
@@ -190,8 +194,8 @@ function Tarjeta({
         enFalta ? "border-critico/40" : excedida ? "border-alerta/40" : "border-linea"
       } ${apagada ? "opacity-60" : ""}`}
     >
-      <div className="px-3 pt-3">
-        <div className="flex items-start gap-2.5">
+      <div className="px-4 pt-4">
+        <div className="flex items-start gap-3">
           <span
             aria-hidden="true"
             className={`flex h-8 w-8 flex-none items-center justify-center font-mono text-[11px] font-medium ${
@@ -218,7 +222,7 @@ function Tarjeta({
           )}
         </div>
 
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-tinta-3">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px] text-tinta-3">
           <span className="truncate">{r.recurso}</span>
           <span aria-hidden="true">·</span>
           <span className="numeros font-mono">{hora(r.inicio, zona)}</span>
@@ -229,28 +233,28 @@ function Tarjeta({
       </div>
 
       {aviso ? (
-        <p className={`mx-3 mt-2.5 px-2.5 py-2 text-[11px] leading-snug ${enFalta ? "bg-critico/10 text-critico" : "bg-alerta/10 text-alerta"}`}>
+        <p className={`mx-4 mt-3 px-3 py-2 text-[11.5px] leading-snug ${enFalta ? "bg-critico/10 text-critico" : "bg-alerta/10 text-alerta"}`}>
           {aviso}
         </p>
       ) : r.notas ? (
-        <p className="mx-3 mt-2.5 bg-panel-2 px-2.5 py-2 text-[11px] leading-snug text-tinta-2" title={r.notas}>
+        <p className="mx-4 mt-3 bg-panel-2 px-3 py-2 text-[11.5px] leading-snug text-tinta-2" title={r.notas}>
           {r.notas}
         </p>
       ) : null}
 
-      <div className="mt-2.5 flex flex-wrap gap-1 border-t border-linea px-2 py-1.5">
+      <div className="mt-3 flex flex-wrap gap-1 border-t border-linea px-3 py-2">
         {paso === "por_llegar" ? (
           <>
             <Paso id={r.id} paso="llego" principal>
               Llegó
             </Paso>
-            <Reagendar reserva={r} zona={zona} />
+            <Reagendar reserva={r} zona={zona} compacto />
             <Paso id={r.id} paso="no_llego">
               No llegó
             </Paso>
             <form action={cancelarReserva} className="ml-auto">
               <input type="hidden" name="id" value={r.id} />
-              <button className="h-7 px-2 text-[12px] text-tinta-3 transition hover:text-critico">Cancelar</button>
+              <button className="h-7 px-2 text-[12px] text-tinta-3 transition hover:text-critico" title="Cancelar la cita">Cancelar</button>
             </form>
           </>
         ) : null}

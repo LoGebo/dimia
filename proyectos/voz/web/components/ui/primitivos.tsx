@@ -17,7 +17,7 @@ export function Boton({
   return (
     <button
       {...props}
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition disabled:pointer-events-none disabled:opacity-50 ${variantes[variante]} ${className}`}
+      className={`inline-flex h-9 items-center justify-center gap-1.5 border px-3.5 text-[13px] font-medium transition disabled:pointer-events-none disabled:opacity-50 ${variantes[variante]} ${className}`}
     />
   );
 }
@@ -26,7 +26,7 @@ export function Tarjeta({ className = "", ...props }: ComponentProps<"div">) {
   return (
     <div
       {...props}
-      className={`rounded-lg border border-linea bg-panel shadow-[var(--sombra)] ${className}`}
+      className={`border border-linea bg-panel ${className}`}
     />
   );
 }
@@ -41,10 +41,10 @@ export function TarjetaCabecera({
   accion?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-linea px-4 py-3">
+    <div className="flex items-start justify-between gap-4 px-5 pt-5 pb-3">
       <div className="min-w-0">
-        <h2 className="text-[13px] font-semibold tracking-tight text-tinta">{titulo}</h2>
-        {descripcion ? <p className="mt-0.5 text-xs text-tinta-3">{descripcion}</p> : null}
+        <h2 className="text-[14px] font-semibold tracking-tight text-tinta">{titulo}</h2>
+        {descripcion ? <p className="mt-0.5 text-[12.5px] text-tinta-3">{descripcion}</p> : null}
       </div>
       {accion}
     </div>
@@ -64,7 +64,7 @@ export function Campo({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-xs font-medium text-tinta-2">{etiqueta}</span>
+      <span className="mb-1.5 block text-[12.5px] font-medium text-tinta-2">{etiqueta}</span>
       {children}
       {ayuda ? <span className="mt-1 block text-[11px] text-tinta-3">{ayuda}</span> : null}
     </label>
@@ -72,7 +72,7 @@ export function Campo({
 }
 
 const baseCampo =
-  "w-full rounded-md border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
+  "w-full border border-linea bg-panel-2 px-3 py-2 text-[13.5px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
 
 export function Entrada({ className = "", ...props }: ComponentProps<"input">) {
   return <input {...props} className={`${baseCampo} ${className}`} />;
@@ -111,7 +111,7 @@ export function Insignia({
 
 export function Vacio({ titulo, detalle, accion }: { titulo: string; detalle?: string; accion?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
       <p className="text-[13px] font-medium text-tinta-2">{titulo}</p>
       {detalle ? <p className="max-w-sm text-xs text-tinta-3">{detalle}</p> : null}
       {accion}

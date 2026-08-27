@@ -114,6 +114,23 @@ body {
   font-feature-settings: "cv05", "ss01";
 }
 
+/* El contenido flota sobre el papel: aire generoso, ancho contenido. */
+.contenido {
+  width: 100%;
+  max-width: 1400px;
+  padding: 8px 32px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .contenido {
+    padding: 8px 16px 40px;
+    gap: 16px;
+  }
+}
+
 .numeros {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;

@@ -27,7 +27,7 @@ export default async function Conocimiento() {
         descripcion="Lo que el agente puede contestar además de su trabajo principal. Si no está aquí, transfiere."
         giro={giro.nombre}
       />
-      <div className="grid gap-4 px-5 py-5 lg:grid-cols-[380px_1fr]">
+      <div className="contenido !grid gap-6 lg:grid-cols-[380px_1fr]">
         <div className="space-y-4">
           <Tarjeta>
             <TarjetaCabecera titulo="Nueva respuesta" />

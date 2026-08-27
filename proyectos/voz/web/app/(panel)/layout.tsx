@@ -20,7 +20,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <div className="border-b border-linea">
         <NombreNegocio membresia={membresias.find((m) => m.tenant_id === negocioId)} />
       </div>
-      <div className="flex items-center justify-between gap-2 border-b border-linea px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-linea px-4 py-3">
         <div className="min-w-0">
           <p className="etiqueta">Línea</p>
           <p className="numeros mt-0.5 truncate font-mono text-[12px] text-tinta">
@@ -36,13 +36,13 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           {!actual.telefono_entrada ? "Sin línea" : actual.activo ? "Activo" : "Pausado"}
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="flex-1 overflow-y-auto py-5">
         <Navegacion
           herramientas={giro.herramientas}
           contadores={{ "/bandeja": avisos.bandeja, "/pedidos": avisos.pedidos, "/recados": avisos.recados }}
         />
       </div>
-      <div className="border-t border-linea px-3 py-3">
+      <div className="border-t border-linea px-4 py-4">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-[12px] text-tinta-2">{usuario.email}</p>
