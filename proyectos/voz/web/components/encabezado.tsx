@@ -5,7 +5,6 @@ import { BuscadorGlobal } from "@/components/buscador-global";
 import { ChipGiro } from "@/components/selector-negocio";
 import { contadores } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
-import { NOMBRE_GRUPO, secciones } from "@/lib/giro";
 
 /**
  * La barra de cada pantalla: título a la izquierda; a la derecha las
@@ -18,7 +17,6 @@ export async function Encabezado({
   acciones,
   principal,
   busqueda,
-  compacto = false,
 }: {
   titulo: string;
   descripcion?: string;
@@ -27,57 +25,31 @@ export async function Encabezado({
   /** La acción grande de la pantalla, como «Nueva cita». */
   principal?: ReactNode;
   busqueda?: string;
-  /** Todo en la barra, sin bloque de título. Para pantallas de lista y detalle. */
-  compacto?: boolean;
 }) {
   const [{ usuario, giro: giroActual }, avisos] = await Promise.all([contexto(), contadores()]);
   const pendientes = avisos.bandeja + avisos.recados;
   const conAgenda = giroActual.herramientas.includes("agendar");
-  const seccion = secciones(giroActual.herramientas).find((s) => s.nombre === titulo);
-  const grupo = seccion ? NOMBRE_GRUPO[seccion.grupo] : "Panel";
-
-  const tituloBloque = (
-    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="flex items-baseline gap-1.5 font-display text-[30px] leading-none font-light tracking-[-0.012em] text-tinta">
-            {titulo}
-            <i className="cuadrado" aria-hidden="true" />
-          </h1>
-          {giro ? <ChipGiro nombre={giro} /> : null}
-        </div>
-        {descripcion ? <p className="mt-2 max-w-2xl text-[13.5px] text-tinta-2">{descripcion}</p> : null}
-      </div>
-      {acciones || principal ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {acciones}
-          {principal}
-        </div>
-      ) : null}
-    </div>
-  );
 
   return (
-    <>
     <header className="sticky top-0 z-20 border-b border-linea bg-paper/90 backdrop-blur">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-8 py-2.5 max-md:px-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <BotonMenu />
-          <nav aria-label="Ubicación" className="flex items-center gap-2 text-[12.5px]">
-            {grupo !== titulo ? (
-              <>
-                <span className="text-tinta-3">{grupo}</span>
-                <i aria-hidden="true" className="h-1 w-1 bg-linea-fuerte" />
-              </>
-            ) : null}
-            <span className="font-medium text-tinta">{titulo}</span>
-            {compacto && descripcion ? <span className="hidden text-tinta-3 lg:inline">· {descripcion}</span> : null}
-          </nav>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="flex items-baseline gap-1.5 font-display text-[24px] leading-none font-light tracking-[-0.012em] text-tinta">
+                {titulo}
+                <i className="cuadrado" aria-hidden="true" />
+              </h1>
+              {giro ? <ChipGiro nombre={giro} /> : null}
+            </div>
+            {descripcion ? <p className="mt-1 text-[12px] text-tinta-3">{descripcion}</p> : null}
+          </div>
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          {compacto ? acciones : null}
-          {compacto && acciones ? <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-linea md:block" /> : null}
+          {acciones}
+          {acciones ? <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-linea md:block" /> : null}
           {conAgenda ? <BuscadorGlobal destino="/agenda" valor={busqueda} /> : null}
           <Link
             href={avisos.bandeja > 0 || avisos.recados === 0 ? "/bandeja" : "/recados"}
@@ -95,7 +67,7 @@ export async function Encabezado({
               </span>
             ) : null}
           </Link>
-          {compacto ? principal : null}
+          {principal}
           <span
             title={usuario.email}
             aria-label={usuario.email}
@@ -106,8 +78,6 @@ export async function Encabezado({
         </div>
       </div>
     </header>
-    {compacto ? null : <div className="px-8 pt-7 pb-4 max-md:px-4">{tituloBloque}</div>}
-    </>
   );
 }
 

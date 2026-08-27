@@ -62,7 +62,7 @@ export default async function Resumen({
         }
       />
 
-      <div className="contenido">
+      <div className="space-y-4 px-5 py-5">
         <Hoy herramientas={giro.herramientas} dia={hoy} />
 
         <TiraIndicadores>

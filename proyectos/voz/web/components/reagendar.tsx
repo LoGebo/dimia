@@ -6,23 +6,13 @@ import { reagendarReserva, slotsLibres, type Slot } from "@/lib/acciones";
 import { Aviso, Boton, Campo, Entrada } from "@/components/ui/primitivos";
 import type { Reserva } from "@/lib/tipos";
 
-export function Reagendar({ reserva, zona, compacto = false }: { reserva: Reserva; zona: string; compacto?: boolean }) {
+export function Reagendar({ reserva, zona }: { reserva: Reserva; zona: string }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
-      {compacto ? (
-        <button
-          type="button"
-          onClick={() => setAbierto(true)}
-          className="h-7 px-2.5 text-[12px] font-medium text-tinta-2 transition hover:bg-panel-2 hover:text-tinta"
-        >
-          Mover
-        </button>
-      ) : (
-        <Boton variante="fantasma" onClick={() => setAbierto(true)}>
-          Mover
-        </Boton>
-      )}
+      <Boton variante="fantasma" onClick={() => setAbierto(true)}>
+        Mover
+      </Boton>
       {abierto ? <Dialogo reserva={reserva} zona={zona} cerrar={() => setAbierto(false)} /> : null}
     </>
   );

@@ -51,7 +51,7 @@ export default async function Agenda({
             </Link>
           }
         />
-        <div className="contenido">
+        <div className="px-5 py-5">
           <Tarjeta>
             <TarjetaCabecera titulo={`${encontradas.length} reservas`} descripcion="Por código, teléfono o nombre." />
             {encontradas.length === 0 ? (
@@ -131,7 +131,7 @@ export default async function Agenda({
     return (
       <>
         <Encabezado titulo="Agenda" descripcion={`Semana del ${lunes}`} giro={giro.nombre} acciones={navegacion} principal={nueva} />
-        <div className="contenido">
+        <div className="space-y-4 px-5 py-5">
           <OcupacionSemanal conteos={conteos} />
           {dias.map((d, i) => {
             const delDia = enDia(d);
@@ -202,13 +202,11 @@ export default async function Agenda({
   const columnas: Columna[] = [
     {
       paso: "por_llegar",
-      tono: "acento",
       nombre: "Por llegar",
       pista: proxima ? `próxima ${hora(proxima.inicio, config.zona_horaria)}` : "sin próximas",
     },
     {
       paso: "en_atencion",
-      tono: "acento",
       nombre: esRestaurante ? "En mesa" : "En atención",
       pista: promedioSala !== null ? `prom. ${promedioSala} min` : "nadie adentro",
     },
@@ -237,7 +235,7 @@ export default async function Agenda({
         principal={nueva}
       />
 
-      <div className="contenido">
+      <div className="space-y-4 px-5 py-5">
         <TiraIndicadores>
           <Cifra
             etiqueta="Citas del día"

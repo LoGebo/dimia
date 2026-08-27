@@ -20,13 +20,13 @@ export function Navegacion({
   const lista = secciones(herramientas);
 
   return (
-    <nav className="flex flex-col gap-6 px-4">
+    <nav className="flex flex-col gap-5 px-3">
       {ORDEN.map((grupo) => {
         const propias = lista.filter((s) => s.grupo === grupo);
         if (propias.length === 0) return null;
         return (
           <div key={grupo}>
-            <p className="etiqueta mb-2 px-2.5 text-laton">{NOMBRE_GRUPO[grupo]}</p>
+            <p className="etiqueta mb-1.5 px-2 text-laton">{NOMBRE_GRUPO[grupo]}</p>
             <ul className="flex flex-col gap-px">
               {propias.map((s) => {
                 const activo = ruta === s.href || ruta.startsWith(`${s.href}/`);
@@ -37,7 +37,7 @@ export function Navegacion({
                       href={s.href}
                       aria-current={activo ? "page" : undefined}
                       title={s.detalle}
-                      className={`group flex h-10 items-center gap-3 px-2.5 text-[13.5px] transition ${
+                      className={`group flex h-9 items-center gap-2.5 px-2 text-[13px] transition ${
                         activo
                           ? "bg-acento font-semibold text-acento-tinta"
                           : "text-tinta-2 hover:bg-panel-2 hover:text-tinta"

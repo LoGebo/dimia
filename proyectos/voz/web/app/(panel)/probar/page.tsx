@@ -18,7 +18,7 @@ export default async function Probar() {
     return (
       <>
         <Encabezado titulo="Probar el agente" descripcion="Háblale a tu agente desde aquí." />
-        <div className="contenido">
+        <div className="px-5 py-5">
           <Tarjeta className="max-w-2xl">
             <TarjetaCabecera
               titulo="Falta conectar LiveKit"
@@ -82,7 +82,7 @@ export default async function Probar() {
           </div>
         }
       />
-      <div className="contenido">
+      <div className="space-y-4 px-5 py-5">
         <CombinacionActiva negocio={config} />
         <ConsolaPrueba
           tenantId={negocioId}

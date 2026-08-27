@@ -19,7 +19,7 @@ export default async function Horarios() {
         descripcion={`Cuándo contesta y trabaja el negocio. Hora de ${config.zona_horaria}.`}
         giro={giro.nombre}
       />
-      <div className="contenido">
+      <div className="space-y-4 px-5 py-5">
         <Tarjeta>
           <TarjetaCabecera
             titulo="Semana tipo"
