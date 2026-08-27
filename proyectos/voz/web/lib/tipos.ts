@@ -29,12 +29,39 @@ export type Negocio = {
   activo: boolean;
 };
 
+export type TipoRecurso = "lugar" | "persona";
+
 export type Recurso = {
   id: string;
   nombre: string;
+  tipo: TipoRecurso;
   capacidad: number;
+  telefono: string | null;
+  correo: string | null;
+  comision_pct: string | null;
   metadatos: Record<string, string>;
   activo: boolean;
+};
+
+export type Productividad = {
+  resource_id: string;
+  nombre: string;
+  tipo: TipoRecurso;
+  comision_pct: string | null;
+  citas: number;
+  atendidas: number;
+  no_asistio: number;
+  cobrado: string;
+  comision: string;
+};
+
+export type Ausencia = {
+  id: string;
+  resource_id: string | null;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
+  motivo: string | null;
 };
 
 export type Servicio = {

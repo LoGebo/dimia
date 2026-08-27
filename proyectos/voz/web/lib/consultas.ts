@@ -2,6 +2,7 @@ import "server-only";
 
 import { datos } from "@/lib/sesion";
 import type {
+  Ausencia,
   Campana,
   CampanaContacto,
   CatalogoItem,
@@ -15,6 +16,7 @@ import type {
   Negocio,
   Pago,
   Pedido,
+  Productividad,
   PlantillaVertical,
   Recado,
   Recurso,
@@ -59,7 +61,7 @@ export function catalogo(): Promise<CatalogoItem[]> {
 export function recursos(): Promise<Recurso[]> {
   return datos((q, id) =>
     q<Recurso>(
-      "select id, nombre, capacidad, metadatos, activo from resource where tenant_id = $1 order by nombre",
+      "select id, nombre, tipo, capacidad, telefono, correo, comision_pct::text as comision_pct, metadatos, activo from resource where tenant_id = $1 order by tipo desc, nombre",
       [id],
     ),
   );
@@ -669,4 +671,31 @@ export function alcanceCampana(tipo: string, dias: number): Promise<number> {
     const filas = await q<{ n: number }>(consulta, consulta.includes("$2") ? [id, dias] : [id]);
     return filas[0]?.n ?? 0;
   });
+}
+
+// ---------------------------------------------------------------
+// Equipo
+// ---------------------------------------------------------------
+
+export function productividadEquipo(desde: string, hasta: string): Promise<Productividad[]> {
+  return datos((q, id) =>
+    q<Productividad>(
+      `select resource_id, nombre, tipo, comision_pct::text as comision_pct, citas, atendidas, no_asistio,
+              cobrado::text as cobrado, comision::text as comision
+         from public.equipo_productividad($1, $2::date, $3::date)`,
+      [id, desde, hasta],
+    ),
+  );
+}
+
+export function ausencias(): Promise<Ausencia[]> {
+  return datos((q, id) =>
+    q<Ausencia>(
+      `select id, resource_id, fecha::text as fecha, hora_inicio::text as hora_inicio, hora_fin::text as hora_fin, motivo
+         from schedule_rule
+        where tenant_id = $1 and tipo = 'bloqueo' and fecha is not null and fecha >= current_date - 7
+        order by fecha, resource_id`,
+      [id],
+    ),
+  );
 }

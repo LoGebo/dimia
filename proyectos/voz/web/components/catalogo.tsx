@@ -48,6 +48,29 @@ export function FormularioRecurso({
           <Campo etiqueta="Etiqueta interna" ayuda="Zona, especialidad o piso. Solo la ves tú.">
             <Entrada name="etiqueta" defaultValue={recurso?.metadatos?.etiqueta} placeholder="terraza" />
           </Campo>
+          <fieldset>
+            <legend className="mb-1.5 text-xs font-medium text-tinta-2">Qué es</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {(["persona", "lugar"] as const).map((t) => (
+                <label key={t} className="cursor-pointer border border-linea bg-panel px-3 py-2 transition has-checked:border-acento has-checked:bg-acento-suave">
+                  <input type="radio" name="tipo" value={t} defaultChecked={(recurso?.tipo ?? "lugar") === t} className="sr-only" />
+                  <span className="block text-[13px] font-medium text-tinta">{t === "persona" ? "Una persona" : "Un lugar"}</span>
+                  <span className="mt-0.5 block text-[11px] text-tinta-3">{t === "persona" ? "Doctora, estilista, técnico. Tiene ausencias y comisión." : "Consultorio, mesa, estación."}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className={compacto ? "space-y-3" : "grid gap-3 sm:grid-cols-3"}>
+            <Campo etiqueta="Teléfono" ayuda="Para avisarle de sus citas.">
+              <Entrada name="telefono" type="tel" defaultValue={recurso?.telefono ?? ""} placeholder="+52..." />
+            </Campo>
+            <Campo etiqueta="Correo">
+              <Entrada name="correo" type="email" defaultValue={recurso?.correo ?? ""} placeholder="opcional" />
+            </Campo>
+            <Campo etiqueta="Comisión (%)" ayuda="Sobre lo cobrado de sus citas.">
+              <Entrada name="comision_pct" type="number" min={0} max={100} step="0.5" defaultValue={recurso?.comision_pct ?? ""} placeholder="0" />
+            </Campo>
+          </div>
           <BotonEnviar>
             {recurso ? "Guardar cambios" : "Agregar recurso"}
           </BotonEnviar>
@@ -120,7 +143,9 @@ export function FilaRecurso({ recurso, vertical }: { recurso: Recurso; vertical:
           <span className={`text-[13px] font-medium ${recurso.activo ? "text-tinta" : "text-tinta-3 line-through"}`}>
             {recurso.nombre}
           </span>
+          <span className="text-[11px] text-tinta-3">{recurso.tipo === "persona" ? "persona" : "lugar"}</span>
           <span className="numeros text-[12px] text-tinta-3">cap. {recurso.capacidad}</span>
+          {recurso.comision_pct ? <span className="numeros text-[11px] text-tinta-3">{Number(recurso.comision_pct)} % comisión</span> : null}
           {recurso.metadatos?.etiqueta ? (
             <span className="text-[11px] text-tinta-3">{recurso.metadatos.etiqueta}</span>
           ) : null}

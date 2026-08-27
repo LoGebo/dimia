@@ -29,6 +29,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   lista.push({ href: "/campanas", nombre: "Campañas", detalle: "Recuperar y avisar", grupo: "operacion" });
   if (agenda || pedidos) lista.push({ href: "/horarios", nombre: "Horarios", detalle: "Cuándo abres", grupo: "configuracion" });
   if (agenda) lista.push({ href: "/servicios", nombre: "Servicios", detalle: "Recursos y duración", grupo: "configuracion" });
+  if (agenda) lista.push({ href: "/equipo", nombre: "Equipo", detalle: "Quién atiende y qué produce", grupo: "configuracion" });
 
   lista.push(
     { href: "/mensajes", nombre: "Mensajes", detalle: "Lo que sale por WhatsApp", grupo: "configuracion" },

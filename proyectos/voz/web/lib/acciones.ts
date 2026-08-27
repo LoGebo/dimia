@@ -477,19 +477,21 @@ export async function guardarRecurso(_previo: Estado, fd: FormData): Promise<Est
   const capacidad = Math.max(1, numero(fd, "capacidad", 1));
   const etiqueta = opcional(fd, "etiqueta");
   const metadatos = etiqueta ? JSON.stringify({ etiqueta }) : "{}";
+  const tipo = texto(fd, "tipo") === "persona" ? "persona" : "lugar";
+  const comision = texto(fd, "comision_pct") ? Math.min(100, Math.max(0, numero(fd, "comision_pct", 0))) : null;
   try {
     await datos(async (q, negocioId) => {
       if (id) {
-        await q("update resource set nombre = $2, capacidad = $3, metadatos = $4::jsonb where id = $1", [
-          id,
-          nombre,
-          capacidad,
-          metadatos,
-        ]);
+        await q(
+          `update resource set nombre = $2, capacidad = $3, metadatos = $4::jsonb, tipo = $5, telefono = $6, correo = $7, comision_pct = $8
+            where id = $1`,
+          [id, nombre, capacidad, metadatos, tipo, opcional(fd, "telefono"), opcional(fd, "correo"), comision],
+        );
       } else {
         await q(
-          "insert into resource (tenant_id, nombre, capacidad, metadatos) values ($1, $2, $3, $4::jsonb)",
-          [negocioId, nombre, capacidad, metadatos],
+          `insert into resource (tenant_id, nombre, capacidad, metadatos, tipo, telefono, correo, comision_pct)
+           values ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)`,
+          [negocioId, nombre, capacidad, metadatos, tipo, opcional(fd, "telefono"), opcional(fd, "correo"), comision],
         );
       }
     });
@@ -562,6 +564,28 @@ export async function guardarHorario(reglas: ReglaNueva[]): Promise<Estado> {
   });
   refrescarPanel();
   return { ok: "Horario guardado." };
+}
+
+/** Una ausencia: la persona no atiende esos días. Es un bloqueo por fecha con motivo. */
+export async function guardarAusencia(_previo: Estado, fd: FormData): Promise<Estado> {
+  const recurso = texto(fd, "resource_id");
+  const desde = texto(fd, "desde");
+  const hasta = texto(fd, "hasta") || desde;
+  if (!recurso) return { error: "Elige a quién." };
+  if (!desde) return { error: "Elige desde cuándo." };
+  if (hasta < desde) return { error: "El fin no puede ser antes del inicio." };
+  const dias = Math.round((new Date(`${hasta}T12:00:00Z`).getTime() - new Date(`${desde}T12:00:00Z`).getTime()) / 86400000) + 1;
+  if (dias > 62) return { error: "Máximo dos meses seguidos." };
+  await datos((q, id) =>
+    q(
+      `insert into schedule_rule (tenant_id, resource_id, tipo, fecha, hora_inicio, hora_fin, motivo)
+       select $1, $2, 'bloqueo', d::date, '00:00'::time, '23:59'::time, $5
+         from generate_series($3::date, $4::date, interval '1 day') d`,
+      [id, recurso, desde, hasta, opcional(fd, "motivo")],
+    ),
+  );
+  refrescarPanel();
+  return { ok: dias === 1 ? "Ausencia guardada." : `${dias} días bloqueados.` };
 }
 
 export async function guardarExcepcion(_previo: Estado, fd: FormData): Promise<Estado> {
