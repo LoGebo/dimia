@@ -2,25 +2,31 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { conSesion, elevado } from "@/lib/db";
+import { elevado, type Consulta } from "@/lib/db";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
 import { avance } from "@/lib/listo";
-import { negocio } from "@/lib/consultas";
+import { CONDICION_SEGMENTO, alcanceCampana, negocio, type SegmentoCliente } from "@/lib/consultas";
+import { TELEFONO_E164, fechaValida, normalizarTelefono } from "@/lib/formato";
 import { sembrarPlantilla } from "@/lib/plantilla-inicial";
-import { contexto, datos, elegirNegocio } from "@/lib/sesion";
-import { siguientePaso } from "@/lib/giro";
+import { contexto, datos, elegirNegocio, membresias } from "@/lib/sesion";
 import {
   AJUSTES_ELEVENLABS,
+  ESTADOS_PEDIDO,
   FORMATO_VOZ,
+  TIPOS_REGLA,
   VELOCIDAD_AZURE,
   nombreProveedorTts,
   vozValida,
   type EstadoPedido,
+  type EstadoPrueba,
   type Herramienta,
+  type LlamadaPrueba,
   type ProveedorLlm,
   type ProveedorTts,
   type Regla,
   type ResultadoCatalogo,
+  type ResumenPedidoPrueba,
+  type TipoRegla,
   type TtsAjustes,
   type Vertical,
 } from "@/lib/tipos";
@@ -28,11 +34,23 @@ import {
 export type Estado = { error?: string; ok?: string };
 
 const texto = (fd: FormData, campo: string): string => String(fd.get(campo) ?? "").trim();
+/** Un campo vacío es ausencia, no cero: así aplica el valor por defecto. */
 const numero = (fd: FormData, campo: string, porDefecto = 0): number => {
-  const valor = Number(fd.get(campo));
+  const crudo = texto(fd, campo);
+  if (!crudo) return porDefecto;
+  const valor = Number(crudo);
   return Number.isFinite(valor) ? valor : porDefecto;
 };
 const opcional = (fd: FormData, campo: string): string | null => texto(fd, campo) || null;
+const ERROR_TELEFONO = "El número va en formato +52 y diez dígitos, por ejemplo +525512345678.";
+
+/** Teléfono opcional normalizado a E.164; `false` cuando viene con formato malo. */
+function telefonoOpcional(fd: FormData, campo: string): string | null | false {
+  const crudo = texto(fd, campo);
+  if (!crudo) return null;
+  const tel = normalizarTelefono(crudo);
+  return TELEFONO_E164.test(tel) ? tel : false;
+}
 
 /**
  * Refresca el panel entero después de una acción.
@@ -43,6 +61,44 @@ const opcional = (fd: FormData, campo: string): string | null => texto(fd, campo
  */
 function refrescarPanel(): void {
   revalidatePath("/", "layout");
+}
+
+function errorLegible(error: unknown, proveedor?: ProveedorTts): string {
+  const mensaje = error instanceof Error ? error.message : "";
+  const codigo = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+  if (proveedor && /voz_id/.test(mensaje)) {
+    const formato = FORMATO_VOZ[proveedor];
+    const nombre = nombreProveedorTts(proveedor);
+    return `La base rechazó la voz: no tiene el formato de ${nombre} (${formato.formato}). Ejemplo: ${formato.ejemplo}.`;
+  }
+  if (/telefono_entrada/.test(mensaje) && /duplicate|unique/i.test(mensaje)) {
+    return "Ese número de entrada ya está asignado a otro negocio.";
+  }
+  if (codigo === "23505" || /duplicate key/i.test(mensaje)) return "Ya existe uno con ese nombre.";
+  if (codigo === "23503") return "No se puede: otro registro depende de este.";
+  if (codigo === "42501" || /row-level security/i.test(mensaje)) {
+    return "No se pudo completar por un permiso en la base. Avísanos y lo revisamos.";
+  }
+  if (/statement timeout|timeout/i.test(mensaje)) {
+    return "La base tardó demasiado en responder. Intenta de nuevo.";
+  }
+  return "No se pudo guardar.";
+}
+
+/**
+ * Corre una acción del panel y convierte cualquier fallo en un `{ error }`
+ * legible. Devolver filas de una consulta cuenta como éxito sin mensaje.
+ */
+async function intentar(fn: () => Promise<Estado | unknown[] | void>): Promise<Estado> {
+  try {
+    const resultado = await fn();
+    const estado: Estado = !resultado || Array.isArray(resultado) ? {} : resultado;
+    if (estado.error) return estado;
+    refrescarPanel();
+    return estado;
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
 }
 
 export async function entrar(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -59,13 +115,12 @@ export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> 
   const email = texto(fd, "email");
   const password = texto(fd, "password");
   const nombre = texto(fd, "nombre");
-  const elegido = texto(fd, "vertical") || "generico";
 
   if (!email.includes("@")) return { error: "Escribe un correo válido." };
   if (password.length < 8) return { error: "La contraseña necesita al menos 8 caracteres." };
   if (!nombre) return { error: "Ponle nombre a tu negocio." };
-  if (elegido === "propio" && !texto(fd, "giro_nombre")) return { error: "Ponle nombre al giro." };
-  const vertical: Vertical = elegido === "propio" ? await crearGiroPropio(fd) : elegido;
+  const giro = await giroElegido(fd);
+  if ("error" in giro) return giro;
 
   let usuarioId: string;
   try {
@@ -74,14 +129,17 @@ export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> 
     return { error: "Ese correo ya está registrado." };
   }
 
-  // El negocio se crea aquí mismo: una sola pantalla para empezar, y el panel
-  // se abre con la plantilla del giro ya puesta.
-  const creado = await crearNegocio(usuarioId, {
-    nombre,
-    vertical,
-    zonaHoraria: "America/Mexico_City",
-    telefonoEscalamiento: null,
-  });
+  let creado: { id: string };
+  try {
+    creado = await crearNegocio(usuarioId, {
+      nombre,
+      giro,
+      zonaHoraria: "America/Mexico_City",
+      telefonoEscalamiento: null,
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
   await elegirNegocio(creado.id);
   redirect("/hoy");
 }
@@ -91,44 +149,68 @@ export async function salir(): Promise<void> {
   redirect("/entrar");
 }
 
+type GiroElegido = { vertical: Vertical; propio: GiroPropio | null };
+
+/** El giro del formulario: uno del catálogo (verificado) o uno propio por crear. */
+async function giroElegido(fd: FormData): Promise<GiroElegido | { error: string }> {
+  const elegido = texto(fd, "vertical") || "generico";
+  if (elegido === "propio") {
+    const propio = giroPropio(fd);
+    return "error" in propio ? propio : { vertical: "propio", propio };
+  }
+  const existe = await elevado((q) =>
+    q<{ clave: string }>("select clave from vertical_template where clave = $1 and activo", [elegido]),
+  );
+  if (existe.length === 0) return { error: "Ese giro no está en el catálogo." };
+  return { vertical: elegido, propio: null };
+}
+
 /**
  * Crea el negocio, hace dueño a quien lo crea y lo siembra con la plantilla de
- * su giro. Lo usan el registro y el alta de un negocio adicional.
+ * su giro. Si el giro es propio, la plantilla nace en la misma transacción:
+ * un registro que falle no deja plantillas huérfanas.
  */
 async function crearNegocio(
   usuarioId: string,
-  datos: { nombre: string; vertical: Vertical; zonaHoraria: string; telefonoEscalamiento: string | null },
+  datos: { nombre: string; giro: GiroElegido; zonaHoraria: string; telefonoEscalamiento: string | null },
 ): Promise<{ id: string; herramientas: Herramienta[] }> {
   return elevado(async (q) => {
+    const vertical = datos.giro.propio ? await crearGiroPropio(q, datos.giro.propio) : datos.giro.vertical;
     const plantillas = await q<{ herramientas: Herramienta[] }>(
       "select herramientas from vertical_template where clave = $1",
-      [datos.vertical],
+      [vertical],
     );
     const herramientas = plantillas[0]?.herramientas ?? ["agendar", "recado"];
-    const rapido = herramientas.includes("pedido") || datos.vertical === "restaurante";
+    const rapido = herramientas.includes("pedido") || vertical === "restaurante";
     const filas = await q<{ id: string }>(
       `insert into tenant (nombre, vertical, zona_horaria, telefono_escalamiento,
                            slot_granularidad_min, anticipacion_min)
        values ($1, $2, $3, $4, $5, $6) returning id`,
-      [
-        datos.nombre,
-        datos.vertical,
-        datos.zonaHoraria,
-        datos.telefonoEscalamiento,
-        rapido ? 15 : 30,
-        rapido ? 60 : 120,
-      ],
+      [datos.nombre, vertical, datos.zonaHoraria, datos.telefonoEscalamiento, rapido ? 15 : 30, rapido ? 60 : 120],
     );
     const id = filas[0]!.id;
     await q("insert into tenant_member (tenant_id, user_id, rol) values ($1, $2, 'owner')", [id, usuarioId]);
-    // Nace con lo típico de su giro, marcado como sugerido: se edita, no se
-    // crea desde cero. Va en la misma transacción que el alta.
-    await sembrarPlantilla(q, id, datos.vertical);
+    await sembrarPlantilla(q, id, vertical);
     return { id, herramientas };
   });
 }
 
 const HERRAMIENTAS_VALIDAS: Herramienta[] = ["agendar", "pedido", "recado"];
+
+type GiroPropio = { nombre: string; herramientas: Herramienta[]; descripcion: string };
+
+function giroPropio(fd: FormData): GiroPropio | { error: string } {
+  const nombre = texto(fd, "giro_nombre");
+  if (!nombre) return { error: "Ponle nombre al giro." };
+  if (nombre.length > 60) return { error: "El nombre del giro va en 60 caracteres o menos." };
+  const descripcion = texto(fd, "giro_instrucciones");
+  if (descripcion.length > 2000) return { error: "La descripción del giro va en 2000 caracteres o menos." };
+  const elegidas = fd
+    .getAll("giro_herramientas")
+    .map(String)
+    .filter((h): h is Herramienta => HERRAMIENTAS_VALIDAS.includes(h as Herramienta));
+  return { nombre, descripcion, herramientas: elegidas.length > 0 ? elegidas : ["recado"] };
+}
 
 /**
  * Un giro que no está en el catálogo se guarda como plantilla propia del
@@ -136,15 +218,8 @@ const HERRAMIENTAS_VALIDAS: Herramienta[] = ["agendar", "pedido", "recado"];
  * muestra. La clave lleva un sufijo aleatorio para que dos negocios con el
  * mismo giro no choquen.
  */
-async function crearGiroPropio(fd: FormData): Promise<Vertical> {
-  const nombre = texto(fd, "giro_nombre");
-  const elegidas = fd
-    .getAll("giro_herramientas")
-    .map(String)
-    .filter((h): h is Herramienta => HERRAMIENTAS_VALIDAS.includes(h as Herramienta));
-  const herramientas: Herramienta[] = elegidas.length > 0 ? elegidas : ["recado"];
-  const descripcion = texto(fd, "giro_instrucciones");
-  const base = nombre
+async function crearGiroPropio(q: Consulta, giro: GiroPropio): Promise<Vertical> {
+  const base = giro.nombre
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -153,20 +228,18 @@ async function crearGiroPropio(fd: FormData): Promise<Vertical> {
     .slice(0, 24);
   const clave = `propio_${base || "giro"}_${Math.random().toString(36).slice(2, 8)}`;
   const instrucciones = [
-    `CONTEXTO: ${nombre.toLowerCase()}.`,
-    descripcion ? `- ${descripcion}` : null,
-    herramientas.includes("agendar") ? "- Agenda solo en horarios que devuelva la herramienta de disponibilidad." : null,
-    herramientas.includes("pedido") ? "- Consulta el catalogo antes de decir que hay o cuanto cuesta." : null,
+    `CONTEXTO: ${giro.nombre.toLowerCase()}.`,
+    giro.descripcion ? `- ${giro.descripcion}` : null,
+    giro.herramientas.includes("agendar") ? "- Agenda solo en horarios que devuelva la herramienta de disponibilidad." : null,
+    giro.herramientas.includes("pedido") ? "- Consulta el catalogo antes de decir que hay o cuanto cuesta." : null,
     "- Lo que no puedas resolver, toma recado o transfiere.",
   ]
     .filter(Boolean)
     .join("\n");
-  await elevado((q) =>
-    q(
-      `insert into vertical_template (clave, nombre, instrucciones, saludo, herramientas, activo, propio)
-       values ($1, $2, $3, $4, $5::jsonb, true, true)`,
-      [clave, nombre, instrucciones, "{nombre}, buen dia. ¿En que le puedo ayudar?", JSON.stringify(herramientas)],
-    ),
+  await q(
+    `insert into vertical_template (clave, nombre, instrucciones, saludo, herramientas, activo, propio)
+     values ($1, $2, $3, $4, $5::jsonb, true, true)`,
+    [clave, giro.nombre, instrucciones, "{nombre}, buen dia. ¿En que le puedo ayudar?", JSON.stringify(giro.herramientas)],
   );
   return clave;
 }
@@ -174,19 +247,25 @@ async function crearGiroPropio(fd: FormData): Promise<Vertical> {
 export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/entrar");
+  if ((await membresias(usuario.id)).length > 0) return { error: "Esta cuenta ya tiene un negocio." };
   const nombre = texto(fd, "nombre");
   if (!nombre) return { error: "Ponle nombre al negocio." };
-  const elegido = texto(fd, "vertical") || "generico";
-  if (elegido === "propio" && !texto(fd, "giro_nombre")) return { error: "Ponle nombre al giro." };
-  const vertical: Vertical = elegido === "propio" ? await crearGiroPropio(fd) : elegido;
+  const giro = await giroElegido(fd);
+  if ("error" in giro) return giro;
+  const escalamiento = telefonoOpcional(fd, "telefono_escalamiento");
+  if (escalamiento === false) return { error: ERROR_TELEFONO };
 
-  const creado = await crearNegocio(usuario.id, {
-    nombre,
-    vertical,
-    zonaHoraria: texto(fd, "zona_horaria") || "America/Mexico_City",
-    telefonoEscalamiento: opcional(fd, "telefono_escalamiento"),
-  });
-
+  let creado: { id: string };
+  try {
+    creado = await crearNegocio(usuario.id, {
+      nombre,
+      giro,
+      zonaHoraria: texto(fd, "zona_horaria") || "America/Mexico_City",
+      telefonoEscalamiento: escalamiento,
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
   await elegirNegocio(creado.id);
   redirect("/hoy");
 }
@@ -215,27 +294,11 @@ function ajustesTts(fd: FormData, proveedor: ProveedorTts): TtsAjustes {
   return {};
 }
 
-function errorLegible(error: unknown, proveedor?: ProveedorTts): string {
-  const mensaje = error instanceof Error ? error.message : "";
-  if (proveedor && /voz_id/.test(mensaje)) {
-    const formato = FORMATO_VOZ[proveedor];
-    const nombre = nombreProveedorTts(proveedor);
-    return `La base rechazó la voz: no tiene el formato de ${nombre} (${formato.formato}). Ejemplo: ${formato.ejemplo}.`;
-  }
-  // El número de entrada es único: dos negocios no pueden compartirlo.
-  if (/telefono_entrada/.test(mensaje) && /duplicate|unique/i.test(mensaje)) {
-    return "Ese número de entrada ya está asignado a otro negocio.";
-  }
-  if (/statement timeout|timeout/i.test(mensaje)) {
-    return "La base tardó demasiado en responder. Intenta de nuevo.";
-  }
-  return "No se pudo guardar.";
-}
-
 export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Estado> {
   const proveedor = (texto(fd, "tts_proveedor") || "azure") as ProveedorTts;
   const proveedorLlm = (texto(fd, "llm_proveedor") || "openai") as ProveedorLlm;
   const voz = opcional(fd, "voz_id");
+  if (!texto(fd, "nombre")) return { error: "Ponle nombre al negocio." };
 
   if (voz && !vozValida(proveedor, voz)) {
     const formato = FORMATO_VOZ[proveedor];
@@ -244,14 +307,24 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
     };
   }
 
+  const telefonoEntrada = telefonoOpcional(fd, "telefono_entrada");
+  if (telefonoEntrada === false) return { error: `Número de entrada: ${ERROR_TELEFONO}` };
+  const telefonoEscalamiento = telefonoOpcional(fd, "telefono_escalamiento");
+  if (telefonoEscalamiento === false) return { error: `Número para transferir: ${ERROR_TELEFONO}` };
+
+  const granularidad = numero(fd, "slot_granularidad_min", 15);
+  const anticipacion = numero(fd, "anticipacion_min", 60);
+  const horizonte = numero(fd, "horizonte_dias", 60);
+  if (granularidad < 5 || granularidad > 120) return { error: "«Cada (min)» va entre 5 y 120." };
+  if (anticipacion < 0) return { error: "La anticipación no puede ser negativa." };
+  if (horizonte < 1 || horizonte > 365) return { error: "El horizonte va entre 1 y 365 días." };
+
   // Candado: el número de entrada solo se guarda cuando el negocio está
   // completo. Un agente a medias contestando el teléfono real queda mal con
   // el cliente, y el dueño no siempre lee el aviso.
-  const telefonoEntrada = opcional(fd, "telefono_entrada");
   if (telefonoEntrada) {
     const { giro } = await contexto();
-    const progreso = await avance(giro.herramientas);
-    const previo = await negocio();
+    const [progreso, previo] = await Promise.all([avance(giro.herramientas), negocio()]);
     if (!progreso.completo && telefonoEntrada !== previo.telefono_entrada) {
       const faltan = progreso.requisitos.filter((r) => !r.listo).map((r) => r.nombre.toLowerCase());
       return { error: `El número de entrada se activa cuando todo está listo. Falta: ${faltan.join(", ")}.` };
@@ -259,7 +332,14 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
   }
 
   try {
-    await datos(async (q, id) => {
+    const resultado = await datos(async (q, id): Promise<Estado> => {
+      if (telefonoEntrada) {
+        const ajeno = await q<{ id: string }>(
+          "select id from linea where telefono = $2 and tenant_id <> $1 limit 1",
+          [id, telefonoEntrada],
+        );
+        if (ajeno.length > 0) return { error: "Ese número ya está registrado como línea de otro negocio." };
+      }
       await q(
         `update tenant set nombre = $2, zona_horaria = $3, telefono_entrada = $4,
                 telefono_escalamiento = $5, voz_id = $6, slot_granularidad_min = $7,
@@ -271,13 +351,13 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
         [
           id,
           texto(fd, "nombre"),
-          texto(fd, "zona_horaria"),
+          texto(fd, "zona_horaria") || "America/Mexico_City",
           telefonoEntrada,
-          opcional(fd, "telefono_escalamiento"),
+          telefonoEscalamiento,
           voz,
-          numero(fd, "slot_granularidad_min", 15),
-          numero(fd, "anticipacion_min", 60),
-          numero(fd, "horizonte_dias", 60),
+          granularidad,
+          anticipacion,
+          horizonte,
           proveedor,
           JSON.stringify(ajustesTts(fd, proveedor)),
           opcional(fd, "instrucciones_extra"),
@@ -287,7 +367,9 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
           opcional(fd, "messenger_page_id"),
         ],
       );
+      return {};
     });
+    if (resultado.error) return resultado;
   } catch (error) {
     return { error: errorLegible(error, proveedor) };
   }
@@ -297,73 +379,61 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
 
 /** Abrirla es haberla leído: baja el contador del menú. */
 export async function marcarLeida(conversacionId: string): Promise<void> {
-  await datos(async (q, id) => {
-    await q("select conversacion_marcar_leida($1, $2)", [id, conversacionId]);
-  });
-  revalidatePath("/", "layout");
+  await intentar(() => datos((q, id) => q("select conversacion_marcar_leida($1, $2)", [id, conversacionId])));
 }
 
 /** La primera frase de cada llamada. Vacío usa la de la plantilla del vertical. */
 export async function guardarSaludo(_previo: Estado, fd: FormData): Promise<Estado> {
   const propio = opcional(fd, "saludo");
-  try {
-    await datos(async (q, id) => {
-      await q("update tenant set saludo = $2 where id = $1", [id, propio]);
-    });
-  } catch (error) {
-    return { error: errorLegible(error) };
-  }
-  refrescarPanel();
-  return { ok: propio ? "Saludo guardado." : "Saludo de fábrica restaurado." };
+  return intentar(async () => {
+    await datos((q, id) => q("update tenant set saludo = $2 where id = $1", [id, propio]));
+    return { ok: propio ? "Saludo guardado." : "Saludo de fábrica restaurado." };
+  });
 }
 
-/** Crea un grupo del catálogo. El nombre se guarda en minúscula, sin espacios. */
+/** Los grupos y tipos del catálogo se guardan en minúscula, sin espacios ni acentos. */
+function normalizarGrupo(crudo: string): string {
+  return crudo
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_-]/g, "");
+}
+
 export async function agregarGrupoCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
-  const crudo = texto(fd, "grupo").trim().toLowerCase();
-  const grupo = crudo.replace(/\s+/g, "_").replace(/[^a-z0-9_-]/g, "");
+  const grupo = normalizarGrupo(texto(fd, "grupo"));
   if (!grupo) return { error: "El grupo necesita un nombre." };
-  try {
-    await datos(async (q, id) => {
-      await q(
+  return intentar(async () => {
+    await datos((q, id) =>
+      q(
         `update tenant
             set tipos_catalogo = (select array_agg(distinct t)
                                     from unnest(tipos_catalogo || array[$2]) as t)
           where id = $1`,
         [id, grupo],
-      );
-    });
-  } catch (error) {
-    return { error: errorLegible(error) };
-  }
-  refrescarPanel();
-  return { ok: `Grupo "${grupo}" agregado.` };
+      ),
+    );
+    return { ok: `Grupo "${grupo}" agregado.` };
+  });
 }
 
 /** Quita un grupo. Solo si ya no tiene items: si los tiene, se avisa. */
 export async function quitarGrupoCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
   const grupo = texto(fd, "grupo");
-  try {
-    let conItems = 0;
-    await datos(async (q, id) => {
+  return intentar(() =>
+    datos(async (q, id) => {
       const filas = await q<{ total: string }>(
         "select count(*)::text as total from catalogo_item where tenant_id = $1 and tipo = $2",
         [id, grupo],
       );
-      conItems = Number(filas[0]?.total ?? 0);
-      if (conItems > 0) return;
-      await q("update tenant set tipos_catalogo = array_remove(tipos_catalogo, $2) where id = $1", [
-        id,
-        grupo,
-      ]);
-    });
-    if (conItems > 0) {
-      return { error: `"${grupo}" todavía tiene ${conItems} items. Muévelos o bórralos primero.` };
-    }
-  } catch (error) {
-    return { error: errorLegible(error) };
-  }
-  refrescarPanel();
-  return { ok: "Grupo quitado." };
+      const conItems = Number(filas[0]?.total ?? 0);
+      if (conItems > 0) return { error: `"${grupo}" todavía tiene ${conItems} items. Muévelos o bórralos primero.` };
+      await q("update tenant set tipos_catalogo = array_remove(tipos_catalogo, $2) where id = $1", [id, grupo]);
+      return { ok: "Grupo quitado." };
+    }),
+  );
 }
 
 /**
@@ -373,20 +443,15 @@ export async function quitarGrupoCatalogo(_previo: Estado, fd: FormData): Promis
  */
 export async function guardarPrompt(_previo: Estado, fd: FormData): Promise<Estado> {
   const propio = opcional(fd, "prompt_base");
-  try {
-    await datos(async (q, id) => {
-      await q("update tenant set prompt_base = $2 where id = $1", [id, propio]);
-    });
-  } catch (error) {
-    return { error: errorLegible(error) };
-  }
-  refrescarPanel();
-  return { ok: propio ? "Instrucciones guardadas." : "Instrucciones de fábrica restauradas." };
+  return intentar(async () => {
+    await datos((q, id) => q("update tenant set prompt_base = $2 where id = $1", [id, propio]));
+    return { ok: propio ? "Instrucciones guardadas." : "Instrucciones de fábrica restauradas." };
+  });
 }
 
 export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
   const nombre = texto(fd, "nombre");
-  const tipo = texto(fd, "tipo").toLowerCase();
+  const tipo = normalizarGrupo(texto(fd, "tipo"));
   if (!nombre) return { error: "El item necesita un nombre." };
   if (!tipo) return { error: "Elige o escribe un tipo." };
 
@@ -405,69 +470,74 @@ export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promis
 
   const id = opcional(fd, "id");
   const precio = texto(fd, "precio") ? numero(fd, "precio") : null;
+  if (precio !== null && precio < 0) return { error: "El precio no puede ser negativo." };
   const recurso = opcional(fd, "resource_id");
   const existencias = texto(fd, "existencias") ? Math.max(0, Math.round(numero(fd, "existencias", 0))) : null;
+  const orden = Math.round(numero(fd, "orden"));
 
-  try {
-    await datos(async (q, negocioId) => {
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      const parametros = [
+        negocioId,
+        tipo,
+        nombre,
+        opcional(fd, "descripcion"),
+        precio,
+        alias,
+        atributos,
+        recurso,
+        orden,
+        existencias,
+      ];
       if (id) {
+        // Reponer existencias vuelve a ofrecer lo que el motor apagó al llegar a cero.
         await q(
           `update catalogo_item
               set tipo = $2, nombre = $3, descripcion = $4, precio = $5,
-                  alias = $6::jsonb, atributos = $7::jsonb, resource_id = $8, orden = $9, existencias = $10
-            where id = $1`,
-          [id, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden"), existencias],
+                  alias = $6::jsonb, atributos = $7::jsonb,
+                  resource_id = (select r.id from resource r where r.id = $8 and r.tenant_id = $1),
+                  orden = $9, existencias = $10,
+                  disponible = case when coalesce($10::int, 1) > 0 and existencias = 0 and not disponible then true else disponible end
+            where id = $11 and tenant_id = $1`,
+          [...parametros, id],
         );
       } else {
         await q(
           `insert into catalogo_item
            (tenant_id, tipo, nombre, descripcion, precio, alias, atributos, resource_id, orden, existencias)
-           values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10)`,
-          [negocioId, tipo, nombre, opcional(fd, "descripcion"), precio, alias, atributos, recurso, numero(fd, "orden"), existencias],
+           values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb,
+                   (select r.id from resource r where r.id = $8 and r.tenant_id = $1), $9, $10)`,
+          parametros,
         );
       }
-    });
-  } catch {
-    return { error: `Ya existe un ${tipo} con ese nombre.` };
-  }
-  refrescarPanel();
-  return { ok: "Item guardado." };
+      await q(
+        `update tenant
+            set tipos_catalogo = (select array_agg(distinct t) from unnest(tipos_catalogo || array[$2]) as t)
+          where id = $1 and not ($2 = any(tipos_catalogo))`,
+        [negocioId, tipo],
+      );
+      return { ok: "Item guardado." };
+    }),
+  );
 }
 
-export async function alternarDisponible(fd: FormData): Promise<void> {
-  await datos((q) =>
-    q("update catalogo_item set disponible = not disponible where id = $1", [texto(fd, "id")]),
+export async function alternarDisponible(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) =>
+      q("update catalogo_item set disponible = not disponible where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+    ),
   );
-  refrescarPanel();
 }
 
-export async function eliminarItemCatalogo(fd: FormData): Promise<void> {
-  await datos((q, negocioId) =>
-    q("delete from catalogo_item where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+export async function eliminarItemCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) => q("delete from catalogo_item where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId])),
   );
-  refrescarPanel();
 }
 
 export async function probarCatalogo(consulta: string, tipo: string | null): Promise<ResultadoCatalogo[]> {
-  const { usuario, negocioId } = await contexto();
-  return conSesion(usuario.id, (q) =>
-    q<ResultadoCatalogo>("select * from public.buscar_catalogo($1, $2, $3, 8)", [
-      negocioId,
-      consulta,
-      tipo,
-    ]),
-  );
-}
-
-export async function probarConocimiento(
-  consulta: string,
-): Promise<{ pregunta: string; respuesta: string; puntaje: number }[]> {
-  const { usuario, negocioId } = await contexto();
-  return conSesion(usuario.id, (q) =>
-    q<{ pregunta: string; respuesta: string; puntaje: number }>(
-      "select * from public.buscar_conocimiento($1, $2, 4)",
-      [negocioId, consulta],
-    ),
+  return datos((q, negocioId) =>
+    q<ResultadoCatalogo>("select * from public.buscar_catalogo($1, $2, $3, 8)", [negocioId, consulta, tipo]),
   );
 }
 
@@ -475,37 +545,31 @@ export async function guardarRecurso(_previo: Estado, fd: FormData): Promise<Est
   const nombre = texto(fd, "nombre");
   if (!nombre) return { error: "El recurso necesita un nombre." };
   const id = opcional(fd, "id");
-  const capacidad = Math.max(1, numero(fd, "capacidad", 1));
+  const capacidad = Math.max(1, Math.round(numero(fd, "capacidad", 1)));
   const etiqueta = opcional(fd, "etiqueta");
   const metadatos = etiqueta ? JSON.stringify({ etiqueta }) : "{}";
   const tipo = texto(fd, "tipo") === "persona" ? "persona" : "lugar";
   const comision = texto(fd, "comision_pct") ? Math.min(100, Math.max(0, numero(fd, "comision_pct", 0))) : null;
-  try {
-    await datos(async (q, negocioId) => {
+  const telefono = telefonoOpcional(fd, "telefono");
+  if (telefono === false) return { error: ERROR_TELEFONO };
+  return intentar(() =>
+    datos(async (q, negocioId) => {
       if (id) {
         await q(
           `update resource set nombre = $2, capacidad = $3, metadatos = $4::jsonb, tipo = $5, telefono = $6, correo = $7, comision_pct = $8
-            where id = $1`,
-          [id, nombre, capacidad, metadatos, tipo, opcional(fd, "telefono"), opcional(fd, "correo"), comision],
+            where id = $1 and tenant_id = $9`,
+          [id, nombre, capacidad, metadatos, tipo, telefono, opcional(fd, "correo"), comision, negocioId],
         );
       } else {
         await q(
           `insert into resource (tenant_id, nombre, capacidad, metadatos, tipo, telefono, correo, comision_pct)
            values ($1, $2, $3, $4::jsonb, $5, $6, $7, $8)`,
-          [negocioId, nombre, capacidad, metadatos, tipo, opcional(fd, "telefono"), opcional(fd, "correo"), comision],
+          [negocioId, nombre, capacidad, metadatos, tipo, telefono, opcional(fd, "correo"), comision],
         );
       }
-    });
-  } catch {
-    return { error: "Ya existe un recurso con ese nombre." };
-  }
-  refrescarPanel();
-  return { ok: "Recurso guardado." };
-}
-
-export async function alternarRecurso(fd: FormData): Promise<void> {
-  await datos((q) => q("update resource set activo = not activo where id = $1", [texto(fd, "id")]));
-  refrescarPanel();
+      return { ok: "Recurso guardado." };
+    }),
+  );
 }
 
 export async function guardarServicio(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -513,6 +577,7 @@ export async function guardarServicio(_previo: Estado, fd: FormData): Promise<Es
   if (!nombre) return { error: "El servicio necesita un nombre." };
   const duracion = numero(fd, "duracion_min", 0);
   if (duracion <= 0) return { error: "La duración debe ser mayor a cero." };
+  const buffer = Math.max(0, numero(fd, "buffer_min"));
   const alias = JSON.stringify(
     texto(fd, "alias")
       .split(",")
@@ -521,50 +586,80 @@ export async function guardarServicio(_previo: Estado, fd: FormData): Promise<Es
   );
   const recursos = JSON.stringify(fd.getAll("recursos_validos").map(String));
   const precio = texto(fd, "precio") ? numero(fd, "precio") : null;
+  if (precio !== null && precio < 0) return { error: "El precio no puede ser negativo." };
   const id = opcional(fd, "id");
-  try {
-    await datos(async (q, negocioId) => {
+  return intentar(() =>
+    datos(async (q, negocioId) => {
       if (id) {
         await q(
           `update service set nombre = $2, alias = $3::jsonb, duracion_min = $4, buffer_min = $5,
-                  precio = $6, recursos_validos = $7::jsonb where id = $1`,
-          [id, nombre, alias, duracion, numero(fd, "buffer_min"), precio, recursos],
+                  precio = $6, recursos_validos = $7::jsonb where id = $1 and tenant_id = $8`,
+          [id, nombre, alias, duracion, buffer, precio, recursos, negocioId],
         );
       } else {
         await q(
           `insert into service (tenant_id, nombre, alias, duracion_min, buffer_min, precio, recursos_validos)
            values ($1, $2, $3::jsonb, $4, $5, $6, $7::jsonb)`,
-          [negocioId, nombre, alias, duracion, numero(fd, "buffer_min"), precio, recursos],
+          [negocioId, nombre, alias, duracion, buffer, precio, recursos],
         );
       }
-    });
-  } catch {
-    return { error: "Ya existe un servicio con ese nombre." };
-  }
-  refrescarPanel();
-  return { ok: "Servicio guardado." };
-}
-
-export async function alternarServicio(fd: FormData): Promise<void> {
-  await datos((q) => q("update service set activo = not activo where id = $1", [texto(fd, "id")]));
-  refrescarPanel();
+      return { ok: "Servicio guardado." };
+    }),
+  );
 }
 
 export type ReglaNueva = Omit<Regla, "id">;
 
-export async function guardarHorario(reglas: ReglaNueva[]): Promise<Estado> {
-  await datos(async (q, id) => {
-    await q("delete from schedule_rule where tenant_id = $1 and fecha is null", [id]);
-    for (const r of reglas) {
+const HORA = /^\d{2}:\d{2}$/;
+
+function reglaValida(r: ReglaNueva): boolean {
+  return (
+    TIPOS_REGLA.includes(r.tipo) &&
+    r.dia_semana !== null &&
+    Number.isInteger(r.dia_semana) &&
+    r.dia_semana >= 0 &&
+    r.dia_semana <= 6 &&
+    HORA.test(r.hora_inicio) &&
+    HORA.test(r.hora_fin) &&
+    r.hora_fin > r.hora_inicio
+  );
+}
+
+/**
+ * Reescribe la semana tipo. Solo toca los alcances que el editor conoce
+ * (`recursos`): el horario de un recurso que no se le pasó queda como estaba.
+ */
+export async function guardarHorario(reglas: ReglaNueva[], recursos: string[]): Promise<Estado> {
+  if (!reglas.every(reglaValida)) return { error: "Hay una franja mal formada. Recarga y vuelve a intentar." };
+  if (!reglas.every((r) => r.resource_id === null || recursos.includes(r.resource_id))) {
+    return { error: "Hay una franja de un recurso que no está en el editor." };
+  }
+  return intentar(() =>
+    datos(async (q, id) => {
       await q(
-        `insert into schedule_rule (tenant_id, resource_id, tipo, dia_semana, hora_inicio, hora_fin)
-         values ($1, $2, $3, $4, $5::time, $6::time)`,
-        [id, r.resource_id, r.tipo, r.dia_semana, r.hora_inicio, r.hora_fin],
+        "delete from schedule_rule where tenant_id = $1 and fecha is null and (resource_id is null or resource_id = any($2::uuid[]))",
+        [id, recursos],
       );
-    }
-  });
-  refrescarPanel();
-  return { ok: "Horario guardado." };
+      if (reglas.length > 0) {
+        await q(
+          `insert into schedule_rule (tenant_id, resource_id, tipo, dia_semana, hora_inicio, hora_fin)
+           select $1, r.resource_id, r.tipo::text, r.dia_semana, r.hora_inicio, r.hora_fin
+             from unnest($2::uuid[], $3::text[], $4::int[], $5::time[], $6::time[])
+               as r(resource_id, tipo, dia_semana, hora_inicio, hora_fin)
+            where r.resource_id is null or exists (select 1 from resource x where x.id = r.resource_id and x.tenant_id = $1)`,
+          [
+            id,
+            reglas.map((r) => r.resource_id),
+            reglas.map((r) => r.tipo),
+            reglas.map((r) => r.dia_semana),
+            reglas.map((r) => r.hora_inicio),
+            reglas.map((r) => r.hora_fin),
+          ],
+        );
+      }
+      return { ok: "Horario guardado." };
+    }),
+  );
 }
 
 /** Una ausencia: la persona no atiende esos días. Es un bloqueo por fecha con motivo. */
@@ -574,41 +669,54 @@ export async function guardarAusencia(_previo: Estado, fd: FormData): Promise<Es
   const hasta = texto(fd, "hasta") || desde;
   if (!recurso) return { error: "Elige a quién." };
   if (!desde) return { error: "Elige desde cuándo." };
+  if (!fechaValida(desde) || !fechaValida(hasta)) return { error: "Las fechas van como AAAA-MM-DD." };
   if (hasta < desde) return { error: "El fin no puede ser antes del inicio." };
-  const dias = Math.round((new Date(`${hasta}T12:00:00Z`).getTime() - new Date(`${desde}T12:00:00Z`).getTime()) / 86400000) + 1;
+  const dias = Math.round((Date.parse(`${hasta}T12:00:00Z`) - Date.parse(`${desde}T12:00:00Z`)) / 86400000) + 1;
   if (dias > 62) return { error: "Máximo dos meses seguidos." };
-  await datos((q, id) =>
-    q(
-      `insert into schedule_rule (tenant_id, resource_id, tipo, fecha, hora_inicio, hora_fin, motivo)
-       select $1, $2, 'bloqueo', d::date, '00:00'::time, '23:59'::time, $5
-         from generate_series($3::date, $4::date, interval '1 day') d`,
-      [id, recurso, desde, hasta, opcional(fd, "motivo")],
-    ),
+  return intentar(() =>
+    datos(async (q, id) => {
+      const persona = await q<{ id: string }>(
+        "select id from resource where id = $2 and tenant_id = $1 and tipo = 'persona' and activo",
+        [id, recurso],
+      );
+      if (persona.length === 0) return { error: "Elige a una persona activa del equipo." };
+      await q(
+        `insert into schedule_rule (tenant_id, resource_id, tipo, fecha, hora_inicio, hora_fin, motivo)
+         select $1, $2, 'bloqueo', d::date, '00:00'::time, '23:59'::time, $5
+           from generate_series($3::date, $4::date, interval '1 day') d`,
+        [id, recurso, desde, hasta, opcional(fd, "motivo")],
+      );
+      return { ok: dias === 1 ? "Ausencia guardada." : `${dias} días bloqueados.` };
+    }),
   );
-  refrescarPanel();
-  return { ok: dias === 1 ? "Ausencia guardada." : `${dias} días bloqueados.` };
 }
 
 export async function guardarExcepcion(_previo: Estado, fd: FormData): Promise<Estado> {
   const fecha = texto(fd, "fecha");
   if (!fecha) return { error: "Elige una fecha." };
-  const tipo = texto(fd, "tipo") || "festivo";
-  await datos((q, id) =>
-    q(
-      `insert into schedule_rule (tenant_id, tipo, fecha, hora_inicio, hora_fin)
-       values ($1, $2, $3::date, $4::time, $5::time)`,
-      [id, tipo, fecha, texto(fd, "hora_inicio") || "00:00", texto(fd, "hora_fin") || "23:59"],
-    ),
-  );
-  refrescarPanel();
-  return { ok: "Excepción agregada." };
+  if (!fechaValida(fecha)) return { error: "La fecha va como AAAA-MM-DD." };
+  const tipo = (texto(fd, "tipo") || "festivo") as TipoRegla;
+  if (!TIPOS_REGLA.includes(tipo)) return { error: "Elige qué pasa ese día." };
+  const inicio = texto(fd, "hora_inicio") || "00:00";
+  const fin = texto(fd, "hora_fin") || "23:59";
+  if (!HORA.test(inicio) || !HORA.test(fin)) return { error: "Las horas van como HH:MM." };
+  if (fin <= inicio) return { error: "La hora de fin debe ser después de la de inicio." };
+  return intentar(async () => {
+    await datos((q, id) =>
+      q(
+        `insert into schedule_rule (tenant_id, tipo, fecha, hora_inicio, hora_fin)
+         values ($1, $2, $3::date, $4::time, $5::time)`,
+        [id, tipo, fecha, inicio, fin],
+      ),
+    );
+    return { ok: "Excepción agregada." };
+  });
 }
 
-export async function eliminarRegla(fd: FormData): Promise<void> {
-  await datos((q, negocioId) =>
-    q("delete from schedule_rule where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+export async function eliminarRegla(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) => q("delete from schedule_rule where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId])),
   );
-  refrescarPanel();
 }
 
 export async function guardarFaq(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -616,38 +724,40 @@ export async function guardarFaq(_previo: Estado, fd: FormData): Promise<Estado>
   const respuesta = texto(fd, "respuesta");
   if (!pregunta || !respuesta) return { error: "Faltan la pregunta o la respuesta." };
   const id = opcional(fd, "id");
-  await datos(async (q, negocioId) => {
-    if (id) {
-      await q("update knowledge set pregunta = $2, respuesta = $3, prioridad = $4 where id = $1", [
-        id,
-        pregunta,
-        respuesta,
-        numero(fd, "prioridad"),
-      ]);
-    } else {
-      await q(
-        "insert into knowledge (tenant_id, pregunta, respuesta, prioridad) values ($1, $2, $3, $4)",
-        [negocioId, pregunta, respuesta, numero(fd, "prioridad")],
-      );
-    }
-  });
-  refrescarPanel();
-  return { ok: "Respuesta guardada." };
+  const prioridad = Math.round(numero(fd, "prioridad"));
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      if (id) {
+        await q("update knowledge set pregunta = $2, respuesta = $3, prioridad = $4 where id = $1 and tenant_id = $5", [
+          id,
+          pregunta,
+          respuesta,
+          prioridad,
+          negocioId,
+        ]);
+      } else {
+        await q("insert into knowledge (tenant_id, pregunta, respuesta, prioridad) values ($1, $2, $3, $4)", [
+          negocioId,
+          pregunta,
+          respuesta,
+          prioridad,
+        ]);
+      }
+      return { ok: "Respuesta guardada." };
+    }),
+  );
 }
 
-export async function eliminarFaq(fd: FormData): Promise<void> {
-  await datos((q, negocioId) =>
-    q("delete from knowledge where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+export async function eliminarFaq(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) => q("delete from knowledge where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId])),
   );
-  refrescarPanel();
 }
 
-export async function cancelarReserva(fd: FormData): Promise<void> {
-  const { usuario, negocioId } = await contexto();
-  await conSesion(usuario.id, (q) =>
-    q("select public.cancelar_reserva($1, $2)", [negocioId, texto(fd, "id")]),
+export async function cancelarReserva(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) => q("select public.cancelar_reserva($1, $2)", [negocioId, texto(fd, "id")])),
   );
-  refrescarPanel();
 }
 
 export async function guardarCliente(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -656,7 +766,7 @@ export async function guardarCliente(_previo: Estado, fd: FormData): Promise<Est
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  try {
+  return intentar(async () => {
     await datos((q, negocioId) =>
       q(
         `update cliente
@@ -665,62 +775,74 @@ export async function guardarCliente(_previo: Estado, fd: FormData): Promise<Est
         [negocioId, id, opcional(fd, "nombre"), opcional(fd, "correo"), opcional(fd, "notas"), etiquetas],
       ),
     );
-  } catch (error) {
-    return { error: errorLegible(error) };
-  }
-  refrescarPanel();
-  return { ok: "Cliente guardado." };
+    return { ok: "Cliente guardado." };
+  });
 }
 
 const METODOS_PAGO = ["efectivo", "tarjeta", "transferencia", "enlace", "otro"];
 
 /** Registra lo que de verdad se cobró por una cita o un pedido. */
 export async function registrarPago(_previo: Estado, fd: FormData): Promise<Estado> {
-  const monto = numero(fd, "monto", -1);
-  if (monto < 0) return { error: "Escribe el monto." };
+  const monto = numero(fd, "monto", 0);
+  if (!(monto > 0)) return { error: "Escribe un monto mayor a cero." };
   const metodo = texto(fd, "metodo");
   if (!METODOS_PAGO.includes(metodo)) return { error: "Elige cómo se pagó." };
+  const enlace = opcional(fd, "enlace_url");
+  if (enlace && !/^https?:\/\//.test(enlace)) return { error: "El enlace debe empezar con https://" };
   const pendiente = fd.get("pendiente") === "1";
-  try {
-    await datos((q, negocioId) =>
-      q(
+  const bookingId = opcional(fd, "booking_id");
+  const pedidoId = opcional(fd, "pedido_id");
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      const filas = await q<{ id: string }>(
         `insert into pago (tenant_id, booking_id, pedido_id, concepto, monto, metodo, estado, enlace_url, referencia_externa, notas)
-         values ($1, $2, $3, $4, $5, $6::pago_metodo, $7::pago_estado, $8, $9, $10)`,
+         select $1,
+                (select b.id from booking b where b.id = $2 and b.tenant_id = $1),
+                (select p.id from pedido p where p.id = $3 and p.tenant_id = $1),
+                $4, $5, $6::pago_metodo, $7::pago_estado, $8, $9, $10
+          where ($2::uuid is null or exists (select 1 from booking b where b.id = $2 and b.tenant_id = $1))
+            and ($3::uuid is null or exists (select 1 from pedido p where p.id = $3 and p.tenant_id = $1))
+         returning id`,
         [
           negocioId,
-          opcional(fd, "booking_id"),
-          opcional(fd, "pedido_id"),
+          bookingId,
+          pedidoId,
           texto(fd, "concepto") || "Cobro",
           monto,
           metodo,
           pendiente ? "pendiente" : "pagado",
-          opcional(fd, "enlace_url"),
+          enlace,
           opcional(fd, "referencia"),
           opcional(fd, "notas"),
         ],
-      ),
-    );
-  } catch (error) {
-    return { error: errorLegible(error) };
-  }
-  refrescarPanel();
-  return { ok: pendiente ? "Cobro pendiente registrado." : "Cobro registrado." };
+      );
+      if (filas.length === 0) return { error: "La cita o el pedido ya no existe." };
+      return { ok: pendiente ? "Cobro pendiente registrado." : "Cobro registrado." };
+    }),
+  );
 }
 
-export async function cambiarEstadoPago(fd: FormData): Promise<void> {
+export async function cambiarEstadoPago(_previo: Estado, fd: FormData): Promise<Estado> {
   const estado = texto(fd, "estado");
-  if (!["pagado", "cancelado", "reembolsado"].includes(estado)) return;
-  await datos((q, negocioId) =>
-    q(
-      `update pago set estado = $3::pago_estado, pagado_en = case when $3 = 'pagado' then now() else pagado_en end, actualizado = now()
-        where id = $2 and tenant_id = $1`,
-      [negocioId, texto(fd, "id"), estado],
+  if (!["pagado", "cancelado", "reembolsado"].includes(estado)) return { error: "Estado desconocido." };
+  return intentar(() =>
+    datos((q, negocioId) =>
+      q(
+        `update pago set estado = $3::pago_estado, pagado_en = case when $3 = 'pagado' then now() else pagado_en end, actualizado = now()
+          where id = $2 and tenant_id = $1`,
+        [negocioId, texto(fd, "id"), estado],
+      ),
     ),
   );
-  refrescarPanel();
 }
 
 const TIPOS_CAMPANA = ["no_show", "inactivos", "recordatorio_pago", "resena", "marketing", "manual"];
+
+/** Cuántas personas alcanzaría una campaña con este criterio; lo consulta el formulario al cambiar los días. */
+export async function alcanceDeCampana(tipo: string, dias: number): Promise<number> {
+  if (!TIPOS_CAMPANA.includes(tipo)) return 0;
+  return alcanceCampana(tipo, Math.max(1, Math.min(365, Math.round(dias) || 30)));
+}
 
 export async function crearCampana(_previo: Estado, fd: FormData): Promise<Estado> {
   const nombre = texto(fd, "nombre");
@@ -730,7 +852,10 @@ export async function crearCampana(_previo: Estado, fd: FormData): Promise<Estad
   if (!nombre) return { error: "Ponle nombre a la campaña." };
   if (!TIPOS_CAMPANA.includes(tipo)) return { error: "Elige a quién va dirigida." };
   if (!mensaje) return { error: canal === "llamada" ? "Escribe el guion de la llamada." : "Escribe el mensaje." };
-  const dias = Math.max(1, Math.min(365, numero(fd, "dias", 30)));
+  const dias = Math.max(1, Math.min(365, Math.round(numero(fd, "dias", 30))));
+  const inicio = texto(fd, "ventana_inicio") || "10:00";
+  const fin = texto(fd, "ventana_fin") || "19:00";
+  if (!HORA.test(inicio) || !HORA.test(fin) || fin <= inicio) return { error: "La ventana de horario está mal: el fin va después del inicio." };
   let id = "";
   try {
     id = await datos(async (q, negocioId) => {
@@ -746,9 +871,9 @@ export async function crearCampana(_previo: Estado, fd: FormData): Promise<Estad
           JSON.stringify({ dias }),
           mensaje,
           opcional(fd, "objetivo"),
-          texto(fd, "ventana_inicio") || "10:00",
-          texto(fd, "ventana_fin") || "19:00",
-          Math.max(1, Math.min(5, numero(fd, "max_intentos", 2))),
+          inicio,
+          fin,
+          Math.max(1, Math.min(5, Math.round(numero(fd, "max_intentos", 2)))),
         ],
       );
       const nuevo = filas[0]!.id;
@@ -762,68 +887,76 @@ export async function crearCampana(_previo: Estado, fd: FormData): Promise<Estad
   redirect(`/campanas/${id}`);
 }
 
-export async function cambiarEstadoCampana(fd: FormData): Promise<void> {
+export async function cambiarEstadoCampana(_previo: Estado, fd: FormData): Promise<Estado> {
   const estado = texto(fd, "estado");
-  if (!["activa", "pausada", "terminada"].includes(estado)) return;
-  await datos(async (q, negocioId) => {
-    await q("update campana set estado = $3::campana_estado, actualizado = now() where id = $2 and tenant_id = $1", [
-      negocioId,
-      texto(fd, "id"),
-      estado,
-    ]);
-    if (estado === "activa") await q("select public.campana_poblar($1)", [texto(fd, "id")]);
-  });
-  refrescarPanel();
+  if (!["activa", "pausada", "terminada"].includes(estado)) return { error: "Estado desconocido." };
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      const filas = await q<{ id: string }>(
+        "update campana set estado = $3::campana_estado, actualizado = now() where id = $2 and tenant_id = $1 returning id",
+        [negocioId, texto(fd, "id"), estado],
+      );
+      const propia = filas[0]?.id;
+      if (!propia) return { error: "Esa campaña no es de este negocio." };
+      if (estado === "activa") await q("select public.campana_poblar($1)", [propia]);
+      return {};
+    }),
+  );
 }
 
-export async function agregarContactosCampana(fd: FormData): Promise<void> {
+export async function agregarContactosCampana(_previo: Estado, fd: FormData): Promise<Estado> {
   const campanaId = texto(fd, "campana_id");
-  const segmento = texto(fd, "segmento");
-  const condiciones: Record<string, string> = {
-    todos: "true",
-    frecuentes: "(select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada') >= 3",
-    inactivos: "c.ultimo_contacto < now() - interval '90 days'",
-    faltan: "exists (select 1 from booking b where b.cliente_id = c.id and b.estado = 'no_asistio')",
-  };
-  const condicion = condiciones[segmento];
-  if (!condicion) return;
-  await datos((q, negocioId) =>
-    q(
-      `insert into campana_contacto (campana_id, tenant_id, cliente_id)
-       select $2, $1, c.id from cliente c
-        where c.tenant_id = $1 and c.telefono is not null and ${condicion}
-       on conflict do nothing`,
-      [negocioId, campanaId],
+  const segmento = texto(fd, "segmento") as SegmentoCliente;
+  const condicion = CONDICION_SEGMENTO[segmento];
+  if (!condicion) return { error: "Elige un segmento." };
+  return intentar(() =>
+    datos((q, negocioId) =>
+      q(
+        `insert into campana_contacto (campana_id, tenant_id, cliente_id)
+         select ca.id, $1, c.id
+           from campana ca, cliente c
+          where ca.id = $2 and ca.tenant_id = $1
+            and c.tenant_id = $1 and c.telefono is not null and ${condicion}
+         on conflict do nothing`,
+        [negocioId, campanaId],
+      ),
     ),
   );
-  refrescarPanel();
 }
 
-export async function excluirContacto(fd: FormData): Promise<void> {
-  await datos((q, negocioId) =>
-    q("select public.campana_contacto_resultado(cc.id, 'excluido') from campana_contacto cc where cc.id = $2 and cc.tenant_id = $1", [
-      negocioId,
-      texto(fd, "id"),
-    ]),
+export async function excluirContacto(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) =>
+      q("select public.campana_contacto_resultado(cc.id, 'excluido') from campana_contacto cc where cc.id = $2 and cc.tenant_id = $1", [
+        negocioId,
+        texto(fd, "id"),
+      ]),
+    ),
   );
-  refrescarPanel();
 }
 
 /** Un número de entrada extra ligado a una campaña: quien marque ahí queda atribuido. */
 export async function guardarLinea(_previo: Estado, fd: FormData): Promise<Estado> {
-  const tel = texto(fd, "telefono").replace(/[^\d+]/g, "");
+  const tel = normalizarTelefono(texto(fd, "telefono"));
   const etiqueta = texto(fd, "etiqueta");
-  if (!/^\+\d{10,15}$/.test(tel)) return { error: "El número va en formato +52 y diez dígitos." };
+  if (!TELEFONO_E164.test(tel)) return { error: ERROR_TELEFONO };
   if (!etiqueta) return { error: "Ponle etiqueta: de dónde viene quien marca ahí." };
+  const campanaId = opcional(fd, "campana_id");
   try {
-    await datos((q, negocioId) =>
-      q("insert into linea (tenant_id, telefono, etiqueta, campana_id) values ($1, $2, $3, $4)", [
-        negocioId,
-        tel,
-        etiqueta,
-        opcional(fd, "campana_id"),
-      ]),
-    );
+    const resultado = await datos(async (q, negocioId): Promise<Estado> => {
+      const entrada = await q<{ id: string }>("select id from tenant where telefono_entrada = $1 limit 1", [tel]);
+      if (entrada.length > 0) return { error: "Ese número ya es el número de entrada de un negocio." };
+      const filas = await q<{ id: string }>(
+        `insert into linea (tenant_id, telefono, etiqueta, campana_id)
+         select $1, $2, $3, (select ca.id from campana ca where ca.id = $4 and ca.tenant_id = $1)
+          where $4::uuid is null or exists (select 1 from campana ca where ca.id = $4 and ca.tenant_id = $1)
+         returning id`,
+        [negocioId, tel, etiqueta, campanaId],
+      );
+      if (filas.length === 0) return { error: "Esa campaña no es de este negocio." };
+      return { ok: "Línea agregada." };
+    });
+    if (resultado.error) return resultado;
   } catch (error) {
     const mensaje = error instanceof Error ? error.message : "";
     return { error: /unique|duplicate/i.test(mensaje) ? "Ese número ya está registrado." : errorLegible(error) };
@@ -832,81 +965,85 @@ export async function guardarLinea(_previo: Estado, fd: FormData): Promise<Estad
   return { ok: "Línea agregada." };
 }
 
-export async function eliminarLinea(fd: FormData): Promise<void> {
-  await datos((q, negocioId) => q("delete from linea where id = $2 and tenant_id = $1", [negocioId, texto(fd, "id")]));
-  refrescarPanel();
+export async function eliminarLinea(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) => q("delete from linea where id = $2 and tenant_id = $1", [negocioId, texto(fd, "id")])),
+  );
 }
 
 export async function guardarResenas(_previo: Estado, fd: FormData): Promise<Estado> {
-  const espera = Math.max(15, Math.min(1440, numero(fd, "resena_espera_min", 120)));
+  const espera = Math.max(15, Math.min(1440, Math.round(numero(fd, "resena_espera_min", 120))));
   const url = opcional(fd, "resena_url");
   if (url && !/^https?:\/\//.test(url)) return { error: "La liga debe empezar con https://" };
-  await datos((q, negocioId) =>
-    q("update tenant set resena_activa = $2, resena_url = $3, resena_espera_min = $4 where id = $1", [
-      negocioId,
-      fd.get("resena_activa") === "on",
-      url,
-      espera,
-    ]),
-  );
-  refrescarPanel();
-  return { ok: "Reseñas guardadas." };
+  return intentar(async () => {
+    await datos((q, negocioId) =>
+      q("update tenant set resena_activa = $2, resena_url = $3, resena_espera_min = $4 where id = $1", [
+        negocioId,
+        fd.get("resena_activa") === "on",
+        url,
+        espera,
+      ]),
+    );
+    return { ok: "Reseñas guardadas." };
+  });
 }
 
 export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
+
+const CAMBIOS_PASO: Record<PasoFlujo, string> = {
+  llego: "llegada = now()",
+  regresar: "llegada = null",
+  atendida: "estado = 'completada', llegada = coalesce(llegada, now())",
+  no_llego: "estado = 'no_asistio'",
+};
 
 /**
  * Mueve una cita dentro del día. `llego` y `regresar` solo tocan `llegada`,
  * así la cita sigue confirmada y sigue bloqueando su horario mientras se atiende.
  */
-export async function moverCita(fd: FormData): Promise<void> {
-  const paso = texto(fd, "paso") as PasoFlujo;
-  const cambios: Record<PasoFlujo, string> = {
-    llego: "llegada = now()",
-    regresar: "llegada = null",
-    atendida: "estado = 'completada', llegada = coalesce(llegada, now())",
-    no_llego: "estado = 'no_asistio'",
-  };
-  const cambio = cambios[paso];
-  if (!cambio) return;
-  await datos((q, negocioId) =>
-    q(`update booking set ${cambio} where id = $2 and tenant_id = $1 and estado = 'confirmada'`, [
-      negocioId,
-      texto(fd, "id"),
-    ]),
+export async function moverCita(_previo: Estado, fd: FormData): Promise<Estado> {
+  const cambio = CAMBIOS_PASO[texto(fd, "paso") as PasoFlujo];
+  if (!cambio) return { error: "Paso desconocido." };
+  return intentar(() =>
+    datos((q, negocioId) =>
+      q(`update booking set ${cambio} where id = $2 and tenant_id = $1 and estado = 'confirmada'`, [negocioId, texto(fd, "id")]),
+    ),
   );
-  refrescarPanel();
 }
 
 export type Slot = { inicio: string; fin: string; resource_id: string; resource_nombre: string };
 
 export async function slotsLibres(servicioId: string, dia: string, personas: number): Promise<Slot[]> {
-  const { usuario, negocioId } = await contexto();
-  return conSesion(usuario.id, (q) =>
+  if (!fechaValida(dia)) return [];
+  return datos((q, negocioId) =>
     q<Slot>("select * from public.slots_libres($1, $2, $3::date, $4, 40)", [
       negocioId,
       servicioId,
       dia,
-      personas,
+      Math.max(1, Math.round(personas) || 1),
     ]),
   );
 }
 
-export async function reagendarReserva(reservaId: string, inicio: string): Promise<Estado> {
+/** Mueve la cita al horario y al recurso elegidos: el slot que se mostró es el que se toma. */
+export async function reagendarReserva(reservaId: string, inicio: string, recursoId: string): Promise<Estado> {
+  if (Number.isNaN(Date.parse(inicio))) return { error: "Elige un horario." };
   try {
     const movidas = await datos(async (q, id) => {
       const filas = await q<{ id: string }>(
         `update booking b
             set inicio = $3::timestamptz,
-                fin = $3::timestamptz + make_interval(mins => s.duracion_min + s.buffer_min)
-           from service s
+                fin = $3::timestamptz + make_interval(mins => s.duracion_min + s.buffer_min),
+                resource_id = r.id
+           from service s, resource r
           where b.id = $2 and b.tenant_id = $1 and s.id = b.service_id and b.estado = 'confirmada'
+            and r.id = $4 and r.tenant_id = $1 and r.activo
           returning b.id`,
-        [id, reservaId, inicio],
+        [id, reservaId, inicio, recursoId],
       );
       return filas.length;
     });
-    if (movidas === 0) return { error: "La reserva ya no está confirmada." };
+    if (movidas === 0) return { error: "La reserva ya no está confirmada o el recurso no está activo." };
   } catch {
     return { error: "Ese horario acaba de ocuparse. Elige otro." };
   }
@@ -915,23 +1052,31 @@ export async function reagendarReserva(reservaId: string, inicio: string): Promi
 }
 
 export async function crearReserva(_previo: Estado, fd: FormData): Promise<Estado> {
-  const { usuario, negocioId } = await contexto();
-  const resultado = await conSesion(usuario.id, async (q) => {
-    const filas = await q<{ reservar: { ok: boolean; error?: string; codigo?: string } }>(
-      "select public.reservar($1, $2, $3, $4::timestamptz, $5, $6, $7, $8, null) as reservar",
-      [
-        negocioId,
-        texto(fd, "service_id"),
-        texto(fd, "resource_id"),
-        texto(fd, "inicio"),
-        texto(fd, "cliente_nombre"),
-        texto(fd, "telefono"),
-        Math.max(1, numero(fd, "personas", 1)),
-        opcional(fd, "notas"),
-      ],
-    );
-    return filas[0]!.reservar;
-  });
+  const telefono = normalizarTelefono(texto(fd, "telefono"));
+  if (!TELEFONO_E164.test(telefono)) return { error: ERROR_TELEFONO };
+  if (!texto(fd, "cliente_nombre")) return { error: "Escribe el nombre." };
+  if (Number.isNaN(Date.parse(texto(fd, "inicio")))) return { error: "Elige un horario." };
+  let resultado: { ok: boolean; error?: string; codigo?: string };
+  try {
+    resultado = await datos(async (q, negocioId) => {
+      const filas = await q<{ reservar: { ok: boolean; error?: string; codigo?: string } }>(
+        "select public.reservar($1, $2, $3, $4::timestamptz, $5, $6, $7, $8, null) as reservar",
+        [
+          negocioId,
+          texto(fd, "service_id"),
+          texto(fd, "resource_id"),
+          texto(fd, "inicio"),
+          texto(fd, "cliente_nombre"),
+          telefono,
+          Math.max(1, Math.round(numero(fd, "personas", 1))),
+          opcional(fd, "notas"),
+        ],
+      );
+      return filas[0]!.reservar;
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
   refrescarPanel();
   if (!resultado.ok) {
     const mensajes: Record<string, string> = {
@@ -944,49 +1089,9 @@ export async function crearReserva(_previo: Estado, fd: FormData): Promise<Estad
   return { ok: `Reservado con código ${resultado.codigo}.` };
 }
 
-export type ItemPedido = {
-  nombre: string;
-  cantidad: number;
-  precio_unitario: string;
-  subtotal: string;
-  notas: string | null;
-};
-
-export type ResumenPedido = {
-  id: string;
-  codigo: string;
-  estado: string;
-  tipo: string;
-  total: string;
-  items: ItemPedido[];
-};
-
-export type LlamadaPrueba = {
-  call_id: string;
-  inicio: string;
-  duracion_seg: number | null;
-  resuelto: boolean | null;
-  escalado: boolean;
-  motivo_escalamiento: string | null;
-};
-
-export type EstadoPrueba = {
-  pedido: ResumenPedido | null;
-  reservas: {
-    id: string;
-    codigo: string;
-    cliente_nombre: string;
-    inicio: string;
-    servicio: string;
-    recurso: string;
-    personas: number;
-  }[];
-  llamadas: LlamadaPrueba[];
-};
-
 export async function estadoPrueba(minutos: number): Promise<EstadoPrueba> {
   return datos(async (q, id) => {
-    const pedidos = await q<{ id: string; resumen: Omit<ResumenPedido, "id"> | null }>(
+    const pedidos = await q<{ id: string; resumen: Omit<ResumenPedidoPrueba, "id"> | null }>(
       `select p.id, public.pedido_resumen($1, p.id) as resumen
          from pedido p
         where p.tenant_id = $1 and p.creado >= now() - make_interval(mins => $2::int)
@@ -1022,24 +1127,18 @@ export async function estadoPrueba(minutos: number): Promise<EstadoPrueba> {
   });
 }
 
-export async function cambiarEstadoPedido(fd: FormData): Promise<void> {
+export async function cambiarEstadoPedido(_previo: Estado, fd: FormData): Promise<Estado> {
   const estado = texto(fd, "estado") as EstadoPedido;
-  await datos((q, negocioId) =>
-    q("update pedido set estado = $3::pedido_estado where id = $2 and tenant_id = $1", [
-      negocioId,
-      texto(fd, "id"),
-      estado,
-    ]),
+  if (!ESTADOS_PEDIDO.includes(estado)) return { error: "Estado desconocido." };
+  return intentar(() =>
+    datos((q, negocioId) =>
+      q("update pedido set estado = $3::pedido_estado where id = $2 and tenant_id = $1", [negocioId, texto(fd, "id"), estado]),
+    ),
   );
-  refrescarPanel();
 }
 
-export async function alternarRecado(fd: FormData): Promise<void> {
-  await datos((q, negocioId) =>
-    q("update lead set atendido = not atendido where id = $2 and tenant_id = $1", [
-      negocioId,
-      texto(fd, "id"),
-    ]),
+export async function alternarRecado(_previo: Estado, fd: FormData): Promise<Estado> {
+  return intentar(() =>
+    datos((q, negocioId) => q("update lead set atendido = not atendido where id = $2 and tenant_id = $1", [negocioId, texto(fd, "id")])),
   );
-  refrescarPanel();
 }

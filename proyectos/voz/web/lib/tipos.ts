@@ -1,8 +1,10 @@
 export type Vertical = string;
 export type Herramienta = "agendar" | "pedido" | "recado";
 export type TipoRegla = "disponible" | "bloqueo" | "festivo";
+export const TIPOS_REGLA: TipoRegla[] = ["disponible", "bloqueo", "festivo"];
 export type EstadoReserva = "confirmada" | "cancelada" | "no_asistio" | "completada";
 export type EstadoPedido = "abierto" | "confirmado" | "cancelado" | "entregado";
+export const ESTADOS_PEDIDO: EstadoPedido[] = ["abierto", "confirmado", "cancelado", "entregado"];
 export type TipoPedido = "recoger" | "domicilio" | "local";
 
 export type Negocio = {
@@ -107,6 +109,8 @@ export type Reserva = {
   recurso: string;
   resource_id: string;
   service_id: string;
+  /** Lo pagado por esta cita, o null si no se ha cobrado. */
+  cobrado: string | null;
 };
 
 /** En qué columna del día va una cita. Se deriva de `estado` y `llegada`. */
@@ -117,6 +121,20 @@ export function pasoDe(r: Pick<Reserva, "estado" | "llegada">): PasoCita {
   if (r.estado === "no_asistio") return "no_llego";
   if (r.estado === "cancelada") return "cancelada";
   return r.llegada ? "en_atencion" : "por_llegar";
+}
+
+export type ResumenCitas = { citas: Reserva[]; atendidas: number; enAtencion: Reserva[]; porLlegar: Reserva[] };
+
+/** Las cuentas del día que comparten Hoy y la Agenda: mismas reglas, un solo lugar. */
+export function resumenCitas(reservas: Reserva[]): ResumenCitas {
+  return {
+    citas: reservas.filter((r) => r.estado === "confirmada" || r.estado === "completada"),
+    atendidas: reservas.filter((r) => r.estado === "completada").length,
+    enAtencion: reservas.filter((r) => pasoDe(r) === "en_atencion"),
+    porLlegar: reservas
+      .filter((r) => pasoDe(r) === "por_llegar")
+      .sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime()),
+  };
 }
 
 export type Faq = {
@@ -147,6 +165,63 @@ export type Pedido = {
   listo_para: string | null;
   total: string;
   items: PedidoItem[];
+};
+
+export type ResumenPedidos = {
+  total: number;
+  abiertos: number;
+  confirmados: number;
+  entregados: number;
+  cancelados: number;
+  vendido: number;
+  ticket: number | null;
+};
+
+export function resumirPedidos(pedidos: Pedido[]): ResumenPedidos {
+  const cuenta = (estado: EstadoPedido) => pedidos.filter((p) => p.estado === estado).length;
+  const vendidos = pedidos.filter((p) => p.estado === "confirmado" || p.estado === "entregado");
+  const vendido = vendidos.reduce((s, p) => s + Number(p.total), 0);
+  return {
+    total: pedidos.length,
+    abiertos: cuenta("abierto"),
+    confirmados: cuenta("confirmado"),
+    entregados: cuenta("entregado"),
+    cancelados: cuenta("cancelado"),
+    vendido,
+    ticket: vendidos.length > 0 ? vendido / vendidos.length : null,
+  };
+}
+
+export type ResumenPedidoPrueba = {
+  id: string;
+  codigo: string;
+  estado: string;
+  tipo: string;
+  total: string;
+  items: PedidoItem[];
+};
+
+export type LlamadaPrueba = {
+  call_id: string;
+  inicio: string;
+  duracion_seg: number | null;
+  resuelto: boolean | null;
+  escalado: boolean;
+  motivo_escalamiento: string | null;
+};
+
+export type EstadoPrueba = {
+  pedido: ResumenPedidoPrueba | null;
+  reservas: {
+    id: string;
+    codigo: string;
+    cliente_nombre: string;
+    inicio: string;
+    servicio: string;
+    recurso: string;
+    personas: number;
+  }[];
+  llamadas: LlamadaPrueba[];
 };
 
 export type Recado = {
@@ -470,18 +545,20 @@ export function etiquetaTipo(tipo: string, plural = false): string {
   return tipo.charAt(0).toUpperCase() + tipo.slice(1);
 }
 
-export const ETIQUETAS_RECURSO: Record<string, { recurso: string; ejemplos: string }> = {
-  clinica: { recurso: "Doctor o consultorio", ejemplos: "Dra. Ana Ruiz, Dr. Luis Méndez" },
-  restaurante: { recurso: "Mesa", ejemplos: "Mesa 1, Terraza 3" },
-  comida: { recurso: "Estación de cocina", ejemplos: "Plancha, Trompo" },
-  salon: { recurso: "Estación o estilista", ejemplos: "Silla 1, Karla" },
-  taller: { recurso: "Bahía o técnico", ejemplos: "Bahía 1, Rampa 2" },
-  inmobiliaria: { recurso: "Asesor", ejemplos: "Asesor Norte, Asesor Centro" },
-  recepcion: { recurso: "Línea o agente", ejemplos: "Línea 1, Recepción" },
+export type EtiquetasRecurso = { recurso: string; plural: string; ejemplos: string };
+
+export const ETIQUETAS_RECURSO: Record<string, EtiquetasRecurso> = {
+  clinica: { recurso: "Doctor o consultorio", plural: "Consultorios", ejemplos: "Dra. Ana Ruiz, Dr. Luis Méndez" },
+  restaurante: { recurso: "Mesa", plural: "Mesas", ejemplos: "Mesa 1, Terraza 3" },
+  comida: { recurso: "Estación de cocina", plural: "Estaciones", ejemplos: "Plancha, Trompo" },
+  salon: { recurso: "Estación o estilista", plural: "Estaciones", ejemplos: "Silla 1, Karla" },
+  taller: { recurso: "Bahía o técnico", plural: "Bahías", ejemplos: "Bahía 1, Rampa 2" },
+  inmobiliaria: { recurso: "Asesor", plural: "Asesores", ejemplos: "Asesor Norte, Asesor Centro" },
+  recepcion: { recurso: "Línea o agente", plural: "Líneas", ejemplos: "Línea 1, Recepción" },
 };
 
-export function etiquetasRecurso(vertical: Vertical): { recurso: string; ejemplos: string } {
-  return ETIQUETAS_RECURSO[vertical] ?? { recurso: "Recurso", ejemplos: "Sala A, Taller 1" };
+export function etiquetasRecurso(vertical: Vertical): EtiquetasRecurso {
+  return ETIQUETAS_RECURSO[vertical] ?? { recurso: "Recurso", plural: "Recursos", ejemplos: "Sala A, Taller 1" };
 }
 
 export type ClaveDeslizador = "estabilidad" | "similitud" | "estilo" | "velocidad";
@@ -669,6 +746,13 @@ export type Conversacion = {
   booking_id: string | null;
   pedido_id: string | null;
   call_id: string | null;
+};
+
+/** La conversación abierta en el hilo, con lo justo para enlazar a la cita o al pedido que salió de ella. */
+export type ConversacionDetalle = Conversacion & {
+  booking_codigo: string | null;
+  booking_inicio: string | null;
+  pedido_creado: string | null;
 };
 
 export type Mensaje = {

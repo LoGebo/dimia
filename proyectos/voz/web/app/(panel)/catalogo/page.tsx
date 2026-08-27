@@ -124,20 +124,20 @@ function FilaItem({
 }) {
   return (
     <div className="grid grid-cols-[auto_1fr] items-start border-b border-linea last:border-0">
-      <form action={alternarDisponible} className="py-2.5 pl-4">
+      <Formulario accion={alternarDisponible} className="py-2.5 pl-4">
         <input type="hidden" name="id" value={item.id} />
         <button
           title={item.disponible ? "Marcar como agotado" : "Volver a ofrecerlo"}
           aria-label={item.disponible ? "Marcar como agotado" : "Volver a ofrecerlo"}
-          className={`flex h-4 w-7 items-center rounded-full border transition ${
+          className={`flex h-4 w-7 items-center border transition ${
             item.disponible ? "justify-end border-bueno bg-bueno/25" : "justify-start border-linea-fuerte bg-panel-2"
           }`}
         >
           <span
-            className={`mx-px h-3 w-3 rounded-full ${item.disponible ? "bg-bueno" : "bg-linea-fuerte"}`}
+            className={`mx-px h-3 w-3 ${item.disponible ? "bg-bueno" : "bg-linea-fuerte"}`}
           />
         </button>
-      </form>
+      </Formulario>
 
       <details className="group min-w-0">
         <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-2.5 hover:bg-panel-2">
@@ -159,10 +159,10 @@ function FilaItem({
         </summary>
         <div className="border-t border-linea bg-panel-2 px-4 py-4">
           <FormularioItem item={item} tipos={tipos} recursos={recursos} />
-          <form action={eliminarItemCatalogo} className="mt-3 border-t border-linea pt-3">
+          <Formulario accion={eliminarItemCatalogo} className="mt-3 border-t border-linea pt-3">
             <input type="hidden" name="id" value={item.id} />
             <BotonPeligro>Eliminar del catálogo</BotonPeligro>
-          </form>
+          </Formulario>
         </div>
       </details>
     </div>

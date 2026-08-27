@@ -1,18 +1,14 @@
-import { Encabezado, Indicador } from "@/components/encabezado";
+import { Encabezado } from "@/components/encabezado";
+import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { Insignia, Vacio } from "@/components/ui/primitivos";
-import { mensajesSalientes } from "@/lib/consultas";
-import { telefono as formatearTelefono } from "@/lib/formato";
+import { mensajesSalientes, negocio } from "@/lib/consultas";
+import { fechaCorta, hora, telefono as formatearTelefono } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import { NOMBRE_PLANTILLA, type MensajeSaliente } from "@/lib/tipos";
 
-function cuando(iso: string | null): string {
+function cuando(iso: string | null, zona: string): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("es-MX", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return `${fechaCorta(iso, zona)} ${hora(iso, zona)}`;
 }
 
 function Estado({ mensaje: m }: { mensaje: MensajeSaliente }) {
@@ -23,7 +19,7 @@ function Estado({ mensaje: m }: { mensaje: MensajeSaliente }) {
 
 export default async function Mensajes() {
   const giro = await exigirSeccion("/mensajes");
-  const lista = await mensajesSalientes();
+  const [lista, config] = await Promise.all([mensajesSalientes(), negocio()]);
 
   const enviados = lista.filter((m) => m.estado === "enviado").length;
   const enCola = lista.filter((m) => m.estado === "pendiente").length;
@@ -37,23 +33,13 @@ export default async function Mensajes() {
         giro={giro.nombre}
       />
 
-      <div className="grid grid-cols-2 gap-px bg-linea lg:grid-cols-3">
-        <Indicador etiqueta="Entregados" valor={String(enviados)} detalle="llegaron al cliente" />
-        <Indicador
-          etiqueta="En cola"
-          valor={String(enCola)}
-          detalle="salen en el próximo minuto"
-          tono={enCola > 0 ? "alerta" : undefined}
-        />
-        <Indicador
-          etiqueta="No salieron"
-          valor={String(fallidos)}
-          detalle="se agotaron los reintentos"
-          tono={fallidos > 0 ? "critico" : undefined}
-        />
-      </div>
+      <div className="space-y-4 px-5 py-5">
+        <TiraIndicadores>
+          <Cifra etiqueta="Entregados" valor={String(enviados)} glifo={Glifos.llamada} pildora="llegaron al cliente" tono="bueno" />
+          <Cifra etiqueta="En cola" valor={String(enCola)} glifo={Glifos.reloj} pildora="salen en el próximo minuto" tono={enCola > 0 ? "alerta" : "neutro"} />
+          <Cifra etiqueta="No salieron" valor={String(fallidos)} glifo={Glifos.alerta} pildora="se agotaron los reintentos" tono={fallidos > 0 ? "critico" : "neutro"} />
+        </TiraIndicadores>
 
-      <div className="px-5 py-5">
         {lista.length === 0 ? (
           <Vacio
             titulo="Todavía no sale ningún mensaje"
@@ -94,7 +80,7 @@ export default async function Mensajes() {
                       ) : null}
                     </td>
                     <td className="numeros px-4 py-2.5 text-tinta-3">
-                      {cuando(m.enviado ?? m.creado)}
+                      {cuando(m.enviado ?? m.creado, config.zona_horaria)}
                     </td>
                   </tr>
                 ))}

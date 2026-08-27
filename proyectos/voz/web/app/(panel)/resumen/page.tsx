@@ -10,13 +10,14 @@ import {
   llamadasPorHora,
   motivosEscalamiento,
   negocio,
+  pedidosDelDia,
   recadosPendientes,
   resumenAgendaHoy,
   resumenLlamadas,
-  resumenPedidos,
 } from "@/lib/consultas";
 import { duracion, isoDia, moneda, porcentaje } from "@/lib/formato";
 import { contexto } from "@/lib/sesion";
+import { resumirPedidos } from "@/lib/tipos";
 
 const RANGOS = [7, 14, 30] as const;
 
@@ -188,7 +189,7 @@ export default async function Resumen({
 
 async function Hoy({ herramientas, dia }: { herramientas: string[]; dia: string }) {
   if (herramientas.includes("pedido")) {
-    const pedidos = await resumenPedidos(dia);
+    const pedidos = resumirPedidos(await pedidosDelDia(dia));
     return (
       <Bloque titulo="Hoy" ruta="/pedidos" enlace="Ver pedidos" columnas={4}>
         <Cifra etiqueta="Pedidos del día" valor={String(pedidos.total)} glifo={Glifos.personas} pildora={`${pedidos.cancelados} cancelados`} />

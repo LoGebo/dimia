@@ -21,7 +21,7 @@ export function CombinacionActiva({ negocio }: { negocio: Negocio }) {
     porMinutoLlm !== null && porHoraTts !== null ? porMinutoLlm + porHoraTts / 60 : null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-linea bg-panel px-4 py-2.5 shadow-[var(--sombra)]">
+    <div className="flex flex-wrap items-center justify-between gap-3 border border-linea bg-panel px-4 py-2.5">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="etiqueta">Contesta con</span>
         <span className="text-[13px] font-medium text-tinta">

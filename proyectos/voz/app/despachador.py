@@ -11,6 +11,22 @@ al teléfono — justo al revés de lo que se necesita.
 
 Se pueden levantar varios a la vez sin coordinarlos: `outbox_reclamar` usa
 `for update skip locked`, así que dos nunca toman la misma fila.
+
+Lo que gobiernan las constantes:
+
+- `VENCE_EN_HORAS`: un mensaje viejo ya no sirve y hace daño; nadie quiere
+  recibir hoy la confirmación de un pedido de la semana pasada. Si la cola
+  estuvo detenida, lo acumulado se descarta en vez de dispararse junto.
+- `CADA_RECORDATORIO_SEG` y `VENTANA_RECORDATORIO_HORAS`: cada cuánto se
+  revisa si hay citas por recordar y con cuánta anticipación.
+- `CADA_CIERRE_SEG` y `CONVERSACION_FRIA_MIN`: una conversación de texto se da
+  por terminada cuando lleva dos horas sin mensajes; ahí se escribe su cierre.
+- `CADA_CAMPANA_SEG`: cada cuánto se revisa qué campañas tienen a quién hablarle.
+
+Las llamadas salientes no reintentan por el outbox. La fila queda terminal
+tras el primer intento y el siguiente lo decide `campana_contacto` con
+`siguiente_intento`: si el outbox reintentara por su cuenta, la persona
+recibiría seis llamadas en unas horas y mañana otra fila más.
 """
 
 from __future__ import annotations
@@ -21,7 +37,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
-from app.cierre import resumir
+from app.cierre import ModeloNoContesto, resumir
 from app.salientes import SinTroncal, marcar
 from app.supabase_client import Agenda
 
@@ -29,19 +45,13 @@ log = logging.getLogger("despachador")
 
 INTERVALO_SEG = 20
 POR_VUELTA = 25
-# Un mensaje viejo ya no sirve y hace daño: nadie quiere recibir hoy la
-# confirmación de un pedido de la semana pasada. Si la cola estuvo detenida,
-# lo acumulado se descarta en vez de dispararse todo junto al reanudar.
 VENCE_EN_HORAS = 12
-# Cada cuanto se revisa si hay citas por recordar, y con cuanta anticipacion.
 CADA_RECORDATORIO_SEG = 3600
 VENTANA_RECORDATORIO_HORAS = 24
-# Una conversacion de texto se da por terminada cuando lleva dos horas sin
-# mensajes; ahi se escribe su cierre.
 CADA_CIERRE_SEG = 600
 CONVERSACION_FRIA_MIN = 120
-# Cada cuanto se revisa que campañas tienen a quien hablarle.
 CADA_CAMPANA_SEG = 300
+MAX_INTENTOS_OUTBOX = 6
 
 
 class Mensajero(Protocol):
@@ -56,6 +66,14 @@ class Tanda:
     enviados: int
     fallidos: int
     vencidos: int = 0
+    marcando: int = 0
+
+
+def _sin_mas_intentos(fila: dict) -> bool:
+    """La misma cuenta que hace `outbox_marcar_error` para rendirse."""
+    intentos = int(fila.get("intentos") or 0)
+    maximo = int(fila.get("max_intentos") or MAX_INTENTOS_OUTBOX)
+    return intentos >= maximo
 
 
 def _pesos(monto: object) -> str:
@@ -110,7 +128,6 @@ def redactar(plantilla: str, payload: dict) -> str:
         )
 
     if plantilla == "campana":
-        # El texto ya viene redactado por campana_redactar, con nombre y negocio.
         return str(payload.get("mensaje") or "").strip()
 
     if plantilla == "confirmacion":
@@ -152,29 +169,35 @@ class Despachador:
         self._salientes: set[asyncio.Task] = set()
 
     async def tanda(self) -> Tanda:
-        """Una vuelta: reclama lo que toca, lo manda y marca el resultado."""
+        """Una vuelta: reclama lo que toca, lo manda y marca el resultado.
+
+        Lo vencido se marca fallido de una vez, no por la via de los reintentos:
+        cada reintento solo lo encontraria mas viejo. Marcar una llamada tarda
+        lo que tarde en contestar la persona, asi que se lanza aparte y la cola
+        sigue con lo demas; esas cuentan en `marcando`, no en `enviados`. El
+        error de un envio se guarda en la fila: es lo que el dueño va a leer
+        cuando pregunte por que un mensaje no llego. Si con ese error el outbox
+        se rinde y la fila era de campaña, el contacto queda `fallido` para que
+        la campaña pueda terminar.
+        """
         pendientes = await self.agenda.outbox_reclamar(self.por_vuelta)
-        enviados = fallidos = vencidos = 0
+        enviados = fallidos = vencidos = marcando = 0
         limite = datetime.now(UTC) - timedelta(hours=VENCE_EN_HORAS)
 
         for fila in pendientes:
             creado = fila.get("creado")
             if creado is not None and creado < limite:
                 vencidos += 1
-                # Se marca fallido de una vez, no por la via de los reintentos:
-                # cada reintento solo lo encontraria mas viejo.
-                await self.agenda.outbox_marcar_vencido(
-                    fila["id"], f"vencido: encolado hace mas de {VENCE_EN_HORAS} h"
-                )
+                motivo = f"vencido: encolado hace mas de {VENCE_EN_HORAS} h"
+                await self.agenda.outbox_marcar_vencido(fila["id"], motivo)
+                await self._contacto_fallido(fila, motivo)
                 continue
             try:
                 if fila["canal"] == "llamada":
-                    # Marcar tarda lo que tarde en contestar la persona: se
-                    # lanza aparte y la cola sigue con lo demas.
                     tarea = asyncio.create_task(self._marcar(fila))
                     self._salientes.add(tarea)
                     tarea.add_done_callback(self._salientes.discard)
-                    enviados += 1
+                    marcando += 1
                     continue
                 if fila["canal"] != "whatsapp":
                     raise ValueError(f"canal no soportado: {fila['canal']}")
@@ -188,12 +211,21 @@ class Despachador:
                 enviados += 1
             except Exception as error:
                 fallidos += 1
-                # El error se guarda en la fila: es lo que el dueño va a leer
-                # cuando pregunte por que un mensaje no llego.
                 await self.agenda.outbox_marcar_error(fila["id"], str(error))
+                if _sin_mas_intentos(fila):
+                    await self._contacto_fallido(fila, str(error))
                 log.warning("no se pudo enviar %s: %s", fila["id"], error)
 
-        return Tanda(len(pendientes), enviados, fallidos, vencidos)
+        return Tanda(len(pendientes), enviados, fallidos, vencidos, marcando)
+
+    async def _contacto_fallido(self, fila: dict, motivo: str) -> None:
+        contacto = fila.get("campana_contacto_id")
+        if not contacto:
+            return
+        try:
+            await self.agenda.campana_contacto_resultado(contacto, "fallido", motivo[:200])
+        except Exception:
+            log.exception("no se pudo marcar fallido el contacto %s", contacto)
 
     async def recordatorios(self) -> int:
         """Encola el recordatorio de las citas de mañana.
@@ -206,23 +238,32 @@ class Despachador:
         return await self.agenda.encolar_recordatorios(VENTANA_RECORDATORIO_HORAS)
 
     async def _marcar(self, fila: dict) -> None:
+        """Un solo intento por fila: el outbox no vuelve a marcar.
+
+        Si no contesto o el puente fallo, la fila queda terminal y el contacto
+        en `sin_respuesta`; cuando volver a intentar lo decide `campana_contacto`.
+        Corre como tarea suelta, asi que nada puede escapar de aqui: un error al
+        anotar el resultado se registra y ya.
+        """
         contacto = fila.get("campana_contacto_id")
         try:
-            from app.config import settings
+            try:
+                from app.config import settings
 
-            sala = await marcar(settings(), fila["tenant_id"], fila["destino"], fila["payload"])
-            await self.agenda.outbox_marcar_enviado(fila["id"])
-            log.info("llamada saliente en %s a %s", sala, fila["destino"])
-        except SinTroncal as error:
-            await self.agenda.outbox_marcar_vencido(fila["id"], str(error))
-            if contacto:
-                await self.agenda.campana_contacto_resultado(contacto, "fallido", str(error))
-        except Exception as error:
-            # No contesto o el puente fallo: se reintenta mañana dentro de la ventana.
-            await self.agenda.outbox_marcar_error(fila["id"], str(error))
-            if contacto:
-                await self.agenda.campana_contacto_resultado(contacto, "sin_respuesta", str(error)[:200])
-            log.warning("no se pudo marcar a %s: %s", fila["destino"], error)
+                sala = await marcar(settings(), fila["tenant_id"], fila["destino"], fila["payload"])
+                await self.agenda.outbox_marcar_enviado(fila["id"])
+                log.info("llamada saliente en %s a %s", sala, fila["destino"])
+            except SinTroncal as error:
+                await self.agenda.outbox_marcar_vencido(fila["id"], str(error))
+                if contacto:
+                    await self.agenda.campana_contacto_resultado(contacto, "fallido", str(error)[:200])
+            except Exception as error:
+                await self.agenda.outbox_marcar_vencido(fila["id"], str(error))
+                if contacto:
+                    await self.agenda.campana_contacto_resultado(contacto, "sin_respuesta", str(error)[:200])
+                log.warning("no se pudo marcar a %s: %s", fila["destino"], error)
+        except Exception:
+            log.exception("no se pudo anotar el resultado de marcar a %s", fila.get("destino"))
 
     async def campanas(self) -> int:
         """Encola lo que las campañas activas tengan que decir hoy."""
@@ -232,15 +273,23 @@ class Despachador:
         return await self.agenda.campana_encolar()
 
     async def cierres(self) -> int:
-        """Escribe motivo, resultado y resumen de las conversaciones frias."""
+        """Escribe motivo, resultado y resumen de las conversaciones frias.
+
+        Una conversacion donde la persona nunca dijo nada se cierra sin motivo
+        y no se vuelve a intentar. Si el modelo fallo, se deja abierta para el
+        siguiente ciclo: cerrarla a ciegas seria irreversible.
+        """
         if self.llm is None:
             return 0
         cerradas = 0
         for fila in await self.agenda.conversaciones_por_resumir(CONVERSACION_FRIA_MIN):
             turnos = await self.agenda.turnos_de_conversacion(fila["id"])
-            cierre = await resumir(self.llm, turnos)
+            try:
+                cierre = await resumir(self.llm, turnos)
+            except ModeloNoContesto as error:
+                log.warning("cierre de %s pospuesto: %s", fila["id"], error)
+                continue
             if cierre is None:
-                # Sin nada que leer no hay cierre, pero tampoco se vuelve a intentar.
                 cierre_vacio = ("sin motivo claro", "sin_resultado", "")
                 await self.agenda.conversacion_cerrar(fila["tenant_id"], fila["id"], *cierre_vacio)
                 continue
@@ -251,7 +300,22 @@ class Despachador:
         return cerradas
 
     async def correr(self, intervalo: float = INTERVALO_SEG) -> None:
-        """El ciclo. Nunca muere por un error de una tanda."""
+        """El ciclo. Nunca muere por un error de una tanda.
+
+        Al cancelarlo espera las llamadas que siguen marcando: si no, mueren
+        contra un pool ya cerrado y la fila se queda reclamada sin resultado.
+        """
+        try:
+            await self._ciclo(intervalo)
+        except asyncio.CancelledError:
+            await self.esperar_salientes()
+            raise
+
+    async def esperar_salientes(self) -> None:
+        if self._salientes:
+            await asyncio.gather(*self._salientes, return_exceptions=True)
+
+    async def _ciclo(self, intervalo: float) -> None:
         while True:
             try:
                 ahora = asyncio.get_running_loop().time()
@@ -276,9 +340,9 @@ class Despachador:
                 resultado = await self.tanda()
                 if resultado.reclamados:
                     log.info(
-                        "cola: %d reclamados, %d enviados, %d fallidos, %d vencidos",
+                        "cola: %d reclamados, %d enviados, %d fallidos, %d vencidos, %d marcando",
                         resultado.reclamados, resultado.enviados,
-                        resultado.fallidos, resultado.vencidos,
+                        resultado.fallidos, resultado.vencidos, resultado.marcando,
                     )
             except asyncio.CancelledError:
                 raise

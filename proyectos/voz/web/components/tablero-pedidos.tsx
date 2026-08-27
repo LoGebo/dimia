@@ -1,4 +1,5 @@
 import { Cobrar } from "@/components/cobrar";
+import { Formulario } from "@/components/formulario";
 import { cambiarEstadoPedido } from "@/lib/acciones";
 import { hora, moneda, telefono } from "@/lib/formato";
 import type { EstadoPedido, Pedido, TipoPedido } from "@/lib/tipos";
@@ -37,7 +38,7 @@ function TarjetaPedido({ pedido, zona, ahora, cobrado }: { pedido: Pedido; zona:
 
   return (
     <article
-      className={`flex flex-col overflow-hidden rounded-xl border bg-panel shadow-[var(--sombra)] ${
+      className={`flex flex-col overflow-hidden border bg-panel ${
         nuevo ? "late border-serie-2" : "border-linea"
       } ${pedido.estado === "cancelado" ? "opacity-60" : ""}`}
     >
@@ -51,11 +52,11 @@ function TarjetaPedido({ pedido, zona, ahora, cobrado }: { pedido: Pedido; zona:
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <span className={`rounded border px-2 py-0.5 text-[13px] font-semibold ${estado.clase}`}>
+          <span className={`border px-2 py-0.5 text-[13px] font-semibold ${estado.clase}`}>
             {estado.nombre}
           </span>
           {nuevo ? (
-            <span className="rounded bg-serie-2 px-2 py-0.5 text-[11px] font-bold tracking-widest text-white uppercase">
+            <span className="bg-serie-2 px-2 py-0.5 text-[11px] font-bold tracking-widest text-white uppercase">
               Nuevo
             </span>
           ) : null}
@@ -117,7 +118,7 @@ function TarjetaPedido({ pedido, zona, ahora, cobrado }: { pedido: Pedido; zona:
             Marcar entregado
           </BotonEstado>
         ) : null}
-        {pedido.estado !== "cancelado" && !cobrado ? (
+        {pedido.estado !== "cancelado" && !cobrado && pedido.items.length > 0 && Number(pedido.total) > 0 ? (
           <Cobrar pedidoId={pedido.id} concepto={`Pedido ${pedido.codigo}`} montoSugerido={pedido.total} etiqueta="Cobrar" />
         ) : null}
         {pendiente ? (
@@ -153,14 +154,14 @@ function BotonEstado({
   children: string;
 }) {
   return (
-    <form action={cambiarEstadoPedido} className={tono === "critico" || tono === "neutro" ? "" : "flex-1"}>
+    <Formulario accion={cambiarEstadoPedido} className={tono === "critico" || tono === "neutro" ? "" : "flex-1"}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="estado" value={estado} />
       <button
-        className={`inline-flex h-11 w-full items-center justify-center rounded-lg border px-4 text-[15px] font-semibold transition ${TONOS[tono]}`}
+        className={`inline-flex h-11 w-full items-center justify-center border px-4 text-[15px] font-semibold transition ${TONOS[tono]}`}
       >
         {children}
       </button>
-    </form>
+    </Formulario>
   );
 }

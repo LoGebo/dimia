@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { crearReserva, slotsLibres, type Estado, type Slot } from "@/lib/acciones";
+import { Dialogo } from "@/components/dialogo";
 import { Aviso, Boton, Campo, Entrada, Selector } from "@/components/ui/primitivos";
 import type { Servicio } from "@/lib/tipos";
 
@@ -38,7 +39,7 @@ export function NuevaCita({
       )}
       {abierto
         ? createPortal(
-            <Dialogo servicios={servicios} diaInicial={dia} zona={zona} cerrar={() => setAbierto(false)} />,
+            <FormaCita servicios={servicios} diaInicial={dia} zona={zona} cerrar={() => setAbierto(false)} />,
             document.body,
           )
         : null}
@@ -48,7 +49,7 @@ export function NuevaCita({
 
 const inicial: Estado = {};
 
-function Dialogo({
+function FormaCita({
   servicios,
   diaInicial,
   zona,
@@ -88,12 +89,8 @@ function Dialogo({
   const formatoHora = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: zona });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-tinta/40 px-4" onClick={cerrar}>
-      <form
-        action={enviar}
-        onClick={(e) => e.stopPropagation()}
-        className="entra flex max-h-[90vh] w-full max-w-lg flex-col border border-linea bg-panel"
-      >
+    <Dialogo titulo="Nueva cita" cerrar={cerrar} className="max-w-lg">
+      <form action={enviar} className="flex max-h-[90vh] flex-col">
         <div className="border-b border-linea px-4 py-3">
           <h2 className="flex items-baseline gap-1.5 text-[15px] font-semibold text-tinta">
             Nueva cita <i className="cuadrado" aria-hidden="true" />
@@ -187,6 +184,6 @@ function Dialogo({
           </div>
         </div>
       </form>
-    </div>
+    </Dialogo>
   );
 }

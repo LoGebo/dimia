@@ -160,15 +160,21 @@ def construir(
     catalogo: list[dict] | None = None,
     catalogo_incompleto: bool = False,
 ) -> str:
+    """El prompt completo del negocio.
+
+    Si el negocio reescribio su base, manda la suya; los bloques que salen de
+    los datos se siguen generando aparte. La plantilla del giro viene de la
+    base y puede no traer instrucciones: si es asi se cae a la del giro en vez
+    de tronar a media llamada. La lista textual del catalogo va al final a
+    proposito: el renglon que invita a negar lo desconocido pesaba mas, por
+    recencia, que el menu, y el modelo negaba platillos que si estaban. Los
+    nombres textuales, al ultimo, cierran esa puerta.
+    """
     ahora = ahora or datetime.now(tenant.tz)
-    # Si el negocio reescribió su base, manda la suya. Los bloques que salen de
-    # los datos se siguen generando aparte.
     propio = (tenant.prompt_base or "").strip()
     if propio:
         lineas = [propio]
     else:
-        # La plantilla viene de la base y puede no traer instrucciones: si es
-        # asi se cae a la del giro en vez de tronar a media llamada.
         respaldo = PLANTILLAS.get(tenant.vertical, PLANTILLAS["generico"])
         instrucciones = (plantilla or {}).get("instrucciones") or respaldo
         lineas = [BASE, instrucciones]
@@ -251,9 +257,6 @@ def construir(
         "dato a la mano y ofrece transferir. NO lo inventes."
     )
 
-    # Va al final a proposito. El renglon de arriba invita a negar, y por
-    # recencia el modelo le hacia mas caso que al menu: negaba platillos que si
-    # estaban en la lista. Los nombres textuales, al ultimo, cierran esa puerta.
     if catalogo:
         nombres = ", ".join(str(i["nombre"]) for i in catalogo)
         lineas.append(

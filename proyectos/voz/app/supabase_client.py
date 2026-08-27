@@ -57,6 +57,27 @@ class Tenant:
         return ZoneInfo(self.zona_horaria)
 
 
+COLUMNAS_TENANT = (
+    "id, nombre, vertical, zona_horaria, telefono_escalamiento, voz_id, "
+    "tts_proveedor, tts_ajustes, instrucciones_extra, llm_proveedor, llm_modelo, "
+    "saludo, prompt_base"
+)
+
+
+def _tenant(fila: asyncpg.Record | None) -> Tenant | None:
+    """Una sola lista de columnas para las dos formas de resolver el negocio.
+
+    Cuando divergian, la sala de prueba y la llamada saliente leian un tenant
+    sin `prompt_base` y sonaban distinto de la llamada real.
+    """
+    if not fila:
+        return None
+    d = dict(fila)
+    if isinstance(d.get("tts_ajustes"), str):
+        d["tts_ajustes"] = json.loads(d["tts_ajustes"])
+    return Tenant(**d)
+
+
 class Agenda:
     """Pool compartido por todo el proceso del agente."""
 
@@ -90,19 +111,12 @@ class Agenda:
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
         fila = await self.pool.fetchrow(
-            """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
-                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra,
-                      llm_proveedor, llm_modelo, saludo, prompt_base
-               from tenant where activo
-                 and id = (select tenant_id from public.tenant_por_numero($1))""",
+            f"""select {COLUMNAS_TENANT}
+                  from tenant where activo
+                   and id = (select tenant_id from public.tenant_por_numero($1))""",
             numero,
         )
-        if not fila:
-            return None
-        d = dict(fila)
-        if isinstance(d.get("tts_ajustes"), str):
-            d["tts_ajustes"] = json.loads(d["tts_ajustes"])
-        return Tenant(**d)
+        return _tenant(fila)
 
     async def plantilla_vertical(self, clave: str) -> dict | None:
         fila = await self.pool.fetchrow(
@@ -250,6 +264,29 @@ class Agenda:
     async def cliente_atribuir(self, tenant_id: uuid.UUID, telefono: str, origen: str) -> None:
         await self.pool.execute("select public.cliente_atribuir($1, $2, $3)", tenant_id, telefono, origen)
 
+    async def resena_esperando(self, tenant_id: uuid.UUID, telefono: str) -> bool:
+        """Si lo ultimo que le llego a esta persona fue la pregunta de reseña.
+
+        La pregunta sale por el outbox y no queda en `mensaje`, asi que se
+        compara contra el hilo: si despues de enviarla hubo cualquier turno,
+        la persona ya esta hablando de otra cosa y un "2" no es calificacion.
+        """
+        return await self.pool.fetchval(
+            """select exists (
+                 select 1 from outbox o
+                  where o.tenant_id = $1 and o.plantilla = 'resena' and o.estado = 'enviado'
+                    and o.destino = public.telefono_normalizado($2)
+                    and o.enviado >= now() - interval '3 days'
+                    and not exists (select 1 from resena r where r.booking_id = o.booking_id)
+                    and not exists (
+                      select 1 from mensaje m
+                        join conversacion c on c.id = m.conversacion_id
+                       where c.tenant_id = $1 and c.canal = 'whatsapp'
+                         and c.contacto in ($2, public.telefono_normalizado($2))
+                         and m.creado > o.enviado))""",
+            tenant_id, telefono,
+        ) or False
+
     async def resena_responder(self, tenant_id: uuid.UUID, telefono: str, texto: str) -> dict:
         crudo = await self.pool.fetchval("select public.resena_responder($1, $2, $3)", tenant_id, telefono, texto)
         return json.loads(crudo) if isinstance(crudo, str) else dict(crudo or {})
@@ -292,6 +329,9 @@ class Agenda:
         Sin esto el modelo contesta "no tenemos eso" de memoria antes de
         buscarlo, y solo consulta si el cliente insiste. Con el menu a la vista
         tambien se ahorra un viaje al modelo por cada pregunta de precio.
+
+        `alias` puede llegar como texto JSON; sin decodificarlo se deletrea
+        letra por letra.
         """
         filas = await self.pool.fetch(
             """select nombre, tipo, precio, alias
@@ -304,7 +344,6 @@ class Agenda:
         salida = []
         for f in filas:
             d = dict(f)
-            # alias puede llegar como texto JSON; sin esto se deletrea letra por letra.
             if isinstance(d.get("alias"), str):
                 d["alias"] = json.loads(d["alias"])
             salida.append(d)
@@ -366,18 +405,10 @@ class Agenda:
 
     async def tenant_por_id(self, tenant_id: uuid.UUID) -> Tenant | None:
         fila = await self.pool.fetchrow(
-            """select id, nombre, vertical, zona_horaria, telefono_escalamiento,
-                      voz_id, tts_proveedor, tts_ajustes, instrucciones_extra,
-                      llm_proveedor, llm_modelo, saludo
-               from tenant where id = $1 and activo""",
+            f"select {COLUMNAS_TENANT} from tenant where id = $1 and activo",
             tenant_id,
         )
-        if not fila:
-            return None
-        d = dict(fila)
-        if isinstance(d.get("tts_ajustes"), str):
-            d["tts_ajustes"] = json.loads(d["tts_ajustes"])
-        return Tenant(**d)
+        return _tenant(fila)
 
     async def horario_semanal(self, tenant_id: uuid.UUID) -> list[dict]:
         filas = await self.pool.fetch(

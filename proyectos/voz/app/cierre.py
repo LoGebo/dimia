@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, Protocol
 
 log = logging.getLogger("cierre")
@@ -42,8 +42,15 @@ HERRAMIENTA = {
             "motivo": {"type": "string"},
             "resultado": {"type": "string", "enum": list(RESULTADOS)},
             "resumen": {"type": "string"},
+            "rechazo_contacto": {
+                "type": "boolean",
+                "description": (
+                    "true solo si la persona pidio que no la vuelvan a llamar o a "
+                    "escribir, o si el agente le dijo que no le volveran a llamar."
+                ),
+            },
         },
-        "required": ["motivo", "resultado", "resumen"],
+        "required": ["motivo", "resultado", "resumen", "rechazo_contacto"],
     },
 }
 
@@ -52,11 +59,20 @@ class ClienteLLM(Protocol):
     messages: Any
 
 
+class ModeloNoContesto(RuntimeError):
+    """El modelo fallo o no llamo a la herramienta.
+
+    Es distinto de "no habia nada que leer": una conversacion que no se pudo
+    resumir hoy se vuelve a intentar despues, no se cierra a ciegas.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class Cierre:
     motivo: str
     resultado: str
     resumen: str
+    rechazo_contacto: bool = False
 
 
 def _transcripcion(turnos: list[dict]) -> str:
@@ -80,7 +96,11 @@ def _a_dict(bloque: Any) -> dict[str, Any]:
 
 
 async def resumir(llm: ClienteLLM, turnos: list[dict], *, modelo: str = MODELO) -> Cierre | None:
-    """Un cierre, o None si no hay nada que leer o el modelo no contesto."""
+    """Un cierre, o None si la persona nunca dijo nada.
+
+    Si el modelo falla (clave ausente, 429, red) lanza `ModeloNoContesto` en vez
+    de devolver None: quien llama decide si deja la conversacion para despues.
+    """
     texto = _transcripcion(turnos)
     if not texto or not any(t.get("autor") == "cliente" for t in turnos):
         return None
@@ -93,9 +113,9 @@ async def resumir(llm: ClienteLLM, turnos: list[dict], *, modelo: str = MODELO) 
             tool_choice={"type": "tool", "name": "cerrar_contacto"},
             messages=[{"role": "user", "content": texto}],
         )
-    except Exception:
+    except Exception as error:
         log.exception("no se pudo resumir el contacto")
-        return None
+        raise ModeloNoContesto(str(error)) from error
 
     for bloque in respuesta.content:
         b = _a_dict(bloque)
@@ -108,9 +128,10 @@ async def resumir(llm: ClienteLLM, turnos: list[dict], *, modelo: str = MODELO) 
                 motivo=str(datos.get("motivo", "")).strip()[:120] or "sin motivo claro",
                 resultado=resultado,
                 resumen=str(datos.get("resumen", "")).strip()[:1000],
+                rechazo_contacto=bool(datos.get("rechazo_contacto", False)),
             )
-    return None
+    raise ModeloNoContesto("la respuesta no trae cerrar_contacto")
 
 
 def cierre_a_json(cierre: Cierre) -> str:
-    return json.dumps(cierre.__dict__, ensure_ascii=False)
+    return json.dumps(asdict(cierre), ensure_ascii=False)

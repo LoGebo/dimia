@@ -1,6 +1,7 @@
 import "server-only";
 
-import { catalogo, faq, negocio, recursos, reglas, servicios } from "@/lib/consultas";
+import { leer } from "@/lib/consultas";
+import { datos } from "@/lib/sesion";
 import type { Herramienta } from "@/lib/tipos";
 
 export type Requisito = {
@@ -30,14 +31,16 @@ export type Avance = {
  * ya habían empezado a divergir.
  */
 export async function avance(herramientas: Herramienta[]): Promise<Avance> {
-  const [config, listaRecursos, listaServicios, listaReglas, listaFaq, items] = await Promise.all([
-    negocio(),
-    recursos(),
-    servicios(),
-    reglas(),
-    faq(),
-    catalogo(),
-  ]);
+  const [config, listaRecursos, listaServicios, listaReglas, listaFaq, items] = await datos((q, id) =>
+    Promise.all([
+      leer.negocio(q, id),
+      leer.recursos(q, id),
+      leer.servicios(q, id),
+      leer.reglas(q, id),
+      leer.faq(q, id),
+      leer.catalogo(q, id),
+    ]),
+  );
 
   const agenda = herramientas.includes("agendar");
   const pedidos = herramientas.includes("pedido");

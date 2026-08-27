@@ -1,6 +1,6 @@
 "use client";
 
-import type { EstadoPrueba } from "@/lib/acciones";
+import type { EstadoPrueba } from "@/lib/tipos";
 import { Insignia, Vacio } from "@/components/ui/primitivos";
 import { duracion, hora, moneda } from "@/lib/formato";
 
@@ -16,7 +16,7 @@ export function CarritoVivo({ pedido, zona }: { pedido: EstadoPrueba["pedido"]; 
   return (
     <div>
       <div className="flex items-center justify-between gap-2 px-4 py-2.5">
-        <span className="numeros rounded border border-linea bg-panel-2 px-1.5 py-0.5 text-[11px] font-medium tracking-wider text-tinta-2">
+        <span className="numeros border border-linea bg-panel-2 px-1.5 py-0.5 text-[11px] font-medium tracking-wider text-tinta-2">
           {pedido.codigo}
         </span>
         <span className="text-[11px] text-tinta-3 capitalize">{pedido.tipo}</span>
@@ -70,7 +70,7 @@ export function ReservasVivas({ reservas, zona }: { reservas: EstadoPrueba["rese
         <li key={r.id} className="px-4 py-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-[13px] font-medium text-tinta">{r.cliente_nombre}</span>
-            <span className="numeros rounded border border-linea bg-panel-2 px-1.5 py-0.5 text-[11px] tracking-wider text-tinta-2">
+            <span className="numeros border border-linea bg-panel-2 px-1.5 py-0.5 text-[11px] tracking-wider text-tinta-2">
               {r.codigo}
             </span>
           </div>

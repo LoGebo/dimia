@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { RenglonConversacion } from "@/components/bandeja";
+import { RenglonConversacion } from "@/components/renglon-conversacion";
 import { Encabezado } from "@/components/encabezado";
 import { GraficaLlamadas } from "@/components/graficas";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { MINUTOS_TOLERANCIA, iniciales, minutosDesde, minutosLegibles } from "@/components/flujo-citas";
+import { MINUTOS_TOLERANCIA, minutosDesde, minutosLegibles } from "@/components/flujo-citas";
 import {
   alertasHoy,
   conversaciones,
@@ -17,10 +17,10 @@ import {
   resumenCobros,
   resumenLlamadas,
 } from "@/lib/consultas";
-import { fechaCorta, fechaLarga, hora, isoDia, moneda, porcentaje, telefono } from "@/lib/formato";
+import { fechaCorta, fechaLarga, hora, iniciales, isoDia, moneda, porcentaje, telefono } from "@/lib/formato";
 import { avance } from "@/lib/listo";
 import { contexto } from "@/lib/sesion";
-import { pasoDe } from "@/lib/tipos";
+import { resumenCitas } from "@/lib/tipos";
 
 /**
  * El tablero de inicio: qué necesita atención, cómo va el día en cuatro
@@ -51,13 +51,10 @@ export default async function Hoy() {
   const ahora = Date.now();
   const horaLocal = Number(new Intl.DateTimeFormat("es-MX", { hour: "numeric", hour12: false, timeZone: zona }).format(new Date()));
   const saludo = horaLocal < 12 ? "Buenos días" : horaLocal < 19 ? "Buenas tardes" : "Buenas noches";
-  const delDia = reservas.filter((r) => isoDia(new Date(r.inicio), zona) === hoy);
-  const citasHoy = delDia.filter((r) => r.estado === "confirmada" || r.estado === "completada");
-  const atendidas = delDia.filter((r) => r.estado === "completada").length;
-  const proximas = delDia.filter((r) => pasoDe(r) === "por_llegar").sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime()).slice(0, 6);
-  const enAtencion = delDia.filter((r) => pasoDe(r) === "en_atencion");
+  const { citas: citasHoy, atendidas, enAtencion, porLlegar } = resumenCitas(reservas);
+  const proximas = porLlegar.slice(0, 6);
   const porSacar = listaPedidos.filter((p) => p.estado === "abierto" || p.estado === "confirmado");
-  const sinLeer = hilos.reduce((s, c) => s + c.mensajes_sin_leer, 0);
+  const sinLeer = alertas.mensajes_sin_leer;
   const totalResenas = resenas.reduce((s, r) => s + r.total, 0);
   const promedio = totalResenas > 0 ? resenas.reduce((s, r) => s + Number(r.promedio) * r.total, 0) / totalResenas : null;
   const contencion = llamadas7.total > 0 ? llamadas7.resueltas / llamadas7.total : null;
@@ -224,7 +221,7 @@ export default async function Hoy() {
               descripcion="Conversaciones por teléfono, WhatsApp y redes."
               accion={<Link href="/bandeja" className="text-xs text-tinta-3 transition hover:text-acento">Abrir mensajes</Link>}
             />
-            {hilos.length === 0 ? <Vacio titulo="Todavía nadie escribe" /> : hilos.map((c) => <RenglonConversacion key={c.id} conversacion={c} activa={false} />)}
+            {hilos.length === 0 ? <Vacio titulo="Todavía nadie escribe" /> : hilos.map((c) => <RenglonConversacion key={c.id} conversacion={c} zona={zona} />)}
           </Tarjeta>
         </div>
 

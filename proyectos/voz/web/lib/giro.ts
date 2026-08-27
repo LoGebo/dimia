@@ -1,6 +1,5 @@
 import type { Herramienta } from "@/lib/tipos";
 
-export type PasoAlta = { href: string; nombre: string };
 export type Pestana = { href: string; nombre: string };
 export type Seccion = { href: string; nombre: string; detalle: string; pestanas: Pestana[] };
 
@@ -59,32 +58,6 @@ export function rutasPanel(herramientas: Herramienta[]): string[] {
 
 export function permiteSeccion(herramientas: Herramienta[], href: string): boolean {
   return rutasPanel(herramientas).includes(href);
-}
-
-export function pasosAlta(herramientas: Herramienta[]): PasoAlta[] {
-  const agenda = herramientas.includes("agendar");
-  const pedidos = herramientas.includes("pedido");
-
-  const lista: PasoAlta[] = [{ href: "/alta", nombre: "Negocio" }];
-
-  if (agenda) {
-    lista.push(
-      { href: "/alta/recursos", nombre: "Recursos" },
-      { href: "/alta/servicios", nombre: "Servicios" },
-    );
-  }
-  if (pedidos) lista.push({ href: "/alta/menu", nombre: "Menú" });
-  if (agenda || pedidos) lista.push({ href: "/alta/horario", nombre: "Horario" });
-
-  lista.push({ href: "/alta/respuestas", nombre: "Respuestas" }, { href: "/alta/listo", nombre: "Listo" });
-
-  return lista;
-}
-
-export function siguientePaso(herramientas: Herramienta[], actual: string): string {
-  const lista = pasosAlta(herramientas);
-  const indice = lista.findIndex((p) => p.href === actual);
-  return lista[indice + 1]?.href ?? "/alta/listo";
 }
 
 export const HERRAMIENTAS_POR_DEFECTO: Herramienta[] = ["agendar", "recado"];

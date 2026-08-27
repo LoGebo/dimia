@@ -3,10 +3,10 @@ import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { NuevaCita } from "@/components/nueva-cita";
 import { Refrescar } from "@/components/refrescar";
 import { Vacio } from "@/components/ui/primitivos";
-import { citasDelDia, negocio, pagosDeReservas, recursos, reservasEntre, servicios } from "@/lib/consultas";
+import { citasDelDia, recursos, reservasEntre, servicios } from "@/lib/consultas";
 import { hora, isoDia, sumarDias } from "@/lib/formato";
 import type { Giro } from "@/lib/sesion";
-import { pasoDe, type Reserva } from "@/lib/tipos";
+import { etiquetasRecurso, pasoDe, resumenCitas, type Reserva } from "@/lib/tipos";
 
 type Filtro = "todas" | "retrasadas" | "nuevas" | "grupos" | "notas";
 type Orden = "hora" | "espera";
@@ -20,35 +20,30 @@ const FILTROS: { valor: Filtro; nombre: string }[] = [
 
 export type ParametrosDia = { recurso?: string; filtro?: string; orden?: string };
 
-/**
- * El tablero de un día: cifras, filtros y columnas. Lo usan Hoy y la Agenda
- * completa; la única diferencia es la ruta base de los enlaces.
- */
+/** El tablero de un día en la Agenda: cifras, filtros y columnas. */
 export async function FlujoDelDia({
   dia,
   base,
   parametros,
   giro,
+  zona,
   extra = {},
 }: {
   dia: string;
   base: string;
   parametros: ParametrosDia;
   giro: Giro;
+  zona: string;
   /** Parámetros que la página quiere conservar en los enlaces (por ejemplo `dia`). */
   extra?: Record<string, string | undefined>;
 }) {
-  const config = await negocio();
-  const hoy = isoDia(new Date(), config.zona_horaria);
-  const [reservas, listaServicios, listaRecursos, hace7] = await Promise.all([
+  const hoy = isoDia(new Date(), zona);
+  const [delDia, listaServicios, listaRecursos, hace7] = await Promise.all([
     reservasEntre(dia, dia),
     servicios(),
     recursos(),
     citasDelDia(sumarDias(dia, -7)),
   ]);
-  const delDia = reservas.filter((r) => isoDia(new Date(r.inicio), config.zona_horaria) === dia);
-  const pagos = await pagosDeReservas(delDia.map((r) => r.id));
-  const cobradas = new Map(pagos.filter((p) => p.estado === "pagado" && p.booking_id).map((p) => [p.booking_id!, p.monto]));
 
   const enlace = (cambios: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
@@ -66,41 +61,40 @@ export async function FlujoDelDia({
   const conteoFiltro: Record<Filtro, number> = {
     todas: delDia.length,
     retrasadas: delDia.filter(retrasada).length,
-    nuevas: delDia.filter((r) => isoDia(new Date(r.creado), config.zona_horaria) === hoy).length,
+    nuevas: delDia.filter((r) => isoDia(new Date(r.creado), zona) === hoy).length,
     grupos: delDia.filter((r) => r.personas > 1).length,
     notas: delDia.filter((r) => Boolean(r.notas)).length,
   };
 
   let visibles = delDia.filter((r) => !recursoActivo || r.resource_id === recursoActivo);
   if (filtro === "retrasadas") visibles = visibles.filter(retrasada);
-  if (filtro === "nuevas") visibles = visibles.filter((r) => isoDia(new Date(r.creado), config.zona_horaria) === hoy);
+  if (filtro === "nuevas") visibles = visibles.filter((r) => isoDia(new Date(r.creado), zona) === hoy);
   if (filtro === "grupos") visibles = visibles.filter((r) => r.personas > 1);
   if (filtro === "notas") visibles = visibles.filter((r) => Boolean(r.notas));
   if (orden === "espera") visibles = [...visibles].sort((a, b) => minutosDesde(b.inicio, ahora) - minutosDesde(a.inicio, ahora));
 
-  const confirmadasOAtendidas = delDia.filter((r) => r.estado === "confirmada" || r.estado === "completada");
+  const { citas: confirmadasOAtendidas, enAtencion, porLlegar } = resumenCitas(delDia);
   const personas = confirmadasOAtendidas.reduce((s, r) => s + r.personas, 0);
-  const esperando = delDia.filter((r) => pasoDe(r) === "por_llegar" && minutosDesde(r.inicio, ahora) >= 0);
+  const esperando = porLlegar.filter((r) => minutosDesde(r.inicio, ahora) >= 0);
   const enFalta = delDia.filter(retrasada);
-  const enAtencion = delDia.filter((r) => pasoDe(r) === "en_atencion");
   const activos = listaRecursos.filter((r) => r.activo);
   const ocupados = new Set(enAtencion.map((r) => r.resource_id));
   const libres = activos.filter((r) => !ocupados.has(r.id)).length;
   const variacion = hace7 > 0 ? Math.round(((confirmadasOAtendidas.length - hace7) / hace7) * 100) : null;
-  const proxima = delDia.filter((r) => pasoDe(r) === "por_llegar" && minutosDesde(r.inicio, ahora) < 0)[0];
+  const proxima = porLlegar.find((r) => minutosDesde(r.inicio, ahora) < 0);
   const promedioSala =
     enAtencion.length > 0 ? Math.round(enAtencion.reduce((s, r) => s + (r.llegada ? minutosDesde(r.llegada, ahora) : 0), 0) / enAtencion.length) : null;
   const esRestaurante = giro.clave === "restaurante" || giro.clave === "comida";
 
   const columnas: Columna[] = [
-    { paso: "por_llegar", nombre: "Por llegar", pista: proxima ? `próxima ${hora(proxima.inicio, config.zona_horaria)}` : "sin próximas" },
+    { paso: "por_llegar", nombre: "Por llegar", pista: proxima ? `próxima ${hora(proxima.inicio, zona)}` : "sin próximas" },
     { paso: "en_atencion", nombre: esRestaurante ? "En mesa" : "En atención", pista: promedioSala !== null ? `prom. ${promedioSala} min` : "nadie adentro" },
     { paso: "no_llego", incluye: ["no_llego", "cancelada"], nombre: "Sin atender", pista: `${delDia.filter((r) => r.estado === "cancelada").length} canceladas` },
     { paso: "atendida", nombre: "Atendidas", pista: `${personas} personas`, tono: "bueno" },
   ];
 
   const nueva = (variante: "principal" | "columna") => (
-    <NuevaCita servicios={listaServicios.filter((s) => s.activo)} dia={dia} zona={config.zona_horaria} variante={variante} />
+    <NuevaCita servicios={listaServicios.filter((s) => s.activo)} dia={dia} zona={zona} variante={variante} />
   );
 
   return (
@@ -124,7 +118,7 @@ export async function FlujoDelDia({
           tono={esperando.length === 0 ? "bueno" : enFalta.length > 0 ? "alerta" : "neutro"}
         />
         <Cifra
-          etiqueta={`${etiquetaRecursos(giro.clave)} libres`}
+          etiqueta={`${etiquetasRecurso(giro.clave).plural} libres`}
           valor={String(libres)}
           unidad={`de ${activos.length}`}
           glifo={Glifos.recurso}
@@ -159,20 +153,8 @@ export async function FlujoDelDia({
           />
         </div>
       ) : (
-        <FlujoCitas columnas={columnas} reservas={visibles} zona={config.zona_horaria} ahora={ahora} cobradas={cobradas} nuevaCita={nueva("columna")} />
+        <FlujoCitas columnas={columnas} reservas={visibles} delDia={delDia} zona={zona} ahora={ahora} nuevaCita={nueva("columna")} />
       )}
     </>
   );
-}
-
-export function etiquetaRecursos(vertical: string): string {
-  const nombres: Record<string, string> = {
-    clinica: "Consultorios",
-    restaurante: "Mesas",
-    comida: "Mesas",
-    salon: "Estaciones",
-    taller: "Bahías",
-    inmobiliaria: "Asesores",
-  };
-  return nombres[vertical] ?? "Recursos";
 }

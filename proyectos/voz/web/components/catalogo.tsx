@@ -114,7 +114,7 @@ export function FormularioServicio({
               {recursos.map((r) => (
                 <label
                   key={r.id}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-md border border-linea bg-panel px-2 py-1 text-[12px] text-tinta-2 has-checked:border-acento has-checked:bg-acento-suave has-checked:text-acento"
+                  className="flex cursor-pointer items-center gap-1.5 border border-linea bg-panel px-2 py-1 text-[12px] text-tinta-2 has-checked:border-acento has-checked:bg-acento-suave has-checked:text-acento"
                 >
                   <input
                     type="checkbox"

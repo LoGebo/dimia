@@ -20,3 +20,5 @@ node_modules/
 # artefactos de herramientas
 .playwright-mcp/
 **/.next-verificacion/
+.vercel
+.venv-pruebas/

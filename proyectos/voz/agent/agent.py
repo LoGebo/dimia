@@ -21,12 +21,16 @@ from livekit.plugins import deepgram, elevenlabs, openai, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from app import prompt as prompt_mod
+from app.cierre import ModeloNoContesto, resumir
 from app.config import settings
 from app.supabase_client import Tenant, agenda
+from app.telefonos import normalizar
 
 load_dotenv()
 log = logging.getLogger("agente")
 cfg = settings()
+
+ESPERA_CONTESTACION_SEG = 45
 
 
 class Recepcionista(Agent):
@@ -52,6 +56,7 @@ class Recepcionista(Agent):
         self.tenant = tenant
         self.servicios = {str(s["id"]): s for s in servicios}
         self.telefono: str | None = None
+        self.identidad_sip: str | None = None
         self.call_id: str = uuid.uuid4().hex
         self.fallos = 0
         self.booking_id: uuid.UUID | None = None
@@ -477,7 +482,7 @@ class Recepcionista(Agent):
                 await lk.sip.transfer_sip_participant(
                     api.TransferSIPParticipantRequest(
                         room_name=room.name,
-                        participant_identity=self.telefono or "caller",
+                        participant_identity=self.identidad_sip or self.telefono or "caller",
                         transfer_to=f"tel:{destino}",
                         play_dialtone=True,
                     )
@@ -642,27 +647,94 @@ def prewarm(proc: JobProcess) -> None:
     proc.userdata["vad"] = silero.VAD.load()
 
 
+def quien_llama(attrs: dict, identidad: str) -> tuple[str, str]:
+    """(llamante, marcado) en E.164 a partir de lo que expone LiveKit.
+
+    El numero de quien llama viene en `sip.phoneNumber` y el marcado en
+    `sip.trunkPhoneNumber`. Sin regla de identidad, un participante SIP
+    entrante se llama `sip_<numero>`, asi que ese prefijo se quita antes de
+    normalizar. Fuera de SIP (sala de prueba) la identidad se queda tal cual.
+    """
+    marcado = normalizar(attrs.get("sip.trunkPhoneNumber")) or ""
+    llamante = normalizar(attrs.get("sip.phoneNumber"))
+    if not llamante:
+        cruda = identidad.removeprefix("sip_")
+        llamante = normalizar(cruda) if identidad.startswith("sip_") else cruda
+    return llamante or identidad, marcado
+
+
+async def esperar_contestacion(
+    room: Any, participante: Any, timeout: float = ESPERA_CONTESTACION_SEG
+) -> bool:
+    """True cuando el tramo SIP saliente ya tiene audio.
+
+    El participante entra a la sala desde que empieza a marcar, con
+    `sip.callStatus = 'dialing'`; si el agente saluda en ese momento, quien
+    contesta oye silencio y el guion se pierde. Se espera a `active`. Si pasa
+    a `hangup`, el participante se va o vence el plazo, no hubo llamada. Un
+    participante sin ese atributo no viene por SIP y se atiende de inmediato.
+    """
+    estado = (participante.attributes or {}).get("sip.callStatus")
+    if estado is None or estado == "active":
+        return True
+    if estado == "hangup":
+        return False
+
+    listo: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+
+    def resolver(valor: bool) -> None:
+        if not listo.done():
+            listo.set_result(valor)
+
+    def al_cambiar(cambios: dict, quien: Any) -> None:
+        if quien.identity != participante.identity:
+            return
+        nuevo = cambios.get("sip.callStatus") or (quien.attributes or {}).get("sip.callStatus")
+        if nuevo == "active":
+            resolver(True)
+        elif nuevo == "hangup":
+            resolver(False)
+
+    def al_salir(quien: Any, *_: Any) -> None:
+        if quien.identity == participante.identity:
+            resolver(False)
+
+    room.on("participant_attributes_changed", al_cambiar)
+    room.on("participant_disconnected", al_salir)
+    try:
+        return await asyncio.wait_for(listo, timeout)
+    except asyncio.TimeoutError:
+        return False
+    finally:
+        room.off("participant_attributes_changed", al_cambiar)
+        room.off("participant_disconnected", al_salir)
+
+
 async def entrypoint(ctx: JobContext) -> None:
+    """Una sala, una conversacion.
+
+    El negocio se resuelve por el numero marcado cuando viene de telefono, por
+    los metadatos de la sala cuando el agente marco (campaña) o cuando viene
+    del panel. Si marcaron a una linea de campaña, esa es la procedencia del
+    cliente y se atribuye antes de contestar.
+    """
     await agenda.conectar()
     await ctx.connect()
 
     participante = await ctx.wait_for_participant()
     attrs = participante.attributes or {}
-    marcado = attrs.get("sip.trunkPhoneNumber") or attrs.get("sip.phoneNumber") or ""
-    llamante = attrs.get("sip.from_number") or participante.identity
+    llamante, marcado = quien_llama(attrs, participante.identity)
 
     tenant = None
     saliente = _saliente_de_metadatos(ctx.room.metadata)
     if saliente:
-        # El agente marco: el negocio viene en la sala y la persona es el destino.
         tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
         if tenant_id:
             tenant = await agenda.tenant_por_id(tenant_id)
-        llamante = str(saliente.get("telefono") or llamante)
+        llamante = normalizar(str(saliente.get("telefono") or "")) or llamante
     elif marcado:
         tenant = await agenda.tenant_por_telefono(marcado)
-        # Si marcaron a una linea de campaña, esa es la procedencia del cliente.
-        if tenant is not None and llamante and llamante.startswith("+"):
+        if tenant is not None and llamante.startswith("+"):
             try:
                 origen = await agenda.origen_por_numero(marcado)
                 if origen:
@@ -699,6 +771,7 @@ async def entrypoint(ctx: JobContext) -> None:
         catalogo_incompleto=menu_total > len(menu),
     )
     recepcionista.telefono = llamante
+    recepcionista.identidad_sip = participante.identity
     if saliente:
         await recepcionista.update_instructions(
             recepcionista.instructions + prompt_mod.guion_saliente(saliente)
@@ -727,17 +800,19 @@ async def entrypoint(ctx: JobContext) -> None:
         false_interruption_timeout=1.0,
     )
 
-    # Cada turno de la llamada queda escrito en el mismo hilo que WhatsApp.
-    # Antes de esto una llamada solo dejaba su duracion: el dueno no podia leer
-    # lo que su agente le habia dicho al cliente.
-    # Sin guardar la referencia, el recolector de basura puede llevarse la
-    # tarea a medio camino y el turno se pierde sin ruido.
     escrituras: set[asyncio.Task] = set()
-    # La transcripcion en memoria: con ella se escribe el cierre al colgar.
     turnos: list[dict] = []
 
     @session.on("conversation_item_added")
     def _guardar_turno(ev) -> None:
+        """Cada turno queda escrito en el mismo hilo que WhatsApp, y en memoria.
+
+        Antes una llamada solo dejaba su duracion: el dueño no podia leer lo
+        que su agente le habia dicho al cliente. La copia en memoria es con la
+        que se escribe el cierre al colgar. La referencia a la tarea se guarda
+        porque sin ella el recolector de basura puede llevarsela a medio
+        camino y el turno se pierde sin ruido.
+        """
         item = ev.item
         rol = getattr(item, "role", None)
         if rol not in ("user", "assistant"):
@@ -768,13 +843,15 @@ async def entrypoint(ctx: JobContext) -> None:
         except Exception:
             log.exception("no se pudo registrar el turno de la llamada")
 
-    # Un solo renglon por turno con el desglose de la latencia. Sin esto, "esta
-    # tardando" no se puede diagnosticar: no se sabe si es el silencio que se
-    # espera, el modelo pensando o la voz tardando en salir.
     demoras: dict[str, float] = {}
 
     @session.on("metrics_collected")
     def _medir(ev) -> None:
+        """Un solo renglon por turno con el desglose de la latencia.
+
+        Sin esto, "esta tardando" no se puede diagnosticar: no se sabe si es
+        el silencio que se espera, el modelo pensando o la voz tardando en salir.
+        """
         m = ev.metrics
         tipo = type(m).__name__
         if tipo == "EOUMetrics":
@@ -802,6 +879,24 @@ async def entrypoint(ctx: JobContext) -> None:
         room_input_options=RoomInputOptions(close_on_disconnect=False),
     )
 
+    contacto_campana = (
+        uuid.UUID(str(saliente["campana_contacto_id"]))
+        if saliente and saliente.get("campana_contacto_id") else None
+    )
+
+    if saliente and not await esperar_contestacion(ctx.room, participante):
+        log.info("saliente a %s sin contestar en %s", llamante, ctx.room.name)
+        if contacto_campana:
+            try:
+                await agenda.campana_contacto_resultado(
+                    contacto_campana, "sin_respuesta", "no contesto", recepcionista.call_id
+                )
+            except Exception:
+                log.exception("no se pudo anotar la llamada sin respuesta")
+        await session.aclose()
+        await ctx.room.disconnect()
+        return
+
     apertura = (
         prompt_mod.apertura_saliente(tenant, saliente) if saliente
         else prompt_mod.saludo(tenant, plantilla)
@@ -809,6 +904,10 @@ async def entrypoint(ctx: JobContext) -> None:
     await session.say(apertura, allow_interruptions=True)
 
     async def al_colgar() -> None:
+        """Ya colgo: una sola pasada del modelo deja escrito por que llamo y en
+        que termino. Fuera del camino en vivo, por eso va aqui. Si el modelo no
+        contesta, el call_log se queda sin cierre pero la campaña si se entera
+        del resultado."""
         try:
             await agenda.registrar_llamada(
                 tenant_id=tenant.id,
@@ -828,28 +927,27 @@ async def entrypoint(ctx: JobContext) -> None:
         except Exception:
             log.exception("no se pudo registrar la llamada")
             return
-        # Ya colgo: una sola pasada del modelo para dejar escrito por que llamo
-        # y en que termino. Fuera del camino en vivo, por eso va aqui.
         try:
             from anthropic import AsyncAnthropic
-            from app.cierre import resumir
 
-            cierre = await resumir(AsyncAnthropic(api_key=cfg.anthropic_api_key or None), turnos)
+            try:
+                cierre = await resumir(AsyncAnthropic(api_key=cfg.anthropic_api_key or None), turnos)
+            except ModeloNoContesto:
+                cierre = None
             if cierre:
                 await agenda.llamada_cerrar(
                     tenant.id, recepcionista.call_id, cierre.motivo, cierre.resultado, cierre.resumen
                 )
-            if saliente and saliente.get("campana_contacto_id"):
+            if contacto_campana:
                 hablo = any(t["autor"] == "cliente" for t in turnos)
                 estado = (
                     "agendo" if recepcionista.booking_id is not None
+                    else "rechazo" if hablo and cierre and cierre.rechazo_contacto
                     else "contestado" if hablo
                     else "sin_respuesta"
                 )
-                if hablo and cierre and "no le volvemos a llamar" in (cierre.resumen or "").lower():
-                    estado = "rechazo"
                 await agenda.campana_contacto_resultado(
-                    uuid.UUID(str(saliente["campana_contacto_id"])), estado,
+                    contacto_campana, estado,
                     cierre.resumen if cierre else None, recepcionista.call_id,
                 )
         except Exception:

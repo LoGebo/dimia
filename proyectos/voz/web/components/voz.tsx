@@ -28,7 +28,7 @@ function Bloque({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-linea bg-panel-2 px-3 py-3">
+    <section className="border border-linea bg-panel-2 px-3 py-3">
       <p className="etiqueta">{titulo}</p>
       <p className="mt-0.5 mb-3 text-[11px] text-tinta-3">{descripcion}</p>
       <div className="space-y-3">{children}</div>
@@ -90,7 +90,7 @@ export function ConfiguracionCerebro({
         ))}
       </datalist>
 
-      <ul className="divide-y divide-linea rounded-md border border-linea bg-panel">
+      <ul className="divide-y divide-linea border border-linea bg-panel">
         {opciones.map((m) => (
           <li key={m.id} className="flex items-center justify-between gap-3 px-2.5 py-2">
             <button
@@ -186,14 +186,14 @@ export function ConfiguracionVoz({
       )}
 
       {invalida ? (
-        <p className="rounded-md border border-alerta/30 bg-alerta/10 px-2.5 py-1.5 text-[11px] text-alerta">
+        <p className="border border-alerta/30 bg-alerta/10 px-2.5 py-1.5 text-[11px] text-alerta">
           Ese ID no tiene el formato de {formato.formato} que espera el proveedor. Ejemplo:{" "}
           <span className="font-mono">{formato.ejemplo}</span>.
         </p>
       ) : null}
 
       {actual === "elevenlabs" ? (
-        <div className="space-y-3 rounded-md border border-linea bg-panel px-2.5 py-2.5">
+        <div className="space-y-3 border border-linea bg-panel px-2.5 py-2.5">
           {AJUSTES_ELEVENLABS.map((campo) => (
             <Deslizador
               key={campo.clave}

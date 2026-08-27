@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+import type { Consulta } from "@/lib/db";
 import { datos } from "@/lib/sesion";
 import type {
   Ausencia,
@@ -13,6 +15,7 @@ import type {
   ClienteResumen,
   Evento,
   Conversacion,
+  ConversacionDetalle,
   Mensaje,
   MensajeSaliente,
   Faq,
@@ -28,13 +31,55 @@ import type {
   Servicio,
 } from "@/lib/tipos";
 
-export function negocio(): Promise<Negocio> {
-  return datos(async (q, id) => {
+type Lector<T> = (q: Consulta, negocioId: string) => Promise<T>;
+
+/**
+ * Las lecturas de configuración del negocio, separadas de la sesión para que
+ * `avance()` pueda correrlas todas en una sola transacción.
+ */
+export const leer = {
+  negocio: (async (q, id) => {
     const filas = await q<Negocio>("select * from tenant where id = $1", [id]);
     if (!filas[0]) throw new Error("Negocio no encontrado");
     return filas[0];
-  });
-}
+  }) satisfies Lector<Negocio>,
+  catalogo: ((q, id) =>
+    q<CatalogoItem>(
+      `select id, tipo, nombre, descripcion, precio, alias, atributos, existencias,
+              resource_id, disponible, orden
+         from catalogo_item where tenant_id = $1
+        order by tipo, orden, nombre`,
+      [id],
+    )) satisfies Lector<CatalogoItem[]>,
+  recursos: ((q, id) =>
+    q<Recurso>(
+      "select id, nombre, tipo, capacidad, telefono, correo, comision_pct::text as comision_pct, metadatos, activo from resource where tenant_id = $1 order by tipo desc, nombre",
+      [id],
+    )) satisfies Lector<Recurso[]>,
+  servicios: ((q, id) =>
+    q<Servicio>(
+      `select id, nombre, alias, duracion_min, buffer_min, precio, recursos_validos, activo
+         from service where tenant_id = $1 order by nombre`,
+      [id],
+    )) satisfies Lector<Servicio[]>,
+  reglas: ((q, id) =>
+    q<Regla>(
+      `select id, resource_id, tipo, dia_semana, to_char(fecha, 'YYYY-MM-DD') as fecha,
+              to_char(hora_inicio,'HH24:MI') as hora_inicio,
+              to_char(hora_fin,'HH24:MI') as hora_fin
+         from schedule_rule where tenant_id = $1
+        order by dia_semana nulls last, fecha nulls last, hora_inicio`,
+      [id],
+    )) satisfies Lector<Regla[]>,
+  faq: ((q, id) =>
+    q<Faq>(
+      "select id, pregunta, respuesta, prioridad from knowledge where tenant_id = $1 order by prioridad desc, pregunta",
+      [id],
+    )) satisfies Lector<Faq[]>,
+};
+
+/** Una vez por petición: casi todas las pantallas lo piden para la zona horaria. */
+export const negocio = cache((): Promise<Negocio> => datos(leer.negocio));
 
 export function plantillas(): Promise<PlantillaVertical[]> {
   return datos((q) =>
@@ -50,74 +95,46 @@ export async function plantillaActual(vertical: string): Promise<PlantillaVertic
 }
 
 export function catalogo(): Promise<CatalogoItem[]> {
-  return datos((q, id) =>
-    q<CatalogoItem>(
-      `select id, tipo, nombre, descripcion, precio, alias, atributos, existencias,
-              resource_id, disponible, orden
-         from catalogo_item where tenant_id = $1
-        order by tipo, orden, nombre`,
-      [id],
-    ),
-  );
+  return datos(leer.catalogo);
 }
 
 export function recursos(): Promise<Recurso[]> {
-  return datos((q, id) =>
-    q<Recurso>(
-      "select id, nombre, tipo, capacidad, telefono, correo, comision_pct::text as comision_pct, metadatos, activo from resource where tenant_id = $1 order by tipo desc, nombre",
-      [id],
-    ),
-  );
+  return datos(leer.recursos);
 }
 
 export function servicios(): Promise<Servicio[]> {
-  return datos((q, id) =>
-    q<Servicio>(
-      `select id, nombre, alias, duracion_min, buffer_min, precio, recursos_validos, activo
-         from service where tenant_id = $1 order by nombre`,
-      [id],
-    ),
-  );
+  return datos(leer.servicios);
 }
 
 export function reglas(): Promise<Regla[]> {
-  return datos((q, id) =>
-    q<Regla>(
-      `select id, resource_id, tipo, dia_semana, fecha,
-              to_char(hora_inicio,'HH24:MI') as hora_inicio,
-              to_char(hora_fin,'HH24:MI') as hora_fin
-         from schedule_rule where tenant_id = $1
-        order by dia_semana nulls last, fecha nulls last, hora_inicio`,
-      [id],
-    ),
-  );
+  return datos(leer.reglas);
 }
 
 export function faq(): Promise<Faq[]> {
-  return datos((q, id) =>
-    q<Faq>(
-      "select id, pregunta, respuesta, prioridad from knowledge where tenant_id = $1 order by prioridad desc, pregunta",
-      [id],
-    ),
-  );
+  return datos(leer.faq);
 }
 
 const SELECT_RESERVA = `
   select b.id, b.codigo, b.cliente_nombre, b.telefono, b.personas, b.notas,
          b.inicio, b.fin, b.estado, b.llegada, b.cliente_id, b.creado, s.precio,
          s.nombre as servicio, r.nombre as recurso,
-         b.resource_id, b.service_id
+         b.resource_id, b.service_id, pg.cobrado::text as cobrado
     from booking b
     join service  s on s.id = b.service_id
-    join resource r on r.id = b.resource_id`;
+    join resource r on r.id = b.resource_id
+    left join lateral (
+      select sum(g.monto) as cobrado from pago g
+       where g.booking_id = b.id and g.estado = 'pagado'
+    ) pg on true`;
 
+/** Las citas de un rango de días, en la zona horaria del negocio. */
 export function reservasEntre(desde: string, hasta: string): Promise<Reserva[]> {
   return datos((q, id) =>
     q<Reserva>(
       `${SELECT_RESERVA}
+        join tenant t on t.id = b.tenant_id
         where b.tenant_id = $1
-          and b.inicio >= ($2::date)::timestamptz - interval '1 day'
-          and b.inicio <  ($3::date)::timestamptz + interval '2 day'
+          and (b.inicio at time zone t.zona_horaria)::date between $2::date and $3::date
         order by b.inicio`,
       [id, desde, hasta],
     ),
@@ -235,50 +252,6 @@ export function pedidosDelDia(dia: string): Promise<Pedido[]> {
   );
 }
 
-export type ResumenPedidos = {
-  total: number;
-  abiertos: number;
-  confirmados: number;
-  entregados: number;
-  cancelados: number;
-  vendido: number;
-  ticket: number | null;
-};
-
-export function resumenPedidos(dia: string): Promise<ResumenPedidos> {
-  return datos(async (q, id) => {
-    const filas = await q<ResumenPedidos>(
-      `with del_dia as (
-         select p.id, p.estado, public.pedido_total(p.id) as total
-           from pedido p
-           join tenant t on t.id = p.tenant_id
-          where p.tenant_id = $1
-            and (p.creado at time zone t.zona_horaria)::date = $2::date
-       ),
-       vendidos as (select * from del_dia where estado in ('confirmado','entregado'))
-       select (select count(*) from del_dia)::int as total,
-              (select count(*) from del_dia where estado = 'abierto')::int as abiertos,
-              (select count(*) from del_dia where estado = 'confirmado')::int as confirmados,
-              (select count(*) from del_dia where estado = 'entregado')::int as entregados,
-              (select count(*) from del_dia where estado = 'cancelado')::int as cancelados,
-              (select coalesce(sum(total), 0) from vendidos)::float as vendido,
-              (select avg(total) from vendidos)::float as ticket`,
-      [id, dia],
-    );
-    return (
-      filas[0] ?? {
-        total: 0,
-        abiertos: 0,
-        confirmados: 0,
-        entregados: 0,
-        cancelados: 0,
-        vendido: 0,
-        ticket: null,
-      }
-    );
-  });
-}
-
 export function recados(soloPendientes: boolean): Promise<Recado[]> {
   return datos((q, id) =>
     q<Recado>(
@@ -353,6 +326,12 @@ export function resumenAgendaHoy(dia: string): Promise<ResumenAgendaHoy> {
   });
 }
 
+const SELECT_CONVERSACION = `
+  select c.id, c.canal, c.contacto, c.contacto_nombre, c.cliente_id, c.estado, c.escalada_en,
+         c.motivo_escalamiento, c.motivo, c.resultado, c.resumen, c.ultimo_mensaje, c.ultimo_mensaje_en,
+         c.mensajes_sin_leer, c.booking_id, c.pedido_id, c.call_id
+    from conversacion c`;
+
 /**
  * La bandeja: un renglón por conversación, ordenada por lo más reciente.
  *
@@ -362,25 +341,22 @@ export function resumenAgendaHoy(dia: string): Promise<ResumenAgendaHoy> {
 export function conversaciones(limite = 50): Promise<Conversacion[]> {
   return datos((q, id) =>
     q<Conversacion>(
-      `select id, canal, contacto, contacto_nombre, cliente_id, estado, escalada_en,
-              motivo_escalamiento, motivo, resultado, resumen, ultimo_mensaje, ultimo_mensaje_en,
-              mensajes_sin_leer, booking_id, pedido_id, call_id
-         from conversacion
-        where tenant_id = $1 and estado <> 'cerrada'
-        order by ultimo_mensaje_en desc
+      `${SELECT_CONVERSACION}
+        where c.tenant_id = $1 and c.estado <> 'cerrada'
+        order by c.ultimo_mensaje_en desc
         limit $2`,
       [id, limite],
     ),
   );
 }
 
-export function conversacion(conversacionId: string): Promise<Conversacion | null> {
+export function conversacion(conversacionId: string): Promise<ConversacionDetalle | null> {
   return datos(async (q, id) => {
-    const filas = await q<Conversacion>(
-      `select id, canal, contacto, contacto_nombre, cliente_id, estado, escalada_en,
-              motivo_escalamiento, motivo, resultado, resumen, ultimo_mensaje, ultimo_mensaje_en,
-              mensajes_sin_leer, booking_id, pedido_id, call_id
-         from conversacion where id = $2 and tenant_id = $1`,
+    const filas = await q<ConversacionDetalle>(
+      `select x.*, b.codigo as booking_codigo, b.inicio as booking_inicio, p.creado as pedido_creado
+         from (${SELECT_CONVERSACION} where c.id = $2 and c.tenant_id = $1) x
+         left join booking b on b.id = x.booking_id
+         left join pedido p on p.id = x.pedido_id`,
       [id, conversacionId],
     );
     return filas[0] ?? null;
@@ -398,18 +374,6 @@ export function mensajes(conversacionId: string, limite = 200): Promise<Mensaje[
       [id, conversacionId, limite],
     ),
   );
-}
-
-/** Cuántas conversaciones traen algo sin leer. Alimenta el punto del menú. */
-export function conversacionesSinLeer(): Promise<number> {
-  return datos(async (q, id) => {
-    const filas = await q<{ n: string }>(
-      `select count(*)::text as n from conversacion
-        where tenant_id = $1 and mensajes_sin_leer > 0 and estado <> 'cerrada'`,
-      [id],
-    );
-    return Number(filas[0]?.n ?? 0);
-  });
 }
 
 /**
@@ -447,20 +411,27 @@ const SELECT_CLIENTE = `
          (select count(*) from lead l where l.cliente_id = c.id and not l.atendido)::int as recados_pendientes
     from cliente c`;
 
+/**
+ * Qué es cada segmento, en SQL sobre el alias `c` de cliente. Lo leen la
+ * pantalla de clientes y «Agregar personas» de campañas: un solo criterio.
+ * Frecuente es quien ya volvió tres veces, sea a una cita o por un pedido.
+ */
+export const CONDICION_SEGMENTO: Record<SegmentoCliente, string> = {
+  todos: "true",
+  nuevos: "c.primer_contacto >= now() - interval '30 days'",
+  frecuentes: `((select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada')
+               + (select count(*) from pedido p where p.cliente_id = c.id and p.estado = 'entregado')) >= 3`,
+  inactivos: "c.ultimo_contacto < now() - interval '90 days'",
+  faltan: "exists (select 1 from booking b where b.cliente_id = c.id and b.estado = 'no_asistio')",
+};
+
 export function clientes(segmento: SegmentoCliente, busqueda = "", limite = 200): Promise<ClienteResumen[]> {
-  const condiciones: Record<SegmentoCliente, string> = {
-    todos: "true",
-    nuevos: "c.primer_contacto >= now() - interval '30 days'",
-    frecuentes: "(select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada') >= 3",
-    inactivos: "c.ultimo_contacto < now() - interval '90 days'",
-    faltan: "(select count(*) from booking b where b.cliente_id = c.id and b.estado = 'no_asistio') >= 1",
-  };
   const termino = busqueda.trim();
   return datos((q, id) =>
     q<ClienteResumen>(
       `${SELECT_CLIENTE}
         where c.tenant_id = $1
-          and ${condiciones[segmento]}
+          and ${CONDICION_SEGMENTO[segmento]}
           and ($2 = '' or c.nombre ilike '%' || $2 || '%'
                or regexp_replace(coalesce(c.telefono,''), '\\D', '', 'g') like '%' || regexp_replace($2, '\\D', '', 'g') || '%')
         order by c.ultimo_contacto desc
@@ -503,12 +474,9 @@ export function reservasDeCliente(clienteId: string, limite = 30): Promise<Reser
 export function conversacionesDeCliente(clienteId: string): Promise<Conversacion[]> {
   return datos((q, id) =>
     q<Conversacion>(
-      `select id, canal, contacto, contacto_nombre, cliente_id, estado, escalada_en,
-              motivo_escalamiento, motivo, resultado, resumen, ultimo_mensaje, ultimo_mensaje_en,
-              mensajes_sin_leer, booking_id, pedido_id, call_id
-         from conversacion
-        where tenant_id = $1 and cliente_id = $2
-        order by ultimo_mensaje_en desc
+      `${SELECT_CONVERSACION}
+        where c.tenant_id = $1 and c.cliente_id = $2
+        order by c.ultimo_mensaje_en desc
         limit 20`,
       [id, clienteId],
     ),
@@ -529,21 +497,6 @@ export function resumenClientes(): Promise<ResumenClientes> {
     );
     return filas[0] ?? { total: 0, nuevos30: 0, inactivos90: 0, faltan: 0 };
   });
-}
-
-export function eventosRecientes(limite = 40): Promise<(Evento & { cliente_nombre: string | null; cliente_telefono: string | null })[]> {
-  return datos((q, id) =>
-    q(
-      `select e.id, e.cliente_id, e.tipo, e.entidad, e.entidad_id, e.datos, e.autor, e.creado,
-              c.nombre as cliente_nombre, c.telefono as cliente_telefono
-         from evento e
-         left join cliente c on c.id = e.cliente_id
-        where e.tenant_id = $1
-        order by e.creado desc
-        limit $2`,
-      [id, limite],
-    ),
-  );
 }
 
 // ---------------------------------------------------------------
@@ -573,19 +526,6 @@ export function pagosDelDia(dia: string): Promise<Pago[]> {
 export function pagosPendientes(): Promise<Pago[]> {
   return datos((q, id) =>
     q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.estado = 'pendiente' order by g.creado desc limit 100`, [id]),
-  );
-}
-
-export function pagosDeCliente(clienteId: string): Promise<Pago[]> {
-  return datos((q, id) =>
-    q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.cliente_id = $2 order by g.creado desc limit 50`, [id, clienteId]),
-  );
-}
-
-export function pagosDeReservas(ids: string[]): Promise<Pago[]> {
-  if (ids.length === 0) return Promise.resolve([]);
-  return datos((q, id) =>
-    q<Pago>(`${SELECT_PAGO} where g.tenant_id = $1 and g.booking_id = any($2::uuid[]) and g.estado <> 'cancelado'`, [id, ids]),
   );
 }
 
@@ -737,6 +677,7 @@ export type AlertasHoy = {
   cobros_monto: string;
   campanas_contestaron: number;
   por_cobrar_atendidas: number;
+  mensajes_sin_leer: number;
 };
 
 export function alertasHoy(): Promise<AlertasHoy> {
@@ -752,9 +693,10 @@ export function alertasHoy(): Promise<AlertasHoy> {
          (select count(*) from campana_contacto cc where cc.tenant_id = $1 and cc.estado = 'contestado' and cc.actualizado >= now() - interval '24 hours')::int as campanas_contestaron,
          (select count(*) from booking b join tenant t on t.id = b.tenant_id
            where b.tenant_id = $1 and b.estado = 'completada' and (b.inicio at time zone t.zona_horaria)::date = (now() at time zone t.zona_horaria)::date
-             and not exists (select 1 from pago g where g.booking_id = b.id and g.estado <> 'cancelado'))::int as por_cobrar_atendidas`,
+             and not exists (select 1 from pago g where g.booking_id = b.id and g.estado <> 'cancelado'))::int as por_cobrar_atendidas,
+         (select coalesce(sum(mensajes_sin_leer), 0) from conversacion c where c.tenant_id = $1 and c.estado <> 'cerrada')::int as mensajes_sin_leer`,
       [id],
     );
-    return filas[0] ?? { retrasadas: 0, escaladas: 0, recados: 0, cobros_pendientes: 0, cobros_monto: "0", campanas_contestaron: 0, por_cobrar_atendidas: 0 };
+    return filas[0] ?? { retrasadas: 0, escaladas: 0, recados: 0, cobros_pendientes: 0, cobros_monto: "0", campanas_contestaron: 0, por_cobrar_atendidas: 0, mensajes_sin_leer: 0 };
   });
 }

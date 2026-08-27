@@ -5,7 +5,8 @@ import type { Room } from "livekit-client";
 import { Acciones, Transcripcion, type Accion, type Turno } from "@/components/prueba-transcripcion";
 import { CarritoVivo, LlamadasRegistradas, ReservasVivas } from "@/components/prueba-panel";
 import { Aviso, Boton, Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { estadoPrueba, type EstadoPrueba } from "@/lib/acciones";
+import { estadoPrueba } from "@/lib/acciones";
+import type { EstadoPrueba } from "@/lib/tipos";
 
 type Fase = "listo" | "conectando" | "en_llamada";
 
@@ -268,7 +269,7 @@ export function ConsolaPrueba({
                     {[0.08, 0.2, 0.35, 0.5, 0.68, 0.85].map((umbral) => (
                       <span
                         key={umbral}
-                        className={`w-[4px] rounded-sm transition-colors ${
+                        className={`w-[4px] transition-colors ${
                           microActivo && nivelMicro >= umbral
                             ? "bg-emerald-400"
                             : "bg-neutral-700"

@@ -195,10 +195,10 @@ export default async function Agente() {
                   <li key={l.id} className="flex items-center gap-3 px-4 py-2">
                     <span className="numeros font-mono text-[12px] text-tinta">{l.telefono}</span>
                     <span className="min-w-0 flex-1 truncate text-[12px] text-tinta-2">{l.etiqueta}</span>
-                    <form action={eliminarLinea}>
+                    <Formulario accion={eliminarLinea}>
                       <input type="hidden" name="id" value={l.id} />
                       <button className="text-[11px] text-tinta-3 transition hover:text-critico">Quitar</button>
-                    </form>
+                    </Formulario>
                   </li>
                 ))}
               </ul>

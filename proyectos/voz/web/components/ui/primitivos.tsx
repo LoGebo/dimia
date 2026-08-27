@@ -17,7 +17,7 @@ export function Boton({
   return (
     <button
       {...props}
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition disabled:pointer-events-none disabled:opacity-50 ${variantes[variante]} ${className}`}
+      className={`inline-flex h-8 items-center justify-center gap-1.5 border px-3 text-[13px] font-medium transition disabled:pointer-events-none disabled:opacity-50 ${variantes[variante]} ${className}`}
     />
   );
 }
@@ -26,7 +26,7 @@ export function Tarjeta({ className = "", ...props }: ComponentProps<"div">) {
   return (
     <div
       {...props}
-      className={`rounded-lg border border-linea bg-panel shadow-[var(--sombra)] ${className}`}
+      className={`border border-linea bg-panel ${className}`}
     />
   );
 }
@@ -72,7 +72,7 @@ export function Campo({
 }
 
 const baseCampo =
-  "w-full rounded-md border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
+  "w-full border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
 
 export function Entrada({ className = "", ...props }: ComponentProps<"input">) {
   return <input {...props} className={`${baseCampo} ${className}`} />;
@@ -102,7 +102,7 @@ export function Insignia({
   } as const;
   return (
     <span
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] font-medium ${tonos[tono]}`}
+      className={`inline-flex items-center border px-1.5 py-0.5 text-[11px] font-medium ${tonos[tono]}`}
     >
       {children}
     </span>
@@ -124,5 +124,5 @@ export function Aviso({ tono, children }: { tono: "error" | "ok"; children: Reac
     tono === "error"
       ? "border-critico/30 bg-critico/10 text-critico"
       : "border-bueno/30 bg-bueno/10 text-bueno";
-  return <p className={`rounded-md border px-2.5 py-1.5 text-xs ${clase}`}>{children}</p>;
+  return <p className={`border px-2.5 py-1.5 text-xs ${clase}`}>{children}</p>;
 }

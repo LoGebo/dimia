@@ -41,7 +41,7 @@ export function EditorAtributos({ tipo, iniciales }: { tipo: string; iniciales: 
   }
 
   return (
-    <div className="rounded-md border border-linea bg-panel px-3 py-3">
+    <div className="border border-linea bg-panel px-3 py-3">
       <input type="hidden" name="atributos" value={JSON.stringify(valores)} />
       <p className="etiqueta mb-2">Atributos</p>
 
@@ -164,7 +164,7 @@ function CampoSugerido({
                     onClick={() =>
                       fijar(campo.clave, activo ? lista.filter((x) => x !== o) : [...lista, o])
                     }
-                    className={`rounded border px-1.5 py-0.5 text-[11px] transition ${
+                    className={`border px-1.5 py-0.5 text-[11px] transition ${
                       activo
                         ? "border-acento bg-acento-suave text-acento"
                         : "border-linea bg-panel-2 text-tinta-3 hover:text-tinta"

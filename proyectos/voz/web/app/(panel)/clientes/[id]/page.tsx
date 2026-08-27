@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RenglonConversacion } from "@/components/bandeja";
+import { RenglonConversacion } from "@/components/renglon-conversacion";
 import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
@@ -87,7 +87,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
               {hilos.length === 0 ? (
                 <Vacio titulo="Sin conversaciones" />
               ) : (
-                hilos.map((c) => <RenglonConversacion key={c.id} conversacion={c} activa={false} />)
+                hilos.map((c) => <RenglonConversacion key={c.id} conversacion={c} zona={config.zona_horaria} />)
               )}
             </Tarjeta>
           </div>

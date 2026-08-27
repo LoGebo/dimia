@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { nombreDe } from "@/components/bandeja";
 import { Insignia } from "@/components/ui/primitivos";
-import { telefono as formatearTelefono } from "@/lib/formato";
-import { NOMBRE_CANAL, NOMBRE_RESULTADO, type Conversacion, type Mensaje } from "@/lib/tipos";
+import { fechaLarga, hora, isoDia, telefono as formatearTelefono } from "@/lib/formato";
+import { NOMBRE_CANAL, NOMBRE_RESULTADO, type ConversacionDetalle, type Mensaje } from "@/lib/tipos";
 
 // Lo que entra a la izquierda, lo que sale a la derecha: es como se lee
 // cualquier bandeja, y el dueño ya tiene esa costumbre de su propio WhatsApp.
@@ -27,29 +27,18 @@ const QUIEN: Record<Mensaje["autor"], string> = {
   sistema: "Sistema",
 };
 
-function hora(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-MX", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function dia(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-MX", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
 export function Hilo({
   conversacion: c,
   mensajes,
+  zona,
 }: {
-  conversacion: Conversacion;
+  conversacion: ConversacionDetalle;
   mensajes: Mensaje[];
+  zona: string;
 }) {
   let ultimoDia = "";
+  const enlacePedido = c.pedido_creado ? `/pedidos?dia=${isoDia(new Date(c.pedido_creado), zona)}&estado=todos` : "/pedidos";
+  const enlaceCita = c.booking_codigo ? `/agenda?q=${encodeURIComponent(c.booking_codigo)}` : "/agenda";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -82,12 +71,12 @@ export function Hilo({
         {/* De la conversación al hecho: lo que salió de ella se abre desde aquí. */}
         <div className="flex flex-wrap items-center gap-2">
           {c.pedido_id ? (
-            <Link href="/pedidos" className="text-[12px] text-acento hover:underline">
+            <Link href={enlacePedido} className="text-[12px] text-acento hover:underline">
               Ver el pedido →
             </Link>
           ) : null}
           {c.booking_id ? (
-            <Link href="/agenda" className="text-[12px] text-acento hover:underline">
+            <Link href={enlaceCita} className="text-[12px] text-acento hover:underline">
               Ver la cita →
             </Link>
           ) : null}
@@ -119,7 +108,7 @@ export function Hilo({
         ) : null}
 
         {mensajes.map((m) => {
-          const suDia = dia(m.creado);
+          const suDia = fechaLarga(m.creado, zona);
           const cambiaDia = suDia !== ultimoDia;
           ultimoDia = suDia;
 
@@ -132,7 +121,7 @@ export function Hilo({
                 <div className={`max-w-[min(560px,80%)] border px-3 py-2 ${BURBUJA[m.autor]}`}>
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="etiqueta text-[10px]">{QUIEN[m.autor]}</span>
-                    <span className="numeros text-[10px] text-tinta-3">{hora(m.creado)}</span>
+                    <span className="numeros text-[10px] text-tinta-3">{hora(m.creado, zona)}</span>
                   </div>
                   <p className="mt-1 text-[13px] leading-relaxed whitespace-pre-wrap">
                     {m.texto}

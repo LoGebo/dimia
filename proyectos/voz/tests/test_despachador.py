@@ -7,6 +7,7 @@ una fila que falla no se lleve al resto ni se pierda.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -332,3 +333,138 @@ async def test_los_recordatorios_los_encola_el_proceso_no_pg_cron():
 
     assert cuantos == 3
     assert agenda.ventanas == [24]
+
+
+# --- Campañas: lo que pasa cuando no sale -----------------------------------
+
+
+class AgendaDeCampana(AgendaFalsa):
+    def __init__(self, filas: list[dict[str, Any]]) -> None:
+        super().__init__(filas)
+        self.contactos: list[tuple[Any, str, str | None]] = []
+
+    async def campana_contacto_resultado(self, contacto_id, estado, resultado=None, call_id=None):
+        self.contactos.append((contacto_id, estado, resultado))
+
+
+async def test_una_llamada_que_no_contestan_no_vuelve_a_marcar_por_el_outbox(monkeypatch):
+    """Seis reintentos en unas horas son seis llamadas a la misma persona. La
+    fila queda terminal y el siguiente intento lo decide la campaña."""
+    contacto = uuid.uuid4()
+    fila = {**_fila(canal="llamada", destino="+525511112222"),
+            "tenant_id": uuid.uuid4(), "campana_contacto_id": contacto}
+    agenda = AgendaDeCampana([fila])
+
+    async def nadie_contesta(cfg, tenant_id, destino, payload):
+        raise RuntimeError("SIP 480 Temporarily Unavailable")
+
+    monkeypatch.setattr("app.despachador.marcar", nadie_contesta)
+    despachador = Despachador(agenda, MensajeroFalso())
+
+    tanda = await despachador.tanda()
+    await despachador.esperar_salientes()
+
+    assert (tanda.enviados, tanda.marcando) == (0, 1)
+    assert agenda.errores == []
+    assert [i for i, _ in agenda.vencidos] == [fila["id"]]
+    assert agenda.contactos == [(contacto, "sin_respuesta", "SIP 480 Temporarily Unavailable")]
+
+
+async def test_un_error_al_anotar_la_llamada_no_escapa_de_la_tarea(monkeypatch):
+    fila = {**_fila(canal="llamada"), "tenant_id": uuid.uuid4()}
+    agenda = AgendaDeCampana([fila])
+
+    async def nadie_contesta(cfg, tenant_id, destino, payload):
+        raise RuntimeError("sin respuesta")
+
+    async def pool_cerrado(outbox_id, motivo):
+        raise RuntimeError("pool cerrado")
+
+    monkeypatch.setattr("app.despachador.marcar", nadie_contesta)
+    agenda.outbox_marcar_vencido = pool_cerrado
+    despachador = Despachador(agenda, MensajeroFalso())
+
+    await despachador.tanda()
+    resultados = await asyncio.gather(*despachador._salientes, return_exceptions=True)
+
+    assert all(not isinstance(r, Exception) for r in resultados)
+
+
+async def test_whatsapp_de_campana_que_agota_intentos_deja_el_contacto_fallido():
+    """Sin esto el contacto se queda `en_curso` y la campaña nunca termina."""
+    contacto = uuid.uuid4()
+    ultimo = {**_fila(plantilla="campana", destino="+52550000000"),
+              "campana_contacto_id": contacto, "intentos": 6, "max_intentos": 6}
+    primero = {**_fila(plantilla="campana", destino="+52550000000"),
+               "campana_contacto_id": uuid.uuid4(), "intentos": 1, "max_intentos": 6}
+    agenda = AgendaDeCampana([ultimo, primero])
+    mensajero = MensajeroFalso(falla_en={"+52550000000"})
+
+    tanda = await Despachador(agenda, mensajero).tanda()
+
+    assert tanda.fallidos == 2
+    assert [c for c, _, _ in agenda.contactos] == [contacto]
+    assert agenda.contactos[0][1] == "fallido"
+
+
+async def test_whatsapp_de_campana_vencido_deja_el_contacto_fallido():
+    contacto = uuid.uuid4()
+    fila = {**_fila(plantilla="campana", antiguedad_horas=VENCE_EN_HORAS + 1),
+            "campana_contacto_id": contacto}
+    agenda = AgendaDeCampana([fila])
+
+    tanda = await Despachador(agenda, MensajeroFalso()).tanda()
+
+    assert tanda.vencidos == 1
+    assert agenda.contactos[0][:2] == (contacto, "fallido")
+
+
+# --- Cierres: si el modelo no contesta, la conversacion sigue abierta -------
+
+
+class AgendaConConversaciones(AgendaFalsa):
+    def __init__(self, turnos: list[dict]) -> None:
+        super().__init__([])
+        self.turnos = turnos
+        self.conversacion = uuid.uuid4()
+        self.cierres: list[tuple] = []
+
+    async def conversaciones_por_resumir(self, inactiva_min: int = 120, limite: int = 20):
+        return [{"id": self.conversacion, "tenant_id": uuid.uuid4(), "canal": "whatsapp"}]
+
+    async def turnos_de_conversacion(self, conversacion_id, limite: int = 80):
+        return self.turnos
+
+    async def conversacion_cerrar(self, tenant_id, conversacion_id, motivo, resultado, resumen):
+        self.cierres.append((conversacion_id, motivo, resultado, resumen))
+
+
+class ModeloCaido:
+    def __init__(self) -> None:
+        self.messages = self
+
+    async def create(self, **kwargs):
+        raise RuntimeError("429 rate limited")
+
+
+async def test_si_el_modelo_falla_la_conversacion_no_se_cierra():
+    """Cerrarla como 'sin motivo claro' es irreversible: se deja para el
+    siguiente ciclo."""
+    agenda = AgendaConConversaciones([
+        {"autor": "cliente", "texto": "quiero una cita"},
+        {"autor": "agente", "texto": "claro, ¿para cuando?"},
+    ])
+
+    cerradas = await Despachador(agenda, MensajeroFalso(), llm=ModeloCaido()).cierres()
+
+    assert cerradas == 0
+    assert agenda.cierres == []
+
+
+async def test_una_conversacion_donde_nadie_hablo_si_se_cierra_sin_modelo():
+    agenda = AgendaConConversaciones([{"autor": "agente", "texto": "hola, ¿en que le ayudo?"}])
+
+    cerradas = await Despachador(agenda, MensajeroFalso(), llm=ModeloCaido()).cierres()
+
+    assert cerradas == 0
+    assert agenda.cierres[0][1:3] == ("sin motivo claro", "sin_resultado")

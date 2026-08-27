@@ -32,12 +32,16 @@ class ClienteLLM(Protocol):
 
 @dataclass(slots=True)
 class ContextoNegocio:
+    """Lo que el canal sabe del negocio.
+
+    El menu y el giro llegan igual que en la llamada: WhatsApp y telefono
+    tienen que saber lo mismo del negocio o el cliente recibe dos versiones.
+    """
+
     tenant: Tenant
     servicios: list[dict]
     faq: list[dict]
     cargado: float
-    # El menu y el giro llegan igual que en la llamada: WhatsApp y telefono
-    # tienen que saber lo mismo del negocio o el cliente recibe dos versiones.
     catalogo: list[dict] = field(default_factory=list)
     plantilla: dict | None = None
     herramientas_giro: list[str] = field(default_factory=list)
@@ -98,9 +102,7 @@ class AgenteWhatsApp:
         if not entrante.soportado:
             return [SalidaTexto(destino=entrante.wa_id, texto=NO_SOPORTADO)]
 
-        # Un numero solo, despues de haberle preguntado como le fue, es la
-        # reseña. No hace falta el modelo para eso.
-        resena = await self._resena(contexto.tenant.id, entrante)
+        resena = await self._resena(contexto, entrante)
         if resena is not None:
             return resena
 
@@ -119,11 +121,23 @@ class AgenteWhatsApp:
         await self._registrar(contexto, entrante, herramientas, texto)
         return self._salidas(entrante, contexto.tenant, herramientas, texto)
 
-    async def _resena(self, tenant_id: Any, entrante: MensajeEntrante) -> list[Salida] | None:
+    async def _resena(
+        self, contexto: ContextoNegocio, entrante: MensajeEntrante
+    ) -> list[Salida] | None:
+        """Un numero solo, justo despues de preguntarle como le fue, es la reseña.
+
+        No hace falta el modelo para eso, pero la via corta aplica solo si lo
+        ultimo que recibio la persona fue esa pregunta: un "2" a mitad de una
+        reserva es "para dos personas", no dos estrellas. Los dos turnos quedan
+        escritos en el hilo igual que cualquier otro.
+        """
         texto = (entrante.texto or "").strip()
         if len(texto) > 2 or not texto.isdigit():
             return None
+        tenant_id = contexto.tenant.id
         try:
+            if not await self.agenda.resena_esperando(tenant_id, entrante.telefono):
+                return None
             resultado = await self.agenda.resena_responder(tenant_id, entrante.telefono, texto)
         except Exception:
             log.exception("no se pudo registrar la reseña")
@@ -138,6 +152,20 @@ class AgenteWhatsApp:
             respuesta = "¡Gracias! Nos da gusto que te haya ido bien."
         else:
             respuesta = "Gracias por decirlo. Lo vamos a revisar y, si quieres contarnos qué pasó, aquí te leemos."
+        await nucleo.registrar_turno(
+            self.agenda,
+            tenant_id=tenant_id,
+            canal="whatsapp",
+            contacto=entrante.telefono,
+            entrante=entrante.texto,
+            respuesta=respuesta,
+            nombre=entrante.nombre_perfil,
+            herramienta="resena",
+            externo_id=entrante.mensaje_id,
+            escalado=False,
+            motivo=None,
+            log=log,
+        )
         return [SalidaTexto(destino=entrante.wa_id, texto=respuesta)]
 
     async def _registrar(

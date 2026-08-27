@@ -62,6 +62,32 @@ export function isoDia(fecha: Date, zona: string): string {
   }).format(fecha);
 }
 
+export const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+export function fechaValida(dia: string): boolean {
+  return FECHA_ISO.test(dia) && !Number.isNaN(Date.parse(`${dia}T12:00:00Z`));
+}
+
+/** Un `?dia=` de la URL solo se usa si es una fecha real; si no, se cae a hoy. */
+export function diaValido(param: string | undefined, hoy: string): string {
+  return param && fechaValida(param) ? param : hoy;
+}
+
+export const TELEFONO_E164 = /^\+\d{10,15}$/;
+
+/** Deja solo dígitos y el signo; diez dígitos a secas se toman como número de México. */
+export function normalizarTelefono(valor: string): string {
+  const limpio = valor.replace(/[^\d+]/g, "");
+  return /^\d{10}$/.test(limpio) ? `+52${limpio}` : limpio;
+}
+
+export function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/);
+  const a = partes[0]?.[0] ?? "";
+  const b = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? "") : (partes[0]?.[1] ?? "");
+  return `${a}${b}`.toUpperCase();
+}
+
 export function lunesDe(dia: string): string {
   const fecha = new Date(`${dia}T12:00:00Z`);
   const desplazamiento = (fecha.getUTCDay() + 6) % 7;

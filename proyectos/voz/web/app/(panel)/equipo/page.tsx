@@ -104,7 +104,7 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
               <Formulario accion={guardarAusencia} className="space-y-3 px-4 pb-4" reiniciar>
                 <Campo etiqueta="Quién">
                   <Selector name="resource_id" defaultValue={personas[0]?.id ?? ""}>
-                    {lista.filter((r) => r.activo).map((r) => (
+                    {personas.filter((r) => r.activo).map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.nombre}
                       </option>
@@ -139,10 +139,10 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
                         {lista.find((r) => r.id === a.resource_id)?.nombre ?? "Todo el negocio"}
                         {a.motivo ? <span className="text-tinta-3"> · {a.motivo}</span> : null}
                       </span>
-                      <form action={eliminarRegla}>
+                      <Formulario accion={eliminarRegla}>
                         <input type="hidden" name="id" value={a.id} />
                         <button className="text-[11px] text-tinta-3 transition hover:text-critico">Quitar</button>
-                      </form>
+                      </Formulario>
                     </li>
                   ))}
                 </ul>

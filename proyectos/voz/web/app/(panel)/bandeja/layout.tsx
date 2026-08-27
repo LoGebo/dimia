@@ -1,7 +1,7 @@
 import { Encabezado } from "@/components/encabezado";
-import { RenglonConversacion } from "@/components/bandeja";
+import { RenglonConversacion } from "@/components/renglon-conversacion";
 import { Vacio } from "@/components/ui/primitivos";
-import { conversaciones } from "@/lib/consultas";
+import { conversaciones, negocio } from "@/lib/consultas";
 import { exigirSeccion } from "@/lib/sesion";
 
 /**
@@ -10,7 +10,7 @@ import { exigirSeccion } from "@/lib/sesion";
  */
 export default async function BandejaLayout({ children }: { children: React.ReactNode }) {
   const giro = await exigirSeccion("/bandeja");
-  const hilos = await conversaciones();
+  const [hilos, config] = await Promise.all([conversaciones(), negocio()]);
 
   return (
     <>
@@ -28,7 +28,7 @@ export default async function BandejaLayout({ children }: { children: React.Reac
             />
           ) : (
             hilos.map((c) => (
-              <RenglonConversacion key={c.id} conversacion={c} activa={false} />
+              <RenglonConversacion key={c.id} conversacion={c} zona={config.zona_horaria} />
             ))
           )}
         </aside>

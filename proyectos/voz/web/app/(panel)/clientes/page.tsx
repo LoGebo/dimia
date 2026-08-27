@@ -40,6 +40,7 @@ export default async function Clientes({
               name="q"
               defaultValue={busqueda}
               placeholder="Nombre o teléfono"
+              aria-label="Buscar cliente por nombre o teléfono"
               className="h-8 w-52 border border-linea bg-panel px-2.5 text-xs text-tinta outline-none placeholder:text-tinta-3 focus:border-acento"
             />
           </form>

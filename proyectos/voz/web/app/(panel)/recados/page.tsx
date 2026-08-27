@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { Boton, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { Formulario } from "@/components/formulario";
 import { alternarRecado } from "@/lib/acciones";
 import { negocio, recados } from "@/lib/consultas";
 import { fechaCorta, hora, telefono } from "@/lib/formato";
@@ -25,7 +26,7 @@ export default async function Recados({
         descripcion="Quién llamó, qué necesita y a qué número regresarle la llamada."
         giro={giro.nombre}
         acciones={
-          <div className="flex overflow-hidden rounded-md border border-linea bg-panel">
+          <div className="flex overflow-hidden border border-linea bg-panel">
             {[
               { valor: "pendientes", nombre: "Pendientes" },
               { valor: "todos", nombre: "Todos" },
@@ -93,12 +94,12 @@ function FilaRecado({ recado, zona }: { recado: Recado; zona: string }) {
           </p>
         ) : null}
       </div>
-      <form action={alternarRecado}>
+      <Formulario accion={alternarRecado}>
         <input type="hidden" name="id" value={recado.id} />
         <Boton variante={recado.atendido ? "fantasma" : "solido"}>
           {recado.atendido ? "Reabrir" : "Marcar atendido"}
         </Boton>
-      </form>
+      </Formulario>
     </li>
   );
 }

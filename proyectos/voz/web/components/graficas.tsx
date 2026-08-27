@@ -9,7 +9,7 @@ function Leyenda({ series }: { series: { nombre: string; color: string }[] }) {
     <div className="flex flex-wrap items-center gap-3">
       {series.map((s) => (
         <span key={s.nombre} className="flex items-center gap-1.5 text-[11px] text-tinta-2">
-          <span className="h-2 w-2 rounded-sm" style={{ background: s.color }} />
+          <span className="h-2 w-2" style={{ background: s.color }} />
           {s.nombre}
         </span>
       ))}
@@ -58,10 +58,10 @@ export function GraficaLlamadas({ datos }: { datos: LlamadasPorDia[] }) {
                   aria-label={`${d.dia}: ${d.total} llamadas`}
                 >
                   <span
-                    className="absolute inset-0 rounded-sm transition group-hover:bg-tinta/[0.04] group-focus:bg-tinta/[0.04]"
+                    className="absolute inset-0 transition group-hover:bg-tinta/[0.04] group-focus:bg-tinta/[0.04]"
                   />
                   <span
-                    className="relative w-full rounded-t"
+                    className="relative w-full"
                     style={{ height: `${escaladas}%`, background: "var(--serie-2)" }}
                   />
                   <span
@@ -124,7 +124,7 @@ function Globo({
   const izquierda = ((indice + 0.5) / total) * 100;
   return (
     <div
-      className="pointer-events-none absolute -top-2 z-10 w-max -translate-x-1/2 rounded-md border border-linea bg-panel px-2.5 py-1.5 shadow-[var(--sombra)]"
+      className="pointer-events-none absolute -top-2 z-10 w-max -translate-x-1/2 border border-linea bg-panel px-2.5 py-1.5"
       style={{ left: `${Math.min(88, Math.max(12, izquierda))}%` }}
     >
       <p className="text-[11px] font-medium text-tinta">{titulo}</p>
@@ -157,9 +157,9 @@ export function GraficaMotivos({ datos }: { datos: MotivoEscalamiento[] }) {
             <span className="truncate text-[12px] text-tinta-2">{d.motivo}</span>
             <span className="numeros text-[12px] font-medium text-tinta">{d.total}</span>
           </div>
-          <div className="mt-1 h-1.5 rounded-full bg-linea">
+          <div className="mt-1 h-1.5 bg-linea">
             <div
-              className="h-1.5 rounded-full"
+              className="h-1.5"
               style={{ width: `${(d.total / maximo) * 100}%`, background: "var(--serie-2)" }}
             />
           </div>
@@ -181,7 +181,7 @@ export function GraficaHoras({ datos }: { datos: LlamadaPorHora[] }) {
           return (
             <div key={h} className="group relative flex-1" title={`${h}:00 — ${valor} llamadas`}>
               <div
-                className="w-full rounded-t"
+                className="w-full"
                 style={{
                   height: `${Math.max(2, (valor / maximo) * 92)}px`,
                   background: valor === 0 ? "var(--linea)" : "var(--serie-1)",
@@ -205,14 +205,14 @@ export function GraficaHoras({ datos }: { datos: LlamadaPorHora[] }) {
 export function OcupacionSemanal({ conteos }: { conteos: number[] }) {
   const maximo = Math.max(1, ...conteos);
   return (
-    <div className="grid grid-cols-7 gap-px overflow-hidden rounded-md border border-linea bg-linea">
+    <div className="grid grid-cols-7 gap-px overflow-hidden border border-linea bg-linea">
       {conteos.map((n, i) => (
         <div key={DIAS_CORTOS[i]} className="bg-panel px-2 py-2 text-center">
           <p className="text-[10px] text-tinta-3">{DIAS_CORTOS[i]}</p>
           <p className="numeros mt-1 text-[15px] font-semibold text-tinta">{n}</p>
-          <div className="mx-auto mt-1.5 h-1 w-full rounded-full bg-linea">
+          <div className="mx-auto mt-1.5 h-1 w-full bg-linea">
             <div
-              className="h-1 rounded-full"
+              className="h-1"
               style={{ width: `${(n / maximo) * 100}%`, background: "var(--serie-3)" }}
             />
           </div>

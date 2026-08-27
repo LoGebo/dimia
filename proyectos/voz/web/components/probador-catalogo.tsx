@@ -61,7 +61,7 @@ export function ProbadorCatalogo({ tipos }: { tipos: string[] }) {
           <button
             key={e}
             onClick={() => buscar(e)}
-            className="rounded border border-linea bg-panel-2 px-1.5 py-0.5 text-[11px] text-tinta-2 transition hover:border-acento hover:text-acento"
+            className="border border-linea bg-panel-2 px-1.5 py-0.5 text-[11px] text-tinta-2 transition hover:border-acento hover:text-acento"
           >
             {e}
           </button>
@@ -94,9 +94,9 @@ export function ProbadorCatalogo({ tipos }: { tipos: string[] }) {
               </div>
               <span className="numeros w-16 text-right text-[12px] text-tinta-2">{moneda(r.precio)}</span>
               <div className="w-20">
-                <div className="h-1.5 rounded-full bg-linea">
+                <div className="h-1.5 bg-linea">
                   <div
-                    className="h-1.5 rounded-full"
+                    className="h-1.5"
                     style={{
                       width: `${Math.min(100, Math.max(6, r.puntaje * 140))}%`,
                       background: "var(--serie-1)",
@@ -123,7 +123,7 @@ function Atributos({ atributos }: { atributos: Record<string, unknown> }) {
   return (
     <div className="mt-0.5 flex flex-wrap gap-1">
       {pares.map(([clave, valor]) => (
-        <span key={clave} className="rounded bg-panel-2 px-1 py-px text-[10px] text-tinta-3">
+        <span key={clave} className="bg-panel-2 px-1 py-px text-[10px] text-tinta-3">
           {clave}: {Array.isArray(valor) ? valor.join(", ") : String(valor)}
         </span>
       ))}

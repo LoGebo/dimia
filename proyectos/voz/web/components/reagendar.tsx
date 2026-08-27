@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { reagendarReserva, slotsLibres, type Slot } from "@/lib/acciones";
+import { Dialogo } from "@/components/dialogo";
 import { Aviso, Boton, Campo, Entrada } from "@/components/ui/primitivos";
+import { isoDia } from "@/lib/formato";
 import type { Reserva } from "@/lib/tipos";
 
 export function Reagendar({ reserva, zona }: { reserva: Reserva; zona: string }) {
@@ -13,31 +15,30 @@ export function Reagendar({ reserva, zona }: { reserva: Reserva; zona: string })
       <Boton variante="fantasma" onClick={() => setAbierto(true)}>
         Mover
       </Boton>
-      {abierto ? <Dialogo reserva={reserva} zona={zona} cerrar={() => setAbierto(false)} /> : null}
+      {abierto ? <Mover reserva={reserva} zona={zona} cerrar={() => setAbierto(false)} /> : null}
     </>
   );
 }
 
-function Dialogo({ reserva, zona, cerrar }: { reserva: Reserva; zona: string; cerrar: () => void }) {
+function Mover({ reserva, zona, cerrar }: { reserva: Reserva; zona: string; cerrar: () => void }) {
   const router = useRouter();
-  const [dia, setDia] = useState(() => new Date(reserva.inicio).toISOString().slice(0, 10));
+  const [dia, setDia] = useState(() => isoDia(new Date(reserva.inicio), zona));
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, iniciar] = useTransition();
 
-  function buscar(fecha: string) {
-    setDia(fecha);
+  useEffect(() => {
+    if (!dia) return;
     setSlots(null);
     setError(null);
     iniciar(async () => {
-      const libres = await slotsLibres(reserva.service_id, fecha, reserva.personas);
-      setSlots(libres);
+      setSlots(await slotsLibres(reserva.service_id, dia, reserva.personas));
     });
-  }
+  }, [dia, reserva.service_id, reserva.personas]);
 
-  function mover(inicio: string) {
+  function mover(slot: Slot) {
     iniciar(async () => {
-      const resultado = await reagendarReserva(reserva.id, inicio);
+      const resultado = await reagendarReserva(reserva.id, slot.inicio, slot.resource_id);
       if (resultado.error) {
         setError(resultado.error);
         return;
@@ -55,11 +56,7 @@ function Dialogo({ reserva, zona, cerrar }: { reserva: Reserva; zona: string; ce
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-tinta/25 px-4" onClick={cerrar}>
-      <div
-        className="entra w-full max-w-md rounded-lg border border-linea bg-panel shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Dialogo titulo={`Mover reserva ${reserva.codigo}`} cerrar={cerrar} className="max-w-md">
         <div className="border-b border-linea px-4 py-3">
           <h2 className="text-[13px] font-semibold text-tinta">Mover reserva {reserva.codigo}</h2>
           <p className="mt-0.5 text-xs text-tinta-3">
@@ -69,7 +66,7 @@ function Dialogo({ reserva, zona, cerrar }: { reserva: Reserva; zona: string; ce
         </div>
         <div className="space-y-3 px-4 py-4">
           <Campo etiqueta="Nuevo día">
-            <Entrada type="date" value={dia} onChange={(e) => buscar(e.target.value)} />
+            <Entrada type="date" value={dia} onChange={(e) => setDia(e.target.value)} autoFocus />
           </Campo>
           {error ? <Aviso tono="error">{error}</Aviso> : null}
           {cargando ? <p className="text-xs text-tinta-3">Buscando horarios libres…</p> : null}
@@ -80,9 +77,9 @@ function Dialogo({ reserva, zona, cerrar }: { reserva: Reserva; zona: string; ce
               <div className="grid grid-cols-3 gap-1.5">
                 {slots.map((s) => (
                   <button
-                    key={s.inicio}
-                    onClick={() => mover(s.inicio)}
-                    className="numeros rounded-md border border-linea bg-panel-2 px-2 py-1.5 text-[12px] text-tinta transition hover:border-acento hover:bg-acento-suave hover:text-acento"
+                    key={`${s.inicio}-${s.resource_id}`}
+                    onClick={() => mover(s)}
+                    className="numeros border border-linea bg-panel-2 px-2 py-1.5 text-[12px] text-tinta transition hover:border-acento hover:bg-acento-suave hover:text-acento"
                   >
                     {formatoHora.format(new Date(s.inicio))}
                     <span className="block text-[10px] text-tinta-3">{s.resource_nombre}</span>
@@ -100,7 +97,6 @@ function Dialogo({ reserva, zona, cerrar }: { reserva: Reserva; zona: string; ce
             Cerrar
           </Boton>
         </div>
-      </div>
-    </div>
+    </Dialogo>
   );
 }

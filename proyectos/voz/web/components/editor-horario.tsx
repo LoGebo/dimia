@@ -7,10 +7,9 @@ import { Aviso, Boton, Selector } from "@/components/ui/primitivos";
 import { horaHablada, horaDeMinutos, minutosDeHora } from "@/lib/formato";
 import { DIAS_CORTOS, type Recurso, type Regla } from "@/lib/tipos";
 
-const INICIO_MIN = 6 * 60;
+const INICIO_HABITUAL = 6 * 60;
 const FIN_MIN = 24 * 60;
 const PASO = 30;
-const FILAS = (FIN_MIN - INICIO_MIN) / PASO;
 
 type Pincel = "disponible" | "bloqueo" | "borrar";
 type Celda = "disponible" | "bloqueo" | null;
@@ -18,13 +17,20 @@ type Rejilla = Record<string, Celda[][]>;
 
 const GLOBAL = "negocio";
 
-function rejillaVacia(): Celda[][] {
-  return Array.from({ length: 7 }, () => Array.from({ length: FILAS }, () => null as Celda));
+/** La rejilla arranca a las 6, o antes si alguna regla ya empieza antes: nada se recorta al guardar. */
+function inicioDe(reglas: Regla[]): number {
+  const minimo = Math.min(INICIO_HABITUAL, ...reglas.filter((r) => r.dia_semana !== null).map((r) => minutosDeHora(r.hora_inicio)));
+  return Math.floor(minimo / 60) * 60;
 }
 
-function desdeReglas(reglas: Regla[], claves: string[]): Rejilla {
+function rejillaVacia(filas: number): Celda[][] {
+  return Array.from({ length: 7 }, () => Array.from({ length: filas }, () => null as Celda));
+}
+
+function desdeReglas(reglas: Regla[], claves: string[], inicio: number): Rejilla {
+  const FILAS = (FIN_MIN - inicio) / PASO;
   const rejilla: Rejilla = {};
-  for (const clave of claves) rejilla[clave] = rejillaVacia();
+  for (const clave of claves) rejilla[clave] = rejillaVacia(FILAS);
 
   const recurrentes = reglas.filter((r) => r.dia_semana !== null && r.tipo !== "festivo");
   for (const orden of ["disponible", "bloqueo"] as const) {
@@ -33,19 +39,20 @@ function desdeReglas(reglas: Regla[], claves: string[]): Rejilla {
       const celdas = rejilla[clave];
       const dia = celdas?.[regla.dia_semana!];
       if (!dia) continue;
-      const desde = Math.max(0, (minutosDeHora(regla.hora_inicio) - INICIO_MIN) / PASO);
-      const hasta = Math.min(FILAS, (minutosDeHora(regla.hora_fin) - INICIO_MIN) / PASO);
+      const desde = Math.max(0, (minutosDeHora(regla.hora_inicio) - inicio) / PASO);
+      const hasta = Math.min(FILAS, (minutosDeHora(regla.hora_fin) - inicio) / PASO);
       for (let i = Math.floor(desde); i < Math.ceil(hasta); i++) dia[i] = orden;
     }
   }
   return rejilla;
 }
 
-function haciaReglas(rejilla: Rejilla): ReglaNueva[] {
+function haciaReglas(rejilla: Rejilla, inicio: number): ReglaNueva[] {
   const salida: ReglaNueva[] = [];
   for (const [clave, dias] of Object.entries(rejilla)) {
     const resource_id = clave === GLOBAL ? null : clave;
     dias.forEach((celdas, dia_semana) => {
+      const FILAS = celdas.length;
       let cursor = 0;
       while (cursor < FILAS) {
         const valor = celdas[cursor];
@@ -60,8 +67,8 @@ function haciaReglas(rejilla: Rejilla): ReglaNueva[] {
           tipo: valor,
           dia_semana,
           fecha: null,
-          hora_inicio: horaDeMinutos(INICIO_MIN + cursor * PASO),
-          hora_fin: horaDeMinutos(INICIO_MIN + fin * PASO),
+          hora_inicio: horaDeMinutos(inicio + cursor * PASO),
+          hora_fin: horaDeMinutos(inicio + fin * PASO),
         });
         cursor = fin;
       }
@@ -89,20 +96,22 @@ const COLOR: Record<NonNullable<Celda>, string> = {
 export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos: Recurso[] }) {
   const router = useRouter();
   const claves = useMemo(() => [GLOBAL, ...recursos.map((r) => r.id)], [recursos]);
-  const [rejilla, setRejilla] = useState<Rejilla>(() => desdeReglas(reglas, claves));
+  const inicio = useMemo(() => inicioDe(reglas), [reglas]);
+  const FILAS = (FIN_MIN - inicio) / PASO;
+  const [rejilla, setRejilla] = useState<Rejilla>(() => desdeReglas(reglas, claves, inicio));
   const [alcance, setAlcance] = useState<string>(GLOBAL);
   const [pincel, setPincel] = useState<Pincel>("disponible");
   const [pintando, setPintando] = useState(false);
   const [sucio, setSucio] = useState(false);
-  const [mensaje, setMensaje] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
   const [guardando, iniciar] = useTransition();
 
-  const celdas = rejilla[alcance] ?? rejillaVacia();
+  const celdas = rejilla[alcance] ?? rejillaVacia(FILAS);
 
   function pintar(dia: number, fila: number) {
     setRejilla((previa) => {
       const copia: Rejilla = { ...previa };
-      const dias = (copia[alcance] ?? rejillaVacia()).map((d) => [...d]);
+      const dias = (copia[alcance] ?? rejillaVacia(FILAS)).map((d) => [...d]);
       const columna = dias[dia];
       if (!columna) return previa;
       columna[fila] = pincel === "borrar" ? null : pincel;
@@ -115,7 +124,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
 
   function aplicarATodos(dia: number) {
     setRejilla((previa) => {
-      const dias = (previa[alcance] ?? rejillaVacia()).map((d) => [...d]);
+      const dias = (previa[alcance] ?? rejillaVacia(FILAS)).map((d) => [...d]);
       const modelo = dias[dia];
       if (!modelo) return previa;
       for (let i = 0; i < 5; i++) dias[i] = [...modelo];
@@ -126,10 +135,10 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
 
   function preajuste(desde: number, hasta: number, diasHabiles: number) {
     setRejilla((previa) => {
-      const dias = rejillaVacia();
+      const dias = rejillaVacia(FILAS);
       for (let d = 0; d < diasHabiles; d++) {
         const columna = dias[d]!;
-        for (let i = (desde * 60 - INICIO_MIN) / PASO; i < (hasta * 60 - INICIO_MIN) / PASO; i++) {
+        for (let i = (desde * 60 - inicio) / PASO; i < (hasta * 60 - inicio) / PASO; i++) {
           columna[i] = "disponible";
         }
       }
@@ -140,10 +149,12 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
 
   function guardar() {
     iniciar(async () => {
-      const resultado = await guardarHorario(haciaReglas(rejilla));
-      setMensaje(resultado.ok ?? resultado.error ?? null);
-      setSucio(false);
-      router.refresh();
+      const resultado = await guardarHorario(haciaReglas(rejilla, inicio), recursos.map((r) => r.id));
+      setMensaje(resultado.error ? { tono: "error", texto: resultado.error } : resultado.ok ? { tono: "ok", texto: resultado.ok } : null);
+      if (!resultado.error) {
+        setSucio(false);
+        router.refresh();
+      }
     });
   }
 
@@ -162,7 +173,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
             </option>
           ))}
         </Selector>
-        <div className="flex overflow-hidden rounded-md border border-linea">
+        <div className="flex overflow-hidden border border-linea">
           {(
             [
               ["disponible", "Abierto"],
@@ -178,7 +189,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
               }`}
             >
               <span
-                className={`h-2 w-2 rounded-sm ${
+                className={`h-2 w-2 ${
                   valor === "disponible" ? "bg-acento" : valor === "bloqueo" ? "bg-serie-2" : "border border-linea-fuerte"
                 }`}
               />
@@ -198,7 +209,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
 
       {mensaje ? (
         <div className="px-4 pt-3">
-          <Aviso tono="ok">{mensaje}</Aviso>
+          <Aviso tono={mensaje.tono}>{mensaje.texto}</Aviso>
         </div>
       ) : null}
 
@@ -222,7 +233,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
               {Array.from({ length: FILAS }).map((_, fila) =>
                 fila % 2 === 0 ? (
                   <div key={fila} className="numeros h-[13px] text-right text-[10px] leading-[13px] text-tinta-3">
-                    {horaHablada(INICIO_MIN + fila * PASO)}
+                    {horaHablada(inicio + fila * PASO)}
                   </div>
                 ) : (
                   <div key={fila} className="h-[13px]" />
@@ -230,12 +241,12 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
               )}
             </div>
             {celdas.map((dia, indiceDia) => (
-              <div key={indiceDia} className="overflow-hidden rounded border border-linea">
+              <div key={indiceDia} className="overflow-hidden border border-linea">
                 {dia.map((celda, fila) => (
                   <div
                     key={fila}
                     role="gridcell"
-                    aria-label={`${DIAS_CORTOS[indiceDia]} ${horaDeMinutos(INICIO_MIN + fila * PASO)}`}
+                    aria-label={`${DIAS_CORTOS[indiceDia]} ${horaDeMinutos(inicio + fila * PASO)}`}
                     onMouseDown={() => {
                       setPintando(true);
                       pintar(indiceDia, fila);

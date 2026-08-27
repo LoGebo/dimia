@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { Boton, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { Formulario } from "@/components/formulario";
 import { cambiarEstadoCampana } from "@/lib/acciones";
 import { campanas, negocio } from "@/lib/consultas";
 import { fechaCorta } from "@/lib/formato";
@@ -89,18 +90,18 @@ function Renglon({ campana: c, zona }: { campana: Campana; zona: string }) {
       <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
       <div className="flex gap-1">
         {c.estado === "borrador" || c.estado === "pausada" ? (
-          <form action={cambiarEstadoCampana}>
+          <Formulario accion={cambiarEstadoCampana}>
             <input type="hidden" name="id" value={c.id} />
             <input type="hidden" name="estado" value="activa" />
             <Boton variante="solido" className="!h-7">Activar</Boton>
-          </form>
+          </Formulario>
         ) : null}
         {c.estado === "activa" ? (
-          <form action={cambiarEstadoCampana}>
+          <Formulario accion={cambiarEstadoCampana}>
             <input type="hidden" name="id" value={c.id} />
             <input type="hidden" name="estado" value="pausada" />
             <Boton variante="fantasma" className="!h-7">Pausar</Boton>
-          </form>
+          </Formulario>
         ) : null}
       </div>
     </li>

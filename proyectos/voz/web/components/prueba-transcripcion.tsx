@@ -43,7 +43,7 @@ export function Transcripcion({ turnos }: { turnos: Turno[] }) {
     <div className="max-h-[380px] space-y-2 overflow-y-auto px-4 py-3">
       {turnos.map((t) => (
         <div key={t.id} className={t.quien === "tu" ? "flex justify-end" : "flex justify-start"}>
-          <div className={`max-w-[85%] rounded-lg border px-2.5 py-1.5 ${ESTILO[t.quien]}`}>
+          <div className={`max-w-[85%] border px-2.5 py-1.5 ${ESTILO[t.quien]}`}>
             {t.quien !== "sistema" ? (
               <span className="etiqueta block text-[10px]">{NOMBRE[t.quien]}</span>
             ) : null}

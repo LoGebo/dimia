@@ -111,7 +111,7 @@ export function Chip({
   return (
     <a
       href={href}
-      aria-pressed={activo}
+      aria-current={activo ? "true" : undefined}
       className={`inline-flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition ${
         activo
           ? "border-tinta bg-tinta text-paper"

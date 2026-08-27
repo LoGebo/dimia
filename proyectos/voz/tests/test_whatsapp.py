@@ -945,3 +945,47 @@ async def test_si_la_base_falla_el_cliente_igual_recibe_respuesta(tenant, cfg):
     salidas = await agente.atender(parse_webhook(_envoltura(_texto("hola")))[0])
 
     assert salidas[0].texto == "Con gusto."
+
+
+# ---------------------------------------------------------------- reseñas
+
+
+class AgendaConResena(AgendaFalsa):
+    def __init__(self, tenant: Tenant, esperando: bool) -> None:
+        super().__init__(tenant)
+        self.esperando = esperando
+        self.calificaciones: list[str] = []
+
+    async def resena_esperando(self, tenant_id, telefono) -> bool:
+        return self.esperando
+
+    async def resena_responder(self, tenant_id, telefono, texto) -> dict:
+        self.calificaciones.append(texto)
+        return {"ok": True, "calificacion": int(texto), "resena_url": None}
+
+
+async def test_un_numero_justo_despues_de_la_pregunta_es_la_resena(tenant, cfg):
+    agenda = AgendaConResena(tenant, esperando=True)
+    llm = LLMFalso([])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("5")))[0])
+
+    assert agenda.calificaciones == ["5"]
+    assert llm.llamadas == []
+    assert "Gracias" in salidas[0].texto
+    assert [t["autor"] for t in agenda.turnos] == ["cliente", "agente"]
+    assert agenda.turnos[0]["texto"] == "5"
+    assert agenda.turnos[1]["texto"] == salidas[0].texto
+
+
+async def test_un_numero_a_mitad_de_otra_conversacion_no_es_calificacion(tenant, cfg):
+    """'¿Para cuantas personas?' — '2' son dos personas, no dos estrellas."""
+    agenda = AgendaConResena(tenant, esperando=False)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Perfecto, mesa para dos.")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("2")))[0])
+
+    assert agenda.calificaciones == []
+    assert salidas[0].texto == "Perfecto, mesa para dos."

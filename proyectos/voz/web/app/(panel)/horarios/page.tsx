@@ -2,7 +2,8 @@ import { BotonPeligro } from "@/components/boton-peligro";
 import { Encabezado } from "@/components/encabezado";
 import { EditorHorario } from "@/components/editor-horario";
 import { BotonEnviar, Formulario } from "@/components/formulario";
-import { Boton, Campo, Entrada, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { Campo, Entrada, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { fechaCorta } from "@/lib/formato";
 import { eliminarRegla, guardarExcepcion } from "@/lib/acciones";
 import { negocio, recursos, reglas } from "@/lib/consultas";
 import { exigirSeccion } from "@/lib/sesion";
@@ -10,7 +11,8 @@ import { exigirSeccion } from "@/lib/sesion";
 export default async function Horarios() {
   const giro = await exigirSeccion("/horarios");
   const [config, listaRecursos, listaReglas] = await Promise.all([negocio(), recursos(), reglas()]);
-  const excepciones = listaReglas.filter((r) => r.fecha !== null);
+  // Las ausencias por persona tienen su propia lista en Equipo; aquí solo las del negocio.
+  const excepciones = listaReglas.filter((r) => r.fecha !== null && r.resource_id === null);
 
   return (
     <>
@@ -67,7 +69,7 @@ export default async function Horarios() {
               <ul className="divide-y divide-linea">
                 {excepciones.map((r) => (
                   <li key={r.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <span className="numeros w-24 text-[13px] font-medium text-tinta">{r.fecha}</span>
+                    <span className="numeros w-24 text-[13px] font-medium text-tinta">{fechaCorta(`${r.fecha}T12:00:00Z`, "UTC")}</span>
                     <span className="text-[13px] text-tinta-2">
                       {r.tipo === "festivo"
                         ? "Cerrado"
@@ -78,10 +80,10 @@ export default async function Horarios() {
                     <span className="numeros text-[12px] text-tinta-3">
                       {r.hora_inicio} – {r.hora_fin}
                     </span>
-                    <form action={eliminarRegla} className="ml-auto">
+                    <Formulario accion={eliminarRegla} className="ml-auto">
                       <input type="hidden" name="id" value={r.id} />
                       <BotonPeligro etiqueta="Sí, quitar">Quitar</BotonPeligro>
-                    </form>
+                    </Formulario>
                   </li>
                 ))}
               </ul>

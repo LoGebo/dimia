@@ -14,8 +14,22 @@ export function clienteServicio(): SupabaseClient {
 
 export function autorizada(peticion: Request): boolean {
   const esperado = entorno("FUNCTION_SECRET");
-  if (!esperado) return true;
-  return peticion.headers.get("x-function-secret") === esperado;
+  if (!esperado) {
+    console.error("FUNCTION_SECRET no esta definido: se rechaza la peticion");
+    return false;
+  }
+  return igualesEnTiempoConstante(peticion.headers.get("x-function-secret") ?? "", esperado);
+}
+
+function igualesEnTiempoConstante(a: string, b: string): boolean {
+  const ba = new TextEncoder().encode(a);
+  const bb = new TextEncoder().encode(b);
+  const largo = Math.max(ba.length, bb.length);
+  let diferencia = ba.length ^ bb.length;
+  for (let i = 0; i < largo; i++) {
+    diferencia |= (ba[i] ?? 0) ^ (bb[i] ?? 0);
+  }
+  return diferencia === 0;
 }
 
 export function json(cuerpo: unknown, status = 200): Response {

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
@@ -63,7 +64,7 @@ function clienteSupabase(almacen: Awaited<ReturnType<typeof cookies>>) {
   );
 }
 
-export async function usuarioActual(): Promise<{ id: string; email: string } | null> {
+export const usuarioActual = cache(async (): Promise<{ id: string; email: string } | null> => {
   const almacen = await cookies();
   if (modoSupabase()) {
     const { data } = await clienteSupabase(almacen).auth.getUser();
@@ -78,7 +79,7 @@ export async function usuarioActual(): Promise<{ id: string; email: string } | n
   );
   const fila = filas[0];
   return fila ? { id, email: fila.email } : null;
-}
+});
 
 export async function iniciarSesionLocal(email: string, password: string): Promise<string | null> {
   const filas = await elevado((q) =>

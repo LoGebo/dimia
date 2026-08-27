@@ -8,6 +8,7 @@ import { contexto } from "@/lib/sesion";
 export default async function NuevaCampanaPagina() {
   const { giro } = await contexto();
   const [noShow, inactivos, pago] = await Promise.all([alcanceCampana("no_show", 30), alcanceCampana("inactivos", 90), alcanceCampana("recordatorio_pago", 0)]);
+  // Los de 30 y 90 días son el arranque; el formulario los vuelve a pedir al cambiar los días.
   return (
     <>
       <Encabezado

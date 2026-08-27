@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { registrarPago, type Estado } from "@/lib/acciones";
+import { Dialogo } from "@/components/dialogo";
 import { Aviso, Boton, Campo, Entrada, Selector } from "@/components/ui/primitivos";
 import { NOMBRE_METODO, type MetodoPago } from "@/lib/tipos";
 
@@ -43,7 +44,7 @@ export function Cobrar({
       )}
       {abierto
         ? createPortal(
-            <Dialogo
+            <FormaCobro
               bookingId={bookingId}
               pedidoId={pedidoId}
               concepto={concepto}
@@ -57,7 +58,7 @@ export function Cobrar({
   );
 }
 
-function Dialogo({
+function FormaCobro({
   bookingId,
   pedidoId,
   concepto,
@@ -84,8 +85,8 @@ function Dialogo({
   }, [estado.ok, router, cerrar]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-tinta/40 px-4" onClick={cerrar}>
-      <form action={enviar} onClick={(e) => e.stopPropagation()} className="entra w-full max-w-md border border-linea bg-panel">
+    <Dialogo titulo={`Cobrar ${concepto}`} cerrar={cerrar} className="max-w-md">
+      <form action={enviar}>
         <div className="border-b border-linea px-4 py-3">
           <h2 className="flex items-baseline gap-1.5 text-[15px] font-semibold text-tinta">
             Cobrar <i className="cuadrado" aria-hidden="true" />
@@ -99,7 +100,7 @@ function Dialogo({
           <input type="hidden" name="pendiente" value={pendiente ? "1" : "0"} />
           <div className="grid grid-cols-2 gap-3">
             <Campo etiqueta="Monto (MXN)">
-              <Entrada name="monto" type="number" min={0} step="1" defaultValue={montoSugerido} required autoFocus className="numeros font-mono text-[16px]" />
+              <Entrada name="monto" type="number" min={1} step="1" defaultValue={montoSugerido} required autoFocus className="numeros font-mono text-[16px]" />
             </Campo>
             <Campo etiqueta="Cómo pagó">
               <Selector name="metodo" value={metodo} onChange={(e) => setMetodo(e.target.value as MetodoPago)}>
@@ -140,6 +141,6 @@ function Dialogo({
           </Boton>
         </div>
       </form>
-    </div>
+    </Dialogo>
   );
 }

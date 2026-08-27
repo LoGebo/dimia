@@ -21,7 +21,7 @@ export function BotonTema() {
     <button
       onClick={alternar}
       aria-label={tema === "oscuro" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-      className="flex h-7 w-7 items-center justify-center rounded-md border border-linea text-tinta-3 transition hover:bg-panel-2 hover:text-tinta"
+      className="flex h-7 w-7 items-center justify-center border border-linea text-tinta-3 transition hover:bg-panel-2 hover:text-tinta"
     >
       <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4">
         {tema === "oscuro" ? (

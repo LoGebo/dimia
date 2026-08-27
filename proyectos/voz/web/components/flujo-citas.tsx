@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { cancelarReserva, moverCita, type PasoFlujo } from "@/lib/acciones";
 import { Cobrar } from "@/components/cobrar";
+import { Formulario } from "@/components/formulario";
 import { Reagendar } from "@/components/reagendar";
-import { hora, moneda, telefono } from "@/lib/formato";
+import { hora, iniciales, moneda, telefono } from "@/lib/formato";
 import { pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
 
 export const MINUTOS_TOLERANCIA = 15;
@@ -20,13 +21,6 @@ export function minutosDesde(iso: string, ahora: number): number {
   return Math.round((ahora - new Date(iso).getTime()) / 60000);
 }
 
-export function iniciales(nombre: string): string {
-  const partes = nombre.trim().split(/\s+/);
-  const a = partes[0]?.[0] ?? "";
-  const b = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? "") : (partes[0]?.[1] ?? "");
-  return `${a}${b}`.toUpperCase();
-}
-
 function nombreCorto(nombre: string): string {
   const partes = nombre.trim().split(/\s+/);
   if (partes.length < 2) return nombre;
@@ -40,18 +34,19 @@ function nombreCorto(nombre: string): string {
 export function FlujoCitas({
   columnas,
   reservas,
+  delDia = reservas,
   zona,
   ahora,
   nuevaCita,
-  cobradas = new Map(),
 }: {
   columnas: Columna[];
+  /** Las que se pintan: ya filtradas por recurso o por chip. */
   reservas: Reserva[];
+  /** Todas las del día, para que el resumen no cambie con el filtro. */
+  delDia?: Reserva[];
   zona: string;
   ahora: number;
   nuevaCita?: React.ReactNode;
-  /** booking_id → monto cobrado, para no cobrar dos veces. */
-  cobradas?: Map<string, string>;
 }) {
   const destino = new Map<PasoCita, PasoCita>();
   for (const c of columnas) for (const p of c.incluye ?? [c.paso]) destino.set(p, c.paso);
@@ -86,11 +81,11 @@ export function FlujoCitas({
                 </span>
               </header>
 
-              {c.paso === "atendida" ? <ResumenAtendidas lista={lista} total={reservas} cobradas={cobradas} /> : null}
+              {c.paso === "atendida" ? <ResumenAtendidas lista={delDia.filter((r) => pasoDe(r) === "atendida")} total={delDia} /> : null}
 
               <ul className="flex flex-1 flex-col gap-2 px-2 pb-2">
                 {lista.map((r) => (
-                  <Tarjeta key={r.id} reserva={r} paso={pasoDe(r)} zona={zona} ahora={ahora} cobrado={cobradas.get(r.id) ?? null} />
+                  <Tarjeta key={r.id} reserva={r} paso={pasoDe(r)} zona={zona} ahora={ahora} />
                 ))}
                 {lista.length === 0 ? (
                   <li className="px-2 py-6 text-center text-[12px] text-tinta-3">Nada aquí todavía.</li>
@@ -108,10 +103,10 @@ export function FlujoCitas({
   );
 }
 
-function ResumenAtendidas({ lista, total, cobradas }: { lista: Reserva[]; total: Reserva[]; cobradas: Map<string, string> }) {
+function ResumenAtendidas({ lista, total }: { lista: Reserva[]; total: Reserva[] }) {
   const personas = lista.reduce((s, r) => s + r.personas, 0);
-  const ingreso = lista.reduce((s, r) => s + Number(cobradas.get(r.id) ?? 0), 0);
-  const conPrecio = lista.filter((r) => cobradas.has(r.id)).length;
+  const ingreso = lista.reduce((s, r) => s + Number(r.cobrado ?? 0), 0);
+  const conPrecio = lista.filter((r) => r.cobrado !== null).length;
   const esperadas = total.filter((r) => r.estado === "confirmada" || r.estado === "completada").length;
   const avance = esperadas > 0 ? Math.round((lista.length / esperadas) * 100) : 0;
 
@@ -142,19 +137,8 @@ function ResumenAtendidas({ lista, total, cobradas }: { lista: Reserva[]; total:
   );
 }
 
-function Tarjeta({
-  reserva: r,
-  paso,
-  zona,
-  ahora,
-  cobrado,
-}: {
-  reserva: Reserva;
-  paso: PasoCita;
-  zona: string;
-  ahora: number;
-  cobrado: string | null;
-}) {
+function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: PasoCita; zona: string; ahora: number }) {
+  const cobrado = r.cobrado;
   const desdeInicio = minutosDesde(r.inicio, ahora);
   const retraso = paso === "por_llegar" && desdeInicio > 0 ? desdeInicio : 0;
   const enFalta = retraso > MINUTOS_TOLERANCIA;
@@ -260,10 +244,10 @@ function Tarjeta({
             <Paso id={r.id} paso="no_llego">
               No llegó
             </Paso>
-            <form action={cancelarReserva} className="ml-auto">
+            <Formulario accion={cancelarReserva} className="ml-auto">
               <input type="hidden" name="id" value={r.id} />
               <button className="h-7 px-2 text-[12px] text-tinta-3 transition hover:text-critico">Cancelar</button>
-            </form>
+            </Formulario>
           </>
         ) : null}
         {paso === "en_atencion" ? (
@@ -311,7 +295,7 @@ function Paso({
   children: string;
 }) {
   return (
-    <form action={moverCita}>
+    <Formulario accion={moverCita}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="paso" value={paso} />
       <button
@@ -323,6 +307,6 @@ function Paso({
       >
         {children}
       </button>
-    </form>
+    </Formulario>
   );
 }

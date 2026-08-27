@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
+import { Formulario } from "@/components/formulario";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
+import { NavegarDia } from "@/components/navegar-dia";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { cambiarEstadoPago } from "@/lib/acciones";
 import { negocio, pagosDelDia, pagosPendientes, resumenCobros } from "@/lib/consultas";
-import { fechaCorta, fechaLarga, hora, isoDia, moneda, sumarDias } from "@/lib/formato";
+import { diaValido, fechaCorta, fechaLarga, hora, isoDia, moneda, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import { NOMBRE_METODO, type MetodoPago, type Pago } from "@/lib/tipos";
 
@@ -13,7 +15,7 @@ export default async function Cobros({ searchParams }: { searchParams: Promise<{
   const parametros = await searchParams;
   const config = await negocio();
   const hoy = isoDia(new Date(), config.zona_horaria);
-  const dia = parametros.dia ?? hoy;
+  const dia = diaValido(parametros.dia, hoy);
   const [pagos, pendientes, resumen] = await Promise.all([pagosDelDia(dia), pagosPendientes(), resumenCobros(dia)]);
 
   return (
@@ -22,15 +24,7 @@ export default async function Cobros({ searchParams }: { searchParams: Promise<{
         titulo="Cobros"
         descripcion={fechaLarga(`${dia}T12:00:00Z`, "UTC")}
         giro={giro.nombre}
-        acciones={
-          <div className="flex items-center gap-1">
-            <Navegar destino={`/cobros?dia=${sumarDias(dia, -1)}`} etiqueta="‹" />
-            <Link href={`/cobros?dia=${hoy}`} className="h-8 border border-linea bg-panel px-2.5 text-[12px] leading-[30px] text-tinta-2 transition hover:bg-panel-2">
-              Hoy
-            </Link>
-            <Navegar destino={`/cobros?dia=${sumarDias(dia, 1)}`} etiqueta="›" />
-          </div>
-        }
+        acciones={<NavegarDia anterior={`/cobros?dia=${sumarDias(dia, -1)}`} hoy={`/cobros?dia=${hoy}`} siguiente={`/cobros?dia=${sumarDias(dia, 1)}`} />}
       />
       <div className="space-y-4 px-5 py-5">
         <TiraIndicadores>
@@ -93,28 +87,20 @@ function ListaPagos({ pagos, zona, conFecha = false }: { pagos: Pago[]; zona: st
           <span className={`numeros font-mono text-[14px] font-medium ${p.estado === "pagado" ? "text-tinta" : "text-alerta"}`}>{moneda(p.monto)}</span>
           {p.estado === "pendiente" ? (
             <div className="flex gap-1">
-              <form action={cambiarEstadoPago}>
+              <Formulario accion={cambiarEstadoPago}>
                 <input type="hidden" name="id" value={p.id} />
                 <input type="hidden" name="estado" value="pagado" />
                 <button className="h-7 bg-bueno px-2.5 text-[12px] font-medium text-white transition hover:brightness-110">Ya pagó</button>
-              </form>
-              <form action={cambiarEstadoPago}>
+              </Formulario>
+              <Formulario accion={cambiarEstadoPago}>
                 <input type="hidden" name="id" value={p.id} />
                 <input type="hidden" name="estado" value="cancelado" />
                 <button className="h-7 px-2 text-[12px] text-tinta-3 transition hover:text-critico">Cancelar</button>
-              </form>
+              </Formulario>
             </div>
           ) : null}
         </li>
       ))}
     </ul>
-  );
-}
-
-function Navegar({ destino, etiqueta }: { destino: string; etiqueta: string }) {
-  return (
-    <Link href={destino} className="flex h-8 w-8 items-center justify-center border border-linea bg-panel text-tinta-2 transition hover:bg-panel-2">
-      {etiqueta}
-    </Link>
   );
 }

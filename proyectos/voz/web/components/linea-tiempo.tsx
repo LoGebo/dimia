@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fechaCorta, hora, moneda } from "@/lib/formato";
+import { fechaCorta, hora, isoDia, moneda } from "@/lib/formato";
 import { NOMBRE_EVENTO, type Evento } from "@/lib/tipos";
 
 const TONO: Record<string, string> = {
@@ -59,9 +59,9 @@ function detalle(e: Evento, zona: string): string | null {
   }
 }
 
-function enlace(e: Evento): string | null {
+function enlace(e: Evento, zona: string): string | null {
   if (e.entidad === "conversacion" && e.entidad_id) return `/bandeja/${e.entidad_id}`;
-  if (e.entidad === "booking" && typeof e.datos.inicio === "string") return `/agenda?dia=${e.datos.inicio.slice(0, 10)}`;
+  if (e.entidad === "booking" && typeof e.datos.inicio === "string") return `/agenda?dia=${isoDia(new Date(e.datos.inicio), zona)}`;
   if (e.entidad === "pedido") return "/pedidos";
   if (e.entidad === "lead") return "/recados";
   return null;
@@ -77,7 +77,7 @@ export function LineaTiempo({ eventos, zona }: { eventos: Evento[]; zona: string
       {eventos.map((e, i) => {
         const nombre = NOMBRE_EVENTO[e.tipo] ?? e.tipo;
         const texto = detalle(e, zona);
-        const href = enlace(e);
+        const href = enlace(e, zona);
         return (
           <li key={e.id} className="relative flex gap-4 py-3">
             <span className="relative flex w-3 flex-none justify-center">

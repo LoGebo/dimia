@@ -27,7 +27,7 @@ export function Paso({
         <div className="flex items-center gap-3 border-t border-linea pt-4">
           <Link
             href={siguiente}
-            className="inline-flex h-8 items-center rounded-md bg-acento px-4 text-[13px] font-medium text-acento-tinta transition hover:brightness-110"
+            className="inline-flex h-8 items-center bg-acento px-4 text-[13px] font-medium text-acento-tinta transition hover:brightness-110"
           >
             {etiquetaSiguiente}
           </Link>

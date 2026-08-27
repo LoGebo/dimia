@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Encabezado } from "@/components/encabezado";
+import { Formulario } from "@/components/formulario";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
-import { Boton, Insignia, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { Boton, Campo, Insignia, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { agregarContactosCampana, cambiarEstadoCampana, excluirContacto } from "@/lib/acciones";
 import { campana, contactosDeCampana, negocio } from "@/lib/consultas";
 import { fechaCorta, hora, telefono } from "@/lib/formato";
@@ -42,17 +43,17 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
         }
         principal={
           c.estado === "activa" ? (
-            <form action={cambiarEstadoCampana}>
+            <Formulario accion={cambiarEstadoCampana}>
               <input type="hidden" name="id" value={c.id} />
               <input type="hidden" name="estado" value="pausada" />
               <Boton>Pausar</Boton>
-            </form>
+            </Formulario>
           ) : c.estado === "terminada" ? null : (
-            <form action={cambiarEstadoCampana}>
+            <Formulario accion={cambiarEstadoCampana}>
               <input type="hidden" name="id" value={c.id} />
               <input type="hidden" name="estado" value="activa" />
               <Boton variante="solido">Activar</Boton>
-            </form>
+            </Formulario>
           )
         }
       />
@@ -87,10 +88,10 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
                     </span>
                     <Insignia tono={TONO[p.estado]}>{NOMBRE_ESTADO_CONTACTO[p.estado]}</Insignia>
                     {p.estado === "pendiente" || p.estado === "sin_respuesta" ? (
-                      <form action={excluirContacto}>
+                      <Formulario accion={excluirContacto}>
                         <input type="hidden" name="id" value={p.id} />
                         <button className="h-7 px-2 text-[12px] text-tinta-3 transition hover:text-critico">Excluir</button>
-                      </form>
+                      </Formulario>
                     ) : null}
                   </li>
                 ))}
@@ -106,16 +107,20 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
             </Tarjeta>
             <Tarjeta>
               <TarjetaCabecera titulo="Agregar personas" descripcion="Un segmento completo de tus clientes." />
-              <form action={agregarContactosCampana} className="flex items-end gap-2 px-4 pb-4">
+              <Formulario accion={agregarContactosCampana} className="space-y-3 px-4 pb-4">
                 <input type="hidden" name="campana_id" value={c.id} />
-                <Selector name="segmento" defaultValue="faltan">
-                  <option value="faltan">Han faltado a una cita</option>
-                  <option value="inactivos">Sin contacto en 90 días</option>
-                  <option value="frecuentes">Frecuentes</option>
-                  <option value="todos">Todos con teléfono</option>
-                </Selector>
-                <Boton>Agregar</Boton>
-              </form>
+                <div className="flex items-end gap-2">
+                  <Campo etiqueta="Segmento" className="flex-1">
+                    <Selector name="segmento" defaultValue="faltan">
+                      <option value="faltan">Han faltado a una cita</option>
+                      <option value="inactivos">Sin contacto en 90 días</option>
+                      <option value="frecuentes">Frecuentes</option>
+                      <option value="todos">Todos con teléfono</option>
+                    </Selector>
+                  </Campo>
+                  <Boton>Agregar</Boton>
+                </div>
+              </Formulario>
             </Tarjeta>
           </div>
         </div>

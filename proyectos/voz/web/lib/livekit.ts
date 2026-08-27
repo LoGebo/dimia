@@ -15,7 +15,3 @@ export function variablesFaltantes(): string[] {
     (nombre) => !process.env[nombre],
   );
 }
-
-export function urlHttp(url: string): string {
-  return url.replace(/^ws/, "http");
-}

@@ -1,13 +1,13 @@
-import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
+import { NavegarDia } from "@/components/navegar-dia";
 import { Refrescar } from "@/components/refrescar";
 import { TableroPedidos } from "@/components/tablero-pedidos";
 import { Vacio } from "@/components/ui/primitivos";
-import { negocio, pagosDePedidos, pedidosDelDia, resumenPedidos } from "@/lib/consultas";
-import { fechaLarga, isoDia, moneda, sumarDias } from "@/lib/formato";
+import { negocio, pagosDePedidos, pedidosDelDia } from "@/lib/consultas";
+import { diaValido, fechaLarga, isoDia, moneda, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
-import type { EstadoPedido } from "@/lib/tipos";
+import { resumirPedidos, type EstadoPedido } from "@/lib/tipos";
 
 const FILTROS: { valor: string; nombre: string }[] = [
   { valor: "pendientes", nombre: "Por sacar" },
@@ -27,10 +27,11 @@ export default async function Pedidos({
   const parametros = await searchParams;
   const config = await negocio();
   const hoy = isoDia(new Date(), config.zona_horaria);
-  const dia = parametros.dia ?? hoy;
+  const dia = diaValido(parametros.dia, hoy);
   const filtro = FILTROS.find((f) => f.valor === parametros.estado)?.valor ?? "pendientes";
 
-  const [todos, resumen] = await Promise.all([pedidosDelDia(dia), resumenPedidos(dia)]);
+  const todos = await pedidosDelDia(dia);
+  const resumen = resumirPedidos(todos);
   const pagos = await pagosDePedidos(todos.map((p) => p.id));
   const cobrados = new Map(pagos.filter((p) => p.estado === "pagado" && p.pedido_id).map((p) => [p.pedido_id!, p.monto]));
 
@@ -51,18 +52,7 @@ export default async function Pedidos({
         titulo="Pedidos"
         descripcion={fechaLarga(`${dia}T12:00:00Z`, "UTC")}
         giro={giro.nombre}
-        acciones={
-          <div className="flex items-center gap-1">
-            <Navegar destino={enlace({ dia: sumarDias(dia, -1) })} etiqueta="‹" />
-            <Link
-              href={enlace({ dia: hoy })}
-              className="h-8 border border-linea bg-panel px-2.5 text-[12px] leading-[30px] text-tinta-2 transition hover:bg-panel-2"
-            >
-              Hoy
-            </Link>
-            <Navegar destino={enlace({ dia: sumarDias(dia, 1) })} etiqueta="›" />
-          </div>
-        }
+        acciones={<NavegarDia anterior={enlace({ dia: sumarDias(dia, -1) })} hoy={enlace({ dia: hoy })} siguiente={enlace({ dia: sumarDias(dia, 1) })} />}
       />
 
       <div className="space-y-4 px-5 py-5">
@@ -97,7 +87,7 @@ export default async function Pedidos({
         </div>
 
         {visibles.length === 0 ? (
-          <div className="rounded-lg border border-linea bg-panel">
+          <div className="border border-linea bg-panel">
             <Vacio
               titulo="Nada aquí"
               detalle={
@@ -112,16 +102,5 @@ export default async function Pedidos({
         )}
       </div>
     </>
-  );
-}
-
-function Navegar({ destino, etiqueta }: { destino: string; etiqueta: string }) {
-  return (
-    <Link
-      href={destino}
-      className="flex h-8 w-8 items-center justify-center border border-linea bg-panel text-tinta-2 transition hover:bg-panel-2"
-    >
-      {etiqueta}
-    </Link>
   );
 }

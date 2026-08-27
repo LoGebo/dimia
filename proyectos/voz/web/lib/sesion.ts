@@ -1,10 +1,11 @@
 import "server-only";
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { conSesion, type Consulta } from "@/lib/db";
 import { usuarioActual } from "@/lib/auth";
-import { HERRAMIENTAS_POR_DEFECTO, pasosAlta, permiteSeccion, siguientePaso } from "@/lib/giro";
+import { HERRAMIENTAS_POR_DEFECTO, permiteSeccion } from "@/lib/giro";
 import type { Herramienta, Membresia } from "@/lib/tipos";
 
 const COOKIE_NEGOCIO = "agenda_negocio";
@@ -19,7 +20,8 @@ export type Contexto = {
   membresias: Membresia[];
 };
 
-export async function membresias(userId: string): Promise<Membresia[]> {
+/** Se resuelve una vez por petición: cada tarjeta del panel lo pide y antes abría su propia transacción. */
+export const membresias = cache(async (userId: string): Promise<Membresia[]> => {
   return conSesion(userId, (q) =>
     q<Membresia>(
       `select m.tenant_id, m.rol, t.nombre, t.vertical,
@@ -33,7 +35,7 @@ export async function membresias(userId: string): Promise<Membresia[]> {
       [userId, JSON.stringify(HERRAMIENTAS_POR_DEFECTO)],
     ),
   );
-}
+});
 
 function giroDe(membresia: Membresia): Giro {
   return {
@@ -49,7 +51,7 @@ async function activa(lista: Membresia[]): Promise<Membresia> {
   return lista.find((m) => m.tenant_id === elegido) ?? lista[0]!;
 }
 
-export async function contexto(): Promise<Contexto> {
+export const contexto = cache(async (): Promise<Contexto> => {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/entrar");
   const lista = await membresias(usuario.id);
@@ -62,7 +64,7 @@ export async function contexto(): Promise<Contexto> {
     giro: giroDe(actual),
     membresias: lista,
   };
-}
+});
 
 export async function giroOpcional(): Promise<Giro | null> {
   const usuario = await usuarioActual();
@@ -75,14 +77,6 @@ export async function giroOpcional(): Promise<Giro | null> {
 export async function exigirSeccion(href: string): Promise<Giro> {
   const { giro } = await contexto();
   if (!permiteSeccion(giro.herramientas, href)) redirect("/hoy");
-  return giro;
-}
-
-export async function exigirPasoAlta(href: string): Promise<Giro> {
-  const { giro } = await contexto();
-  if (!pasosAlta(giro.herramientas).some((p) => p.href === href)) {
-    redirect(siguientePaso(giro.herramientas, "/alta"));
-  }
   return giro;
 }
 

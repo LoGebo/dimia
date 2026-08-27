@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { AreaTexto, Campo, Entrada } from "@/components/ui/primitivos";
-import { crearCampana } from "@/lib/acciones";
+import { alcanceDeCampana, crearCampana } from "@/lib/acciones";
 import { NOMBRE_TIPO_CAMPANA, type CanalCampana, type TipoCampana } from "@/lib/tipos";
 
 const MENSAJES: Record<TipoCampana, { whatsapp: string; llamada: string; objetivo: string }> = {
@@ -39,22 +39,40 @@ const MENSAJES: Record<TipoCampana, { whatsapp: string; llamada: string; objetiv
   },
 };
 
-export function NuevaCampana({ alcances }: { alcances: Record<string, number> }) {
+const CON_DIAS: TipoCampana[] = ["no_show", "inactivos"];
+
+export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string, number> }) {
   const [tipo, setTipo] = useState<TipoCampana>("no_show");
   const [canal, setCanal] = useState<CanalCampana>("whatsapp");
-  const [dias, setDias] = useState(30);
+  const [dias, setDias] = useState("30");
   const [mensaje, setMensaje] = useState(MENSAJES.no_show.whatsapp);
   const [objetivo, setObjetivo] = useState(MENSAJES.no_show.objetivo);
+  const [alcances, setAlcances] = useState(iniciales);
+  const [calculando, setCalculando] = useState(false);
 
   function cambiar(t: TipoCampana, c: CanalCampana) {
     setTipo(t);
     setCanal(c);
     setMensaje(MENSAJES[t][c]);
     setObjetivo(MENSAJES[t].objetivo);
-    if (t === "inactivos" && dias < 60) setDias(90);
+    if (t === "inactivos" && Number(dias) < 60) setDias("90");
   }
 
-  const alcance = alcances[tipo];
+  // El alcance sigue al campo de días: lo que se promete es lo que campana_poblar va a encontrar.
+  useEffect(() => {
+    if (!CON_DIAS.includes(tipo)) return;
+    const n = Number(dias);
+    if (!Number.isInteger(n) || n < 1 || n > 365) return;
+    setCalculando(true);
+    const t = setTimeout(async () => {
+      const alcance = await alcanceDeCampana(tipo, n);
+      setAlcances((previos) => ({ ...previos, [tipo]: alcance }));
+      setCalculando(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [tipo, dias]);
+
+  const alcance = calculando ? undefined : alcances[tipo];
 
   return (
     <Formulario accion={crearCampana} className="space-y-5">
@@ -70,7 +88,7 @@ export function NuevaCampana({ alcances }: { alcances: Record<string, number> })
               <input type="radio" name="tipo" value={t} checked={tipo === t} onChange={() => cambiar(t, canal)} className="sr-only" />
               <span className="flex items-center justify-between gap-2">
                 <span className="text-[13px] font-medium text-tinta">{NOMBRE_TIPO_CAMPANA[t].nombre}</span>
-                {alcances[t] !== undefined ? (
+                {alcances[t] !== undefined && !(calculando && t === tipo) ? (
                   <span className="numeros bg-panel-2 px-1.5 font-mono text-[11px] text-tinta-2">{alcances[t]}</span>
                 ) : null}
               </span>
@@ -82,7 +100,7 @@ export function NuevaCampana({ alcances }: { alcances: Record<string, number> })
 
       {tipo === "no_show" || tipo === "inactivos" ? (
         <Campo etiqueta={tipo === "no_show" ? "Faltas de los últimos (días)" : "Sin venir desde hace (días)"}>
-          <Entrada name="dias" type="number" min={1} max={365} value={dias} onChange={(e) => setDias(Number(e.target.value) || 30)} className="w-32" />
+          <Entrada name="dias" type="number" min={1} max={365} value={dias} onChange={(e) => setDias(e.target.value)} required className="w-32" />
         </Campo>
       ) : (
         <input type="hidden" name="dias" value={dias} />

@@ -22,7 +22,7 @@ export function ChipGiro({ nombre, className = "" }: { nombre: string; className
   return (
     <span
       title={nombre}
-      className={`inline-flex max-w-full items-center truncate rounded border border-acento/30 bg-acento-suave px-1.5 py-0.5 text-[11px] font-medium text-acento ${className}`}
+      className={`inline-flex max-w-full items-center truncate border border-acento/30 bg-acento-suave px-1.5 py-0.5 text-[11px] font-medium text-acento ${className}`}
     >
       {nombre}
     </span>

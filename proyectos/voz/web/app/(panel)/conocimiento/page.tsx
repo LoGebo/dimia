@@ -1,6 +1,7 @@
 import { BotonPeligro } from "@/components/boton-peligro";
 import { Encabezado } from "@/components/encabezado";
 import { FormularioFaq } from "@/components/faq";
+import { Formulario } from "@/components/formulario";
 import { Boton, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { eliminarFaq } from "@/lib/acciones";
 import { faq } from "@/lib/consultas";
@@ -73,10 +74,10 @@ export default async function Conocimiento() {
                   </summary>
                   <div className="border-t border-linea bg-panel-2 px-4 py-4">
                     <FormularioFaq entrada={e} />
-                    <form action={eliminarFaq} className="mt-3 border-t border-linea pt-3">
+                    <Formulario accion={eliminarFaq} className="mt-3 border-t border-linea pt-3">
                       <input type="hidden" name="id" value={e.id} />
                       <BotonPeligro>Eliminar respuesta</BotonPeligro>
-                    </form>
+                    </Formulario>
                   </div>
                 </details>
               ))}

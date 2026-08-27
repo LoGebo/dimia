@@ -6,11 +6,16 @@ leer y escribir sin romper nada. Fuente de verdad: `supabase/migrations/`.
 ## Las tres reglas
 
 1. **Todo cuelga de `tenant`.** Cada tabla lleva `tenant_id` y RLS. El panel entra
-   como `authenticated` y ve solo lo suyo; el motor entra como superusuario.
+   como `authenticated` y ve solo lo suyo; el motor entra como superusuario. Las
+   funciones definidoras que el panel sí puede llamar comprueban el tenant contra
+   `mis_tenants()` y no hacen nada si es ajeno; las que solo usa el motor no tienen
+   EXECUTE para `authenticated` ni `anon` (ver abajo).
 2. **`cliente` es el eje.** Citas, pedidos, recados, conversaciones, llamadas, pagos,
    reseñas y campañas apuntan a un `cliente_id`. La única puerta para crear o
-   encontrar un cliente es `cliente_resolver(tenant, canal, contacto, nombre)`;
-   los triggers la llaman solos al insertar. Nunca insertes en `cliente` a mano.
+   encontrar un cliente es `cliente_resolver(tenant, canal, contacto, nombre,
+   contacto_real)`; los triggers la llaman solos al insertar. Serializa por contacto,
+   así que dos escrituras del mismo teléfono a la vez no chocan. Nunca insertes en
+   `cliente` a mano.
 3. **`evento` es la historia.** Append-only. Cada cambio de estado deja una fila con
    `tipo`, `entidad`, `entidad_id`, `datos` y `autor` (`agente`, `equipo`, `cliente`,
    `sistema`). Solo se escribe por `evento_registrar` (definidor). Para preguntar
@@ -20,7 +25,7 @@ leer y escribir sin romper nada. Fuente de verdad: `supabase/migrations/`.
 
 | Tabla | Qué es | Claves |
 |---|---|---|
-| `cliente` | Una persona que contactó al negocio | `telefono` E.164 único por tenant; `origen`; `etiquetas`; `primer_contacto`, `ultimo_contacto` |
+| `cliente` | Una persona que contactó al negocio | `telefono` E.164 único por tenant (`telefono_normalizado`: 10 dígitos se asumen mexicanos, quita 01/044/045/00 y extensiones, respeta el `+` explícito y devuelve nulo si la longitud no es válida); `origen`; `etiquetas`; `primer_contacto`, `ultimo_contacto` (solo avanza con contacto real: una llamada de campaña sin respuesta no cuenta) |
 | `cliente_identidad` | Cómo llega: teléfono, Instagram, Messenger, correo | `(tenant, canal, identificador)` → `cliente_id` |
 | `booking` | Una cita | `estado` (confirmada, completada, cancelada, no_asistio), `llegada`, `resource_id`, `service_id`, `codigo` |
 | `pedido` / `pedido_item` | Un pedido con sus renglones | `estado` (abierto, confirmado, entregado, cancelado); total por `pedido_total()` |
@@ -35,7 +40,7 @@ leer y escribir sin romper nada. Fuente de verdad: `supabase/migrations/`.
 | `resena` | Una calificación 1–5 después de atender | `booking_id` único, `resource_id` |
 | `linea` | Un número de entrada extra ligado a un origen | `telefono` único, `etiqueta`, `campana_id` |
 | `catalogo_item` | Lo que se vende | `precio`, `disponible`, `existencias` (null = sin control) |
-| `outbox` | Cola de salida: WhatsApp y llamadas | `plantilla`, `canal`, `destino`, `estado`; exactamente uno de `booking_id`, `pedido_id`, `campana_contacto_id`, `pago_id` |
+| `outbox` | Cola de salida: WhatsApp y llamadas | `plantilla`, `canal`, `destino` (siempre normalizado), `estado`; exactamente uno de `booking_id`, `pedido_id`, `campana_contacto_id`, `pago_id`. Lo encolan funciones definidoras; el panel además tiene política de insert sobre su propio tenant |
 | `evento` | La historia | ver arriba |
 
 ## Tipos de evento
@@ -53,28 +58,44 @@ cita, total del pedido, monto y método del pago, motivo/resultado/resumen del c
 
 ## Funciones que un agente puede llamar
 
-| Función | Para qué |
-|---|---|
-| `cliente_resolver(tenant, canal, contacto, nombre)` | El cliente de un contacto, creándolo si hace falta |
-| `cliente_atribuir(tenant, telefono, origen)` | Fijar la procedencia si aún no tiene |
-| `contacto_cerrar(tenant, 'call_log'\|'conversacion', id, motivo, resultado, resumen)` | Escribir el cierre de un contacto |
-| `conversaciones_por_resumir(min, limite)` | Conversaciones frías sin cierre |
-| `campana_poblar(campana)` / `campana_encolar(limite)` / `campana_contacto_resultado(...)` | El ciclo de una campaña |
-| `equipo_productividad(tenant, desde, hasta)` | Citas, cobrado y comisión por persona |
-| `resenas_resumen(tenant, dias)` / `clientes_por_origen(tenant, dias)` | Para el resumen y para insights |
-| `resena_responder(tenant, telefono, texto)` | Registrar un 1–5 si se le preguntó hace poco |
-| `tenant_por_numero(numero)` | El negocio y el origen de un número marcado |
-| `slots_libres`, `reservar`, `cancelar_reserva`, `pedido_confirmar`, `registrar_recado` | El motor de siempre |
+| Función | Para qué | Quién |
+|---|---|---|
+| `cliente_resolver(tenant, canal, contacto, nombre, contacto_real)` | El cliente de un contacto, creándolo si hace falta | motor y panel |
+| `cliente_atribuir(tenant, telefono, origen)` | Fijar la procedencia si aún no tiene | solo motor |
+| `contacto_cerrar(tenant, 'call_log'\|'conversacion', id, motivo, resultado, resumen)` | Escribir el cierre de un contacto; sin fila que cerrar no deja evento | solo motor |
+| `conversaciones_por_resumir(min, limite)` | Conversaciones frías sin cierre | motor |
+| `campana_poblar(campana)` / `campana_contacto_resultado(...)` | Poblar y cerrar contactos; con tenant ajeno no hacen nada | motor y panel |
+| `campana_encolar(limite)` / `campana_cerrar_terminadas()` | El ciclo de una campaña | solo motor |
+| `evento_registrar(tenant, cliente, tipo, entidad, id, datos)` | Escribir un evento; con tenant ajeno no escribe | solo motor (los triggers son definidores) |
+| `equipo_productividad(tenant, desde, hasta)` | Citas, cobrado y comisión por persona | motor y panel |
+| `resenas_resumen(tenant, dias)` / `clientes_por_origen(tenant, dias)` | Para el resumen y para insights | motor y panel |
+| `resena_responder(tenant, telefono, texto)` | Registrar un 1–5 si se le preguntó hace poco; compara teléfonos normalizados | solo motor |
+| `tenant_por_numero(numero)` | El negocio y el origen de un número marcado | motor |
+| `tenant_permitido(tenant)` | Verdadero si no hay usuario en la sesión o el tenant es suyo | interno |
+| `slots_libres`, `reservar`, `cancelar_reserva`, `pedido_confirmar`, `registrar_recado` | El motor de siempre | motor y panel |
+
+«Solo motor» significa que `authenticated` y `anon` no tienen EXECUTE: en Supabase
+no aparecen como RPC. Cualquier función definidora nueva sigue la misma regla en la
+migración que la crea.
 
 ## Lo que pasa solo (triggers)
 
 - Insertar en `booking`, `pedido`, `lead`, `conversacion` o `call_log` resuelve el cliente.
+  Una conversación que ya está abierta no vuelve a resolverlo en cada turno.
 - Cambiar `estado` o `llegada` deja evento.
 - Marcar una cita `completada` programa la pregunta de reseña (`outbox` 'resena').
 - Un `pago` pendiente con `enlace_url` sale por WhatsApp (`outbox` 'pago').
 - Un mensaje del cliente o una cita nueva cierran el contacto de campaña como
-  `contestado` o `agendo`.
-- Confirmar un pedido descuenta `existencias` y apaga el item en cero.
+  `contestado` o `agendo`. Una cita capturada por el equipo no cuenta como `agendo`
+  salvo que traiga el `call_id` del contacto.
+- El `outbox` cierra el contacto de campaña: `fallido` cuando el envío se rinde o
+  vence, `enviado` cuando el WhatsApp salió. El proceso Python no es la fuente.
+- Confirmar un pedido descuenta `existencias` (sumando renglones repetidos) y apaga
+  el item en cero; cancelar un pedido confirmado las devuelve.
+- Todos los triggers de memoria (eventos, campañas, reseña, cobranza, inventario,
+  cliente) atrapan sus errores y avisan con `warning`: nunca revierten la cita, el
+  pedido o la llamada que los disparó. La confirmación y la cancelación del `outbox`
+  siguen siendo estrictas: viven en la misma transacción que el dato a propósito.
 
 ## Cierre de contactos
 
