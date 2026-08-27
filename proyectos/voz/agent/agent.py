@@ -519,6 +519,16 @@ def franja_a_horas(franja: str) -> tuple[dtime | None, dtime | None]:
     return None, None
 
 
+def _saliente_de_metadatos(metadata: str | None) -> dict | None:
+    if not metadata:
+        return None
+    try:
+        datos = json.loads(metadata).get("saliente")
+    except (ValueError, TypeError, AttributeError):
+        return None
+    return datos if isinstance(datos, dict) else None
+
+
 def _tenant_de_metadatos(metadata: str | None, nombre_sala: str) -> uuid.UUID | None:
     if metadata:
         try:
@@ -642,7 +652,14 @@ async def entrypoint(ctx: JobContext) -> None:
     llamante = attrs.get("sip.from_number") or participante.identity
 
     tenant = None
-    if marcado:
+    saliente = _saliente_de_metadatos(ctx.room.metadata)
+    if saliente:
+        # El agente marco: el negocio viene en la sala y la persona es el destino.
+        tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
+        if tenant_id:
+            tenant = await agenda.tenant_por_id(tenant_id)
+        llamante = str(saliente.get("telefono") or llamante)
+    elif marcado:
         tenant = await agenda.tenant_por_telefono(marcado)
     else:
         tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
@@ -674,6 +691,10 @@ async def entrypoint(ctx: JobContext) -> None:
         catalogo_incompleto=menu_total > len(menu),
     )
     recepcionista.telefono = llamante
+    if saliente:
+        await recepcionista.update_instructions(
+            recepcionista.instructions + prompt_mod.guion_saliente(saliente)
+        )
 
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
@@ -773,7 +794,11 @@ async def entrypoint(ctx: JobContext) -> None:
         room_input_options=RoomInputOptions(close_on_disconnect=False),
     )
 
-    await session.say(prompt_mod.saludo(tenant, plantilla), allow_interruptions=True)
+    apertura = (
+        prompt_mod.apertura_saliente(tenant, saliente) if saliente
+        else prompt_mod.saludo(tenant, plantilla)
+    )
+    await session.say(apertura, allow_interruptions=True)
 
     async def al_colgar() -> None:
         try:
@@ -805,6 +830,19 @@ async def entrypoint(ctx: JobContext) -> None:
             if cierre:
                 await agenda.llamada_cerrar(
                     tenant.id, recepcionista.call_id, cierre.motivo, cierre.resultado, cierre.resumen
+                )
+            if saliente and saliente.get("campana_contacto_id"):
+                hablo = any(t["autor"] == "cliente" for t in turnos)
+                estado = (
+                    "agendo" if recepcionista.booking_id is not None
+                    else "contestado" if hablo
+                    else "sin_respuesta"
+                )
+                if hablo and cierre and "no le volvemos a llamar" in (cierre.resumen or "").lower():
+                    estado = "rechazo"
+                await agenda.campana_contacto_resultado(
+                    uuid.UUID(str(saliente["campana_contacto_id"])), estado,
+                    cierre.resumen if cierre else None, recepcionista.call_id,
                 )
         except Exception:
             log.exception("no se pudo cerrar la llamada")

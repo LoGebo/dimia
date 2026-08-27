@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     livekit_url: str = "ws://localhost:7880"
     livekit_api_key: str = "devkey"
     livekit_api_secret: str = "secret"
+    # Troncal SIP de salida en LiveKit (ST_xxx). Sin el, las campañas por
+    # llamada se quedan en la cola con su error a la vista.
+    livekit_sip_trunk_saliente: str = ""
+    telefono_salida: str = ""
 
     deepgram_api_key: str = ""
     stt_model: str = "nova-3"

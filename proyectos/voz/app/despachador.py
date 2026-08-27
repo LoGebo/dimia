@@ -22,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from app.cierre import resumir
+from app.salientes import SinTroncal, marcar
 from app.supabase_client import Agenda
 
 log = logging.getLogger("despachador")
@@ -39,6 +40,8 @@ VENTANA_RECORDATORIO_HORAS = 24
 # mensajes; ahi se escribe su cierre.
 CADA_CIERRE_SEG = 600
 CONVERSACION_FRIA_MIN = 120
+# Cada cuanto se revisa que campañas tienen a quien hablarle.
+CADA_CAMPANA_SEG = 300
 
 
 class Mensajero(Protocol):
@@ -93,6 +96,10 @@ def redactar(plantilla: str, payload: dict) -> str:
             + "Si algo está mal, respóndenos por aquí."
         )
 
+    if plantilla == "campana":
+        # El texto ya viene redactado por campana_redactar, con nombre y negocio.
+        return str(payload.get("mensaje") or "").strip()
+
     if plantilla == "confirmacion":
         return (
             f"¡Listo, {nombre or 'todo'}! Tu {payload.get('servicio', 'cita')} en "
@@ -128,6 +135,8 @@ class Despachador:
         self.llm = llm
         self._ultimo_recordatorio = 0.0
         self._ultimo_cierre = 0.0
+        self._ultima_campana = 0.0
+        self._salientes: set[asyncio.Task] = set()
 
     async def tanda(self) -> Tanda:
         """Una vuelta: reclama lo que toca, lo manda y marca el resultado."""
@@ -146,11 +155,23 @@ class Despachador:
                 )
                 continue
             try:
+                if fila["canal"] == "llamada":
+                    # Marcar tarda lo que tarde en contestar la persona: se
+                    # lanza aparte y la cola sigue con lo demas.
+                    tarea = asyncio.create_task(self._marcar(fila))
+                    self._salientes.add(tarea)
+                    tarea.add_done_callback(self._salientes.discard)
+                    enviados += 1
+                    continue
                 if fila["canal"] != "whatsapp":
                     raise ValueError(f"canal no soportado: {fila['canal']}")
                 texto = redactar(fila["plantilla"], fila["payload"])
                 await self.mensajero.enviar_texto(fila["destino"], texto)
                 await self.agenda.outbox_marcar_enviado(fila["id"])
+                if fila.get("campana_contacto_id"):
+                    await self.agenda.campana_contacto_resultado(
+                        fila["campana_contacto_id"], "enviado", None, None
+                    )
                 enviados += 1
             except Exception as error:
                 fallidos += 1
@@ -170,6 +191,32 @@ class Despachador:
         ya corre lo hace solo.
         """
         return await self.agenda.encolar_recordatorios(VENTANA_RECORDATORIO_HORAS)
+
+    async def _marcar(self, fila: dict) -> None:
+        contacto = fila.get("campana_contacto_id")
+        try:
+            from app.config import settings
+
+            sala = await marcar(settings(), fila["tenant_id"], fila["destino"], fila["payload"])
+            await self.agenda.outbox_marcar_enviado(fila["id"])
+            log.info("llamada saliente en %s a %s", sala, fila["destino"])
+        except SinTroncal as error:
+            await self.agenda.outbox_marcar_vencido(fila["id"], str(error))
+            if contacto:
+                await self.agenda.campana_contacto_resultado(contacto, "fallido", str(error))
+        except Exception as error:
+            # No contesto o el puente fallo: se reintenta mañana dentro de la ventana.
+            await self.agenda.outbox_marcar_error(fila["id"], str(error))
+            if contacto:
+                await self.agenda.campana_contacto_resultado(contacto, "sin_respuesta", str(error)[:200])
+            log.warning("no se pudo marcar a %s: %s", fila["destino"], error)
+
+    async def campanas(self) -> int:
+        """Encola lo que las campañas activas tengan que decir hoy."""
+        cerradas = await self.agenda.campana_cerrar_terminadas()
+        if cerradas:
+            log.info("%d campañas terminadas", cerradas)
+        return await self.agenda.campana_encolar()
 
     async def cierres(self) -> int:
         """Escribe motivo, resultado y resumen de las conversaciones frias."""
@@ -200,6 +247,12 @@ class Despachador:
                     cuantos = await self.recordatorios()
                     if cuantos:
                         log.info("%d recordatorios encolados", cuantos)
+
+                if ahora - self._ultima_campana >= CADA_CAMPANA_SEG:
+                    self._ultima_campana = ahora
+                    encolados = await self.campanas()
+                    if encolados:
+                        log.info("%d contactos de campaña encolados", encolados)
 
                 if ahora - self._ultimo_cierre >= CADA_CIERRE_SEG:
                     self._ultimo_cierre = ahora

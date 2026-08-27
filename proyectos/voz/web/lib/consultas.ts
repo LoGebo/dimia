@@ -2,6 +2,8 @@ import "server-only";
 
 import { datos } from "@/lib/sesion";
 import type {
+  Campana,
+  CampanaContacto,
   CatalogoItem,
   Cliente,
   ClienteResumen,
@@ -608,5 +610,63 @@ export function resumenCobros(dia: string): Promise<ResumenCobros> {
     );
     const f = filas[0];
     return { cobrado: f?.cobrado ?? "0", operaciones: f?.operaciones ?? 0, pendiente: f?.pendiente ?? "0", por_metodo: f?.por_metodo ?? [] };
+  });
+}
+
+// ---------------------------------------------------------------
+// Campañas
+// ---------------------------------------------------------------
+
+const SELECT_CAMPANA = `
+  select ca.id, ca.nombre, ca.tipo, ca.canal, ca.estado, ca.criterio, ca.mensaje, ca.objetivo,
+         ca.ventana_inicio::text as ventana_inicio, ca.ventana_fin::text as ventana_fin, ca.max_intentos, ca.creado,
+         r.total, r.pendientes, r.enviados, r.contestados, r.agendaron, r.sin_respuesta, r.fallidos
+    from campana ca
+    cross join lateral public.campana_resumen(ca.id) r`;
+
+export function campanas(): Promise<Campana[]> {
+  return datos((q, id) => q<Campana>(`${SELECT_CAMPANA} where ca.tenant_id = $1 order by ca.creado desc`, [id]));
+}
+
+export function campana(campanaId: string): Promise<Campana | null> {
+  return datos(async (q, id) => {
+    const filas = await q<Campana>(`${SELECT_CAMPANA} where ca.tenant_id = $1 and ca.id = $2`, [id, campanaId]);
+    return filas[0] ?? null;
+  });
+}
+
+export function contactosDeCampana(campanaId: string): Promise<CampanaContacto[]> {
+  return datos((q, id) =>
+    q<CampanaContacto>(
+      `select cc.id, cc.cliente_id, c.nombre as cliente_nombre, c.telefono as cliente_telefono,
+              cc.estado, cc.intentos, cc.ultimo_intento, cc.siguiente_intento, cc.resultado, cc.booking_id
+         from campana_contacto cc
+         join cliente c on c.id = cc.cliente_id
+        where cc.tenant_id = $1 and cc.campana_id = $2
+        order by case cc.estado when 'agendo' then 0 when 'contestado' then 1 when 'en_curso' then 2 when 'pendiente' then 3 else 4 end,
+                 cc.actualizado desc
+        limit 500`,
+      [id, campanaId],
+    ),
+  );
+}
+
+/** Cuántas personas alcanzaría una campaña con este criterio, antes de crearla. */
+export function alcanceCampana(tipo: string, dias: number): Promise<number> {
+  return datos(async (q, id) => {
+    const sql: Record<string, string> = {
+      no_show: `select count(distinct b.cliente_id)::int as n from booking b
+                 where b.tenant_id = $1 and b.estado = 'no_asistio' and b.cliente_id is not null
+                   and b.inicio >= now() - make_interval(days => $2)
+                   and not exists (select 1 from booking f where f.cliente_id = b.cliente_id and f.estado = 'confirmada' and f.inicio > now())`,
+      inactivos: `select count(*)::int as n from cliente c
+                   where c.tenant_id = $1 and c.telefono is not null and c.ultimo_contacto < now() - make_interval(days => $2)
+                     and exists (select 1 from booking b where b.cliente_id = c.id and b.estado = 'completada')`,
+      recordatorio_pago: `select count(distinct cliente_id)::int as n from pago where tenant_id = $1 and estado = 'pendiente' and cliente_id is not null`,
+    };
+    const consulta = sql[tipo];
+    if (!consulta) return 0;
+    const filas = await q<{ n: number }>(consulta, consulta.includes("$2") ? [id, dias] : [id]);
+    return filas[0]?.n ?? 0;
   });
 }

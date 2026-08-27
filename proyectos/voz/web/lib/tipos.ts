@@ -185,6 +185,13 @@ export const NOMBRE_EVENTO: Record<string, string> = {
   "pago.pendiente": "Cobro pendiente",
   "pago.cancelado": "Cobro cancelado",
   "pago.reembolsado": "Reembolso",
+  "campana.enviado": "Le mandamos un mensaje",
+  "campana.en_curso": "Le estamos marcando",
+  "campana.contestado": "Contestó a la campaña",
+  "campana.agendo": "Agendó por la campaña",
+  "campana.sin_respuesta": "No contestó la campaña",
+  "campana.rechazo": "Pidió que no le llamen",
+  "campana.fallido": "No se pudo contactar",
 };
 
 export type MetodoPago = "efectivo" | "tarjeta" | "transferencia" | "enlace" | "otro";
@@ -214,6 +221,68 @@ export type Pago = {
   notas: string | null;
   pagado_en: string | null;
   creado: string;
+};
+
+export type TipoCampana = "no_show" | "inactivos" | "recordatorio_pago" | "resena" | "marketing" | "manual";
+export type CanalCampana = "whatsapp" | "llamada";
+export type EstadoCampana = "borrador" | "activa" | "pausada" | "terminada";
+export type EstadoContacto =
+  | "pendiente" | "en_curso" | "enviado" | "contestado" | "agendo" | "sin_respuesta" | "rechazo" | "fallido" | "excluido";
+
+export const NOMBRE_TIPO_CAMPANA: Record<TipoCampana, { nombre: string; detalle: string }> = {
+  no_show: { nombre: "Recuperar a quien faltó", detalle: "Personas con una cita a la que no llegaron y sin cita futura." },
+  inactivos: { nombre: "Traer de vuelta a inactivos", detalle: "Clientes atendidos antes que no han vuelto en N días." },
+  recordatorio_pago: { nombre: "Recordar un pago", detalle: "Clientes con un cobro pendiente." },
+  resena: { nombre: "Pedir reseña", detalle: "Después de una cita atendida." },
+  marketing: { nombre: "Promoción", detalle: "Un mensaje a una lista que tú eliges." },
+  manual: { nombre: "Lista propia", detalle: "Tú eliges a quién." },
+};
+
+export const NOMBRE_ESTADO_CONTACTO: Record<EstadoContacto, string> = {
+  pendiente: "Por contactar",
+  en_curso: "En curso",
+  enviado: "Enviado",
+  contestado: "Contestó",
+  agendo: "Agendó",
+  sin_respuesta: "Sin respuesta",
+  rechazo: "No quiere",
+  fallido: "Falló",
+  excluido: "Excluido",
+};
+
+export type Campana = {
+  id: string;
+  nombre: string;
+  tipo: TipoCampana;
+  canal: CanalCampana;
+  estado: EstadoCampana;
+  criterio: { dias?: number };
+  mensaje: string;
+  objetivo: string | null;
+  ventana_inicio: string;
+  ventana_fin: string;
+  max_intentos: number;
+  creado: string;
+  total: number;
+  pendientes: number;
+  enviados: number;
+  contestados: number;
+  agendaron: number;
+  sin_respuesta: number;
+  fallidos: number;
+};
+
+export type CampanaContacto = {
+  id: string;
+  cliente_id: string;
+  cliente_nombre: string | null;
+  cliente_telefono: string | null;
+  estado: EstadoContacto;
+  intentos: number;
+  ultimo_intento: string | null;
+  siguiente_intento: string;
+  resultado: string | null;
+  booking_id: string | null;
 };
 
 export type Rol = "owner" | "staff";

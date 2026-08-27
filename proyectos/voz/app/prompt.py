@@ -278,3 +278,24 @@ def saludo(tenant: Tenant, plantilla: dict | None = None) -> str:
         return patron.format(nombre=tenant.nombre)
     except (KeyError, IndexError, ValueError):
         return patron
+
+
+def guion_saliente(saliente: dict) -> str:
+    """Instrucciones extra cuando es el agente quien marca."""
+    nombre = (saliente.get("cliente") or "").strip()
+    objetivo = (saliente.get("objetivo") or "reagendar").strip()
+    guion = (saliente.get("guion") or "").strip()
+    return (
+        "\n\nMODO LLAMADA SALIENTE. Tu marcaste, no te marcaron. "
+        f"Estas llamando a {nombre or 'una persona'} de parte del negocio por esto: {guion}\n"
+        f"Tu objetivo es: {objetivo}. Presentate en una frase, di por que llamas y pregunta si es buen momento. "
+        "Si no es buen momento, ofrece marcar despues y despidete. Si no quiere que le vuelvan a llamar, "
+        "dilo con claridad al despedirte ('entendido, no le volvemos a llamar'). Nunca insistas mas de una vez. "
+        "Usa las mismas herramientas de siempre para agendar."
+    )
+
+
+def apertura_saliente(tenant: Tenant, saliente: dict) -> str:
+    nombre = (saliente.get("cliente") or "").split(" ")[0]
+    quien = f"¿Hablo con {nombre}? " if nombre else ""
+    return f"{quien}Le llamo de {tenant.nombre}. ¿Tiene un momento?"

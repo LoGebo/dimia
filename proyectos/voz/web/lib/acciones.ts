@@ -695,6 +695,95 @@ export async function cambiarEstadoPago(fd: FormData): Promise<void> {
   refrescarPanel();
 }
 
+const TIPOS_CAMPANA = ["no_show", "inactivos", "recordatorio_pago", "resena", "marketing", "manual"];
+
+export async function crearCampana(_previo: Estado, fd: FormData): Promise<Estado> {
+  const nombre = texto(fd, "nombre");
+  const tipo = texto(fd, "tipo");
+  const canal = texto(fd, "canal") === "llamada" ? "llamada" : "whatsapp";
+  const mensaje = texto(fd, "mensaje");
+  if (!nombre) return { error: "Ponle nombre a la campaña." };
+  if (!TIPOS_CAMPANA.includes(tipo)) return { error: "Elige a quién va dirigida." };
+  if (!mensaje) return { error: canal === "llamada" ? "Escribe el guion de la llamada." : "Escribe el mensaje." };
+  const dias = Math.max(1, Math.min(365, numero(fd, "dias", 30)));
+  let id = "";
+  try {
+    id = await datos(async (q, negocioId) => {
+      const filas = await q<{ id: string }>(
+        `insert into campana (tenant_id, nombre, tipo, canal, criterio, mensaje, objetivo, ventana_inicio, ventana_fin, max_intentos)
+         values ($1, $2, $3::campana_tipo, $4::campana_canal, $5::jsonb, $6, $7, $8::time, $9::time, $10)
+         returning id`,
+        [
+          negocioId,
+          nombre,
+          tipo,
+          canal,
+          JSON.stringify({ dias }),
+          mensaje,
+          opcional(fd, "objetivo"),
+          texto(fd, "ventana_inicio") || "10:00",
+          texto(fd, "ventana_fin") || "19:00",
+          Math.max(1, Math.min(5, numero(fd, "max_intentos", 2))),
+        ],
+      );
+      const nuevo = filas[0]!.id;
+      await q("select public.campana_poblar($1)", [nuevo]);
+      return nuevo;
+    });
+  } catch (error) {
+    return { error: errorLegible(error) };
+  }
+  refrescarPanel();
+  redirect(`/campanas/${id}`);
+}
+
+export async function cambiarEstadoCampana(fd: FormData): Promise<void> {
+  const estado = texto(fd, "estado");
+  if (!["activa", "pausada", "terminada"].includes(estado)) return;
+  await datos(async (q, negocioId) => {
+    await q("update campana set estado = $3::campana_estado, actualizado = now() where id = $2 and tenant_id = $1", [
+      negocioId,
+      texto(fd, "id"),
+      estado,
+    ]);
+    if (estado === "activa") await q("select public.campana_poblar($1)", [texto(fd, "id")]);
+  });
+  refrescarPanel();
+}
+
+export async function agregarContactosCampana(fd: FormData): Promise<void> {
+  const campanaId = texto(fd, "campana_id");
+  const segmento = texto(fd, "segmento");
+  const condiciones: Record<string, string> = {
+    todos: "true",
+    frecuentes: "(select count(*) from booking b where b.cliente_id = c.id and b.estado = 'completada') >= 3",
+    inactivos: "c.ultimo_contacto < now() - interval '90 days'",
+    faltan: "exists (select 1 from booking b where b.cliente_id = c.id and b.estado = 'no_asistio')",
+  };
+  const condicion = condiciones[segmento];
+  if (!condicion) return;
+  await datos((q, negocioId) =>
+    q(
+      `insert into campana_contacto (campana_id, tenant_id, cliente_id)
+       select $2, $1, c.id from cliente c
+        where c.tenant_id = $1 and c.telefono is not null and ${condicion}
+       on conflict do nothing`,
+      [negocioId, campanaId],
+    ),
+  );
+  refrescarPanel();
+}
+
+export async function excluirContacto(fd: FormData): Promise<void> {
+  await datos((q, negocioId) =>
+    q("select public.campana_contacto_resultado(cc.id, 'excluido') from campana_contacto cc where cc.id = $2 and cc.tenant_id = $1", [
+      negocioId,
+      texto(fd, "id"),
+    ]),
+  );
+  refrescarPanel();
+}
+
 export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
 
 /**

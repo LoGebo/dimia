@@ -69,6 +69,31 @@ Profiles → Create*, asocia la misma SIP Connection y permite el destino
 **Mexico**. Pon un **límite de gasto diario** (10-20 USD): es el freno contra
 un bug o un fraude que se marque solo a destinos caros.
 
+## 4b. Troncal de salida (campañas por llamada)
+
+Las campañas de recuperación marcan desde el agente. Necesitan:
+
+1. En Telnyx, el mismo *Outbound Voice Profile* del paso 4, con **México**
+   permitido y límite de gasto diario. Una campaña mal armada puede marcar
+   a cientos de números: el límite es el freno.
+2. En LiveKit, un troncal SIP de salida apuntando a Telnyx:
+
+   ```bash
+   lk sip outbound create --name telnyx-salida --address sip.telnyx.com \
+     --numbers +528112345678 --auth-user <usuario> --auth-pass <clave>
+   ```
+
+   Devuelve un `ST_xxxx`. Va en el entorno del **despachador** (no del
+   worker) como `LIVEKIT_SIP_TRUNK_SALIENTE`, junto con `TELEFONO_SALIDA`
+   (el número que verá la persona). Sin esa variable, las filas de llamada
+   quedan en la cola marcadas como fallidas con el motivo a la vista.
+3. El worker del agente no cambia: recibe la sala como cualquier otra, lee
+   `saliente` en los metadatos y abre con el guion en vez del saludo.
+
+Horario: el motor solo encola dentro de la ventana que se fijó en la campaña,
+en hora local del negocio. Nadie recibe una llamada del agente a las once de
+la noche.
+
 ## 5. Registrar el número en el sistema
 
 Dos lugares, siempre los dos:

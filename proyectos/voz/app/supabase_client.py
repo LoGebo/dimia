@@ -240,6 +240,21 @@ class Agenda:
             tenant_id, conversacion_id, motivo, resultado, resumen,
         )
 
+    async def campana_encolar(self, limite: int = 50) -> int:
+        return await self.pool.fetchval("select public.campana_encolar($1)", limite) or 0
+
+    async def campana_cerrar_terminadas(self) -> int:
+        return await self.pool.fetchval("select public.campana_cerrar_terminadas()") or 0
+
+    async def campana_contacto_resultado(
+        self, contacto_id: uuid.UUID, estado: str, resultado: str | None = None,
+        call_id: str | None = None,
+    ) -> None:
+        await self.pool.execute(
+            "select public.campana_contacto_resultado($1, $2::contacto_estado, $3, $4)",
+            contacto_id, estado, resultado, call_id,
+        )
+
     async def conversaciones_por_resumir(self, inactiva_min: int = 120, limite: int = 20) -> list[dict]:
         filas = await self.pool.fetch(
             "select id, tenant_id, canal from public.conversaciones_por_resumir($1, $2)",
