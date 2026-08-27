@@ -359,13 +359,13 @@ async def _principal() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    from anthropic import AsyncAnthropic
+    from app.llm_texto import cliente_texto
 
     from app.config import settings
 
     await agenda.conectar()
     cliente = WhatsAppCliente()
-    llm = AsyncAnthropic(api_key=settings().anthropic_api_key or None)
+    llm = cliente_texto(settings())
     try:
         log.info("despachador arriba, revisando la cola cada %ds", INTERVALO_SEG)
         await Despachador(agenda, cliente, llm=llm).correr()

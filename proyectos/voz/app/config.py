@@ -48,6 +48,10 @@ class Settings(BaseSettings):
         "google": "gemini-2.5-flash",
     }
 
+    # Canales de texto y cierres: por omision GPT-4.1 mini, el mas barato del stack.
+    texto_llm_proveedor: str = "openai"
+    texto_llm_modelo: str = "gpt-4.1-mini"
+
     n8n_webhook: str | None = None
     log_level: str = "INFO"
 

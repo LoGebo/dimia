@@ -7,6 +7,7 @@ livekit-plugins-anthropic~=1.6
 
 # --- llm y canales ---
 anthropic==1.0.0
+openai>=1.50
 fastapi==0.118.0
 uvicorn[standard]==0.37.0
 httpx==0.28.1

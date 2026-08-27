@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from anthropic import AsyncAnthropic
+from app.llm_texto import cliente_texto
 from fastapi import BackgroundTasks, FastAPI, Request, Response
 
 from app.supabase_client import agenda
@@ -30,7 +30,7 @@ async def ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
     app.state.cfg = cfg
     app.state.cliente = WhatsAppCliente(cfg)
     app.state.agente = AgenteWhatsApp(
-        llm=AsyncAnthropic(api_key=cfg.anthropic_api_key or None),
+        llm=cliente_texto(cfg),
         agenda=agenda,
         cfg=cfg,
     )

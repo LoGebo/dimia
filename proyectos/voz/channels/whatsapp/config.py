@@ -16,6 +16,9 @@ class WhatsAppSettings(BaseSettings):
     whatsapp_graph_url: str = "https://graph.facebook.com"
 
     anthropic_api_key: str = ""
+    openai_api_key: str = ""
+    texto_llm_proveedor: str = "openai"
+    texto_llm_modelo: str = "gpt-4.1-mini"
     llm_model: str = "claude-haiku-4-5"
     llm_max_tokens: int = 1024
     llm_max_iteraciones: int = 6

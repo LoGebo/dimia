@@ -928,10 +928,10 @@ async def entrypoint(ctx: JobContext) -> None:
             log.exception("no se pudo registrar la llamada")
             return
         try:
-            from anthropic import AsyncAnthropic
+            from app.llm_texto import cliente_texto
 
             try:
-                cierre = await resumir(AsyncAnthropic(api_key=cfg.anthropic_api_key or None), turnos)
+                cierre = await resumir(cliente_texto(cfg), turnos)
             except ModeloNoContesto:
                 cierre = None
             if cierre:
