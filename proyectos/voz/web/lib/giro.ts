@@ -14,7 +14,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   const recados = herramientas.includes("recado");
 
   const hoy: Pestana[] = [{ href: "/hoy", nombre: "Hoy" }];
-  if (agenda) hoy.push({ href: "/agenda", nombre: "Agenda completa" });
+  if (agenda) hoy.push({ href: "/agenda", nombre: "Agenda" });
   if (pedidos) hoy.push({ href: "/pedidos", nombre: "Pedidos" });
 
   const mensajes: Pestana[] = [{ href: "/bandeja", nombre: "Conversaciones" }];

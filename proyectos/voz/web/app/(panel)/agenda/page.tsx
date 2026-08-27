@@ -114,7 +114,7 @@ export default async function Agenda({
     const conteos = dias.map((d) => enDia(d).filter((r) => r.estado === "confirmada").length);
     return (
       <>
-        <Encabezado titulo="Agenda completa" descripcion={`Semana del ${lunes}`} giro={giro.nombre} acciones={navegacion} principal={nueva} />
+        <Encabezado titulo="Agenda" descripcion={`Semana del ${lunes}`} giro={giro.nombre} acciones={navegacion} principal={nueva} />
         <div className="space-y-4 px-5 py-5">
           <OcupacionSemanal conteos={conteos} />
           {dias.map((d, i) => {
@@ -146,8 +146,8 @@ export default async function Agenda({
   return (
     <>
       <Encabezado
-        titulo="Agenda completa"
-        descripcion={`${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · cualquier día, por semana, y búsqueda por código o teléfono.`}
+        titulo="Agenda"
+        descripcion={`${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · marca Llegó cuando entre cada persona y Atendida al terminar.`}
         giro={giro.nombre}
         acciones={navegacion}
         principal={nueva}

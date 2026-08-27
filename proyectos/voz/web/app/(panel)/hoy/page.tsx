@@ -1,89 +1,76 @@
 import Link from "next/link";
+import { RenglonConversacion } from "@/components/bandeja";
 import { Encabezado } from "@/components/encabezado";
-import { FlujoDelDia } from "@/components/flujo-del-dia";
-import { TableroPedidos } from "@/components/tablero-pedidos";
+import { GraficaLlamadas } from "@/components/graficas";
+import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { alertasHoy, negocio, pagosDePedidos, pedidosDelDia, recados } from "@/lib/consultas";
-import { fechaCorta, fechaLarga, hora, isoDia, moneda, telefono } from "@/lib/formato";
+import { MINUTOS_TOLERANCIA, minutosDesde, minutosLegibles } from "@/components/flujo-citas";
+import {
+  alertasHoy,
+  conversaciones,
+  llamadasPorDia,
+  negocio,
+  pedidosDelDia,
+  recados,
+  resenasResumen,
+  reservasEntre,
+  resumenCobros,
+  resumenLlamadas,
+} from "@/lib/consultas";
+import { fechaCorta, fechaLarga, hora, isoDia, moneda, porcentaje, telefono } from "@/lib/formato";
 import { avance } from "@/lib/listo";
 import { contexto } from "@/lib/sesion";
+import { pasoDe } from "@/lib/tipos";
 
 /**
- * La pantalla de todos los días. Primero lo que necesita atención; después,
- * el trabajo del día según el giro. Si el negocio no está listo, solo se ve
- * lo que falta.
+ * El tablero de inicio: qué necesita atención, cómo va el día en cuatro
+ * cifras, lo que viene y lo último que entró. Para operar el día se va a
+ * Agenda o a Pedidos; aquí se mira.
  */
-export default async function Hoy({ searchParams }: { searchParams: Promise<{ recurso?: string; filtro?: string; orden?: string }> }) {
+export default async function Hoy() {
   const { giro } = await contexto();
-  const parametros = await searchParams;
   const [config, progreso] = await Promise.all([negocio(), avance(giro.herramientas)]);
   const hoy = isoDia(new Date(), config.zona_horaria);
+  const zona = config.zona_horaria;
   const agenda = giro.herramientas.includes("agendar");
   const pedidos = giro.herramientas.includes("pedido");
 
-  if (!progreso.completo || !progreso.tieneNumero) {
-    const faltantes = progreso.requisitos.filter((r) => !r.listo);
-    return (
-      <>
-        <Encabezado titulo="Para empezar" descripcion="Cuando esto esté completo, el agente contesta y aquí vas a ver el día." giro={giro.nombre} />
-        <div className="px-5 py-5">
-          <Tarjeta className="max-w-2xl">
-            <TarjetaCabecera
-              titulo={progreso.completo ? "Solo falta el número" : `Faltan ${faltantes.length} de ${progreso.total}`}
-              descripcion="Cada paso toma unos minutos. Puedes hacerlos en el orden que quieras."
-            />
-            <ol className="divide-y divide-linea">
-              {progreso.requisitos.map((r, i) => (
-                <li key={r.clave} className="flex items-center gap-4 px-4 py-3">
-                  <span className={`flex h-7 w-7 flex-none items-center justify-center font-mono text-[12px] ${r.listo ? "bg-bueno text-white" : "bg-panel-2 text-tinta-2"}`}>
-                    {r.listo ? "✓" : i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-[14px] font-medium ${r.listo ? "text-tinta-3 line-through" : "text-tinta"}`}>{r.nombre}</p>
-                    <p className="text-[12px] text-tinta-3">{r.ayuda}</p>
-                  </div>
-                  {r.listo ? null : (
-                    <Link href={r.ruta} className="inline-flex h-8 items-center bg-acento px-3 text-[13px] font-medium text-acento-tinta transition hover:brightness-110">
-                      Hacerlo
-                    </Link>
-                  )}
-                </li>
-              ))}
-              {progreso.completo && !progreso.tieneNumero ? (
-                <li className="flex items-center gap-4 px-4 py-3">
-                  <span className="flex h-7 w-7 flex-none items-center justify-center bg-panel-2 font-mono text-[12px] text-tinta-2">{progreso.total + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[14px] font-medium text-tinta">Número de entrada</p>
-                    <p className="text-[12px] text-tinta-3">El teléfono al que van a llamar tus clientes. Al guardarlo, el agente empieza a contestar.</p>
-                  </div>
-                  <Link href="/agente" className="inline-flex h-8 items-center bg-acento px-3 text-[13px] font-medium text-acento-tinta transition hover:brightness-110">
-                    Ponerlo
-                  </Link>
-                </li>
-              ) : null}
-            </ol>
-          </Tarjeta>
-        </div>
-      </>
-    );
-  }
+  if (!progreso.completo || !progreso.tieneNumero) return <ParaEmpezar progreso={progreso} giro={giro.nombre} />;
 
-  const alertas = await alertasHoy();
+  const [alertas, hilos, llamadas7, porDia, cobros, resenas, reservas, listaPedidos, listaRecados] = await Promise.all([
+    alertasHoy(),
+    conversaciones(6),
+    resumenLlamadas(7),
+    llamadasPorDia(7),
+    resumenCobros(hoy),
+    resenasResumen(30),
+    agenda ? reservasEntre(hoy, hoy) : Promise.resolve([]),
+    pedidos ? pedidosDelDia(hoy) : Promise.resolve([]),
+    !agenda && !pedidos ? recados(true) : Promise.resolve([]),
+  ]);
+  const ahora = Date.now();
+  const delDia = reservas.filter((r) => isoDia(new Date(r.inicio), zona) === hoy);
+  const citasHoy = delDia.filter((r) => r.estado === "confirmada" || r.estado === "completada");
+  const atendidas = delDia.filter((r) => r.estado === "completada").length;
+  const proximas = delDia.filter((r) => pasoDe(r) === "por_llegar").sort((a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime()).slice(0, 6);
+  const enAtencion = delDia.filter((r) => pasoDe(r) === "en_atencion");
+  const porSacar = listaPedidos.filter((p) => p.estado === "abierto" || p.estado === "confirmado");
+  const sinLeer = hilos.reduce((s, c) => s + c.mensajes_sin_leer, 0);
+  const totalResenas = resenas.reduce((s, r) => s + r.total, 0);
+  const promedio = totalResenas > 0 ? resenas.reduce((s, r) => s + Number(r.promedio) * r.total, 0) / totalResenas : null;
+  const contencion = llamadas7.total > 0 ? llamadas7.resueltas / llamadas7.total : null;
+
   const avisos: { texto: string; href: string; tono: "critico" | "alerta" | "acento" }[] = [];
-  if (alertas.retrasadas > 0) avisos.push({ texto: `${alertas.retrasadas} ${alertas.retrasadas === 1 ? "persona lleva" : "personas llevan"} más de 15 minutos de retraso`, href: "/hoy?filtro=retrasadas", tono: "critico" });
+  if (alertas.retrasadas > 0) avisos.push({ texto: `${alertas.retrasadas} ${alertas.retrasadas === 1 ? "persona lleva" : "personas llevan"} más de 15 minutos de retraso`, href: "/agenda?filtro=retrasadas", tono: "critico" });
   if (alertas.escaladas > 0) avisos.push({ texto: `${alertas.escaladas} ${alertas.escaladas === 1 ? "conversación pidió" : "conversaciones pidieron"} una persona`, href: "/bandeja", tono: "alerta" });
   if (alertas.recados > 0) avisos.push({ texto: `${alertas.recados} ${alertas.recados === 1 ? "recado espera" : "recados esperan"} que le marques`, href: "/recados", tono: "alerta" });
-  if (alertas.por_cobrar_atendidas > 0) avisos.push({ texto: `${alertas.por_cobrar_atendidas} ${alertas.por_cobrar_atendidas === 1 ? "cita atendida hoy sin cobro registrado" : "citas atendidas hoy sin cobro registrado"}`, href: "/hoy", tono: "alerta" });
+  if (alertas.por_cobrar_atendidas > 0) avisos.push({ texto: `${alertas.por_cobrar_atendidas} ${alertas.por_cobrar_atendidas === 1 ? "cita atendida hoy sin cobro registrado" : "citas atendidas hoy sin cobro registrado"}`, href: "/agenda", tono: "alerta" });
   if (alertas.cobros_pendientes > 0) avisos.push({ texto: `${moneda(alertas.cobros_monto)} por cobrar en ${alertas.cobros_pendientes} ${alertas.cobros_pendientes === 1 ? "pago pendiente" : "pagos pendientes"}`, href: "/cobros", tono: "alerta" });
   if (alertas.campanas_contestaron > 0) avisos.push({ texto: `${alertas.campanas_contestaron} ${alertas.campanas_contestaron === 1 ? "persona contestó" : "personas contestaron"} a una campaña`, href: "/campanas", tono: "acento" });
 
   return (
     <>
-      <Encabezado
-        titulo="Hoy"
-        descripcion={`${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · ${agenda ? "marca Llegó cuando entre cada persona y Atendida al terminar." : pedidos ? "pasa cada pedido a cocina y márcalo entregado al salir." : "marca cada recado cuando lo hayas atendido."}`}
-        giro={giro.nombre}
-      />
+      <Encabezado titulo="Hoy" descripcion={`${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · cómo va el día de un vistazo.`} giro={giro.nombre} />
       <div className="space-y-4 px-5 py-5">
         {avisos.length > 0 ? (
           <section aria-label="Necesita atención" className="border border-linea bg-panel">
@@ -110,60 +97,205 @@ export default async function Hoy({ searchParams }: { searchParams: Promise<{ re
           </p>
         )}
 
-        {agenda ? <FlujoDelDia dia={hoy} base="/hoy" parametros={parametros} giro={giro} /> : null}
-        {!agenda && pedidos ? <PedidosHoy dia={hoy} zona={config.zona_horaria} /> : null}
-        {!agenda && !pedidos ? <RecadosHoy zona={config.zona_horaria} /> : null}
+        <TiraIndicadores>
+          {agenda ? (
+            <Cifra
+              etiqueta="Citas de hoy"
+              valor={String(citasHoy.length)}
+              unidad={`${atendidas} atendidas`}
+              glifo={Glifos.personas}
+              pildora={enAtencion.length > 0 ? `${enAtencion.length} en atención` : undefined}
+              tono="neutro"
+            />
+          ) : null}
+          {pedidos ? (
+            <Cifra etiqueta="Pedidos de hoy" valor={String(listaPedidos.length)} unidad={`${porSacar.length} por sacar`} glifo={Glifos.personas} tono={porSacar.length > 0 ? "alerta" : "bueno"} pildora={porSacar.length > 0 ? "en cocina" : "al día"} />
+          ) : null}
+          <Cifra etiqueta="Cobrado hoy" valor={moneda(cobros.cobrado)} glifo={Glifos.dinero} pildora={`${cobros.operaciones} cobros`} tono="bueno" />
+          <Cifra
+            etiqueta="Mensajes sin leer"
+            valor={String(sinLeer)}
+            glifo={Glifos.llamada}
+            pildora={alertas.escaladas > 0 ? `${alertas.escaladas} piden persona` : undefined}
+            tono={alertas.escaladas > 0 ? "alerta" : "neutro"}
+          />
+          <Cifra
+            etiqueta="Llamadas en 7 días"
+            valor={String(llamadas7.total)}
+            glifo={Glifos.llamada}
+            pildora={contencion === null ? undefined : `${porcentaje(contencion)} resueltas solas`}
+            tono={contencion === null ? "neutro" : contencion >= 0.75 ? "bueno" : "alerta"}
+          />
+        </TiraIndicadores>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          {agenda ? (
+            <Tarjeta>
+              <TarjetaCabecera
+                titulo="Lo que viene"
+                descripcion={proximas.length === 0 ? "Ya no hay citas por llegar hoy." : "Las siguientes citas de hoy."}
+                accion={<Link href="/agenda" className="text-xs text-tinta-3 transition hover:text-acento">Abrir la agenda</Link>}
+              />
+              {proximas.length === 0 ? (
+                <Vacio titulo={citasHoy.length === 0 ? "Día libre" : "Todas atendidas"} detalle={citasHoy.length === 0 ? "El agente agenda por teléfono; aquí aparecen solas." : undefined} />
+              ) : (
+                <ul className="divide-y divide-linea">
+                  {proximas.map((r) => {
+                    const faltan = -minutosDesde(r.inicio, ahora);
+                    const retraso = faltan < 0 ? -faltan : 0;
+                    return (
+                      <li key={r.id} className="flex items-center gap-4 px-4 py-2.5">
+                        <span className="numeros w-[76px] font-mono text-[13px] font-medium text-tinta">{hora(r.inicio, zona)}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-medium text-tinta">
+                            {r.cliente_id ? <Link href={`/clientes/${r.cliente_id}`} className="transition hover:text-acento">{r.cliente_nombre}</Link> : r.cliente_nombre}
+                          </p>
+                          <p className="truncate text-[11.5px] text-tinta-3">{r.servicio} · {r.recurso}</p>
+                        </div>
+                        <span className={`numeros px-1.5 py-0.5 font-mono text-[11px] ${retraso > MINUTOS_TOLERANCIA ? "bg-critico/12 text-critico" : retraso > 0 ? "bg-alerta/12 text-alerta" : "bg-panel-2 text-tinta-2"}`}>
+                          {retraso > 0 ? `+${minutosLegibles(retraso)}` : `en ${minutosLegibles(Math.max(0, faltan))}`}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Tarjeta>
+          ) : null}
+
+          {pedidos ? (
+            <Tarjeta>
+              <TarjetaCabecera
+                titulo="Por sacar"
+                descripcion={porSacar.length === 0 ? "Nada pendiente en cocina." : `${porSacar.length} pedidos sin entregar.`}
+                accion={<Link href="/pedidos" className="text-xs text-tinta-3 transition hover:text-acento">Abrir pedidos</Link>}
+              />
+              {porSacar.length === 0 ? (
+                <Vacio titulo="Sin pedidos pendientes" />
+              ) : (
+                <ul className="divide-y divide-linea">
+                  {porSacar.slice(0, 6).map((p) => (
+                    <li key={p.id} className="flex items-center gap-4 px-4 py-2.5">
+                      <span className="numeros w-[64px] font-mono text-[14px] font-bold tracking-wider text-tinta">{p.codigo}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium text-tinta">{p.cliente_nombre ?? "Sin nombre"}</p>
+                        <p className="truncate text-[11.5px] text-tinta-3">{p.items.length} {p.items.length === 1 ? "cosa" : "cosas"} · {moneda(p.total)}</p>
+                      </div>
+                      <Insignia tono={p.estado === "abierto" ? "alerta" : "acento"}>{p.estado === "abierto" ? "Sin cerrar" : "En cocina"}</Insignia>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Tarjeta>
+          ) : null}
+
+          {!agenda && !pedidos ? (
+            <Tarjeta>
+              <TarjetaCabecera titulo="Recados por regresar" accion={<Link href="/recados" className="text-xs text-tinta-3 transition hover:text-acento">Todos</Link>} />
+              {listaRecados.length === 0 ? (
+                <Vacio titulo="Sin recados" />
+              ) : (
+                <ul className="divide-y divide-linea">
+                  {listaRecados.slice(0, 6).map((r) => (
+                    <li key={r.id} className="flex items-center gap-4 px-4 py-2.5">
+                      <span className="numeros w-[100px] font-mono text-[12px] text-tinta-3">{fechaCorta(r.creado, zona)} {hora(r.creado, zona)}</span>
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-tinta">{r.nombre ?? "Sin nombre"} · {r.asunto}</span>
+                      <span className="numeros font-mono text-[12px] text-tinta-2">{telefono(r.telefono)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Tarjeta>
+          ) : null}
+
+          <Tarjeta>
+            <TarjetaCabecera
+              titulo="Lo último que entró"
+              descripcion="Conversaciones por teléfono, WhatsApp y redes."
+              accion={<Link href="/bandeja" className="text-xs text-tinta-3 transition hover:text-acento">Abrir mensajes</Link>}
+            />
+            {hilos.length === 0 ? <Vacio titulo="Todavía nadie escribe" /> : hilos.map((c) => <RenglonConversacion key={c.id} conversacion={c} activa={false} />)}
+          </Tarjeta>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <Tarjeta>
+            <TarjetaCabecera
+              titulo="Llamadas de la semana"
+              descripcion="Cada columna es un día. El azul lo resolvió el agente; el naranja pasó a una persona."
+              accion={<Link href="/resumen" className="text-xs text-tinta-3 transition hover:text-acento">Informe completo</Link>}
+            />
+            {llamadas7.total === 0 ? <Vacio titulo="Sin llamadas esta semana" /> : <GraficaLlamadas datos={porDia} />}
+          </Tarjeta>
+          <Tarjeta>
+            <TarjetaCabecera titulo="Cómo les fue" descripcion={promedio === null ? "Se pregunta por WhatsApp después de cada cita." : `${totalResenas} calificaciones en 30 días.`} />
+            {promedio === null ? (
+              <Vacio titulo="Sin calificaciones todavía" />
+            ) : (
+              <div className="px-4 pb-4">
+                <p className="numeros text-[40px] leading-none font-semibold tracking-tight text-tinta">
+                  {promedio.toFixed(1)} <span className="text-[16px] font-normal text-tinta-3">de 5</span>
+                </p>
+                <ul className="mt-3 divide-y divide-linea">
+                  {resenas.slice(0, 4).map((r) => (
+                    <li key={r.resource_id ?? "sin"} className="flex items-center justify-between gap-3 py-1.5 text-[13px]">
+                      <span className="truncate text-tinta-2">{r.nombre}</span>
+                      <span className={`numeros font-mono ${Number(r.promedio) >= 4 ? "text-bueno" : "text-alerta"}`}>{Number(r.promedio).toFixed(1)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Tarjeta>
+        </div>
       </div>
     </>
   );
 }
 
-async function PedidosHoy({ dia, zona }: { dia: string; zona: string }) {
-  const todos = await pedidosDelDia(dia);
-  const pendientes = todos.filter((p) => p.estado === "abierto" || p.estado === "confirmado");
-  const pagos = await pagosDePedidos(todos.map((p) => p.id));
-  const cobrados = new Map(pagos.filter((p) => p.estado === "pagado" && p.pedido_id).map((p) => [p.pedido_id!, p.monto]));
+function ParaEmpezar({ progreso, giro }: { progreso: Awaited<ReturnType<typeof avance>>; giro: string }) {
+  const faltantes = progreso.requisitos.filter((r) => !r.listo);
   return (
-    <Tarjeta>
-      <TarjetaCabecera
-        titulo={pendientes.length === 0 ? "Nada por sacar" : `${pendientes.length} por sacar`}
-        descripcion={`${todos.length} pedidos hoy · ${todos.filter((p) => p.estado === "entregado").length} entregados`}
-        accion={<Link href="/pedidos" className="text-xs text-tinta-3 transition hover:text-acento">Todos los pedidos</Link>}
-      />
-      {pendientes.length === 0 ? (
-        <Vacio titulo="Sin pedidos pendientes" detalle="En cuanto el agente cierre uno por teléfono, aparece aquí." />
-      ) : (
-        <div className="px-4 pb-4">
-          <TableroPedidos pedidos={pendientes} zona={zona} cobrados={cobrados} />
-        </div>
-      )}
-    </Tarjeta>
-  );
-}
-
-async function RecadosHoy({ zona }: { zona: string }) {
-  const lista = await recados(true);
-  return (
-    <Tarjeta>
-      <TarjetaCabecera
-        titulo={lista.length === 0 ? "Nada pendiente" : `${lista.length} por regresar la llamada`}
-        descripcion="Nombre, teléfono y qué necesita. Márcalo atendido en Recados cuando le llames."
-        accion={<Link href="/recados" className="text-xs text-tinta-3 transition hover:text-acento">Todos los recados</Link>}
-      />
-      {lista.length === 0 ? (
-        <Vacio titulo="Sin recados" detalle="Cuando el agente no pueda resolver algo, toma el recado y aparece aquí." />
-      ) : (
-        <ul className="divide-y divide-linea">
-          {lista.slice(0, 12).map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
-              <span className="numeros w-[100px] font-mono text-[12px] text-tinta-3">{fechaCorta(r.creado, zona)} {hora(r.creado, zona)}</span>
-              <span className="min-w-[140px] text-[13px] font-medium text-tinta">{r.nombre ?? "Sin nombre"}</span>
-              <span className="numeros font-mono text-[12px] text-tinta-2">{telefono(r.telefono)}</span>
-              <span className="min-w-0 flex-1 truncate text-[13px] text-tinta-2">{r.asunto}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Tarjeta>
+    <>
+      <Encabezado titulo="Para empezar" descripcion="Cuando esto esté completo, el agente contesta y aquí vas a ver cómo va el día." giro={giro} />
+      <div className="px-5 py-5">
+        <Tarjeta className="max-w-2xl">
+          <TarjetaCabecera
+            titulo={progreso.completo ? "Solo falta el número" : `Faltan ${faltantes.length} de ${progreso.total}`}
+            descripcion="Cada paso toma unos minutos. Puedes hacerlos en el orden que quieras."
+          />
+          <ol className="divide-y divide-linea">
+            {progreso.requisitos.map((r, i) => (
+              <li key={r.clave} className="flex items-center gap-4 px-4 py-3">
+                <span className={`flex h-7 w-7 flex-none items-center justify-center font-mono text-[12px] ${r.listo ? "bg-bueno text-white" : "bg-panel-2 text-tinta-2"}`}>
+                  {r.listo ? "✓" : i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-[14px] font-medium ${r.listo ? "text-tinta-3 line-through" : "text-tinta"}`}>{r.nombre}</p>
+                  <p className="text-[12px] text-tinta-3">{r.ayuda}</p>
+                </div>
+                {r.listo ? null : (
+                  <Link href={r.ruta} className="inline-flex h-8 items-center bg-acento px-3 text-[13px] font-medium text-acento-tinta transition hover:brightness-110">
+                    Hacerlo
+                  </Link>
+                )}
+              </li>
+            ))}
+            {progreso.completo && !progreso.tieneNumero ? (
+              <li className="flex items-center gap-4 px-4 py-3">
+                <span className="flex h-7 w-7 flex-none items-center justify-center bg-panel-2 font-mono text-[12px] text-tinta-2">{progreso.total + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-medium text-tinta">Número de entrada</p>
+                  <p className="text-[12px] text-tinta-3">El teléfono al que van a llamar tus clientes. Al guardarlo, el agente empieza a contestar.</p>
+                </div>
+                <Link href="/agente" className="inline-flex h-8 items-center bg-acento px-3 text-[13px] font-medium text-acento-tinta transition hover:brightness-110">
+                  Ponerlo
+                </Link>
+              </li>
+            ) : null}
+          </ol>
+        </Tarjeta>
+      </div>
+    </>
   );
 }
