@@ -48,7 +48,7 @@ Fuente: `proyectos/voz/web/lib/tipos.ts` (`PROVEEDORES_TTS.costoHora`).
 | Azure Neural | 0.77 | 0.0128 | 0.028 | 0.50 | Catálogo mexicano, el más barato |
 | Deepgram Aura | 1.44 | 0.0240 | 0.039 | 0.70 | Latencia muy baja |
 | Cartesia Sonic | 1.70 | 0.0283 | 0.036 (Turbo) | 0.65 | 40 ms al primer audio; voz por defecto |
-| ElevenLabs | 2.40 | 0.0400 | 0.055 | 0.99 | La más natural, más control |
+| ElevenLabs (v3 conversacional o Flash v2.5, mismo precio: 0.05 USD/1k caracteres) | 2.40 | 0.0400 | 0.055 | 0.99 | La más natural; v3 conversacional ~280 ms, Flash ~75 ms |
 
 ### 2.3 Opciones de modelo (LLM), configurables por negocio
 

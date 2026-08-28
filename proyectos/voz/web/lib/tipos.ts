@@ -582,6 +582,11 @@ export const AJUSTES_ELEVENLABS: CampoDeslizador[] = [
 
 export const VELOCIDAD_AZURE = { min: 0.5, max: 2, paso: 0.01, porDefecto: 1 } as const;
 
+export const MODELOS_ELEVENLABS: { id: string; nombre: string; detalle: string }[] = [
+  { id: "eleven_v3_conversational", nombre: "v3 conversacional", detalle: "La más natural en tiempo real. ~280 ms al primer audio." },
+  { id: "eleven_flash_v2_5", nombre: "Flash v2.5", detalle: "La más rápida. ~75 ms al primer audio, un poco más plana." },
+];
+
 export const PROVEEDORES_TTS: {
   valor: ProveedorTts;
   nombre: string;
@@ -591,7 +596,7 @@ export const PROVEEDORES_TTS: {
   { valor: "azure", nombre: "Azure Neural", detalle: "Catálogo mexicano y lo más barato", costoHora: 0.77 },
   { valor: "deepgram", nombre: "Deepgram Aura", detalle: "Latencia muy baja", costoHora: 1.44 },
   { valor: "cartesia", nombre: "Cartesia Sonic", detalle: "40 ms al primer audio", costoHora: 1.7 },
-  { valor: "elevenlabs", nombre: "ElevenLabs", detalle: "La más natural, con más control", costoHora: 2.4 },
+  { valor: "elevenlabs", nombre: "ElevenLabs", detalle: "La más natural: v3 conversacional al precio de Flash", costoHora: 2.4 },
 ];
 
 export const VOCES_AZURE: { id: string; nombre: string; detalle: string }[] = [

@@ -5,6 +5,7 @@ import { Campo, Entrada, Insignia, Selector } from "@/components/ui/primitivos";
 import {
   AJUSTES_ELEVENLABS,
   FORMATO_VOZ,
+  MODELOS_ELEVENLABS,
   MODELOS_LLM,
   PROVEEDORES_LLM,
   PROVEEDORES_TTS,
@@ -194,6 +195,15 @@ export function ConfiguracionVoz({
 
       {actual === "elevenlabs" ? (
         <div className="space-y-3 border border-linea bg-panel px-2.5 py-2.5">
+          <Campo etiqueta="Modelo" ayuda="Mismo precio. Conversacional suena más humano; Flash contesta más rápido.">
+            <Selector name="tts_modelo" defaultValue={(mismos && typeof ajustes.modelo === "string" ? ajustes.modelo : "") || MODELOS_ELEVENLABS[0]!.id}>
+              {MODELOS_ELEVENLABS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nombre} — {m.detalle}
+                </option>
+              ))}
+            </Selector>
+          </Campo>
           {AJUSTES_ELEVENLABS.map((campo) => (
             <Deslizador
               key={campo.clave}

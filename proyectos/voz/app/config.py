@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     cartesia_voice_id: str = "5c5ad5e7-1020-476b-8b91-fdcbe9cc313c"
     elevenlabs_voice_id: str = "MOpELGWw8bqcERsmVMzW"
-    elevenlabs_model: str = "eleven_flash_v2_5"
+    elevenlabs_model: str = "eleven_v3_conversational"
     llm_proveedor: str = "openai"
     llm_model: str = "gpt-4.1-mini"
     modelo_por_proveedor: dict[str, str] = {

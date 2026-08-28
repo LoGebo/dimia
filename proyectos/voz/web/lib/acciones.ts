@@ -13,6 +13,7 @@ import {
   AJUSTES_ELEVENLABS,
   ESTADOS_PEDIDO,
   FORMATO_VOZ,
+  MODELOS_ELEVENLABS,
   TIPOS_REGLA,
   VELOCIDAD_AZURE,
   nombreProveedorTts,
@@ -289,6 +290,8 @@ function ajustesTts(fd: FormData, proveedor: ProveedorTts): TtsAjustes {
       const valor = decimal(fd, `tts_${campo.clave}`, campo.min, campo.max);
       if (valor !== null) ajustes[campo.clave] = valor;
     }
+    const modelo = texto(fd, "tts_modelo");
+    if (MODELOS_ELEVENLABS.some((m) => m.id === modelo)) ajustes.modelo = modelo;
     return ajustes;
   }
   return {};
