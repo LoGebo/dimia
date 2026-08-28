@@ -675,6 +675,7 @@ export const MODELOS_LLM: Record<
   { id: string; nombre: string; detalle: string; costoMinuto: number }[]
 > = {
   openai: [
+    { id: "gpt-4.1-nano", nombre: "GPT-4.1 nano", detalle: "El más rápido y barato; sigue peor instrucciones largas", costoMinuto: 0.001 },
     { id: "gpt-4.1-mini", nombre: "GPT-4.1 mini", detalle: "El equilibrio de siempre", costoMinuto: 0.004 },
     { id: "gpt-4.1", nombre: "GPT-4.1", detalle: "Más fino, ocho veces más caro", costoMinuto: 0.032 },
   ],
