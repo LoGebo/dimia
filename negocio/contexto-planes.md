@@ -70,6 +70,43 @@ Fuente: `web/lib/tipos.ts` (`MODELOS_LLM.costoMinuto`).
 | ElevenLabs + Haiku (solo voz premium) | 0.055 | 0.99 |
 | **ElevenLabs + GPT-4.1 (Premium)** | **0.085** | **1.53** |
 
+### 2.4b Azure contra ElevenLabs, en pesos
+
+Solo la voz, por minuto de llamada, a 18 MXN/USD:
+
+| | Azure Neural | ElevenLabs v3 conversacional |
+|---|---|---|
+| USD por hora de habla | 0.77 | 2.40 |
+| USD por minuto | 0.013 | 0.040 |
+| MXN por minuto | 0.23 | 0.72 |
+| Diferencia | — | +0.49 MXN/min (3.1×) |
+
+El minuto completo (Telnyx + servidor + Deepgram + Haiku + voz):
+
+| | Con Azure | Con ElevenLabs |
+|---|---|---|
+| USD/min | 0.028 | 0.055 |
+| MXN/min | 0.50 | 0.99 |
+| Llamada promedio (2:22) | 1.19 MXN | 2.35 MXN |
+| Consultorio típico (405 min/mes) | 203 MXN | 401 MXN |
+| Restaurante con reservaciones (1,012 min/mes) | 506 MXN | 1,002 MXN |
+| Grupo de tres sucursales (3,270 min/mes) | 1,635 MXN | 3,237 MXN |
+
+Lectura: ElevenLabs duplica el costo del minuto, pero en dinero son ~200 MXN más al mes
+para un consultorio y ~500 para un restaurante. Contra planes de 2,990–4,990 MXN sigue
+dejando 80 % o más de bruto: por eso va como escalón Premium (+990 / +1,990 / +2,990) y no
+como voz por omisión.
+
+Modelos de ElevenLabs al mismo precio (0.05 USD por 1,000 caracteres): `eleven_v3_conversational`
+(la más natural, ~280 ms al primer audio; ya es la de omisión en el stack) y `eleven_flash_v2_5`
+(~75 ms, un poco más plana). Ambas elegibles por negocio desde el panel.
+
+Cuenta actual: plan **Creator** (22 USD/mes), 220,000 caracteres incluidos ≈ 275 minutos hablados
+por el agente (a ~800 caracteres por minuto). Un solo negocio en Premium lo agota; para varios
+hace falta **Pro** (99 USD, 990,000 caracteres ≈ 1,200 min) o **Scale** (299 USD, 2,990,000 ≈
+3,700 min), o pagar excedente al mismo 0.05 USD/1k. Ese fijo debe entrar al costo del Premium:
+con Pro prorrateado entre 4 negocios Premium son ~450 MXN más por negocio al mes.
+
 ### 2.5 Costos fijos mensuales (USD)
 
 Fuente: `proyectos/voz/deploy/README.md`, `deploy/livekit.md`, `deploy/telnyx.md`.

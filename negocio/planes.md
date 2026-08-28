@@ -26,6 +26,19 @@ trabajo 18 MXN/USD `[ confirmar al facturar ]`.
 Fijos: Supabase Pro 25 USD/mes compartido (45 MXN por cliente con diez); número mexicano
 3 USD/mes por línea (54 MXN). WhatsApp por conversación `[ costo Meta por confirmar ]`.
 
+### Azure contra ElevenLabs
+
+| | Con Azure | Con ElevenLabs v3 conversacional |
+|---|---|---|
+| MXN por minuto completo | 0.50 | 0.99 |
+| Consultorio típico (405 min) | 203 MXN/mes | 401 MXN/mes |
+| Restaurante (1,012 min) | 506 MXN/mes | 1,002 MXN/mes |
+
+ElevenLabs cobra 0.05 USD por 1,000 caracteres tanto en `eleven_v3_conversational` (la de
+omisión) como en Flash v2.5. La cuenta Creator (22 USD) rinde ~275 minutos hablados al mes; con
+varios negocios Premium se necesita Pro (99 USD, ~1,200 min) y ese fijo entra al costo del
+Premium (~450 MXN por negocio al mes con cuatro negocios).
+
 ## 2. Consumo real por tipo de negocio
 
 Rango bajo–alto. Anclas medidas: consultorio típico ~450 min (README), llamada promedio 2:22
