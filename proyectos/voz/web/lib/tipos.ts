@@ -680,6 +680,8 @@ export const MODELOS_LLM: Record<
     { id: "gpt-4.1", nombre: "GPT-4.1", detalle: "Más fino, ocho veces más caro", costoMinuto: 0.032 },
   ],
   google: [
+    { id: "gemini-2.5-flash", nombre: "Gemini 2.5 Flash", detalle: "El mejor equilibrio velocidad, costo y herramientas", costoMinuto: 0.003 },
+    { id: "gemini-2.5-flash-lite", nombre: "Gemini 2.5 Flash-Lite", detalle: "El de menor latencia del mercado; algo más simple", costoMinuto: 0.001 },
     { id: "gemini-3-flash-preview", nombre: "Gemini 3 Flash (preview)", detalle: "Muy conciso, pero da 504 seguido: no lo dejes en producción", costoMinuto: 0.005 },
   ],
   anthropic: [
