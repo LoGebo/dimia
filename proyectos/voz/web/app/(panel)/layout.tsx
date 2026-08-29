@@ -8,6 +8,7 @@ import { MarcaDimia } from "@/components/marca";
 import { MenuLateral } from "@/components/menu-lateral";
 import { ProveedorAvisos } from "@/components/kit";
 import { PantallaCarga } from "@/components/pantalla-carga";
+import { ChatAgente } from "@/components/chat-agente";
 import { secciones } from "@/lib/giro";
 import { avance } from "@/lib/listo";
 import { telefono } from "@/lib/formato";
@@ -54,6 +55,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <main className="flex min-w-0 flex-1 flex-col px-6 py-6">{children}</main>
         </div>
       </div>
+      <ChatAgente negocio={membresia?.nombre ?? actual.nombre} />
     </ProveedorAvisos>
   );
 }

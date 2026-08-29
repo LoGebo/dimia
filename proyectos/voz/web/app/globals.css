@@ -263,6 +263,9 @@ input[type="date"] {
   .escalonado > :nth-child(9) { animation-delay: 360ms; }
   .escalonado > :nth-child(10) { animation-delay: 405ms; }
   .escalonado > :nth-child(n + 11) { animation-delay: 450ms; }
+  .aparece-arriba {
+    animation: aparece-arriba 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
   .aparece-escala {
     animation: aparece-escala 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
