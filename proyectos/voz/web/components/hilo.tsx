@@ -142,7 +142,7 @@ export function Hilo({
                 {m.autor === "cliente" ? (
                   <span
                     aria-hidden="true"
-                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-linea text-[12px] font-bold text-tinta uppercase"
+                    className="mb-6 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-linea text-[12px] font-bold text-tinta uppercase"
                   >
                     {nombreDe(c).slice(0, 1)}
                   </span>
@@ -162,7 +162,7 @@ export function Hilo({
                   </div>
                 </div>
                 {m.autor === "agente" ? (
-                  <span aria-hidden="true" className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-panel-2 text-tinta">
+                  <span aria-hidden="true" className="mb-6 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-panel-2 text-tinta">
                     <IconoDimia tamano={16} />
                   </span>
                 ) : null}
