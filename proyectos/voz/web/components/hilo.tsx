@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { nombreDe } from "@/components/bandeja";
 import { ChipHerramienta, ChipsHerramienta, TextoFluye } from "@/components/kit";
+import { IconoDimia } from "@/components/marca";
 import { fechaLarga, hora, isoDia, telefono as formatearTelefono } from "@/lib/formato";
 import { NOMBRE_CANAL, NOMBRE_RESULTADO, type ConversacionDetalle, type Mensaje } from "@/lib/tipos";
 
@@ -14,17 +15,10 @@ const LADO: Record<Mensaje["autor"], string> = {
 };
 
 const BURBUJA: Record<Mensaje["autor"], string> = {
-  cliente: "border-l-2 border-linea-fuerte bg-panel-2 text-tinta",
-  agente: "bg-acento-suave text-tinta",
-  equipo: "border-l-2 border-bueno bg-panel-2 text-tinta",
-  sistema: "bg-transparent text-tinta-3",
-};
-
-const QUIEN: Record<Mensaje["autor"], string> = {
-  cliente: "Cliente",
-  agente: "Agente",
-  equipo: "Equipo",
-  sistema: "Sistema",
+  cliente: "rounded-2xl rounded-bl-md bg-panel-2 text-tinta",
+  agente: "rounded-2xl rounded-br-md bg-acento text-acento-tinta",
+  equipo: "rounded-2xl rounded-br-md bg-bueno/15 text-tinta",
+  sistema: "rounded-lg bg-transparent text-tinta-3",
 };
 
 /** Solo el último mensaje del agente en una conversación viva se muestra llegando: lo demás ya pasó. */
@@ -125,7 +119,7 @@ export function Hilo({
         </p>
       ) : null}
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-6 py-5">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
         {mensajes.length === 0 ? (
           <p className="py-8 text-center text-[12px] text-tinta-3">
             Esta conversación no tiene mensajes escritos.
@@ -144,24 +138,34 @@ export function Hilo({
                   {suDia}
                 </p>
               ) : null}
-              <div className={`flex ${LADO[m.autor]}`}>
-                <div className={`max-w-[min(560px,80%)] px-3 py-2 ${BURBUJA[m.autor]}`}>
-                  <div className="flex items-baseline justify-between gap-3 text-[11px] text-tinta-3">
-                    <span>{QUIEN[m.autor]}</span>
-                    <span className="numeros text-[10px] text-tinta-3">{hora(m.creado, zona)}</span>
+              <div className={`flex items-end gap-2 ${LADO[m.autor]}`}>
+                {m.autor === "cliente" ? (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-linea text-[12px] font-bold text-tinta uppercase"
+                  >
+                    {nombreDe(c).slice(0, 1)}
+                  </span>
+                ) : null}
+                <div className={`max-w-[min(560px,78%)] ${m.autor === "sistema" ? "" : "aparece-arriba"}`}>
+                  <div className={`px-4 py-2.5 ${BURBUJA[m.autor]}`}>
+                    {m.id === enVivo ? (
+                      <TextoFluye texto={m.texto} className="whitespace-pre-wrap" />
+                    ) : (
+                      <p className="text-[14px] leading-relaxed whitespace-pre-wrap">{m.texto}</p>
+                    )}
                   </div>
-                  {m.id === enVivo ? (
-                    <TextoFluye texto={m.texto} className="mt-1 whitespace-pre-wrap" />
-                  ) : (
-                    <p className="mt-1 text-[13px] leading-relaxed whitespace-pre-wrap">{m.texto}</p>
-                  )}
-                  {/* Por qué contestó eso: la herramienta que consultó. */}
-                  {m.herramienta ? (
-                    <div className="mt-2">
-                      <ChipHerramienta estado="hecho">consultó {m.herramienta.replaceAll("_", " ")}</ChipHerramienta>
-                    </div>
-                  ) : null}
+                  <div className={`mt-1 flex items-center gap-2 px-1 text-[11px] text-tinta-3 ${LADO[m.autor]}`}>
+                    {m.autor === "equipo" ? <span>Equipo</span> : null}
+                    <span className="numeros">{hora(m.creado, zona)}</span>
+                    {m.herramienta ? <ChipHerramienta estado="hecho">consultó {m.herramienta.replaceAll("_", " ")}</ChipHerramienta> : null}
+                  </div>
                 </div>
+                {m.autor === "agente" ? (
+                  <span aria-hidden="true" className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-panel-2 text-tinta">
+                    <IconoDimia tamano={16} />
+                  </span>
+                ) : null}
               </div>
             </div>
           );
