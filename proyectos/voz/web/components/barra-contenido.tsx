@@ -35,7 +35,7 @@ export function BarraContenido({
         {principal.texto}
       </Link>
       <div className="ml-1 flex h-9 items-center gap-3 rounded-lg border border-linea bg-panel px-3">
-        <span className="numeros text-[13px] font-semibold text-tinta">{telefono ?? "Sin línea"}</span>
+        {telefono ? <span className="numeros text-[13px] font-semibold text-tinta">{telefono}</span> : null}
         <EstadoLinea estado={estado} />
       </div>
       <HerramientasGlobales />

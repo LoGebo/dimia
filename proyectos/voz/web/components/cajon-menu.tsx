@@ -133,7 +133,7 @@ export function CajonMenu({
           </button>
         </div>
         <div className="flex items-center justify-between gap-2 border-b border-linea px-4 py-2.5 text-[13px]">
-          <span className="numeros font-semibold text-tinta">{telefono ?? "Sin línea"}</span>
+          {telefono ? <span className="numeros font-semibold text-tinta">{telefono}</span> : <span className="text-tinta-3">Aún sin número</span>}
           <EstadoLinea estado={estado} />
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
