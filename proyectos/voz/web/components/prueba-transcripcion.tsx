@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { IconoDimia } from "@/components/marca";
 
 export type Turno = {
   id: string;
@@ -13,15 +14,9 @@ export type Turno = {
 export type Accion = { id: string; texto: string; momento: number };
 
 const ESTILO: Record<Turno["quien"], string> = {
-  tu: "border-linea-fuerte bg-panel-2 text-tinta",
-  agente: "border-acento/30 bg-acento-suave text-tinta",
-  sistema: "border-transparent bg-transparent text-tinta-3",
-};
-
-const NOMBRE: Record<Turno["quien"], string> = {
-  tu: "Tú",
-  agente: "Agente",
-  sistema: "",
+  tu: "rounded-2xl rounded-br-md bg-acento text-acento-tinta",
+  agente: "rounded-2xl rounded-bl-md bg-panel-2 text-tinta",
+  sistema: "rounded-lg bg-transparent text-tinta-3",
 };
 
 export function Transcripcion({ turnos }: { turnos: Turno[] }) {
@@ -40,17 +35,25 @@ export function Transcripcion({ turnos }: { turnos: Turno[] }) {
   }
 
   return (
-    <div className="max-h-[380px] space-y-2 overflow-y-auto px-4 py-3">
+    <div className="max-h-[380px] space-y-3 overflow-y-auto px-4 py-4">
       {turnos.map((t) => (
-        <div key={t.id} className={t.quien === "tu" ? "flex justify-end" : "flex justify-start"}>
-          <div className={`max-w-[85%] border px-2.5 py-1.5 ${ESTILO[t.quien]}`}>
-            {t.quien !== "sistema" ? (
-              <span className="etiqueta block text-[10px]">{NOMBRE[t.quien]}</span>
-            ) : null}
-            <span className={`block text-[13px] leading-snug ${t.final ? "" : "opacity-60"}`}>
-              {t.texto}
+        <div
+          key={t.id}
+          className={`aparece-arriba flex items-end gap-2 ${t.quien === "tu" ? "justify-end" : t.quien === "sistema" ? "justify-center" : "justify-start"}`}
+        >
+          {t.quien === "agente" ? (
+            <span aria-hidden="true" className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-panel-2 text-tinta">
+              <IconoDimia tamano={16} />
             </span>
-          </div>
+          ) : null}
+          <p className={`max-w-[80%] px-4 py-2.5 text-[14px] leading-relaxed ${ESTILO[t.quien]} ${t.final ? "" : "opacity-60"}`}>
+            {t.texto}
+          </p>
+          {t.quien === "tu" ? (
+            <span aria-hidden="true" className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-linea text-[12px] font-bold text-tinta">
+              Tú
+            </span>
+          ) : null}
         </div>
       ))}
       <div ref={fin} />
