@@ -145,7 +145,7 @@ export function TablaRegistros<T>({
               {f.nombre}
             </ChipFiltro>
           ))}
-          <span className="numeros ml-auto font-mono text-[10.5px] tracking-[0.18em] text-tinta-3 uppercase">
+          <span className="numeros ml-auto font-mono text-[11px] text-tinta-3">
             {visibles.length} de {filas.length}
           </span>
         </div>
@@ -164,17 +164,17 @@ export function TablaRegistros<T>({
                     scope="col"
                     aria-sort={ariaSort}
                     style={c.ancho ? { width: c.ancho } : undefined}
-                    className={`etiqueta h-8 px-3 font-normal whitespace-nowrap ${c.numerica ? "text-right" : "text-left"}`}
+                    className={`h-8 px-3 text-[12px] font-medium whitespace-nowrap text-tinta-3 ${c.numerica ? "text-right" : "text-left"}`}
                   >
                     {c.valor ? (
                       <button
                         type="button"
                         onClick={() => alternarOrden(c)}
-                        className={`group inline-flex h-8 items-center gap-1.5 transition-colors duration-150 hover:text-tinta ${
+                        className={`group inline-flex h-8 items-center gap-1.5 transition-colors duration-150 hover:text-tinta focus-visible:text-acento focus-visible:outline-none ${
                           activa ? "text-tinta" : ""
                         } ${c.numerica ? "flex-row-reverse" : ""}`}
                       >
-                        <span className="etiqueta text-inherit">{c.titulo}</span>
+                        <span>{c.titulo}</span>
                         <span
                           aria-hidden="true"
                           className={`font-mono text-[10px] transition-opacity duration-150 ${

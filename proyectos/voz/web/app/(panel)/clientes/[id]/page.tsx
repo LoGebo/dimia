@@ -29,7 +29,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
         giro={giro.nombre}
         acciones={
           <>
-            {ficha.origen ? <span className="font-mono text-[10.5px] tracking-[0.14em] text-tinta-3 uppercase">Origen · {ficha.origen}</span> : null}
+            {ficha.origen ? <span className="text-[12px] text-tinta-3">Origen: {ficha.origen}</span> : null}
             <Link href="/clientes" className="text-[12px] text-tinta-3 transition-colors duration-150 hover:text-acento">
               Todos los clientes
             </Link>

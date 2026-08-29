@@ -69,7 +69,7 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
                 detalle="En Servicios, edita un recurso y elige «Una persona». Desde ahí se le pone teléfono, comisión y ausencias."
                 accion={
                   <Link href="/servicios" className="mt-1 text-[13px] font-medium text-acento transition-colors duration-150 hover:text-tinta">
-                    Ir a Servicios →
+                    Ir a Servicios
                   </Link>
                 }
               />

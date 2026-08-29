@@ -51,7 +51,7 @@ export function ChipsHerramienta({ children, total }: { children: ReactNode; tot
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {total !== undefined ? (
-        <span className="numeros mr-1 font-mono text-[10.5px] tracking-[0.18em] text-tinta-3 uppercase">
+        <span className="numeros mr-1 font-mono text-[11px] text-tinta-3">
           {total} {total === 1 ? "llamada" : "llamadas"}
         </span>
       ) : null}

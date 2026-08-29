@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useArmazon } from "@/components/armazon";
 import { useAtajoPaleta, type GrupoComandos } from "@/components/kit";
 import { PaletaPanel } from "@/components/kit/paleta-panel";
 
@@ -24,7 +23,6 @@ export function BuscadorGlobal({
 }) {
   const router = useRouter();
   const paleta = useAtajoPaleta();
-  const { alternar } = useArmazon();
   const ultimaG = useRef(0);
 
   const saltos = useMemo(
@@ -93,11 +91,10 @@ export function BuscadorGlobal({
             } catch {}
           },
         },
-        { id: "menu", texto: "Plegar o mostrar el menú", claves: "lateral barra", onSelect: alternar },
       ],
     };
     return citas.length > 0 ? [ir, hoy, acciones] : [ir, acciones];
-  }, [pantallas, citas, router, alternar]);
+  }, [pantallas, citas, router]);
 
   return (
     <>
@@ -106,7 +103,7 @@ export function BuscadorGlobal({
         onClick={paleta.abrir}
         aria-haspopup="dialog"
         aria-expanded={paleta.abierta}
-        className="group flex h-8 items-center gap-2 border border-linea bg-panel-2 pr-2 pl-2.5 text-[13px] text-tinta-3 transition-colors duration-150 hover:border-linea-fuerte hover:bg-panel hover:text-tinta focus-visible:border-acento focus-visible:outline-none md:w-56"
+        className="group flex h-8 items-center gap-2 border border-linea bg-panel-2 pr-2 pl-2.5 text-[13px] text-tinta-3 transition-colors duration-150 hover:border-linea-fuerte hover:bg-panel hover:text-tinta focus-visible:border-acento focus-visible:outline-none md:w-52"
       >
         <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5 flex-none" fill="none" stroke="currentColor" strokeWidth="1.4">
           <circle cx="7" cy="7" r="4.5" />

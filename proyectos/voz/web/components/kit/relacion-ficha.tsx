@@ -37,11 +37,7 @@ const ESTADO: Record<string, EstadoHerramienta> = {
   "campana.agendo": "hecho",
   "campana.contestado": "hecho",
   "resena.recibida": "hecho",
-  "cita.cancelada": "fallo",
   "cita.no_asistio": "fallo",
-  "pedido.cancelado": "fallo",
-  "pago.cancelado": "fallo",
-  "campana.rechazo": "fallo",
   "campana.fallido": "fallo",
   "conversacion.escalada": "fallo",
   "campana.en_curso": "en-curso",
@@ -75,11 +71,11 @@ function herramientas(e: Evento, zona: string): { verbo: string; dato?: string; 
   const inicio = typeof d.inicio === "string" ? `${fechaCorta(d.inicio, zona)} ${hora(d.inicio, zona)}` : undefined;
   switch (e.tipo) {
     case "cita.creada":
-      return [{ verbo: "reservó", dato: codigo, estado }, ...(inicio ? [{ verbo: "para", dato: inicio, estado }] : [])];
+      return [{ verbo: "cita", dato: [codigo, inicio].filter(Boolean).join(" · "), estado }];
     case "cita.confirmada":
       return [{ verbo: "confirmó", dato: codigo, estado }];
     case "cita.movida":
-      return [{ verbo: "movió", dato: codigo, estado }, ...(inicio ? [{ verbo: "a", dato: inicio, estado }] : [])];
+      return [{ verbo: "ahora", dato: [codigo, inicio].filter(Boolean).join(" · "), estado }];
     case "cita.cancelada":
       return [{ verbo: "canceló", dato: codigo, estado }];
     case "cita.atendida":
@@ -92,7 +88,7 @@ function herramientas(e: Evento, zona: string): { verbo: string; dato?: string; 
     case "pedido.confirmado":
     case "pedido.entregado":
     case "pedido.cancelado":
-      return [{ verbo: e.tipo === "pedido.abierto" ? "abrió pedido" : e.tipo === "pedido.confirmado" ? "mandó a cocina" : e.tipo === "pedido.entregado" ? "entregó" : "canceló pedido", dato: codigo, estado }, { verbo: "total", dato: moneda(String(d.total ?? "0")), estado }];
+      return [{ verbo: "pedido", dato: [codigo, moneda(String(d.total ?? "0"))].filter(Boolean).join(" · "), estado }];
     case "recado.creado":
       return [{ verbo: "tomó recado", dato: undefined, estado: "en-curso" }];
     case "recado.atendido":
@@ -112,7 +108,7 @@ function herramientas(e: Evento, zona: string): { verbo: string; dato?: string; 
       ];
     }
     case "pago.registrado":
-      return [{ verbo: "cobró", dato: moneda(String(d.monto ?? "0")), estado }, ...(typeof d.metodo === "string" ? [{ verbo: d.metodo, estado }] : [])];
+      return [{ verbo: typeof d.metodo === "string" ? d.metodo : "cobró", dato: moneda(String(d.monto ?? "0")), estado }];
     case "pago.pendiente":
       return [{ verbo: "dejó pendiente", dato: moneda(String(d.monto ?? "0")), estado }];
     case "pago.cancelado":
@@ -179,14 +175,16 @@ export function LineaTiempoCliente({ eventos, zona }: { eventos: Evento[]; zona:
         {visibles.map((e, i) => {
           const nombre = NOMBRE_EVENTO[e.tipo] ?? e.tipo;
           const href = enlace(e, zona);
-          const chips = herramientas(e, zona);
+          const todas = herramientas(e, zona);
+          const chips = todas.filter((h) => h.dato);
+          const notas = todas.filter((h) => !h.dato && (h.estado !== (ESTADO[e.tipo] ?? "hecho") || e.tipo === "llamada.terminada"));
           const estado = ESTADO[e.tipo];
           const dia = fechaLarga(e.creado, zona);
           const cambiaDia = dia !== ultimoDia;
           ultimoDia = dia;
           return (
-            <li key={e.id} className="kit-revela" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
-              {cambiaDia ? <p className="etiqueta pt-3 pb-1 text-[10px]">{dia}</p> : null}
+            <li key={e.id}>
+              {cambiaDia ? <p className="pt-3 pb-1 text-[11px] text-tinta-3">{dia}</p> : null}
               <div className="relative flex gap-4 py-2.5">
                 <span className="relative flex w-3 flex-none justify-center">
                   <i aria-hidden="true" className={`mt-1.5 h-2 w-2 ${estado ? CUADRO[estado] : "bg-linea-fuerte"}`} />
@@ -202,6 +200,7 @@ export function LineaTiempoCliente({ eventos, zona }: { eventos: Evento[]; zona:
                       ) : (
                         nombre
                       )}
+                      {notas.length > 0 ? <span className="font-normal text-tinta-2"> · {notas.map((n) => n.verbo).join(" · ")}</span> : null}
                     </p>
                     <p className="numeros font-mono text-[11px] text-tinta-3">
                       {hora(e.creado, zona)} · {AUTOR[e.autor]}

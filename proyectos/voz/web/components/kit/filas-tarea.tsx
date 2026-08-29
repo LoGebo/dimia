@@ -22,9 +22,7 @@ const ROTULO: Record<EstadoTarea, { texto: string; clase: string }> = {
 export function FilasTarea({ children, rotulo }: { children: ReactNode; rotulo?: string }) {
   return (
     <div className="border border-linea bg-panel">
-      {rotulo ? (
-        <p className="etiqueta border-b border-linea px-3 py-2">{rotulo}</p>
-      ) : null}
+      {rotulo ? <p className="border-b border-linea px-3 py-2 text-[13px] font-semibold text-tinta">{rotulo}</p> : null}
       <ul className="divide-y divide-linea">{children}</ul>
     </div>
   );
@@ -66,9 +64,7 @@ export function FilaTarea({
           {titulo}
         </span>
         {dato ? <span className="numeros font-mono text-[12px] text-tinta-2">{dato}</span> : null}
-        <span className={`numeros w-16 text-right font-mono text-[10.5px] tracking-[0.16em] uppercase ${r.clase}`}>
-          {r.texto}
-        </span>
+        <span className={`w-16 text-right text-[11.5px] ${r.clase}`}>{r.texto}</span>
         {desplegable ? (
           <span
             aria-hidden="true"

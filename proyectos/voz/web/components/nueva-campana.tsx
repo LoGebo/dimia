@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { AreaTexto, Campo, Entrada } from "@/components/ui/primitivos";
-import { MarcaExito } from "@/components/kit";
 import { recordarCampanaCreada } from "@/components/kit/relacion-campanas";
 import { alcanceDeCampana, crearCampana } from "@/lib/acciones";
 import { NOMBRE_TIPO_CAMPANA, type CanalCampana, type TipoCampana } from "@/lib/tipos";
@@ -86,14 +85,14 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
 
       <fieldset>
         <legend className="mb-1.5 text-xs font-medium text-tinta-2">A quién</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid border-t border-linea sm:grid-cols-2">
           {(Object.keys(NOMBRE_TIPO_CAMPANA) as TipoCampana[]).map((t) => (
-            <label key={t} className="cursor-pointer border border-linea bg-panel px-3 py-2.5 transition has-checked:border-acento has-checked:bg-acento-suave">
-              <input type="radio" name="tipo" value={t} checked={tipo === t} onChange={() => cambiar(t, canal)} className="sr-only" />
-              <span className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-medium text-tinta">{NOMBRE_TIPO_CAMPANA[t].nombre}</span>
+            <label key={t} className="cursor-pointer border-b border-l-2 border-linea border-l-transparent px-3 py-2.5 transition-colors duration-150 hover:bg-panel-2 has-checked:border-l-acento has-checked:bg-panel-2">
+              <input type="radio" name="tipo" value={t} checked={tipo === t} onChange={() => cambiar(t, canal)} className="peer sr-only" />
+              <span className="flex items-center justify-between gap-2 peer-checked:[&>span:first-child]:text-acento">
+                <span className="text-[13px] font-medium text-tinta transition-colors duration-150">{NOMBRE_TIPO_CAMPANA[t].nombre}</span>
                 {alcances[t] !== undefined && !(calculando && t === tipo) ? (
-                  <span className="numeros bg-panel-2 px-1.5 font-mono text-[11px] text-tinta-2">{alcances[t]}</span>
+                  <span className="numeros font-mono text-[11.5px] text-tinta-2">{alcances[t]}</span>
                 ) : null}
               </span>
               <span className="mt-0.5 block text-[11px] text-tinta-3">{NOMBRE_TIPO_CAMPANA[t].detalle}</span>
@@ -112,11 +111,11 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
 
       <fieldset>
         <legend className="mb-1.5 text-xs font-medium text-tinta-2">Por dónde</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid border-t border-linea sm:grid-cols-2">
           {(["whatsapp", "llamada"] as CanalCampana[]).map((c) => (
-            <label key={c} className="cursor-pointer border border-linea bg-panel px-3 py-2.5 transition has-checked:border-acento has-checked:bg-acento-suave">
-              <input type="radio" name="canal" value={c} checked={canal === c} onChange={() => cambiar(tipo, c)} className="sr-only" />
-              <span className="block text-[13px] font-medium text-tinta">{c === "whatsapp" ? "WhatsApp" : "Llamada del agente"}</span>
+            <label key={c} className="cursor-pointer border-b border-l-2 border-linea border-l-transparent px-3 py-2.5 transition-colors duration-150 hover:bg-panel-2 has-checked:border-l-acento has-checked:bg-panel-2">
+              <input type="radio" name="canal" value={c} checked={canal === c} onChange={() => cambiar(tipo, c)} className="peer sr-only" />
+              <span className="block text-[13px] font-medium text-tinta transition-colors duration-150 peer-checked:text-acento">{c === "whatsapp" ? "WhatsApp" : "Llamada del agente"}</span>
               <span className="mt-0.5 block text-[11px] text-tinta-3">
                 {c === "whatsapp" ? "Un mensaje; si contesta, el agente sigue la conversación." : "El agente marca, se presenta y agenda ahí mismo."}
               </span>
@@ -160,11 +159,8 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
             Contando personas…
           </span>
         ) : alcance !== undefined ? (
-          <span className="flex items-center gap-2 text-[12px] text-tinta-2">
-            <MarcaExito key={`${tipo}-${alcance}`} tamano={14} tono={alcance > 0 ? "bueno" : "acento"} />
-            <span>
-              Alcanzaría a <span className="numeros font-mono text-[12.5px] text-tinta">{alcance}</span> {alcance === 1 ? "persona" : "personas"} hoy.
-            </span>
+          <span className="text-[12px] text-tinta-2">
+            Alcanzaría a <span className="numeros font-mono text-[12.5px] text-tinta">{alcance}</span> {alcance === 1 ? "persona" : "personas"} hoy.
           </span>
         ) : null}
         <p className="text-[12px] text-tinta-3">Se crea en borrador; tú la activas cuando quieras.</p>

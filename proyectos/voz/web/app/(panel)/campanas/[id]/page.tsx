@@ -67,8 +67,8 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
               <TarjetaCabecera titulo={c.canal === "llamada" ? "Guion" : "Mensaje"} descripcion={c.canal === "llamada" ? "Lo que el agente sabe antes de marcar." : "Tal cual lo recibe cada persona."} />
               <p className="border-l-2 border-acento mx-4 mb-4 pl-3 text-[13px] leading-relaxed whitespace-pre-wrap text-tinta">{c.mensaje}</p>
               {c.objetivo ? (
-                <p className="flex items-baseline gap-2 border-t border-linea px-4 py-2.5 text-[12px] text-tinta-2">
-                  <span className="etiqueta">Objetivo</span>
+                <p className="border-t border-linea px-4 py-2.5 text-[12px] text-tinta-2">
+                  <span className="text-tinta-3">Objetivo: </span>
                   {c.objetivo}
                 </p>
               ) : null}

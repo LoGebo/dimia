@@ -21,3 +21,5 @@ export { EsqueletoLinea, EsqueletoTabla, EsqueletoCifra, EsqueletoTarjeta } from
 export { MarcaExito } from "./marca-exito";
 export { TextoFluye, Pensando } from "./flujo";
 export type { PasoPensando } from "./flujo";
+export { GraficaLineas, BarrasMini, BarraSegmentada, Avance, Kpi, FilaKpis, ListaConceptos } from "./graficas";
+export type { Serie, Formato } from "./graficas";

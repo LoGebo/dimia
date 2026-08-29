@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Formulario } from "@/components/formulario";
 import { FilaTarea, FilasTarea, MarcaExito, TablaRegistros, TarjetaInsight, useAvisos, type Columna, type EstadoTarea, type Filtro, type Insight } from "@/components/kit";
@@ -30,7 +31,7 @@ export function FilasCampana({ children, rotulo, conteo }: { children: ReactNode
   return (
     <div className="border border-linea bg-panel">
       <p className="flex items-baseline gap-2 border-b border-linea px-4 py-2">
-        <span className="etiqueta">{rotulo}</span>
+        <span className="text-[13px] font-medium text-tinta">{rotulo}</span>
         {conteo !== undefined ? <span className="numeros font-mono text-[11px] text-tinta-3">{conteo}</span> : null}
       </p>
       <ul className="divide-y divide-linea">{children}</ul>
@@ -88,7 +89,7 @@ export function FilaCampana({ campana: c, zona }: { campana: Campana; zona: stri
           <span className="text-tinta-2">{c.contestados} contestaron</span>
           <span className={c.agendaron > 0 ? "text-bueno" : "text-tinta-3"}>{c.agendaron} agendaron</span>
         </div>
-        <span className={`numeros w-20 text-right font-mono text-[10.5px] tracking-[0.16em] uppercase ${r.clase}`}>{r.texto}</span>
+        <span className={`w-20 text-right text-[12px] ${r.clase}`}>{r.texto}</span>
         <div className="flex w-[84px] justify-end gap-1">
           {c.estado === "borrador" || c.estado === "pausada" ? (
             <Formulario accion={cambiarEstadoCampana}>
@@ -141,7 +142,7 @@ const TONO_CONTACTO: Record<EstadoContacto, { cuadro: string; texto: string }> =
   contestado: { cuadro: "bg-bueno", texto: "text-bueno" },
   agendo: { cuadro: "bg-bueno", texto: "text-bueno" },
   sin_respuesta: { cuadro: "bg-alerta", texto: "text-alerta" },
-  rechazo: { cuadro: "bg-critico", texto: "text-critico" },
+  rechazo: { cuadro: "bg-alerta", texto: "text-alerta" },
   fallido: { cuadro: "bg-critico", texto: "text-critico" },
   excluido: { cuadro: "bg-linea-fuerte", texto: "text-tinta-3" },
 };
@@ -149,7 +150,7 @@ const TONO_CONTACTO: Record<EstadoContacto, { cuadro: string; texto: string }> =
 export function EstadoContactoRotulo({ estado }: { estado: EstadoContacto }) {
   const t = TONO_CONTACTO[estado];
   return (
-    <span className={`inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.14em] uppercase ${t.texto}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[12px] ${t.texto}`}>
       <i aria-hidden="true" className={`h-1.5 w-1.5 ${t.cuadro}`} />
       {NOMBRE_ESTADO_CONTACTO[estado]}
     </span>
@@ -219,7 +220,7 @@ export function TablaContactos({ contactos, zona }: { contactos: CampanaContacto
     { clave: "contestaron", nombre: "Contestaron", tono: "bueno", pasa: (p) => p.estado === "contestado" || p.estado === "agendo" },
     { clave: "agendaron", nombre: "Agendaron", tono: "bueno", pasa: (p) => p.estado === "agendo" },
     { clave: "sin", nombre: "Sin respuesta", tono: "alerta", pasa: (p) => p.estado === "sin_respuesta" },
-    { clave: "no", nombre: "No quisieron o falló", tono: "critico", pasa: (p) => p.estado === "rechazo" || p.estado === "fallido" },
+    { clave: "no", nombre: "No quisieron o falló", tono: "alerta", pasa: (p) => p.estado === "rechazo" || p.estado === "fallido" },
   ];
 
   return (
@@ -230,6 +231,7 @@ export function TablaContactos({ contactos, zona }: { contactos: CampanaContacto
       filtros={filtros}
       ordenInicial={{ clave: "intento", dir: "desc" }}
       vacio={{ titulo: "Nadie todavía", detalle: "Agrega personas desde la derecha o cambia el criterio de la campaña." }}
+      className="border-0"
     />
   );
 }
@@ -300,7 +302,8 @@ export function ResultadosCampana({ campana: c, contactos, zona }: { campana: Ca
     }
     const dias = Array.from(cuenta.keys());
     let suma = 0;
-    return [0, ...dias.map((d) => (suma += cuenta.get(d) ?? 0))];
+    const serie = [0, ...dias.map((d) => (suma += cuenta.get(d) ?? 0))];
+    return serie.length > 1 ? serie : [0, 0];
   };
   const tasa = c.enviados > 0 ? Math.round((c.contestados / c.enviados) * 100) : 0;
   const insights: Insight[] = [
@@ -360,4 +363,123 @@ export function MarcaCampanaCreada({ nombre }: { nombre: string }) {
   }, [nombre, avisar]);
   if (!creada) return null;
   return <MarcaExito texto="Campaña creada" tamano={18} />;
+}
+
+/** Las campañas como tabla de registros: avance, respuesta, citas y estado; se activa o pausa desde la fila. */
+export function TablaCampanas({ lista, zona }: { lista: Campana[]; zona: string }) {
+  const router = useRouter();
+  const columnas: Columna<Campana>[] = [
+    {
+      clave: "nombre",
+      titulo: "Campaña",
+      valor: (c) => c.nombre,
+      render: (c) => (
+        <span className="flex flex-col py-1 leading-tight">
+          <Link href={`/campanas/${c.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-tinta transition-colors duration-150 group-hover:text-acento">
+            {c.nombre}
+          </Link>
+          <span className="text-[11.5px] text-tinta-3">
+            {NOMBRE_TIPO_CAMPANA[c.tipo].nombre} · {c.canal === "llamada" ? "llamada" : "WhatsApp"}
+          </span>
+        </span>
+      ),
+    },
+    {
+      clave: "avance",
+      titulo: "Avance",
+      ancho: "220px",
+      valor: (c) => (c.total > 0 ? (c.total - c.pendientes) / c.total : 0),
+      render: (c) => {
+        const hechas = c.total - c.pendientes;
+        const avance = c.total > 0 ? Math.round((hechas / c.total) * 100) : 0;
+        return (
+          <span className="flex items-center gap-3">
+            <span className="h-[3px] w-24 bg-linea" role="progressbar" aria-valuenow={avance} aria-valuemin={0} aria-valuemax={100}>
+              <span className="block h-full bg-acento" style={{ width: `${avance}%` }} />
+            </span>
+            <span className="numeros font-mono text-[11.5px] text-tinta-2">
+              {hechas}/{c.total}
+            </span>
+          </span>
+        );
+      },
+    },
+    {
+      clave: "contestaron",
+      titulo: "Contestaron",
+      numerica: true,
+      ancho: "110px",
+      valor: (c) => c.contestados,
+      render: (c) => <span className={c.contestados > 0 ? "" : "text-tinta-3"}>{c.contestados}</span>,
+    },
+    {
+      clave: "agendaron",
+      titulo: "Agendaron",
+      numerica: true,
+      ancho: "100px",
+      valor: (c) => c.agendaron,
+      render: (c) => <span className={c.agendaron > 0 ? "text-bueno" : "text-tinta-3"}>{c.agendaron}</span>,
+    },
+    {
+      clave: "creado",
+      titulo: "Creada",
+      ancho: "90px",
+      valor: (c) => new Date(c.creado).getTime(),
+      render: (c) => <span className="numeros font-mono text-[12px] text-tinta-2">{fechaCorta(c.creado, zona)}</span>,
+    },
+    {
+      clave: "estado",
+      titulo: "Estado",
+      ancho: "110px",
+      valor: (c) => ROTULO[c.estado].texto,
+      render: (c) => {
+        const r = ROTULO[c.estado];
+        return (
+          <span className={`inline-flex items-center gap-1.5 text-[12px] ${r.clase}`}>
+            <i aria-hidden="true" className={`h-1.5 w-1.5 ${CUADRO[r.tono]}`} />
+            {r.texto}
+          </span>
+        );
+      },
+    },
+    {
+      clave: "accion",
+      titulo: "",
+      ancho: "96px",
+      render: (c) => (
+        <span className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          {c.estado === "borrador" || c.estado === "pausada" ? (
+            <Formulario accion={cambiarEstadoCampana} silencioso>
+              <input type="hidden" name="id" value={c.id} />
+              <input type="hidden" name="estado" value="activa" />
+              <Boton variante="solido" className="!h-7">Activar</Boton>
+            </Formulario>
+          ) : c.estado === "activa" ? (
+            <Formulario accion={cambiarEstadoCampana} silencioso>
+              <input type="hidden" name="id" value={c.id} />
+              <input type="hidden" name="estado" value="pausada" />
+              <Boton variante="fantasma" className="!h-7">Pausar</Boton>
+            </Formulario>
+          ) : null}
+        </span>
+      ),
+    },
+  ];
+
+  const filtros: Filtro<Campana>[] = (["activa", "borrador", "pausada", "terminada"] as Campana["estado"][])
+    .filter((e) => lista.some((c) => c.estado === e))
+    .map((e) => ({ clave: e, nombre: ROTULO[e].texto + "s", tono: e === "activa" ? "acento" : e === "pausada" ? "alerta" : e === "terminada" ? "bueno" : "neutro", pasa: (c) => c.estado === e }));
+
+  return (
+    <TablaRegistros<Campana>
+      columnas={columnas}
+      filas={lista}
+      clave={(c) => c.id}
+      filtros={filtros.length > 1 ? filtros : undefined}
+      ordenInicial={{ clave: "creado", dir: "desc" }}
+      alClic={(c) => router.push(`/campanas/${c.id}`)}
+      vacio={{ titulo: "Todavía no hay campañas", detalle: "La primera que conviene: recuperar a quien faltó a su cita. Toma un minuto crearla." }}
+      className="self-start"
+    />
+  );
 }

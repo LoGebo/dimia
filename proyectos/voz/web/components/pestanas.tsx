@@ -28,7 +28,7 @@ export function Pestanas({ herramientas }: { herramientas: Herramienta[] }) {
   if (!seccion || seccion.pestanas.length < 2) return null;
 
   return (
-    <nav aria-label={seccion.nombre} className="relative flex gap-1 overflow-x-auto border-t border-linea px-5">
+    <nav aria-label={seccion.nombre} className="relative flex gap-1 overflow-x-auto px-5">
       {seccion.pestanas.map((p) => {
         const es = p.href === activa;
         return (

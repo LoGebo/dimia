@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { TablaRegistros, useAvisos, type Columna, type Filtro } from "@/components/kit";
+import { TablaRegistros, useAvisos, type Columna } from "@/components/kit";
 import { alternarRecado, type Estado } from "@/lib/acciones";
 import { fechaCorta, hora, telefono } from "@/lib/formato";
 import type { Recado } from "@/lib/tipos";
@@ -58,7 +58,7 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       ancho: "120px",
       valor: (r) => r.creado,
       render: (r) => (
-        <span className="numeros flex flex-col font-mono leading-tight">
+        <span className="numeros flex flex-col py-2 font-mono leading-tight">
           <span className="text-[12.5px] text-tinta">{hora(r.creado, zona)}</span>
           <span className="text-[10.5px] text-tinta-3">{fechaCorta(r.creado, zona)}</span>
         </span>
@@ -70,7 +70,7 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       ancho: "200px",
       valor: (r) => r.nombre ?? "",
       render: (r) => (
-        <span className="flex flex-col leading-tight">
+        <span className="flex flex-col py-2 leading-tight">
           <span className={`font-medium ${r.atendido ? "text-tinta-2" : "text-tinta"}`}>{r.nombre ?? "Sin nombre"}</span>
           <span className="numeros font-mono text-[11.5px] text-tinta-3">{telefono(r.telefono)}</span>
         </span>
@@ -83,17 +83,12 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       render: (r) => {
         const extras = Object.entries(r.campos).filter(([, valor]) => valor !== null && valor !== "");
         return (
-          <span className="flex max-w-[520px] flex-col gap-1 whitespace-normal">
+          <span className="flex max-w-[560px] flex-col gap-0.5 py-2 whitespace-normal">
             <span className={`text-[13px] ${r.atendido ? "text-tinta-2" : "text-tinta"}`}>{r.asunto}</span>
             {r.detalle ? <span className="text-[12px] leading-snug text-tinta-3">{r.detalle}</span> : null}
             {extras.length > 0 ? (
-              <span className="flex flex-wrap gap-1">
-                {extras.map(([clave, valor]) => (
-                  <span key={clave} className="inline-flex items-center gap-1.5 border border-linea bg-panel-2 px-1.5 text-[11px] leading-5 text-tinta-2">
-                    <span className="font-mono text-[10px] tracking-[0.08em] text-tinta-3 uppercase">{clave}</span>
-                    {String(valor)}
-                  </span>
-                ))}
+              <span className="text-[11.5px] text-tinta-3">
+                {extras.map(([clave, valor]) => `${clave}: ${String(valor)}`).join(" · ")}
               </span>
             ) : null}
           </span>
@@ -106,8 +101,8 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       ancho: "110px",
       valor: (r) => (r.atendido ? "Atendido" : "Pendiente"),
       render: (r) => (
-        <span className={`inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.14em] uppercase ${r.atendido ? "text-bueno" : "text-alerta"}`}>
-          <i aria-hidden="true" className={`h-1.5 w-1.5 ${r.atendido ? "bg-bueno" : "late bg-alerta"}`} />
+        <span className={`inline-flex items-center gap-1.5 text-[12px] ${r.atendido ? "text-bueno" : "text-alerta"}`}>
+          <i aria-hidden="true" className={`h-1.5 w-1.5 ${r.atendido ? "bg-bueno" : "bg-alerta"}`} />
           {r.atendido ? "Atendido" : "Pendiente"}
         </span>
       ),
@@ -115,19 +110,11 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
     { clave: "accion", titulo: "", ancho: "140px", render: (r) => <AccionRecado recado={r} /> },
   ];
 
-  const filtros: Filtro<Recado>[] = soloPendientes
-    ? []
-    : [
-        { clave: "pendientes", nombre: "Pendientes", tono: "alerta", pasa: (r) => !r.atendido },
-        { clave: "atendidos", nombre: "Atendidos", tono: "bueno", pasa: (r) => r.atendido },
-      ];
-
   return (
     <TablaRegistros<Recado>
       columnas={columnas}
       filas={lista}
       clave={(r) => r.id}
-      filtros={filtros.length ? filtros : undefined}
       ordenInicial={{ clave: "cuando", dir: "desc" }}
       vacio={{
         titulo: soloPendientes ? "Nada pendiente" : "Sin recados",

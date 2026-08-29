@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { TarjetaInsight, type Insight } from "@/components/kit";
-import { FilaCampana, FilasCampana } from "@/components/kit/relacion-campanas";
+import { TablaCampanas } from "@/components/kit/relacion-campanas";
 import { Tarjeta, Vacio } from "@/components/ui/primitivos";
 import { campanas, negocio } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
@@ -9,7 +9,7 @@ import type { Campana } from "@/lib/tipos";
 
 /** Lo que las campañas han dejado, en tres lecturas: citas recuperadas, respuesta y lo que falta. */
 function insightsDe(lista: Campana[]): Insight[] {
-  const cronologicas = [...lista].sort((a, b) => a.creado.localeCompare(b.creado));
+  const cronologicas = [...lista].sort((a, b) => new Date(a.creado).getTime() - new Date(b.creado).getTime());
   const acumulado = (toma: (c: Campana) => number) => {
     let suma = 0;
     return [0, ...cronologicas.map((c) => (suma += toma(c)))];
@@ -58,8 +58,6 @@ function insightsDe(lista: Campana[]): Insight[] {
 export default async function Campanas() {
   const { giro } = await contexto();
   const [config, lista] = await Promise.all([negocio(), campanas()]);
-  const activas = lista.filter((c) => c.estado === "activa");
-  const otras = lista.filter((c) => c.estado !== "activa");
 
   return (
     <>
@@ -81,27 +79,14 @@ export default async function Campanas() {
               detalle="La primera que conviene: recuperar a quien faltó a su cita. Toma un minuto crearla."
               accion={
                 <Link href="/campanas/nueva" className="mt-2 text-[13px] font-medium text-acento hover:underline">
-                  Crear la primera →
+                  Crear la primera
                 </Link>
               }
             />
           </Tarjeta>
         ) : (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="space-y-4">
-              {[
-                { titulo: "Activas", items: activas },
-                { titulo: "Las demás", items: otras },
-              ]
-                .filter((g) => g.items.length > 0)
-                .map((g) => (
-                  <FilasCampana key={g.titulo} rotulo={g.titulo} conteo={g.items.length}>
-                    {g.items.map((c) => (
-                      <FilaCampana key={c.id} campana={c} zona={config.zona_horaria} />
-                    ))}
-                  </FilasCampana>
-                ))}
-            </div>
+            <TablaCampanas lista={lista} zona={config.zona_horaria} />
             <TarjetaInsight rotulo="Resultados" insights={insightsDe(lista)} />
           </div>
         )}

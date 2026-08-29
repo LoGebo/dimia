@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
-import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
+import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { TablaClientes } from "@/components/kit/relacion-clientes";
 import { clientes, negocio, resumenClientes, type SegmentoCliente } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
@@ -64,14 +65,20 @@ export default async function Clientes({
           />
         </TiraIndicadores>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          {SEGMENTOS.map((s) => (
-            <Chip key={s.valor} activo={s.valor === segmento} href={`/clientes?ver=${s.valor}${busqueda ? `&q=${encodeURIComponent(busqueda)}` : ""}`}>
-              {s.nombre}
-            </Chip>
-          ))}
-          <span className="numeros ml-auto font-mono text-[10.5px] tracking-[0.18em] text-tinta-3 uppercase">{lista.length} {lista.length === 1 ? "cliente" : "clientes"}{lista.length >= 200 ? " · primeros 200" : ""}</span>
-        </div>
+        {segmento !== "todos" || busqueda ? (
+          <p className="flex flex-wrap items-center gap-x-3 text-[12px] text-tinta-2">
+            <span>
+              Viendo {SEGMENTOS.find((s) => s.valor === segmento)?.nombre.toLowerCase()}
+              {busqueda ? ` que coinciden con «${busqueda}»` : ""}
+              {lista.length >= 200 ? " · primeros 200" : ""}
+            </span>
+            <Link href="/clientes" className="text-acento transition-colors duration-150 hover:text-tinta">
+              Ver todos
+            </Link>
+          </p>
+        ) : lista.length >= 200 ? (
+          <p className="text-[12px] text-tinta-3">Se muestran los 200 con contacto más reciente; busca por nombre o teléfono para llegar al resto.</p>
+        ) : null}
 
         <TablaClientes lista={lista} zona={config.zona_horaria} agenda={agenda} pedidos={pedidos} busqueda={busqueda} />
       </div>

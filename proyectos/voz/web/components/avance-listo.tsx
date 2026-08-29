@@ -39,7 +39,7 @@ export function AvanceListo({ avance }: { avance: Avance }) {
 
         {avance.completo ? (
           <Link href="/agente" className="text-[13px] font-medium text-bueno transition hover:opacity-80">
-            Todo listo · falta asignar el número →
+            Todo listo · falta asignar el número
           </Link>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
@@ -51,7 +51,7 @@ export function AvanceListo({ avance }: { avance: Avance }) {
                 title={r.ayuda}
                 className="border border-linea px-2.5 py-1 text-[12px] text-tinta-2 transition hover:border-acento hover:text-acento"
               >
-                {r.nombre} →
+                {r.nombre}
               </Link>
             ))}
             {faltantes.length > 3 ? (

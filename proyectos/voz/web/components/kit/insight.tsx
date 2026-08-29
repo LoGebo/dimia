@@ -117,19 +117,17 @@ export function TarjetaInsight({ insights, rotulo = "Insights" }: { insights: In
             {actual.accion.href ? (
               <a
                 href={actual.accion.href}
-                className="inline-flex h-8 items-center gap-2 bg-acento px-3 text-[12.5px] font-semibold text-acento-tinta transition-[filter] duration-150 hover:brightness-110"
+                className="inline-flex h-8 items-center bg-acento px-3 text-[12.5px] font-semibold text-acento-tinta transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/40"
               >
                 {actual.accion.texto}
-                <span aria-hidden="true">→</span>
               </a>
             ) : (
               <button
                 type="button"
                 onClick={actual.accion.onClick}
-                className="inline-flex h-8 items-center gap-2 bg-acento px-3 text-[12.5px] font-semibold text-acento-tinta transition-[filter] duration-150 hover:brightness-110"
+                className="inline-flex h-8 items-center bg-acento px-3 text-[12.5px] font-semibold text-acento-tinta transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/40"
               >
                 {actual.accion.texto}
-                <span aria-hidden="true">→</span>
               </button>
             )}
           </div>

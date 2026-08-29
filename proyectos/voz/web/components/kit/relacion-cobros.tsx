@@ -12,15 +12,15 @@ const ORDEN_METODO: MetodoPago[] = ["efectivo", "tarjeta", "transferencia", "enl
 
 const ESTADO: Record<EstadoPago, { texto: string; cuadro: string; clase: string; tono: "bueno" | "alerta" | "critico" | "neutro" }> = {
   pagado: { texto: "Pagado", cuadro: "bg-bueno", clase: "text-bueno", tono: "bueno" },
-  pendiente: { texto: "Pendiente", cuadro: "late bg-alerta", clase: "text-alerta", tono: "alerta" },
-  cancelado: { texto: "Cancelado", cuadro: "bg-critico", clase: "text-critico", tono: "critico" },
+  pendiente: { texto: "Pendiente", cuadro: "bg-alerta", clase: "text-alerta", tono: "alerta" },
+  cancelado: { texto: "Cancelado", cuadro: "bg-tinta-3", clase: "text-tinta-3", tono: "neutro" },
   reembolsado: { texto: "Reembolsado", cuadro: "bg-tinta-3", clase: "text-tinta-3", tono: "neutro" },
 };
 
 export function EstadoPagoRotulo({ estado }: { estado: EstadoPago }) {
   const e = ESTADO[estado];
   return (
-    <span className={`inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.14em] uppercase ${e.clase}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[12px] ${e.clase}`}>
       <i aria-hidden="true" className={`h-1.5 w-1.5 ${e.cuadro}`} />
       {e.texto}
     </span>
@@ -121,7 +121,7 @@ export function TablaPagos({
       titulo: "Método",
       ancho: "120px",
       valor: (p) => NOMBRE_METODO[p.metodo],
-      render: (p) => <span className="border border-linea bg-panel-2 px-1.5 text-[11px] leading-5 text-tinta-2">{NOMBRE_METODO[p.metodo]}</span>,
+      render: (p) => <span className="text-[12px] text-tinta-2">{NOMBRE_METODO[p.metodo]}</span>,
     },
     {
       clave: "monto",

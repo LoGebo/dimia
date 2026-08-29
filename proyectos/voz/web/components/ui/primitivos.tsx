@@ -36,12 +36,12 @@ export function TarjetaCabecera({
   accion?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-linea px-4 py-3.5">
+    <div className="flex items-start justify-between gap-4 border-b border-linea px-4 py-3">
       <div className="min-w-0">
         <h2 className="text-[13.5px] font-semibold tracking-tight text-tinta">{titulo}</h2>
-        {descripcion ? <p className="mt-0.5 text-[12px] text-tinta-3">{descripcion}</p> : null}
+        {descripcion ? <p className="mt-0.5 text-[12px] leading-snug text-tinta-3">{descripcion}</p> : null}
       </div>
-      {accion}
+      {accion ? <div className="flex flex-none items-center gap-2">{accion}</div> : null}
     </div>
   );
 }
@@ -96,7 +96,7 @@ export function Insignia({
     acento: "border-acento/30 text-acento bg-acento-suave",
   } as const;
   return (
-    <span className={`inline-flex items-center gap-1.5 border px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${tonos[tono]}`}>
+    <span className={`inline-flex items-center gap-1.5 border px-1.5 py-px text-[11px] font-medium whitespace-nowrap ${tonos[tono]}`}>
       <i aria-hidden="true" className="h-1 w-1 flex-none bg-current" />
       {children}
     </span>

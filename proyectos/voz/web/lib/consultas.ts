@@ -700,3 +700,30 @@ export function alertasHoy(): Promise<AlertasHoy> {
     return filas[0] ?? { retrasadas: 0, escaladas: 0, recados: 0, cobros_pendientes: 0, cobros_monto: "0", campanas_contestaron: 0, por_cobrar_atendidas: 0, mensajes_sin_leer: 0 };
   });
 }
+
+export type CobroPorDia = { dia: string; cobrado: string; operaciones: number };
+
+/** Lo cobrado cada día de los últimos `dias`, incluidos los días en cero. */
+export function cobrosPorDia(dias: number): Promise<CobroPorDia[]> {
+  return datos((q, id) =>
+    q<CobroPorDia>(
+      `with t as (select zona_horaria from tenant where id = $1),
+       rango as (
+         select generate_series(
+           (now() at time zone (select zona_horaria from t))::date - ($2::int - 1),
+           (now() at time zone (select zona_horaria from t))::date,
+           interval '1 day')::date as dia
+       )
+       select to_char(rango.dia, 'YYYY-MM-DD') as dia,
+              coalesce(sum(g.monto) filter (where g.estado = 'pagado'), 0)::text as cobrado,
+              count(g.id) filter (where g.estado = 'pagado')::int as operaciones
+         from rango
+         left join pago g
+           on g.tenant_id = $1
+          and (coalesce(g.pagado_en, g.creado) at time zone (select zona_horaria from t))::date = rango.dia
+        group by rango.dia
+        order by rango.dia`,
+      [id, dias],
+    ),
+  );
+}

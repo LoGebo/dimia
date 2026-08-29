@@ -12,16 +12,13 @@ export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
   );
 }
 
-/** Cabecera de la barra lateral: la marca y el nombre del producto. Plegada, solo el ícono. */
+/** Cabecera de la barra lateral: el ícono y el nombre del producto. Plegada, solo el ícono. */
 export function MarcaDimia() {
   return (
-    <div className="flex h-[52px] items-center gap-2.5 border-b border-linea px-3 text-tinta in-[[data-plegado]]:justify-center in-[[data-plegado]]:px-0">
-      <IconoDimia />
+    <div className="flex h-[52px] items-center gap-2.5 border-b border-linea px-4 text-tinta in-[[data-plegado]]:justify-center in-[[data-plegado]]:px-0">
+      <IconoDimia tamano={20} />
       <SoloAbierto>
-        <div className="min-w-0 leading-tight">
-          <p className="text-[14px] font-semibold tracking-tight">Dimia Línea</p>
-          <p className="etiqueta mt-0.5 whitespace-nowrap">Panel de operación</p>
-        </div>
+        <p className="text-[14px] font-semibold tracking-tight">Dimia Línea</p>
       </SoloAbierto>
     </div>
   );

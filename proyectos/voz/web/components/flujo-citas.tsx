@@ -5,12 +5,18 @@ import { Formulario } from "@/components/formulario";
 import { Reagendar } from "@/components/reagendar";
 import { ChipHerramienta } from "@/components/kit/chips-herramienta";
 import { CabeceraColumna, Estampa } from "@/components/kit/operacion";
-import { hora, iniciales, moneda, telefono } from "@/lib/formato";
+import { hora, moneda, telefono } from "@/lib/formato";
 import { pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
 
 export const MINUTOS_TOLERANCIA = 15;
 
-export type Columna = { paso: PasoCita; incluye?: PasoCita[]; nombre: string; pista: string; tono?: "bueno" };
+export type Columna = {
+  paso: PasoCita;
+  incluye?: PasoCita[];
+  nombre: string;
+  pista: string;
+  tono?: "bueno";
+};
 
 export function minutosLegibles(min: number): string {
   if (min < 60) return `${min} min`;
@@ -51,8 +57,11 @@ export function FlujoCitas({
   nuevaCita?: React.ReactNode;
 }) {
   const destino = new Map<PasoCita, PasoCita>();
-  for (const c of columnas) for (const p of c.incluye ?? [c.paso]) destino.set(p, c.paso);
-  const porPaso = new Map<PasoCita, Reserva[]>(columnas.map((c) => [c.paso, []]));
+  for (const c of columnas)
+    for (const p of c.incluye ?? [c.paso]) destino.set(p, c.paso);
+  const porPaso = new Map<PasoCita, Reserva[]>(
+    columnas.map((c) => [c.paso, []]),
+  );
   for (const r of reservas) {
     const columna = destino.get(pasoDe(r));
     if (columna) porPaso.get(columna)?.push(r);
@@ -60,34 +69,62 @@ export function FlujoCitas({
 
   return (
     <div className="-mx-5 overflow-x-auto px-5 pb-2">
-      <div className="grid min-w-[960px] auto-cols-fr grid-flow-col gap-3">
+      <div className="grid min-w-[960px] auto-cols-fr grid-flow-col divide-x divide-linea border border-linea bg-panel">
         {columnas.map((c) => {
           const lista = porPaso.get(c.paso) ?? [];
           return (
-            <section key={c.paso} aria-label={c.nombre} className="flex min-h-[420px] flex-col border border-linea bg-panel-2/60">
+            <section
+              key={c.paso}
+              aria-label={c.nombre}
+              className="flex min-h-[420px] min-w-0 flex-col"
+            >
               <CabeceraColumna
                 nombre={c.nombre}
                 conteo={lista.length}
                 pista={c.pista}
-                tono={c.tono === "bueno" ? "bueno" : c.paso === "en_atencion" ? "acento" : c.paso === "no_llego" ? "neutro" : lista.length > 0 ? "alerta" : "neutro"}
+                tono={
+                  c.tono === "bueno"
+                    ? "bueno"
+                    : c.paso === "en_atencion"
+                      ? "acento"
+                      : c.paso === "no_llego"
+                        ? "neutro"
+                        : lista.length > 0
+                          ? "alerta"
+                          : "neutro"
+                }
               />
 
-              {c.paso === "atendida" ? <ResumenAtendidas lista={delDia.filter((r) => pasoDe(r) === "atendida")} total={delDia} /> : null}
+              {c.paso === "atendida" ? (
+                <ResumenAtendidas
+                  lista={delDia.filter((r) => pasoDe(r) === "atendida")}
+                  total={delDia}
+                />
+              ) : null}
 
-              <ul className="flex flex-1 flex-col gap-2 p-2">
+              <ul className="flex flex-1 flex-col divide-y divide-linea">
                 {lista.map((r) => (
-                  <Tarjeta key={r.id} reserva={r} paso={pasoDe(r)} zona={zona} ahora={ahora} />
+                  <Tarjeta
+                    key={r.id}
+                    reserva={r}
+                    paso={pasoDe(r)}
+                    zona={zona}
+                    ahora={ahora}
+                  />
                 ))}
                 {lista.length === 0 ? (
-                  <li className="flex items-center gap-2 px-2 py-5 text-[12px] text-tinta-3">
-                    <i aria-hidden="true" className="h-1.5 w-1.5 bg-linea-fuerte" />
+                  <li className="flex items-center gap-2 px-3 py-5 text-[12px] text-tinta-3">
+                    <i
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 bg-linea-fuerte"
+                    />
                     Nada aquí todavía.
                   </li>
                 ) : null}
               </ul>
 
               {c.paso === "por_llegar" && nuevaCita ? (
-                <div className="border-t border-linea px-2 py-2">{nuevaCita}</div>
+                <div className="border-t border-linea">{nuevaCita}</div>
               ) : null}
             </section>
           );
@@ -97,64 +134,110 @@ export function FlujoCitas({
   );
 }
 
-function ResumenAtendidas({ lista, total }: { lista: Reserva[]; total: Reserva[] }) {
+function ResumenAtendidas({
+  lista,
+  total,
+}: {
+  lista: Reserva[];
+  total: Reserva[];
+}) {
   const personas = lista.reduce((s, r) => s + r.personas, 0);
   const ingreso = lista.reduce((s, r) => s + Number(r.cobrado ?? 0), 0);
   const conPrecio = lista.filter((r) => r.cobrado !== null).length;
-  const esperadas = total.filter((r) => r.estado === "confirmada" || r.estado === "completada").length;
-  const avance = esperadas > 0 ? Math.round((lista.length / esperadas) * 100) : 0;
+  const esperadas = total.filter(
+    (r) => r.estado === "confirmada" || r.estado === "completada",
+  ).length;
+  const avance =
+    esperadas > 0 ? Math.round((lista.length / esperadas) * 100) : 0;
 
   return (
-    <div className="mx-2 mt-2 border border-linea bg-panel px-3 py-3">
-      <p className="etiqueta">Hoy hasta ahora</p>
-      <dl className="mt-2 space-y-1.5 text-[12px]">
-        <div className="flex justify-between gap-2">
-          <dt className="text-tinta-2">Atendidas</dt>
-          <dd className="numeros font-mono font-medium text-tinta">{lista.length}</dd>
+    <div className="border-b border-linea px-3 py-3">
+      <dl className="grid grid-cols-3 gap-3">
+        <div>
+          <dt className="text-[11.5px] text-tinta-3">Atendidas</dt>
+          <dd className="numeros mt-0.5 font-mono text-[18px] leading-none text-tinta">
+            {lista.length}
+          </dd>
         </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-tinta-2">Personas</dt>
-          <dd className="numeros font-mono font-medium text-tinta">{personas}</dd>
+        <div>
+          <dt className="text-[11.5px] text-tinta-3">Personas</dt>
+          <dd className="numeros mt-0.5 font-mono text-[18px] leading-none text-tinta">
+            {personas}
+          </dd>
         </div>
-        <div className="flex justify-between gap-2">
-          <dt className="text-tinta-2">Cobrado</dt>
-          <dd className="numeros font-mono font-medium text-tinta">
+        <div>
+          <dt className="text-[11.5px] text-tinta-3">Cobrado</dt>
+          <dd className="numeros mt-0.5 font-mono text-[18px] leading-none text-tinta">
             {conPrecio > 0 ? moneda(ingreso) : "—"}
           </dd>
         </div>
       </dl>
-      <div className="mt-3 h-[3px] bg-linea" role="progressbar" aria-valuenow={avance} aria-valuemin={0} aria-valuemax={100}>
-        <div className="h-full bg-bueno transition-[width] duration-400 ease-out" style={{ width: `${avance}%` }} />
+      <div
+        className="mt-3 h-[3px] bg-linea"
+        role="progressbar"
+        aria-valuenow={avance}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="h-full bg-bueno transition-[width] duration-400 ease-out"
+          style={{ width: `${avance}%` }}
+        />
       </div>
-      <p className="numeros mt-1.5 font-mono text-[10px] tracking-[0.04em] text-tinta-3">{avance}% de las citas del día</p>
+      <p className="numeros mt-1.5 font-mono text-[11px] text-tinta-3">
+        {avance}% de las citas del día
+      </p>
     </div>
   );
 }
 
-function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: PasoCita; zona: string; ahora: number }) {
+function Tarjeta({
+  reserva: r,
+  paso,
+  zona,
+  ahora,
+}: {
+  reserva: Reserva;
+  paso: PasoCita;
+  zona: string;
+  ahora: number;
+}) {
   const cobrado = r.cobrado;
   const desdeInicio = minutosDesde(r.inicio, ahora);
   const retraso = paso === "por_llegar" && desdeInicio > 0 ? desdeInicio : 0;
   const enFalta = retraso > MINUTOS_TOLERANCIA;
-  const enSala = paso === "en_atencion" && r.llegada ? minutosDesde(r.llegada, ahora) : 0;
-  const duracionEsperada = minutosDesde(r.fin, new Date(r.inicio).getTime()) * -1;
+  const enSala =
+    paso === "en_atencion" && r.llegada ? minutosDesde(r.llegada, ahora) : 0;
+  const duracionEsperada =
+    minutosDesde(r.fin, new Date(r.inicio).getTime()) * -1;
   const excedida = paso === "en_atencion" && enSala > duracionEsperada;
   const apagada = paso === "no_llego" || paso === "cancelada";
 
-  let tiempo: { texto: string; tono: "neutro" | "alerta" | "critico" | "bueno" };
+  let tiempo: {
+    texto: string;
+    tono: "neutro" | "alerta" | "critico" | "bueno";
+  };
   if (paso === "por_llegar") {
     tiempo =
       desdeInicio < 0
         ? { texto: `en ${minutosLegibles(-desdeInicio)}`, tono: "neutro" }
         : desdeInicio === 0
           ? { texto: "ahora", tono: "bueno" }
-          : { texto: `+${minutosLegibles(desdeInicio)}`, tono: enFalta ? "critico" : "alerta" };
+          : {
+              texto: `+${minutosLegibles(desdeInicio)}`,
+              tono: enFalta ? "critico" : "alerta",
+            };
   } else if (paso === "en_atencion") {
-    tiempo = { texto: minutosLegibles(enSala), tono: excedida ? "alerta" : "bueno" };
+    tiempo = {
+      texto: minutosLegibles(enSala),
+      tono: excedida ? "alerta" : "bueno",
+    };
   } else {
-    tiempo = { texto: `${hora(r.inicio, zona)} a ${hora(r.fin, zona)}`, tono: "neutro" };
+    tiempo = {
+      texto: `${hora(r.inicio, zona)} a ${hora(r.fin, zona)}`,
+      tono: "neutro",
+    };
   }
-
 
   const aviso = enFalta
     ? `${minutosLegibles(retraso)} de retraso. Márquele al ${telefono(r.telefono)} o libere el horario.`
@@ -164,24 +247,30 @@ function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: Pa
 
   return (
     <li
-      className={`border bg-panel transition-colors duration-150 ${
-        enFalta ? "border-critico/50" : excedida ? "border-alerta/50" : "border-linea hover:border-linea-fuerte"
+      className={`border-l-2 transition-colors duration-150 hover:bg-panel-2 ${
+        enFalta
+          ? "border-l-critico"
+          : excedida
+            ? "border-l-alerta"
+            : paso === "en_atencion"
+              ? "border-l-acento"
+              : paso === "atendida"
+                ? "border-l-bueno"
+                : "border-l-transparent"
       } ${apagada ? "opacity-60" : ""}`}
     >
       <div className="px-3 pt-3">
         <div className="flex items-start gap-2.5">
-          <span
-            aria-hidden="true"
-            className={`flex h-8 w-8 flex-none items-center justify-center font-mono text-[11px] font-medium ${
-              paso === "en_atencion" ? "bg-acento text-acento-tinta" : "bg-acento-suave text-acento"
-            }`}
-          >
-            {iniciales(r.cliente_nombre)}
-          </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold text-tinta" title={r.cliente_nombre}>
+            <p
+              className="truncate text-[13px] font-semibold text-tinta"
+              title={r.cliente_nombre}
+            >
               {r.cliente_id ? (
-                <Link href={`/clientes/${r.cliente_id}`} className="transition hover:text-acento">
+                <Link
+                  href={`/clientes/${r.cliente_id}`}
+                  className="transition hover:text-acento"
+                >
                   {nombreCorto(r.cliente_nombre)}
                 </Link>
               ) : (
@@ -194,9 +283,13 @@ function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: Pa
             </p>
           </div>
           {apagada ? (
-            <Estampa tono={paso === "cancelada" ? "neutro" : "critico"}>{paso === "cancelada" ? "Cancelada" : "No llegó"}</Estampa>
+            <Estampa tono={paso === "cancelada" ? "neutro" : "critico"}>
+              {paso === "cancelada" ? "Cancelada" : "No llegó"}
+            </Estampa>
           ) : (
-            <span className="numeros font-mono text-[10px] tracking-[0.16em] text-tinta-3">{r.codigo}</span>
+            <span className="numeros font-mono text-[11px] text-tinta-3">
+              {r.codigo}
+            </span>
           )}
         </div>
 
@@ -205,22 +298,35 @@ function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: Pa
           <span aria-hidden="true">·</span>
           <span className="numeros font-mono">{hora(r.inicio, zona)}</span>
           <span className="ml-auto">
-            <Estampa tono={tiempo.tono} late={tiempo.tono === "critico" || (paso === "en_atencion" && !excedida)}>{tiempo.texto}</Estampa>
+            <Estampa
+              tono={tiempo.tono}
+              late={
+                tiempo.tono === "critico" ||
+                (paso === "en_atencion" && !excedida)
+              }
+            >
+              {tiempo.texto}
+            </Estampa>
           </span>
         </div>
       </div>
 
       {aviso ? (
-        <p className={`mx-3 mt-2.5 border-l-2 pl-2.5 text-[11px] leading-snug ${enFalta ? "border-critico text-critico" : "border-alerta text-alerta"}`}>
+        <p
+          className={`mx-3 mt-2.5 border-l-2 pl-2.5 text-[11px] leading-snug text-tinta-2 ${enFalta ? "border-critico" : "border-alerta"}`}
+        >
           {aviso}
         </p>
       ) : r.notas ? (
-        <p className="mx-3 mt-2.5 border-l-2 border-linea-fuerte pl-2.5 text-[11px] leading-snug text-tinta-2" title={r.notas}>
+        <p
+          className="mx-3 mt-2.5 border-l-2 border-linea-fuerte pl-2.5 text-[11px] leading-snug text-tinta-2"
+          title={r.notas}
+        >
           {r.notas}
         </p>
       ) : null}
 
-      <div className="mt-2.5 flex flex-wrap gap-1 border-t border-linea px-2 py-1.5">
+      <div className="mt-2.5 flex flex-wrap items-center gap-1 px-2 pb-2">
         {paso === "por_llegar" ? (
           <>
             <Paso id={r.id} paso="llego" principal>
@@ -232,7 +338,9 @@ function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: Pa
             </Paso>
             <Formulario accion={cancelarReserva} className="ml-auto">
               <input type="hidden" name="id" value={r.id} />
-              <button className="h-7 px-2 text-[12px] text-tinta-3 transition-colors duration-150 hover:text-critico">Cancelar</button>
+              <button className="h-7 px-2 text-[12px] text-tinta-3 transition-colors duration-150 hover:text-critico">
+                Cancelar
+              </button>
             </Formulario>
           </>
         ) : null}
@@ -255,9 +363,16 @@ function Tarjeta({ reserva: r, paso, zona, ahora }: { reserva: Reserva; paso: Pa
                 </ChipHerramienta>
               </span>
             ) : (
-              <Cobrar bookingId={r.id} concepto={`${r.servicio} · ${r.cliente_nombre}`} montoSugerido={r.precio} compacto />
+              <Cobrar
+                bookingId={r.id}
+                concepto={`${r.servicio} · ${r.cliente_nombre}`}
+                montoSugerido={r.precio}
+                compacto
+              />
             )}
-            <span className="numeros ml-auto px-2 py-1 font-mono text-[11px] text-tinta-3">Entró {r.llegada ? hora(r.llegada, zona) : "—"}</span>
+            <span className="numeros ml-auto px-2 py-1 font-mono text-[11px] text-tinta-3">
+              Entró {r.llegada ? hora(r.llegada, zona) : "—"}
+            </span>
           </>
         ) : null}
         {apagada ? (

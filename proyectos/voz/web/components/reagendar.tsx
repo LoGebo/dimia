@@ -66,7 +66,7 @@ function Mover({
     iniciar(async () => {
       const resultado = await reagendarReserva(
         reserva.id,
-        slot.inicio,
+        new Date(slot.inicio).toISOString(),
         slot.resource_id,
       );
       if (resultado.error) {

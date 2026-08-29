@@ -51,7 +51,7 @@ export function NuevaCita({
           type="button"
           onClick={() => setAbierto(true)}
           disabled={servicios.length === 0}
-          className="h-8 w-full text-[12px] font-medium text-tinta-3 transition-colors duration-150 hover:bg-panel hover:text-tinta disabled:opacity-40"
+          className="h-8 w-full text-[12px] font-medium text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta disabled:opacity-40"
         >
           + Agregar cita
         </button>
@@ -186,7 +186,7 @@ function FormaCita({
 
           <div className="sm:col-span-2">
             <p className="mb-1.5 text-xs font-medium text-tinta-2">Horario</p>
-            <input type="hidden" name="inicio" value={elegido?.inicio ?? ""} />
+            <input type="hidden" name="inicio" value={elegido ? new Date(elegido.inicio).toISOString() : ""} />
             <input
               type="hidden"
               name="resource_id"
