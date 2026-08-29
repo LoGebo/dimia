@@ -1396,3 +1396,78 @@ export async function cancelarCobroTerminal(pagoId: string): Promise<Estado> {
     }),
   );
 }
+
+// ---------------------------------------------------------------
+// Copiloto: pregunta con datos del negocio y propone acciones.
+// ---------------------------------------------------------------
+
+import { conversar, type Propuesta, type RespuestaCopiloto, type TurnoCopiloto } from "@/lib/copiloto";
+import { recursos as listarRecursos, servicios as listarServicios } from "@/lib/consultas";
+
+export async function preguntarCopiloto(historial: TurnoCopiloto[]): Promise<RespuestaCopiloto> {
+  const { membresias: lista, negocioId } = await contexto();
+  const [config, servicios, recursosLista] = await Promise.all([negocio(), listarServicios(), listarRecursos()]);
+  return datos((q, id) =>
+    conversar({ q, negocioId: id, negocio: config, membresia: lista.find((m) => m.tenant_id === negocioId), servicios, recursos: recursosLista }, historial),
+  );
+}
+
+/** Ejecuta lo que el copiloto propuso, ya con la aprobación del dueño, usando las mismas acciones del panel. */
+export async function ejecutarPropuesta(p: Propuesta): Promise<Estado> {
+  const fd = new FormData();
+  const pon = (k: string, v: unknown) => {
+    if (v !== undefined && v !== null && v !== "") fd.set(k, String(v));
+  };
+  const a = p.args;
+  switch (p.accion) {
+    case "campana":
+      pon("nombre", a.nombre);
+      pon("tipo", a.tipo);
+      pon("canal", a.canal);
+      pon("mensaje", a.mensaje);
+      pon("dias", a.dias ?? 30);
+      return crearCampana({}, fd);
+    case "bloqueo":
+      pon("resource_id", a.resource_id);
+      pon("desde", a.desde);
+      pon("hasta", a.hasta ?? a.desde);
+      pon("motivo", a.motivo);
+      return guardarAusencia({}, fd);
+    case "cita":
+      pon("service_id", a.service_id);
+      pon("resource_id", a.resource_id);
+      pon("inicio", a.inicio);
+      pon("cliente_nombre", a.cliente_nombre);
+      pon("telefono", a.telefono);
+      pon("notas", a.notas);
+      pon("personas", 1);
+      return crearReserva({}, fd);
+    case "cancelar_cita":
+      pon("id", a.id);
+      return cancelarReserva({}, fd);
+    case "atendida":
+      pon("id", a.id);
+      pon("paso", "atendida");
+      return moverCita({}, fd);
+    case "cobro":
+      pon("booking_id", a.booking_id);
+      pon("pedido_id", a.pedido_id);
+      pon("monto", a.monto);
+      pon("metodo", a.metodo);
+      pon("concepto", a.concepto);
+      pon("pendiente", "0");
+      return registrarPago({}, fd);
+    case "enlace_pago": {
+      pon("booking_id", a.booking_id);
+      pon("pedido_id", a.pedido_id);
+      pon("monto", a.monto);
+      pon("concepto", a.concepto);
+      pon("proveedor", a.proveedor);
+      pon("modo", "enlace");
+      const r = await iniciarCobro({}, fd);
+      return r.error ? { error: r.error } : { ok: `${r.ok} ${r.enlace ?? ""}`.trim() };
+    }
+    default:
+      return { error: "No sé ejecutar eso todavía." };
+  }
+}
