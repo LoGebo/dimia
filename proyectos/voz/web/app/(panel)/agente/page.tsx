@@ -51,20 +51,29 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Listo para contestar"
-              descripcion={
-                progreso.completo
-                  ? "Todo en su lugar."
-                  : `Faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`
+              descripcion={progreso.completo ? "Todo en su lugar." : `Faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`}
+              accion={
+                <span className="numeros font-mono text-[13px] text-tinta">
+                  {progreso.cumplidos}
+                  <span className="text-tinta-3">/{progreso.total}</span>
+                </span>
               }
             />
             <ul className="divide-y divide-linea">
               {progreso.requisitos.map((r) => (
-                <li key={r.clave} className="flex items-center justify-between gap-3 px-4 py-2">
-                  <Link href={r.ruta} className="min-w-0 text-[13px] text-tinta-2 transition hover:text-tinta">
-                    {r.nombre}
-                    <span className="block text-[11.5px] text-tinta-3">{r.ayuda}</span>
+                <li key={r.clave} className="transition-colors duration-150 hover:bg-panel-2">
+                  <Link href={r.ruta} className="flex items-center gap-3 px-4 py-2">
+                    <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${r.listo ? "bg-bueno" : "late bg-alerta"}`} />
+                    <span className="min-w-0 flex-1 text-[13px] text-tinta">
+                      {r.nombre}
+                      <span className="block text-[11.5px] text-tinta-3">{r.ayuda}</span>
+                    </span>
+                    <span
+                      className={`numeros font-mono text-[10.5px] tracking-[0.16em] uppercase ${r.listo ? "text-bueno" : "text-alerta"}`}
+                    >
+                      {r.listo ? "Listo" : "Falta"}
+                    </span>
                   </Link>
-                  {r.listo ? <Insignia tono="bueno">Listo</Insignia> : <Insignia tono="alerta">Falta</Insignia>}
                 </li>
               ))}
             </ul>
@@ -73,98 +82,74 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera titulo="Configuración" />
             <Formulario accion={guardarNegocio} className="space-y-3 px-4 py-4">
-                  <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta al contestar.">
-                    <Entrada name="nombre" defaultValue={config.nombre} required />
-                  </Campo>
-                  <ConfiguracionCerebro
-                    proveedor={config.llm_proveedor}
-                    modelo={config.llm_modelo}
+              <Campo etiqueta="Nombre del negocio" ayuda="Así se presenta al contestar.">
+                <Entrada name="nombre" defaultValue={config.nombre} required />
+              </Campo>
+              <ConfiguracionCerebro proveedor={config.llm_proveedor} modelo={config.llm_modelo} />
+              <ConfiguracionVoz proveedor={config.tts_proveedor} vozId={config.voz_id} ajustes={config.tts_ajustes} />
+              <Campo etiqueta="Zona horaria">
+                <Selector name="zona_horaria" defaultValue={config.zona_horaria}>
+                  {ZONAS_HORARIAS.map((z) => (
+                    <option key={z} value={z}>
+                      {z.replace("America/", "").replace("_", " ")}
+                    </option>
+                  ))}
+                </Selector>
+              </Campo>
+              <div className="grid grid-cols-2 gap-3">
+                <Campo etiqueta="Transferir a" ayuda="A dónde pasa las llamadas difíciles.">
+                  <Entrada name="telefono_escalamiento" defaultValue={config.telefono_escalamiento ?? ""} placeholder="+52..." />
+                </Campo>
+                <Campo
+                  etiqueta="Número de entrada"
+                  ayuda={
+                    progreso.puedeActivarLinea || config.telefono_entrada
+                      ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
+                      : `Se desbloquea cuando esté todo listo: faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`
+                  }
+                >
+                  <Entrada
+                    name="telefono_entrada"
+                    defaultValue={config.telefono_entrada ?? ""}
+                    placeholder={progreso.puedeActivarLinea || config.telefono_entrada ? "+52..." : "Con candado"}
+                    disabled={!progreso.puedeActivarLinea && !config.telefono_entrada}
                   />
-                  <ConfiguracionVoz
-                    proveedor={config.tts_proveedor}
-                    vozId={config.voz_id}
-                    ajustes={config.tts_ajustes}
-                  />
-                  <Campo etiqueta="Zona horaria">
-                    <Selector name="zona_horaria" defaultValue={config.zona_horaria}>
-                      {ZONAS_HORARIAS.map((z) => (
-                        <option key={z} value={z}>
-                          {z.replace("America/", "").replace("_", " ")}
-                        </option>
-                      ))}
-                    </Selector>
-                  </Campo>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Campo etiqueta="Transferir a" ayuda="A dónde pasa las llamadas difíciles.">
-                      <Entrada
-                        name="telefono_escalamiento"
-                        defaultValue={config.telefono_escalamiento ?? ""}
-                        placeholder="+52..."
-                      />
-                    </Campo>
-                  <Campo
-                    etiqueta="Número de entrada"
-                    ayuda={
-                      progreso.puedeActivarLinea || config.telefono_entrada
-                        ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
-                        : `Se desbloquea cuando esté todo listo: faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`
-                    }
-                  >
-                    <Entrada
-                      name="telefono_entrada"
-                      defaultValue={config.telefono_entrada ?? ""}
-                      placeholder={progreso.puedeActivarLinea || config.telefono_entrada ? "+52..." : "Con candado"}
-                      disabled={!progreso.puedeActivarLinea && !config.telefono_entrada}
-                    />
-                  </Campo>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Campo
-                      etiqueta="Cuenta de Instagram"
-                      ayuda="El ID de tu cuenta profesional. Sin esto, los mensajes de Instagram no saben de qué negocio son."
-                    >
-                      <Entrada
-                        name="instagram_id"
-                        defaultValue={config.instagram_id ?? ""}
-                        placeholder="1784140..."
-                      />
-                    </Campo>
-                    <Campo
-                      etiqueta="Página de Facebook"
-                      ayuda="El ID de la página que recibe los mensajes de Messenger."
-                    >
-                      <Entrada
-                        name="messenger_page_id"
-                        defaultValue={config.messenger_page_id ?? ""}
-                        placeholder="1020000..."
-                      />
-                    </Campo>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <Campo etiqueta="Cada (min)" ayuda="Salto entre horarios.">
-                      <Entrada name="slot_granularidad_min" type="number" min={5} max={120} step={5} defaultValue={config.slot_granularidad_min} />
-                    </Campo>
-                    <Campo etiqueta="Anticipación" ayuda="Mínimo antes de la cita.">
-                      <Entrada name="anticipacion_min" type="number" min={0} step={5} defaultValue={config.anticipacion_min} />
-                    </Campo>
-                    <Campo etiqueta="Horizonte" ayuda="Días hacia adelante.">
-                      <Entrada name="horizonte_dias" type="number" min={1} max={365} defaultValue={config.horizonte_dias} />
-                    </Campo>
-                  </div>
-                  <Campo
-                    etiqueta="Indicaciones del negocio"
-                    ayuda="Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt."
-                  >
-                    <AreaTexto
-                      name="instrucciones_extra"
-                      defaultValue={config.instrucciones_extra ?? ""}
-                      rows={4}
-                      placeholder={"Los martes hay dos por uno.\nSi preguntan por la terraza, di que no se aparta por telefono."}
-                    />
-                  </Campo>
-                  <BotonEnviar>
-                    Guardar configuración
-                  </BotonEnviar>
+                </Campo>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Campo
+                  etiqueta="Cuenta de Instagram"
+                  ayuda="El ID de tu cuenta profesional. Sin esto, los mensajes de Instagram no saben de qué negocio son."
+                >
+                  <Entrada name="instagram_id" defaultValue={config.instagram_id ?? ""} placeholder="1784140..." />
+                </Campo>
+                <Campo etiqueta="Página de Facebook" ayuda="El ID de la página que recibe los mensajes de Messenger.">
+                  <Entrada name="messenger_page_id" defaultValue={config.messenger_page_id ?? ""} placeholder="1020000..." />
+                </Campo>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <Campo etiqueta="Cada (min)" ayuda="Salto entre horarios.">
+                  <Entrada name="slot_granularidad_min" type="number" min={5} max={120} step={5} defaultValue={config.slot_granularidad_min} />
+                </Campo>
+                <Campo etiqueta="Anticipación" ayuda="Mínimo antes de la cita.">
+                  <Entrada name="anticipacion_min" type="number" min={0} step={5} defaultValue={config.anticipacion_min} />
+                </Campo>
+                <Campo etiqueta="Horizonte" ayuda="Días hacia adelante.">
+                  <Entrada name="horizonte_dias" type="number" min={1} max={365} defaultValue={config.horizonte_dias} />
+                </Campo>
+              </div>
+              <Campo
+                etiqueta="Indicaciones del negocio"
+                ayuda="Reglas propias, en frases cortas: a quién saludar de usted, qué promoción mencionar, qué NO ofrecer. Se inyectan tal cual al prompt."
+              >
+                <AreaTexto
+                  name="instrucciones_extra"
+                  defaultValue={config.instrucciones_extra ?? ""}
+                  rows={4}
+                  placeholder={"Los martes hay dos por uno.\nSi preguntan por la terraza, di que no se aparta por telefono."}
+                />
+              </Campo>
+              <BotonEnviar>Guardar configuración</BotonEnviar>
             </Formulario>
           </Tarjeta>
 
@@ -192,12 +177,13 @@ export default async function Agente() {
             {listaLineas.length > 0 ? (
               <ul className="divide-y divide-linea border-b border-linea">
                 {listaLineas.map((l) => (
-                  <li key={l.id} className="flex items-center gap-3 px-4 py-2">
+                  <li key={l.id} className="flex h-9 items-center gap-3 px-4 transition-colors duration-150 hover:bg-panel-2">
+                    <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${l.activo ? "bg-bueno" : "bg-tinta-3"}`} />
                     <span className="numeros font-mono text-[12px] text-tinta">{l.telefono}</span>
                     <span className="min-w-0 flex-1 truncate text-[12px] text-tinta-2">{l.etiqueta}</span>
-                    <Formulario accion={eliminarLinea}>
+                    <Formulario accion={eliminarLinea} silencioso>
                       <input type="hidden" name="id" value={l.id} />
-                      <button className="text-[11px] text-tinta-3 transition hover:text-critico">Quitar</button>
+                      <button className="text-[11px] text-tinta-3 transition-colors duration-150 hover:text-critico">Quitar</button>
                     </Formulario>
                   </li>
                 ))}
@@ -236,7 +222,7 @@ export default async function Agente() {
               descripcion="Primera frase de cada llamada. Vacío usa la del giro."
               accion={config.saludo?.trim() ? <Insignia tono="alerta">Propio</Insignia> : null}
             />
-            <p className="border-b border-linea px-4 py-4 text-[15px] leading-relaxed text-tinta">
+            <p className="border-b border-linea px-4 py-4 font-display text-[17px] leading-relaxed text-tinta">
               “{saludo(config, plantilla)}”
             </p>
             <Formulario accion={guardarSaludo} className="space-y-3 px-4 py-4">
@@ -277,8 +263,8 @@ export default async function Agente() {
                 spellCheck={false}
               />
               <p className="text-[12px] text-tinta-3">
-                Aquí van las instrucciones de cómo habla y qué nunca hace. Los servicios, el horario,
-                el catálogo y la fecha se agregan solos con lo que capturaste: no se escriben aquí.
+                Aquí van las instrucciones de cómo habla y qué nunca hace. Los servicios, el horario, el catálogo y la
+                fecha se agregan solos con lo que capturaste: no se escriben aquí.
               </p>
               <BotonEnviar>Guardar instrucciones</BotonEnviar>
             </Formulario>
@@ -290,7 +276,7 @@ export default async function Agente() {
               descripcion="Tus instrucciones más los bloques que se arman con tus datos."
               accion={<Copiar texto={prompt} />}
             />
-            <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap px-4 py-4 font-mono text-[11.5px] leading-[1.6] text-tinta-2">
+            <pre className="max-h-[420px] overflow-auto px-4 py-4 font-mono text-[11.5px] leading-[1.6] whitespace-pre-wrap text-tinta-2">
               {prompt}
             </pre>
           </Tarjeta>

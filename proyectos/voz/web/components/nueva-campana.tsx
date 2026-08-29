@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { AreaTexto, Campo, Entrada } from "@/components/ui/primitivos";
+import { MarcaExito } from "@/components/kit";
+import { recordarCampanaCreada } from "@/components/kit/relacion-campanas";
 import { alcanceDeCampana, crearCampana } from "@/lib/acciones";
 import { NOMBRE_TIPO_CAMPANA, type CanalCampana, type TipoCampana } from "@/lib/tipos";
 
@@ -49,6 +51,7 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
   const [objetivo, setObjetivo] = useState(MENSAJES.no_show.objetivo);
   const [alcances, setAlcances] = useState(iniciales);
   const [calculando, setCalculando] = useState(false);
+  const [nombre, setNombre] = useState("");
 
   function cambiar(t: TipoCampana, c: CanalCampana) {
     setTipo(t);
@@ -75,9 +78,10 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
   const alcance = calculando ? undefined : alcances[tipo];
 
   return (
+    <div onSubmit={() => recordarCampanaCreada(nombre.trim())}>
     <Formulario accion={crearCampana} className="space-y-5">
       <Campo etiqueta="Nombre de la campaña">
-        <Entrada name="nombre" required placeholder="Recuperar faltas de agosto" autoFocus />
+        <Entrada name="nombre" required placeholder="Recuperar faltas de agosto" autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} />
       </Campo>
 
       <fieldset>
@@ -148,13 +152,24 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
         </Campo>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-linea pt-4">
-        <BotonEnviar>Crear campaña</BotonEnviar>
-        <p className="text-[12px] text-tinta-3">
-          {alcance !== undefined ? `Alcanzaría a ${alcance} ${alcance === 1 ? "persona" : "personas"} hoy. ` : ""}
-          Se crea en borrador; tú la activas cuando quieras.
-        </p>
+      <div className="flex flex-wrap items-center gap-4 border-t border-linea pt-4">
+        <BotonEnviar pendienteTexto="Creando…">Crear campaña</BotonEnviar>
+        {calculando ? (
+          <span className="flex items-center gap-2 text-[12px] text-tinta-3">
+            <i aria-hidden="true" className="late h-1.5 w-1.5 bg-acento" />
+            Contando personas…
+          </span>
+        ) : alcance !== undefined ? (
+          <span className="flex items-center gap-2 text-[12px] text-tinta-2">
+            <MarcaExito key={`${tipo}-${alcance}`} tamano={14} tono={alcance > 0 ? "bueno" : "acento"} />
+            <span>
+              Alcanzaría a <span className="numeros font-mono text-[12.5px] text-tinta">{alcance}</span> {alcance === 1 ? "persona" : "personas"} hoy.
+            </span>
+          </span>
+        ) : null}
+        <p className="text-[12px] text-tinta-3">Se crea en borrador; tú la activas cuando quieras.</p>
       </div>
     </Formulario>
+    </div>
   );
 }

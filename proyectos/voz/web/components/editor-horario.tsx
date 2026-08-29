@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { guardarHorario, type ReglaNueva } from "@/lib/acciones";
+import { MarcaExito, useAvisos } from "@/components/kit";
 import { Aviso, Boton, Selector } from "@/components/ui/primitivos";
 import { horaHablada, horaDeMinutos, minutosDeHora } from "@/lib/formato";
 import { DIAS_CORTOS, type Recurso, type Regla } from "@/lib/tipos";
@@ -95,6 +96,7 @@ const COLOR: Record<NonNullable<Celda>, string> = {
 
 export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos: Recurso[] }) {
   const router = useRouter();
+  const { avisar } = useAvisos();
   const claves = useMemo(() => [GLOBAL, ...recursos.map((r) => r.id)], [recursos]);
   const inicio = useMemo(() => inicioDe(reglas), [reglas]);
   const FILAS = (FIN_MIN - inicio) / PASO;
@@ -103,7 +105,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
   const [pincel, setPincel] = useState<Pincel>("disponible");
   const [pintando, setPintando] = useState(false);
   const [sucio, setSucio] = useState(false);
-  const [mensaje, setMensaje] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
+  const [mensaje, setMensaje] = useState<{ tono: "ok" | "error"; texto: string; vez: number } | null>(null);
   const [guardando, iniciar] = useTransition();
 
   const celdas = rejilla[alcance] ?? rejillaVacia(FILAS);
@@ -150,11 +152,16 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
   function guardar() {
     iniciar(async () => {
       const resultado = await guardarHorario(haciaReglas(rejilla, inicio), recursos.map((r) => r.id));
-      setMensaje(resultado.error ? { tono: "error", texto: resultado.error } : resultado.ok ? { tono: "ok", texto: resultado.ok } : null);
-      if (!resultado.error) {
-        setSucio(false);
-        router.refresh();
+      if (resultado.error) {
+        setMensaje({ tono: "error", texto: resultado.error, vez: Date.now() });
+        return;
       }
+      if (resultado.ok) {
+        setMensaje({ tono: "ok", texto: resultado.ok, vez: Date.now() });
+        avisar({ titulo: resultado.ok, detalle: `${totalHoras.toFixed(1)} h por semana`, tono: "bueno" });
+      }
+      setSucio(false);
+      router.refresh();
     });
   }
 
@@ -173,7 +180,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
             </option>
           ))}
         </Selector>
-        <div className="flex overflow-hidden border border-linea">
+        <div role="group" aria-label="Pincel" className="flex border border-linea">
           {(
             [
               ["disponible", "Abierto"],
@@ -183,8 +190,10 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
           ).map(([valor, etiqueta]) => (
             <button
               key={valor}
+              type="button"
+              aria-pressed={pincel === valor}
               onClick={() => setPincel(valor)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition ${
+              className={`flex h-[30px] items-center gap-1.5 px-2.5 text-xs transition-colors duration-150 ${
                 pincel === valor ? "bg-acento-suave font-medium text-acento" : "bg-panel text-tinta-2 hover:bg-panel-2"
               }`}
             >
@@ -201,15 +210,25 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
           <Boton onClick={() => preajuste(9, 19, 5)}>9–19 L-V</Boton>
           <Boton onClick={() => preajuste(13, 23, 6)}>13–23 L-S</Boton>
         </div>
-        <span className="numeros ml-auto text-xs text-tinta-3">{totalHoras.toFixed(1)} h por semana</span>
-        <Boton variante="solido" onClick={guardar} disabled={!sucio || guardando}>
+        <span className="numeros ml-auto font-mono text-xs text-tinta-3">
+          <span className="text-tinta">{totalHoras.toFixed(1)}</span> h por semana
+        </span>
+        {mensaje?.tono === "ok" && !sucio ? <MarcaExito key={mensaje.vez} tamano={16} /> : null}
+        {sucio ? (
+          <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.16em] text-alerta uppercase">
+            <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" />
+            Sin guardar
+          </span>
+        ) : null}
+        <Boton variante="solido" onClick={guardar} disabled={!sucio || guardando} aria-busy={guardando}>
+          {guardando ? <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" /> : null}
           {guardando ? "Guardando…" : "Guardar horario"}
         </Boton>
       </div>
 
-      {mensaje ? (
+      {mensaje?.tono === "error" ? (
         <div className="px-4 pt-3">
-          <Aviso tono={mensaje.tono}>{mensaje.texto}</Aviso>
+          <Aviso tono="error">{mensaje.texto}</Aviso>
         </div>
       ) : null}
 
@@ -220,9 +239,10 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
             {DIAS_CORTOS.map((d, i) => (
               <button
                 key={d}
+                type="button"
                 onClick={() => aplicarATodos(i)}
                 title="Copiar este día a lunes-viernes"
-                className="pb-1.5 text-center text-[11px] font-medium text-tinta-2 transition hover:text-acento"
+                className="pb-1.5 text-center text-[11px] font-medium text-tinta-2 transition-colors duration-150 hover:text-acento"
               >
                 {d}
               </button>
@@ -232,7 +252,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
             <div className="relative">
               {Array.from({ length: FILAS }).map((_, fila) =>
                 fila % 2 === 0 ? (
-                  <div key={fila} className="numeros h-[13px] text-right text-[10px] leading-[13px] text-tinta-3">
+                  <div key={fila} className="numeros h-[13px] text-right font-mono text-[10px] leading-[13px] text-tinta-3">
                     {horaHablada(inicio + fila * PASO)}
                   </div>
                 ) : (
@@ -252,7 +272,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
                       pintar(indiceDia, fila);
                     }}
                     onMouseEnter={() => pintando && pintar(indiceDia, fila)}
-                    className={`h-[13px] cursor-crosshair border-b transition-colors ${
+                    className={`h-[13px] cursor-crosshair border-b transition-colors duration-150 ${
                       celda ? "border-transparent" : fila % 2 === 1 ? "border-linea" : "border-transparent"
                     } ${celda ? COLOR[celda] : "bg-panel-2 hover:bg-linea"}`}
                   />
@@ -264,8 +284,8 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
       </div>
 
       <p className="border-t border-linea px-4 py-2.5 text-[11px] text-tinta-3">
-        Arrastra para pintar. Azul es horario abierto; naranja es un bloqueo dentro del horario (comida, junta).
-        Un día sin azul queda cerrado. Haz clic en el nombre del día para copiarlo a toda la semana laboral.
+        Arrastra para pintar. Azul es horario abierto; latón es un bloqueo dentro del horario (comida, junta). Un día sin
+        azul queda cerrado. Haz clic en el nombre del día para copiarlo a toda la semana laboral.
       </p>
     </div>
   );

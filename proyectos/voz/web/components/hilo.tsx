@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { nombreDe } from "@/components/bandeja";
-import { Insignia } from "@/components/ui/primitivos";
+import { ChipHerramienta, ChipsHerramienta, TextoFluye } from "@/components/kit";
 import { fechaLarga, hora, isoDia, telefono as formatearTelefono } from "@/lib/formato";
 import { NOMBRE_CANAL, NOMBRE_RESULTADO, type ConversacionDetalle, type Mensaje } from "@/lib/tipos";
 
@@ -27,6 +27,9 @@ const QUIEN: Record<Mensaje["autor"], string> = {
   sistema: "Sistema",
 };
 
+/** Solo el último mensaje del agente en una conversación viva se muestra llegando: lo demás ya pasó. */
+const VENTANA_EN_VIVO_MS = 3 * 60 * 1000;
+
 export function Hilo({
   conversacion: c,
   mensajes,
@@ -39,6 +42,13 @@ export function Hilo({
   let ultimoDia = "";
   const enlacePedido = c.pedido_creado ? `/pedidos?dia=${isoDia(new Date(c.pedido_creado), zona)}&estado=todos` : "/pedidos";
   const enlaceCita = c.booking_codigo ? `/agenda?q=${encodeURIComponent(c.booking_codigo)}` : "/agenda";
+  const ultimo = mensajes[mensajes.length - 1];
+  const enVivo =
+    ultimo?.autor === "agente" && c.estado !== "cerrada" && Date.now() - new Date(ultimo.creado).getTime() < VENTANA_EN_VIVO_MS
+      ? ultimo.id
+      : null;
+  const llamadas = mensajes.filter((m) => m.herramienta).length;
+  const tonoResultado = !c.resultado || c.resultado === "sin_resultado" ? null : c.resultado === "transferida" ? "fallo" : "hecho";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -49,17 +59,16 @@ export function Hilo({
               {nombreDe(c)}
             </h2>
             <span className="etiqueta text-[10px]">{NOMBRE_CANAL[c.canal]}</span>
-            {c.estado === "escalada" ? (
-              <Insignia tono="alerta">Pidió una persona</Insignia>
-            ) : null}
+            {c.estado === "escalada" ? <ChipHerramienta estado="fallo">Pidió una persona</ChipHerramienta> : null}
+            {c.estado === "abierta" && enVivo ? <ChipHerramienta estado="en-curso">En curso</ChipHerramienta> : null}
           </div>
           {c.contacto.startsWith("+") ? (
-            <p className="numeros mt-0.5 text-[12px] text-tinta-3">
+            <p className="numeros mt-0.5 font-mono text-[12px] text-tinta-3">
               {formatearTelefono(c.contacto)}
               {c.cliente_id ? (
                 <>
                   {" · "}
-                  <Link href={`/clientes/${c.cliente_id}`} className="text-acento hover:underline">
+                  <Link href={`/clientes/${c.cliente_id}`} className="font-sans text-acento transition-colors duration-150 hover:text-tinta">
                     Ver cliente
                   </Link>
                 </>
@@ -71,31 +80,55 @@ export function Hilo({
         {/* De la conversación al hecho: lo que salió de ella se abre desde aquí. */}
         <div className="flex flex-wrap items-center gap-2">
           {c.pedido_id ? (
-            <Link href={enlacePedido} className="text-[12px] text-acento hover:underline">
-              Ver el pedido →
+            <Link href={enlacePedido} className="inline-flex h-7 items-center gap-1.5 border border-linea bg-panel px-2.5 text-[12px] font-medium text-tinta transition-colors duration-150 hover:border-linea-fuerte hover:text-acento">
+              Ver el pedido <span aria-hidden="true">→</span>
             </Link>
           ) : null}
           {c.booking_id ? (
-            <Link href={enlaceCita} className="text-[12px] text-acento hover:underline">
-              Ver la cita →
+            <Link href={enlaceCita} className="inline-flex h-7 items-center gap-1.5 border border-linea bg-panel px-2.5 text-[12px] font-medium text-tinta transition-colors duration-150 hover:border-linea-fuerte hover:text-acento">
+              Ver la cita
+              {c.booking_codigo ? <span className="numeros font-mono text-[11px] text-tinta-3">{c.booking_codigo}</span> : null}
+              <span aria-hidden="true">→</span>
             </Link>
           ) : null}
         </div>
       </header>
 
-      {c.resumen || c.motivo ? (
-        <section aria-label="Qué pasó" className="border-b border-linea bg-panel-2 px-6 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="etiqueta">Qué pasó</span>
-            {c.resultado ? <Insignia tono={c.resultado === "sin_resultado" ? "neutro" : c.resultado === "transferida" ? "alerta" : "bueno"}>{NOMBRE_RESULTADO[c.resultado]}</Insignia> : null}
-            {c.motivo ? <span className="text-[12px] text-tinta-2">{c.motivo}</span> : null}
+      {c.resumen || c.motivo || tonoResultado ? (
+        <section aria-label="Qué pasó" className="border-b border-linea bg-panel-2 px-6 py-3.5">
+          <div className="grid gap-x-6 gap-y-2 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="etiqueta text-laton">Qué pasó</span>
+                {c.motivo ? <span className="text-[12.5px] font-medium text-tinta">{c.motivo}</span> : null}
+              </div>
+              {c.resumen ? (
+                <p className="mt-1.5 max-w-3xl border-l-2 border-acento pl-3 text-[13px] leading-relaxed text-tinta">{c.resumen}</p>
+              ) : null}
+            </div>
+            <ChipsHerramienta total={llamadas > 0 ? llamadas : undefined}>
+              {c.resultado && tonoResultado ? (
+                <ChipHerramienta estado={tonoResultado}>{NOMBRE_RESULTADO[c.resultado]}</ChipHerramienta>
+              ) : c.resultado ? (
+                <span className="inline-flex h-6 items-center gap-1.5 border border-dashed border-linea px-2 text-[12px] text-tinta-3">
+                  <i aria-hidden="true" className="h-1.5 w-1.5 bg-tinta-3" />
+                  {NOMBRE_RESULTADO[c.resultado]}
+                </span>
+              ) : null}
+              {c.booking_id ? (
+                <ChipHerramienta estado="hecho" dato={c.booking_codigo ?? undefined}>
+                  {c.booking_inicio ? `cita ${fechaLarga(c.booking_inicio, zona)} ${hora(c.booking_inicio, zona)}` : "cita"}
+                </ChipHerramienta>
+              ) : null}
+              {c.pedido_id ? <ChipHerramienta estado="hecho">pedido</ChipHerramienta> : null}
+            </ChipsHerramienta>
           </div>
-          {c.resumen ? <p className="mt-1.5 max-w-3xl text-[13px] leading-relaxed text-tinta">{c.resumen}</p> : null}
         </section>
       ) : null}
 
       {c.estado === "escalada" && c.motivo_escalamiento ? (
-        <p className="border-b border-alerta/25 bg-alerta/10 px-6 py-2 text-[12px] text-tinta">
+        <p className="flex items-center gap-2 border-b border-alerta/25 bg-alerta/10 px-6 py-2 text-[12px] text-tinta">
+          <i aria-hidden="true" className="late h-1.5 w-1.5 flex-none bg-alerta" />
           El agente se detuvo: {c.motivo_escalamiento}
         </p>
       ) : null}
@@ -115,22 +148,26 @@ export function Hilo({
           return (
             <div key={m.id}>
               {cambiaDia ? (
-                <p className="etiqueta py-3 text-center text-[10px]">{suDia}</p>
+                <p className="etiqueta flex items-center gap-3 py-3 text-[10px] before:h-px before:flex-1 before:bg-linea after:h-px after:flex-1 after:bg-linea">
+                  {suDia}
+                </p>
               ) : null}
               <div className={`flex ${LADO[m.autor]}`}>
                 <div className={`max-w-[min(560px,80%)] border px-3 py-2 ${BURBUJA[m.autor]}`}>
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="etiqueta text-[10px]">{QUIEN[m.autor]}</span>
-                    <span className="numeros text-[10px] text-tinta-3">{hora(m.creado, zona)}</span>
+                    <span className="numeros font-mono text-[10px] text-tinta-3">{hora(m.creado, zona)}</span>
                   </div>
-                  <p className="mt-1 text-[13px] leading-relaxed whitespace-pre-wrap">
-                    {m.texto}
-                  </p>
+                  {m.id === enVivo ? (
+                    <TextoFluye texto={m.texto} className="mt-1 whitespace-pre-wrap" />
+                  ) : (
+                    <p className="mt-1 text-[13px] leading-relaxed whitespace-pre-wrap">{m.texto}</p>
+                  )}
                   {/* Por qué contestó eso: la herramienta que consultó. */}
                   {m.herramienta ? (
-                    <p className="mt-1.5 text-[10px] text-tinta-3">
-                      consultó {m.herramienta.replaceAll("_", " ")}
-                    </p>
+                    <div className="mt-2">
+                      <ChipHerramienta estado="hecho">consultó {m.herramienta.replaceAll("_", " ")}</ChipHerramienta>
+                    </div>
                   ) : null}
                 </div>
               </div>

@@ -1,12 +1,6 @@
 import { Encabezado } from "@/components/encabezado";
-import {
-  FilaRecurso,
-  FilaServicio,
-  FormularioRecurso,
-  FormularioServicio,
-  NuevoEnPanel,
-} from "@/components/catalogo";
-import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
+import { FormularioRecurso, FormularioServicio, NuevoEnPanel, TablaRecursos, TablaServicios } from "@/components/catalogo";
+import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { negocio, recursos, servicios } from "@/lib/consultas";
 import { exigirSeccion } from "@/lib/sesion";
 import { etiquetasRecurso } from "@/lib/tipos";
@@ -15,6 +9,7 @@ export default async function Catalogo() {
   const giro = await exigirSeccion("/servicios");
   const [config, listaRecursos, listaServicios] = await Promise.all([negocio(), recursos(), servicios()]);
   const vertical = etiquetasRecurso(config.vertical);
+  const activos = listaRecursos.filter((r) => r.activo);
 
   return (
     <>
@@ -26,40 +21,28 @@ export default async function Catalogo() {
       <div className="grid gap-4 px-5 py-5 lg:grid-cols-2">
         <Tarjeta>
           <TarjetaCabecera
-            titulo={`${vertical.recurso}es`}
+            titulo={vertical.plural}
             descripcion={`Lo que se ocupa al reservar. Ejemplos: ${vertical.ejemplos}.`}
+            accion={
+              <NuevoEnPanel titulo={`Nuevo ${vertical.recurso.toLowerCase()}`}>
+                <FormularioRecurso vertical={config.vertical} />
+              </NuevoEnPanel>
+            }
           />
-          <NuevoEnPanel titulo={`Nuevo ${vertical.recurso.toLowerCase()}`}>
-            <FormularioRecurso vertical={config.vertical} compacto />
-          </NuevoEnPanel>
-          {listaRecursos.length === 0 ? (
-            <Vacio titulo="Sin recursos" detalle="Sin al menos uno, el agente no puede ofrecer horarios." />
-          ) : (
-            <div>
-              {listaRecursos.map((r) => (
-                <FilaRecurso key={r.id} recurso={r} vertical={config.vertical} />
-              ))}
-            </div>
-          )}
+          <TablaRecursos recursos={listaRecursos} vertical={config.vertical} etiqueta={vertical.recurso} />
         </Tarjeta>
 
         <Tarjeta>
           <TarjetaCabecera
             titulo="Servicios"
             descripcion="Duración, buffer y precio. El agente los dice tal cual."
+            accion={
+              <NuevoEnPanel titulo="Nuevo servicio">
+                <FormularioServicio recursos={activos} />
+              </NuevoEnPanel>
+            }
           />
-          <NuevoEnPanel titulo="Nuevo servicio">
-            <FormularioServicio recursos={listaRecursos.filter((r) => r.activo)} compacto />
-          </NuevoEnPanel>
-          {listaServicios.length === 0 ? (
-            <Vacio titulo="Sin servicios" detalle="Agrega al menos uno para poder agendar." />
-          ) : (
-            <div>
-              {listaServicios.map((s) => (
-                <FilaServicio key={s.id} servicio={s} recursos={listaRecursos.filter((r) => r.activo)} />
-              ))}
-            </div>
-          )}
+          <TablaServicios servicios={listaServicios} recursos={activos} />
         </Tarjeta>
       </div>
     </>

@@ -3,24 +3,12 @@ import { notFound } from "next/navigation";
 import { Encabezado } from "@/components/encabezado";
 import { Formulario } from "@/components/formulario";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
-import { Boton, Campo, Insignia, Selector, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { agregarContactosCampana, cambiarEstadoCampana, excluirContacto } from "@/lib/acciones";
+import { AvanceCampana, MarcaCampanaCreada, ResultadosCampana, TablaContactos } from "@/components/kit/relacion-campanas";
+import { Boton, Campo, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
+import { agregarContactosCampana, cambiarEstadoCampana } from "@/lib/acciones";
 import { campana, contactosDeCampana, negocio } from "@/lib/consultas";
-import { fechaCorta, hora, telefono } from "@/lib/formato";
 import { contexto } from "@/lib/sesion";
-import { NOMBRE_ESTADO_CONTACTO, NOMBRE_TIPO_CAMPANA, type EstadoContacto } from "@/lib/tipos";
-
-const TONO: Record<EstadoContacto, "neutro" | "bueno" | "alerta" | "critico" | "acento"> = {
-  pendiente: "neutro",
-  en_curso: "acento",
-  enviado: "acento",
-  contestado: "bueno",
-  agendo: "bueno",
-  sin_respuesta: "alerta",
-  rechazo: "critico",
-  fallido: "critico",
-  excluido: "neutro",
-};
+import { NOMBRE_TIPO_CAMPANA } from "@/lib/tipos";
 
 export default async function DetalleCampana({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,6 +17,7 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
   if (!c) notFound();
   const contactos = await contactosDeCampana(id);
   const tasa = c.enviados > 0 ? Math.round((c.contestados / c.enviados) * 100) : 0;
+  const rechazos = contactos.filter((p) => p.estado === "rechazo").length;
 
   return (
     <>
@@ -37,9 +26,12 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
         descripcion={`${NOMBRE_TIPO_CAMPANA[c.tipo].nombre} · por ${c.canal === "llamada" ? "llamada" : "WhatsApp"} · de ${c.ventana_inicio.slice(0, 5)} a ${c.ventana_fin.slice(0, 5)} · hasta ${c.max_intentos} intentos`}
         giro={giro.nombre}
         acciones={
-          <Link href="/campanas" className="text-[12px] text-tinta-3 transition hover:text-acento">
-            Todas las campañas
-          </Link>
+          <>
+            <MarcaCampanaCreada nombre={c.nombre} />
+            <Link href="/campanas" className="text-[12px] text-tinta-3 transition-colors duration-150 hover:text-acento">
+              Todas las campañas
+            </Link>
+          </>
         }
         principal={
           c.estado === "activa" ? (
@@ -66,45 +58,26 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
         </TiraIndicadores>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <Tarjeta>
-            <TarjetaCabecera titulo="Personas" descripcion="Qué pasó con cada una. Excluir saca a alguien sin borrar el rastro." />
-            {contactos.length === 0 ? (
-              <Vacio titulo="Nadie todavía" detalle="Agrega personas desde la derecha o cambia el criterio de la campaña." />
-            ) : (
-              <ul className="divide-y divide-linea">
-                {contactos.map((p) => (
-                  <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5">
-                    <div className="min-w-[180px] flex-1">
-                      <Link href={`/clientes/${p.cliente_id}`} className="text-[13px] font-medium text-tinta transition hover:text-acento">
-                        {p.cliente_nombre ?? "Sin nombre"}
-                      </Link>
-                      <p className="numeros font-mono text-[11px] text-tinta-3">{p.cliente_telefono ? telefono(p.cliente_telefono) : "—"}</p>
-                    </div>
-                    <p className="max-w-[320px] flex-1 truncate text-[12px] text-tinta-2" title={p.resultado ?? ""}>
-                      {p.resultado ?? ""}
-                    </p>
-                    <span className="numeros font-mono text-[11px] text-tinta-3">
-                      {p.ultimo_intento ? `${fechaCorta(p.ultimo_intento, config.zona_horaria)} ${hora(p.ultimo_intento, config.zona_horaria)}` : `intento ${p.intentos}`}
-                    </span>
-                    <Insignia tono={TONO[p.estado]}>{NOMBRE_ESTADO_CONTACTO[p.estado]}</Insignia>
-                    {p.estado === "pendiente" || p.estado === "sin_respuesta" ? (
-                      <Formulario accion={excluirContacto}>
-                        <input type="hidden" name="id" value={p.id} />
-                        <button className="h-7 px-2 text-[12px] text-tinta-3 transition hover:text-critico">Excluir</button>
-                      </Formulario>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Tarjeta>
-
           <div className="space-y-4">
             <Tarjeta>
-              <TarjetaCabecera titulo={c.canal === "llamada" ? "Guion" : "Mensaje"} />
-              <p className="px-4 pb-4 text-[13px] leading-relaxed whitespace-pre-wrap text-tinta">{c.mensaje}</p>
-              {c.objetivo ? <p className="border-t border-linea px-4 py-2.5 text-[12px] text-tinta-3">Objetivo: {c.objetivo}</p> : null}
+              <TarjetaCabecera titulo="Personas" descripcion="Qué pasó con cada una. Excluir saca a alguien sin borrar el rastro." />
+              <TablaContactos contactos={contactos} zona={config.zona_horaria} />
             </Tarjeta>
+            <Tarjeta>
+              <TarjetaCabecera titulo={c.canal === "llamada" ? "Guion" : "Mensaje"} descripcion={c.canal === "llamada" ? "Lo que el agente sabe antes de marcar." : "Tal cual lo recibe cada persona."} />
+              <p className="border-l-2 border-acento mx-4 mb-4 pl-3 text-[13px] leading-relaxed whitespace-pre-wrap text-tinta">{c.mensaje}</p>
+              {c.objetivo ? (
+                <p className="flex items-baseline gap-2 border-t border-linea px-4 py-2.5 text-[12px] text-tinta-2">
+                  <span className="etiqueta">Objetivo</span>
+                  {c.objetivo}
+                </p>
+              ) : null}
+            </Tarjeta>
+          </div>
+
+          <div className="space-y-4">
+            <AvanceCampana campana={c} zona={config.zona_horaria} rechazos={rechazos} />
+            <ResultadosCampana campana={c} contactos={contactos} zona={config.zona_horaria} />
             <Tarjeta>
               <TarjetaCabecera titulo="Agregar personas" descripcion="Un segmento completo de tus clientes." />
               <Formulario accion={agregarContactosCampana} className="space-y-3 px-4 pb-4">

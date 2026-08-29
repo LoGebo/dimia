@@ -1,9 +1,7 @@
-import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
-import { Tarjeta, Vacio } from "@/components/ui/primitivos";
+import { TablaClientes } from "@/components/kit/relacion-clientes";
 import { clientes, negocio, resumenClientes, type SegmentoCliente } from "@/lib/consultas";
-import { fechaCorta, moneda, telefono } from "@/lib/formato";
 import { contexto } from "@/lib/sesion";
 
 const SEGMENTOS: { valor: SegmentoCliente; nombre: string }[] = [
@@ -72,64 +70,10 @@ export default async function Clientes({
               {s.nombre}
             </Chip>
           ))}
-          <span className="numeros ml-auto font-mono text-[11px] text-tinta-3">{lista.length} clientes</span>
+          <span className="numeros ml-auto font-mono text-[10.5px] tracking-[0.18em] text-tinta-3 uppercase">{lista.length} {lista.length === 1 ? "cliente" : "clientes"}{lista.length >= 200 ? " · primeros 200" : ""}</span>
         </div>
 
-        <Tarjeta>
-          {lista.length === 0 ? (
-            <Vacio titulo="Nadie por aquí" detalle={busqueda ? "Prueba con otro nombre o teléfono." : "En cuanto alguien llame o escriba, aparece aquí solo."} />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="border-b border-linea">
-                    <th className="etiqueta px-4 py-2.5 text-left font-normal">Cliente</th>
-                    <th className="etiqueta px-4 py-2.5 text-left font-normal">Teléfono</th>
-                    {agenda ? <th className="etiqueta px-4 py-2.5 text-right font-normal">Citas</th> : null}
-                    {agenda ? <th className="etiqueta px-4 py-2.5 text-right font-normal">Faltas</th> : null}
-                    {pedidos ? <th className="etiqueta px-4 py-2.5 text-right font-normal">Pedidos</th> : null}
-                    {pedidos ? <th className="etiqueta px-4 py-2.5 text-right font-normal">Gastado</th> : null}
-                    <th className="etiqueta px-4 py-2.5 text-left font-normal">Último contacto</th>
-                    <th className="etiqueta px-4 py-2.5 text-left font-normal">Etiquetas</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-linea">
-                  {lista.map((c) => (
-                    <tr key={c.id} className="hover:bg-panel-2">
-                      <td className="px-4 py-2.5">
-                        <Link href={`/clientes/${c.id}`} className="font-medium text-tinta transition hover:text-acento">
-                          {c.nombre ?? "Sin nombre"}
-                        </Link>
-                        {c.recados_pendientes > 0 ? (
-                          <span className="ml-2 bg-alerta/12 px-1.5 py-0.5 font-mono text-[10px] text-alerta">recado</span>
-                        ) : null}
-                      </td>
-                      <td className="numeros px-4 py-2.5 font-mono text-[12px] text-tinta-2">{c.telefono ? telefono(c.telefono) : "—"}</td>
-                      {agenda ? <td className="numeros px-4 py-2.5 text-right font-mono text-[12px]">{c.citas}</td> : null}
-                      {agenda ? (
-                        <td className={`numeros px-4 py-2.5 text-right font-mono text-[12px] ${c.no_asistio > 0 ? "text-critico" : "text-tinta-3"}`}>
-                          {c.no_asistio}
-                        </td>
-                      ) : null}
-                      {pedidos ? <td className="numeros px-4 py-2.5 text-right font-mono text-[12px]">{c.pedidos}</td> : null}
-                      {pedidos ? <td className="numeros px-4 py-2.5 text-right font-mono text-[12px]">{moneda(c.gastado)}</td> : null}
-                      <td className="numeros px-4 py-2.5 font-mono text-[12px] text-tinta-2">{fechaCorta(c.ultimo_contacto, config.zona_horaria)}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-wrap gap-1">
-                          {c.etiquetas.map((e) => (
-                            <span key={e} className="bg-panel-2 px-1.5 py-0.5 text-[11px] text-tinta-2">
-                              {e}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Tarjeta>
+        <TablaClientes lista={lista} zona={config.zona_horaria} agenda={agenda} pedidos={pedidos} busqueda={busqueda} />
       </div>
     </>
   );

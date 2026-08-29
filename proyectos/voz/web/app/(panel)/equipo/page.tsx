@@ -7,6 +7,7 @@ import { eliminarRegla, guardarAusencia } from "@/lib/acciones";
 import { ausencias, negocio, productividadEquipo, recursos } from "@/lib/consultas";
 import { fechaCorta, isoDia, moneda, sumarDias, telefono } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
+import { TablaProduccion } from "./tabla";
 
 const RANGOS = [7, 30, 90] as const;
 
@@ -31,13 +32,17 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
         descripcion="Quién atiende, cuánto produce y cuándo no está. Las personas se dan de alta en Servicios como recurso de tipo persona."
         giro={giro.nombre}
         acciones={
-          <div className="flex overflow-hidden border border-linea bg-panel">
+          <div role="group" aria-label="Periodo" className="flex border border-linea bg-panel">
             {RANGOS.map((r) => (
               <Link
                 key={r}
                 href={`/equipo?dias=${r}`}
-                className={`px-2.5 py-1 text-xs transition ${r === dias ? "bg-acento-suave font-medium text-acento" : "text-tinta-2 hover:bg-panel-2"}`}
+                aria-current={r === dias ? "true" : undefined}
+                className={`numeros flex h-[30px] items-center gap-1.5 px-2.5 font-mono text-[11.5px] transition-colors duration-150 ${
+                  r === dias ? "bg-acento-suave font-medium text-acento" : "text-tinta-2 hover:bg-panel-2 hover:text-tinta"
+                }`}
               >
+                {r === dias ? <i aria-hidden="true" className="h-1 w-1 bg-current" /> : null}
                 {r} d
               </Link>
             ))}
@@ -53,62 +58,39 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
         </TiraIndicadores>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <Tarjeta>
-            <TarjetaCabecera titulo="Producción por persona" descripcion={`Del ${fechaCorta(`${desde}T12:00:00Z`, "UTC")} al ${fechaCorta(`${hoy}T12:00:00Z`, "UTC")}. Lo cobrado es lo registrado en Cobros.`} />
+          <Tarjeta className="self-start">
+            <TarjetaCabecera
+              titulo="Producción por persona"
+              descripcion={`Del ${fechaCorta(`${desde}T12:00:00Z`, "UTC")} al ${fechaCorta(`${hoy}T12:00:00Z`, "UTC")}. Lo cobrado es lo registrado en Cobros.`}
+            />
             {porPersona.length === 0 ? (
               <Vacio
                 titulo="Nadie marcado como persona"
                 detalle="En Servicios, edita un recurso y elige «Una persona». Desde ahí se le pone teléfono, comisión y ausencias."
-                accion={<Link href="/servicios" className="mt-2 text-[13px] font-medium text-acento hover:underline">Ir a Servicios →</Link>}
+                accion={
+                  <Link href="/servicios" className="mt-1 text-[13px] font-medium text-acento transition-colors duration-150 hover:text-tinta">
+                    Ir a Servicios →
+                  </Link>
+                }
               />
             ) : (
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="border-b border-linea">
-                    <th className="etiqueta px-4 py-2.5 text-left font-normal">Persona</th>
-                    <th className="etiqueta px-4 py-2.5 text-right font-normal">Citas</th>
-                    <th className="etiqueta px-4 py-2.5 text-right font-normal">Atendidas</th>
-                    <th className="etiqueta px-4 py-2.5 text-right font-normal">Faltas</th>
-                    <th className="etiqueta px-4 py-2.5 text-right font-normal">Cobrado</th>
-                    <th className="etiqueta px-4 py-2.5 text-right font-normal">Comisión</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-linea">
-                  {porPersona.map((p) => {
-                    const persona = personas.find((x) => x.id === p.resource_id);
-                    return (
-                      <tr key={p.resource_id}>
-                        <td className="px-4 py-2.5">
-                          <p className="font-medium text-tinta">{p.nombre}</p>
-                          <p className="numeros font-mono text-[11px] text-tinta-3">
-                            {persona?.telefono ? telefono(persona.telefono) : ""}
-                            {p.comision_pct ? `${persona?.telefono ? " · " : ""}${Number(p.comision_pct)} %` : ""}
-                          </p>
-                        </td>
-                        <td className="numeros px-4 py-2.5 text-right font-mono">{p.citas}</td>
-                        <td className="numeros px-4 py-2.5 text-right font-mono">{p.atendidas}</td>
-                        <td className={`numeros px-4 py-2.5 text-right font-mono ${p.no_asistio > 0 ? "text-critico" : "text-tinta-3"}`}>{p.no_asistio}</td>
-                        <td className="numeros px-4 py-2.5 text-right font-mono">{moneda(p.cobrado)}</td>
-                        <td className="numeros px-4 py-2.5 text-right font-mono text-alerta">{moneda(p.comision)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <TablaProduccion produccion={porPersona} personas={personas} />
             )}
           </Tarjeta>
 
           <div className="space-y-4">
             <Tarjeta>
               <TarjetaCabecera titulo="Ausencia" descripcion="Vacaciones, curso, enfermedad. El agente deja de ofrecer a esa persona esos días." />
-              <Formulario accion={guardarAusencia} className="space-y-3 px-4 pb-4" reiniciar>
+              <Formulario accion={guardarAusencia} className="space-y-3 px-4 py-4" reiniciar>
                 <Campo etiqueta="Quién">
                   <Selector name="resource_id" defaultValue={personas[0]?.id ?? ""}>
-                    {personas.filter((r) => r.activo).map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.nombre}
-                      </option>
-                    ))}
+                    {personas
+                      .filter((r) => r.activo)
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.nombre}
+                        </option>
+                      ))}
                   </Selector>
                 </Campo>
                 <div className="grid grid-cols-2 gap-3">
@@ -127,21 +109,22 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
             </Tarjeta>
 
             <Tarjeta>
-              <TarjetaCabecera titulo="Próximas ausencias" />
+              <TarjetaCabecera titulo="Próximas ausencias" descripcion={faltas.length > 0 ? `${faltas.length} ${faltas.length === 1 ? "día" : "días"} bloqueados.` : undefined} />
               {faltas.length === 0 ? (
-                <Vacio titulo="Todos disponibles" />
+                <Vacio titulo="Todos disponibles" detalle="Nadie tiene días bloqueados por delante." />
               ) : (
                 <ul className="divide-y divide-linea">
                   {faltas.map((a) => (
-                    <li key={a.id} className="flex items-center gap-3 px-4 py-2">
+                    <li key={a.id} className="flex h-9 items-center gap-3 px-4 transition-colors duration-150 hover:bg-panel-2">
+                      <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-alerta" />
                       <span className="numeros w-16 font-mono text-[12px] text-tinta-2">{fechaCorta(`${a.fecha}T12:00:00Z`, "UTC")}</span>
                       <span className="min-w-0 flex-1 truncate text-[13px] text-tinta">
                         {lista.find((r) => r.id === a.resource_id)?.nombre ?? "Todo el negocio"}
                         {a.motivo ? <span className="text-tinta-3"> · {a.motivo}</span> : null}
                       </span>
-                      <Formulario accion={eliminarRegla}>
+                      <Formulario accion={eliminarRegla} silencioso>
                         <input type="hidden" name="id" value={a.id} />
-                        <button className="text-[11px] text-tinta-3 transition hover:text-critico">Quitar</button>
+                        <button className="text-[11px] text-tinta-3 transition-colors duration-150 hover:text-critico">Quitar</button>
                       </Formulario>
                     </li>
                   ))}

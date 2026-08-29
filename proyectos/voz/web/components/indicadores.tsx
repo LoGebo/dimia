@@ -1,12 +1,20 @@
 import type { ReactNode } from "react";
+import { CifraValor } from "@/components/kit/operacion";
 
 type Tono = "bueno" | "alerta" | "critico" | "neutro";
 
-const PILDORA: Record<Tono, string> = {
-  bueno: "bg-bueno/12 text-bueno",
-  alerta: "bg-alerta/12 text-alerta",
-  critico: "bg-critico/12 text-critico",
-  neutro: "bg-panel-2 text-tinta-2",
+const CUADRO: Record<Tono, string> = {
+  bueno: "bg-bueno",
+  alerta: "bg-alerta",
+  critico: "bg-critico",
+  neutro: "bg-tinta-3",
+};
+
+const TEXTO: Record<Tono, string> = {
+  bueno: "text-bueno",
+  alerta: "text-alerta",
+  critico: "text-critico",
+  neutro: "text-tinta-2",
 };
 
 /** La tira de cifras del día: glifo, rótulo, número y una píldora de estado. */
@@ -24,31 +32,40 @@ export function TiraIndicadores({ children }: { children: ReactNode }) {
 export function Cifra({
   etiqueta,
   valor,
+  numero,
+  formato = "entero",
   unidad,
   pildora,
   tono = "neutro",
   glifo,
 }: {
   etiqueta: string;
+  /** Texto ya formateado. Si viene `numero`, se usa como `aria-label` y la cifra cuenta hasta él. */
   valor: string;
+  numero?: number;
+  formato?: "entero" | "moneda";
   unidad?: string;
   pildora?: string;
   tono?: Tono;
   glifo?: ReactNode;
 }) {
+  const cifra = "numeros text-[28px] leading-none font-semibold tracking-[-0.02em] text-tinta";
   return (
     <div className="flex items-start gap-3.5 bg-panel px-5 py-4">
       <span aria-hidden="true" className="mt-0.5 flex h-9 w-9 flex-none items-center justify-center bg-acento-suave text-acento">
         {glifo ?? <i className="h-2 w-2 bg-acento" />}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] leading-tight text-tinta-2">{etiqueta}</p>
-        <p className="mt-1.5 flex items-baseline gap-1.5">
-          <span className="numeros text-[28px] leading-none font-semibold tracking-[-0.02em] text-tinta">{valor}</span>
+        <p className="etiqueta leading-tight whitespace-nowrap">{etiqueta}</p>
+        <p className="mt-2 flex items-baseline gap-1.5">
+          {numero === undefined ? <span className={cifra}>{valor}</span> : <CifraValor valor={numero} formato={formato} className={cifra} />}
           {unidad ? <span className="text-[12.5px] text-tinta-3">{unidad}</span> : null}
         </p>
         {pildora ? (
-          <span className={`numeros mt-2 inline-block px-1.5 py-0.5 font-mono text-[10.5px] ${PILDORA[tono]}`}>{pildora}</span>
+          <span className={`numeros mt-2.5 inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.04em] ${TEXTO[tono]}`}>
+            <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${CUADRO[tono]}`} />
+            {pildora}
+          </span>
         ) : null}
       </div>
     </div>
@@ -102,22 +119,26 @@ export function Chip({
   href,
   children,
   conteo,
+  tono,
 }: {
   activo: boolean;
   href: string;
   children: ReactNode;
   conteo?: number;
+  /** Cuadrado de color a la izquierda, como en los chips de filtro del kit. */
+  tono?: Tono;
 }) {
   return (
     <a
       href={href}
       aria-current={activo ? "true" : undefined}
-      className={`inline-flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition ${
+      className={`inline-flex h-7 items-center gap-1.5 border px-2.5 text-[12px] font-medium transition-colors duration-150 ${
         activo
           ? "border-tinta bg-tinta text-paper"
           : "border-linea bg-panel text-tinta-2 hover:border-linea-fuerte hover:text-tinta"
       }`}
     >
+      {tono ? <i aria-hidden="true" className={`h-1.5 w-1.5 ${activo ? "bg-paper" : CUADRO[tono]}`} /> : null}
       {children}
       {conteo !== undefined ? (
         <span

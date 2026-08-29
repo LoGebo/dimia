@@ -26,13 +26,13 @@ export function FormularioAcceso({
 function Encabezado({ modo }: { modo: Modo }) {
   return (
     <div className="mb-6">
-      <h1 className="text-lg font-semibold tracking-tight text-tinta">
+      <p className="etiqueta text-laton">{modo === "entrar" ? "Acceso" : "Cuenta nueva"}</p>
+      <h1 className="mt-2 flex items-baseline gap-1.5 font-display text-[28px] leading-none font-light tracking-[-0.012em] text-tinta">
         {modo === "entrar" ? "Entra a tu panel" : "Crea tu cuenta"}
+        <i className="cuadrado" aria-hidden="true" />
       </h1>
-      <p className="mt-1 text-[13px] text-tinta-2">
-        {modo === "entrar"
-          ? "Administra la agenda y el agente de tu negocio."
-          : "En menos de quince minutos tu agente contesta."}
+      <p className="mt-2 text-[13px] leading-relaxed text-tinta-2">
+        {modo === "entrar" ? "Administra la agenda y el agente de tu negocio." : "En menos de quince minutos tu agente contesta."}
       </p>
     </div>
   );
@@ -40,23 +40,32 @@ function Encabezado({ modo }: { modo: Modo }) {
 
 function Pie({ modo }: { modo: Modo }) {
   return (
-    <p className="mt-5 text-center text-xs text-tinta-3">
+    <p className="mt-5 border-t border-linea pt-4 text-xs text-tinta-3">
       {modo === "entrar" ? (
         <>
           ¿No tienes cuenta?{" "}
-          <Link href="/registro" className="font-medium text-acento hover:underline">
+          <Link href="/registro" className="font-medium text-acento transition-colors duration-150 hover:text-tinta">
             Regístrate
           </Link>
         </>
       ) : (
         <>
           ¿Ya tienes cuenta?{" "}
-          <Link href="/entrar" className="font-medium text-acento hover:underline">
+          <Link href="/entrar" className="font-medium text-acento transition-colors duration-150 hover:text-tinta">
             Entra
           </Link>
         </>
       )}
     </p>
+  );
+}
+
+function BotonAcceso({ pendiente, children }: { pendiente: boolean; children: React.ReactNode }) {
+  return (
+    <Boton variante="solido" className="w-full" disabled={pendiente} aria-busy={pendiente}>
+      {pendiente ? <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" /> : null}
+      {pendiente ? "Un momento…" : children}
+    </Boton>
   );
 }
 
@@ -66,11 +75,11 @@ function ConPostgres({ modo, plantillas }: { modo: Modo; plantillas: PlantillaVe
   const [giro, setGiro] = useState<EstadoGiro>({ giro: plantillas[0]?.clave ?? "propio", propio: false, faltantes: [] });
   const conCandado = modo === "registro" && giro.faltantes.length > 0;
   return (
-    <form action={accion}>
+    <form action={accion} className="kit-revela">
       <Encabezado modo={modo} />
       <div className="space-y-3">
         <Campo etiqueta="Correo">
-          <Entrada name="email" type="email" autoComplete="email" required placeholder="tu@negocio.mx" />
+          <Entrada name="email" type="email" autoComplete="email" required placeholder="tu@negocio.mx" autoFocus />
         </Campo>
         <Campo etiqueta="Contraseña" ayuda={modo === "registro" ? "Mínimo 8 caracteres." : undefined}>
           <Entrada
@@ -92,9 +101,13 @@ function ConPostgres({ modo, plantillas }: { modo: Modo; plantillas: PlantillaVe
           </>
         ) : null}
         {estado.error ? <Aviso tono="error">{estado.error}</Aviso> : null}
-        <Boton variante="solido" className="w-full" disabled={pendiente || conCandado}>
-          {pendiente ? "Un momento…" : modo === "entrar" ? "Entrar" : conCandado ? `Falta ${giro.faltantes.join(" y ")}` : "Crear cuenta y empezar"}
-        </Boton>
+        {conCandado ? (
+          <Boton variante="solido" className="w-full" disabled>
+            Falta {giro.faltantes.join(" y ")}
+          </Boton>
+        ) : (
+          <BotonAcceso pendiente={pendiente}>{modo === "entrar" ? "Entrar" : "Crear cuenta y empezar"}</BotonAcceso>
+        )}
       </div>
       <Pie modo={modo} />
     </form>
@@ -131,19 +144,17 @@ function ConSupabase({ modo }: { modo: Modo }) {
   }
 
   return (
-    <form action={enviar}>
+    <form action={enviar} className="kit-revela">
       <Encabezado modo={modo} />
       <div className="space-y-3">
         <Campo etiqueta="Correo">
-          <Entrada name="email" type="email" autoComplete="email" required placeholder="tu@negocio.mx" />
+          <Entrada name="email" type="email" autoComplete="email" required placeholder="tu@negocio.mx" autoFocus />
         </Campo>
         <Campo etiqueta="Contraseña" ayuda={modo === "registro" ? "Mínimo 8 caracteres." : undefined}>
           <Entrada name="password" type="password" required minLength={8} />
         </Campo>
         {error ? <Aviso tono="error">{error}</Aviso> : null}
-        <Boton variante="solido" className="w-full" disabled={pendiente}>
-          {modo === "entrar" ? "Entrar" : "Crear cuenta"}
-        </Boton>
+        <BotonAcceso pendiente={pendiente}>{modo === "entrar" ? "Entrar" : "Crear cuenta"}</BotonAcceso>
       </div>
       <Pie modo={modo} />
     </form>

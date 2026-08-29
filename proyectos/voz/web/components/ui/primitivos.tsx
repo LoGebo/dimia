@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 type Variante = "solido" | "contorno" | "fantasma" | "peligro";
 
 const variantes: Record<Variante, string> = {
-  solido: "bg-acento text-acento-tinta hover:brightness-110 border-transparent",
+  solido: "bg-acento text-acento-tinta border-transparent hover:brightness-110",
   contorno: "bg-panel text-tinta border-linea-fuerte hover:bg-panel-2",
   fantasma: "bg-transparent text-tinta-2 border-transparent hover:bg-panel-2 hover:text-tinta",
   peligro: "bg-transparent text-critico border-transparent hover:bg-critico/10",
@@ -17,18 +17,13 @@ export function Boton({
   return (
     <button
       {...props}
-      className={`inline-flex h-8 items-center justify-center gap-1.5 border px-3 text-[13px] font-medium transition disabled:pointer-events-none disabled:opacity-50 ${variantes[variante]} ${className}`}
+      className={`inline-flex h-8 items-center justify-center gap-1.5 border px-3 text-[13px] font-medium transition-[background-color,border-color,color,filter] duration-150 focus-visible:border-acento focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/25 disabled:pointer-events-none disabled:opacity-50 ${variantes[variante]} ${className}`}
     />
   );
 }
 
 export function Tarjeta({ className = "", ...props }: ComponentProps<"div">) {
-  return (
-    <div
-      {...props}
-      className={`border border-linea bg-panel ${className}`}
-    />
-  );
+  return <div {...props} className={`border border-linea bg-panel ${className}`} />;
 }
 
 export function TarjetaCabecera({
@@ -72,7 +67,7 @@ export function Campo({
 }
 
 const baseCampo =
-  "w-full border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition placeholder:text-tinta-3 focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50";
+  "w-full border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none transition-[background-color,border-color,box-shadow] duration-150 placeholder:text-tinta-3 hover:border-linea-fuerte focus:border-acento focus:bg-panel focus:ring-2 focus:ring-acento/20 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-transparent disabled:text-tinta-3 disabled:placeholder:text-tinta-3/50 disabled:hover:border-linea";
 
 export function Entrada({ className = "", ...props }: ComponentProps<"input">) {
   return <input {...props} className={`${baseCampo} ${className}`} />;
@@ -101,19 +96,22 @@ export function Insignia({
     acento: "border-acento/30 text-acento bg-acento-suave",
   } as const;
   return (
-    <span
-      className={`inline-flex items-center border px-1.5 py-0.5 text-[11px] font-medium ${tonos[tono]}`}
-    >
+    <span className={`inline-flex items-center gap-1.5 border px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${tonos[tono]}`}>
+      <i aria-hidden="true" className="h-1 w-1 flex-none bg-current" />
       {children}
     </span>
   );
 }
 
+/** Estado vacío: cuadrado, título y una línea de por qué. Nunca centrado. */
 export function Vacio({ titulo, detalle, accion }: { titulo: string; detalle?: string; accion?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      <p className="text-[13px] font-medium text-tinta-2">{titulo}</p>
-      {detalle ? <p className="max-w-sm text-xs text-tinta-3">{detalle}</p> : null}
+    <div className="flex flex-col items-start gap-2 px-4 py-8">
+      <p className="flex items-center gap-2 text-[13px] font-medium text-tinta">
+        <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-tinta-3" />
+        {titulo}
+      </p>
+      {detalle ? <p className="max-w-sm text-[12px] leading-relaxed text-tinta-3">{detalle}</p> : null}
       {accion}
     </div>
   );
@@ -121,8 +119,11 @@ export function Vacio({ titulo, detalle, accion }: { titulo: string; detalle?: s
 
 export function Aviso({ tono, children }: { tono: "error" | "ok"; children: ReactNode }) {
   const clase =
-    tono === "error"
-      ? "border-critico/30 bg-critico/10 text-critico"
-      : "border-bueno/30 bg-bueno/10 text-bueno";
-  return <p className={`border px-2.5 py-1.5 text-xs ${clase}`}>{children}</p>;
+    tono === "error" ? "border-critico/30 bg-critico/10 text-critico" : "border-bueno/30 bg-bueno/10 text-bueno";
+  return (
+    <p role={tono === "error" ? "alert" : "status"} className={`entra flex items-start gap-2 border px-2.5 py-1.5 text-xs ${clase}`}>
+      <i aria-hidden="true" className="mt-1 h-1.5 w-1.5 flex-none bg-current" />
+      <span>{children}</span>
+    </p>
+  );
 }

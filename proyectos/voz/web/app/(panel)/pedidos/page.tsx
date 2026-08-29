@@ -3,18 +3,18 @@ import { Chip, Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
 import { NavegarDia } from "@/components/navegar-dia";
 import { Refrescar } from "@/components/refrescar";
 import { TableroPedidos } from "@/components/tablero-pedidos";
-import { Vacio } from "@/components/ui/primitivos";
+import { VacioCompacto } from "@/components/kit/operacion";
 import { negocio, pagosDePedidos, pedidosDelDia } from "@/lib/consultas";
 import { diaValido, fechaLarga, isoDia, moneda, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import { resumirPedidos, type EstadoPedido } from "@/lib/tipos";
 
-const FILTROS: { valor: string; nombre: string }[] = [
+const FILTROS: { valor: string; nombre: string; tono?: "alerta" | "bueno" | "critico" }[] = [
   { valor: "pendientes", nombre: "Por sacar" },
-  { valor: "abierto", nombre: "Sin cerrar" },
+  { valor: "abierto", nombre: "Sin cerrar", tono: "alerta" },
   { valor: "confirmado", nombre: "En cocina" },
-  { valor: "entregado", nombre: "Entregados" },
-  { valor: "cancelado", nombre: "Cancelados" },
+  { valor: "entregado", nombre: "Entregados", tono: "bueno" },
+  { valor: "cancelado", nombre: "Cancelados", tono: "critico" },
   { valor: "todos", nombre: "Todos" },
 ];
 
@@ -35,12 +35,13 @@ export default async function Pedidos({
   const pagos = await pagosDePedidos(todos.map((p) => p.id));
   const cobrados = new Map(pagos.filter((p) => p.estado === "pagado" && p.pedido_id).map((p) => [p.pedido_id!, p.monto]));
 
-  const visibles =
-    filtro === "todos"
+  const filtrar = (valor: string) =>
+    valor === "todos"
       ? todos
-      : filtro === "pendientes"
+      : valor === "pendientes"
         ? todos.filter((p) => p.estado === "abierto" || p.estado === "confirmado")
-        : todos.filter((p) => p.estado === (filtro as EstadoPedido));
+        : todos.filter((p) => p.estado === (valor as EstadoPedido));
+  const visibles = filtrar(filtro);
 
   const enlace = (cambios: { dia?: string; estado?: string }) =>
     `/pedidos?dia=${cambios.dia ?? dia}&estado=${cambios.estado ?? filtro}`;
@@ -60,6 +61,7 @@ export default async function Pedidos({
           <Cifra
             etiqueta="Pedidos del día"
             valor={String(resumen.total)}
+            numero={resumen.total}
             glifo={Glifos.personas}
             pildora={resumen.cancelados > 0 ? `${resumen.cancelados} cancelados` : undefined}
             tono="neutro"
@@ -67,28 +69,29 @@ export default async function Pedidos({
           <Cifra
             etiqueta="Por sacar"
             valor={String(resumen.abiertos + resumen.confirmados)}
+            numero={resumen.abiertos + resumen.confirmados}
             glifo={Glifos.reloj}
             pildora={`${resumen.entregados} ya salieron`}
             tono={resumen.abiertos + resumen.confirmados > 0 ? "alerta" : "bueno"}
           />
-          <Cifra etiqueta="Vendido" valor={moneda(resumen.vendido)} glifo={Glifos.dinero} pildora="confirmados y entregados" />
-          <Cifra etiqueta="Ticket promedio" valor={moneda(resumen.ticket)} glifo={Glifos.dinero} pildora="por pedido cerrado" />
+          <Cifra etiqueta="Vendido" valor={moneda(resumen.vendido)} numero={resumen.vendido} formato="moneda" glifo={Glifos.dinero} pildora="confirmados y entregados" />
+          <Cifra etiqueta="Ticket promedio" valor={moneda(resumen.ticket)} numero={resumen.ticket ?? undefined} formato="moneda" glifo={Glifos.dinero} pildora="por pedido cerrado" />
         </TiraIndicadores>
 
         <div className="flex flex-wrap items-center gap-1.5">
           {FILTROS.map((f) => (
-            <Chip key={f.valor} activo={f.valor === filtro} href={enlace({ estado: f.valor })}>
+            <Chip key={f.valor} activo={f.valor === filtro} href={enlace({ estado: f.valor })} conteo={filtrar(f.valor).length} tono={f.tono}>
               {f.nombre}
             </Chip>
           ))}
-          <span className="numeros ml-auto font-mono text-[11px] text-tinta-3">
-            {visibles.length} de {todos.length} pedidos
+          <span className="numeros ml-auto font-mono text-[10.5px] tracking-[0.18em] text-tinta-3 uppercase">
+            {visibles.length} de {todos.length}
           </span>
         </div>
 
         {visibles.length === 0 ? (
           <div className="border border-linea bg-panel">
-            <Vacio
+            <VacioCompacto
               titulo="Nada aquí"
               detalle={
                 todos.length === 0

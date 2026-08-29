@@ -1,14 +1,13 @@
 import { Encabezado } from "@/components/encabezado";
-import { FormularioItem } from "@/components/item-catalogo";
+import { BotonDialogo } from "@/components/dialogo";
+import { FormularioItem, TablaCatalogo } from "@/components/item-catalogo";
 import { ProbadorCatalogo } from "@/components/probador-catalogo";
-import { BotonPeligro } from "@/components/boton-peligro";
 import { BotonEnviar, Formulario } from "@/components/formulario";
-import { Boton, Campo, Entrada, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { agregarGrupoCatalogo, alternarDisponible, eliminarItemCatalogo, quitarGrupoCatalogo } from "@/lib/acciones";
+import { Campo, Entrada, Insignia, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
+import { agregarGrupoCatalogo, quitarGrupoCatalogo } from "@/lib/acciones";
 import { catalogo, negocio, recursos } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
-import { moneda } from "@/lib/formato";
-import { etiquetaTipo, TIPOS_POR_VERTICAL, type CatalogoItem, type Recurso } from "@/lib/tipos";
+import { etiquetaTipo, TIPOS_POR_VERTICAL } from "@/lib/tipos";
 
 export default async function Catalogo() {
   const { giro } = await contexto();
@@ -27,9 +26,7 @@ export default async function Catalogo() {
         titulo="Catálogo"
         descripcion="Lo que el negocio ofrece e informa: platillos, profesionales, propiedades. Es de donde el agente saca precios y de donde arma un pedido."
         giro={giro.nombre}
-        acciones={
-          agotados > 0 ? <Insignia tono="alerta">{agotados} marcados como no disponibles</Insignia> : null
-        }
+        acciones={agotados > 0 ? <Insignia tono="alerta">{agotados} marcados como no disponibles</Insignia> : null}
       />
 
       <div className="grid gap-4 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -41,27 +38,18 @@ export default async function Catalogo() {
                 <TarjetaCabecera
                   titulo={etiquetaTipo(tipo, true)}
                   descripcion={`${delTipo.length} items · ${delTipo.filter((i) => i.disponible).length} disponibles`}
+                  accion={
+                    <BotonDialogo
+                      etiqueta={`+ Agregar ${etiquetaTipo(tipo).toLowerCase()}`}
+                      titulo={`Nuevo ${etiquetaTipo(tipo).toLowerCase()}`}
+                      descripcion="Queda en el catálogo en cuanto guardes; el agente lo ofrece en la siguiente llamada."
+                      ancho="max-w-2xl"
+                    >
+                      <FormularioItem tipos={tipos} recursos={activos} tipoInicial={tipo} />
+                    </BotonDialogo>
+                  }
                 />
-                <details className="border-b border-linea">
-                  <summary className="cursor-pointer list-none px-4 py-2.5 text-[13px] font-medium text-acento hover:bg-panel-2">
-                    + Agregar {etiquetaTipo(tipo).toLowerCase()}
-                  </summary>
-                  <div className="border-t border-linea bg-panel-2 px-4 py-4">
-                    <FormularioItem tipos={tipos} recursos={activos} tipoInicial={tipo} />
-                  </div>
-                </details>
-                {delTipo.length === 0 ? (
-                  <Vacio
-                    titulo={`Sin ${etiquetaTipo(tipo, true).toLowerCase()}`}
-                    detalle="Mientras no haya nada aquí, el agente contesta que no tiene el dato y ofrece transferir."
-                  />
-                ) : (
-                  <div>
-                    {delTipo.map((item) => (
-                      <FilaItem key={item.id} item={item} tipos={tipos} recursos={activos} />
-                    ))}
-                  </div>
-                )}
+                <TablaCatalogo items={delTipo} tipos={tipos} recursos={activos} tipo={tipo} />
               </Tarjeta>
             );
           })}
@@ -77,19 +65,20 @@ export default async function Catalogo() {
                   <Entrada name="grupo" placeholder="postre" required />
                 </Campo>
               </div>
-              <BotonEnviar>Agregar grupo</BotonEnviar>
+              <BotonEnviar className="mb-[22px]">Agregar grupo</BotonEnviar>
             </Formulario>
             {propios.length > 0 ? (
               <div className="flex flex-wrap items-center gap-2 border-t border-linea px-4 py-3">
                 <span className="etiqueta">Tuyos</span>
                 {propios.map((g) => (
-                  <Formulario key={g} accion={quitarGrupoCatalogo} className="inline-flex">
+                  <Formulario key={g} accion={quitarGrupoCatalogo} className="inline-flex" silencioso>
                     <input type="hidden" name="grupo" value={g} />
                     <button
                       type="submit"
-                      className="border border-linea px-2 py-1 text-[12px] text-tinta-2 transition hover:border-critico hover:text-critico"
+                      className="flex items-center gap-1.5 border border-linea px-2 py-1 text-[12px] text-tinta-2 transition-colors duration-150 hover:border-critico hover:text-critico"
                       title="Quitar el grupo"
                     >
+                      <i aria-hidden="true" className="h-1 w-1 bg-current" />
                       {etiquetaTipo(g, true)} ×
                     </button>
                   </Formulario>
@@ -101,70 +90,11 @@ export default async function Catalogo() {
 
         <div className="space-y-4 xl:sticky xl:top-[76px] xl:self-start">
           <Tarjeta>
-            <TarjetaCabecera
-              titulo="Probar como cliente"
-              descripcion="Lo mismo que ejecuta el agente en la llamada: buscar_catalogo."
-            />
+            <TarjetaCabecera titulo="Probar como cliente" descripcion="Lo mismo que ejecuta el agente en la llamada: buscar_catalogo." />
             <ProbadorCatalogo tipos={tipos} />
           </Tarjeta>
         </div>
       </div>
     </>
-  );
-}
-
-function FilaItem({
-  item,
-  tipos,
-  recursos,
-}: {
-  item: CatalogoItem;
-  tipos: string[];
-  recursos: Recurso[];
-}) {
-  return (
-    <div className="grid grid-cols-[auto_1fr] items-start border-b border-linea last:border-0">
-      <Formulario accion={alternarDisponible} className="py-2.5 pl-4">
-        <input type="hidden" name="id" value={item.id} />
-        <button
-          title={item.disponible ? "Marcar como agotado" : "Volver a ofrecerlo"}
-          aria-label={item.disponible ? "Marcar como agotado" : "Volver a ofrecerlo"}
-          className={`flex h-4 w-7 items-center border transition ${
-            item.disponible ? "justify-end border-bueno bg-bueno/25" : "justify-start border-linea-fuerte bg-panel-2"
-          }`}
-        >
-          <span
-            className={`mx-px h-3 w-3 ${item.disponible ? "bg-bueno" : "bg-linea-fuerte"}`}
-          />
-        </button>
-      </Formulario>
-
-      <details className="group min-w-0">
-        <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-2.5 hover:bg-panel-2">
-          <span className={`min-w-0 flex-1 ${item.disponible ? "" : "opacity-45"}`}>
-            <span className="block truncate text-[13px] font-medium text-tinta">{item.nombre}</span>
-            {item.alias.length > 0 ? (
-              <span className="block truncate text-[11px] text-tinta-3">{item.alias.join(", ")}</span>
-            ) : null}
-          </span>
-          {item.existencias !== null && item.disponible ? (
-            <span className={`numeros font-mono text-[11px] ${item.existencias <= 3 ? "text-alerta" : "text-tinta-3"}`}>{item.existencias} en existencia</span>
-          ) : null}
-          {item.disponible ? null : <Insignia tono="alerta">Se acabó</Insignia>}
-          <span className="numeros text-[12px] text-tinta-2">{moneda(item.precio)}</span>
-          <span className="text-[11px] text-tinta-3 group-open:text-acento">
-            <span className="group-open:hidden">Editar</span>
-            <span className="hidden group-open:inline">Cerrar</span>
-          </span>
-        </summary>
-        <div className="border-t border-linea bg-panel-2 px-4 py-4">
-          <FormularioItem item={item} tipos={tipos} recursos={recursos} />
-          <Formulario accion={eliminarItemCatalogo} className="mt-3 border-t border-linea pt-3">
-            <input type="hidden" name="id" value={item.id} />
-            <BotonPeligro>Eliminar del catálogo</BotonPeligro>
-          </Formulario>
-        </div>
-      </details>
-    </div>
   );
 }

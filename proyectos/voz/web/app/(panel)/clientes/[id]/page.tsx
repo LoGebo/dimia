@@ -4,7 +4,7 @@ import { RenglonConversacion } from "@/components/renglon-conversacion";
 import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
-import { LineaTiempo } from "@/components/linea-tiempo";
+import { LineaTiempoCliente } from "@/components/kit/relacion-ficha";
 import { ListaReservas } from "@/components/lista-reservas";
 import { AreaTexto, Campo, Entrada, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { guardarCliente } from "@/lib/acciones";
@@ -28,9 +28,12 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
         descripcion={`Cliente desde ${fechaCorta(ficha.primer_contacto, config.zona_horaria)} · ${ficha.telefono ? telefono(ficha.telefono) : "sin teléfono"}`}
         giro={giro.nombre}
         acciones={
-          <Link href="/clientes" className="text-[12px] text-tinta-3 transition hover:text-acento">
-            Todos los clientes
-          </Link>
+          <>
+            {ficha.origen ? <span className="font-mono text-[10.5px] tracking-[0.14em] text-tinta-3 uppercase">Origen · {ficha.origen}</span> : null}
+            <Link href="/clientes" className="text-[12px] text-tinta-3 transition-colors duration-150 hover:text-acento">
+              Todos los clientes
+            </Link>
+          </>
         }
       />
 
@@ -50,7 +53,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           <div className="space-y-4">
             <Tarjeta>
               <TarjetaCabecera titulo="Qué ha pasado" descripcion="Cada cita, pedido, recado, mensaje y llamada, en orden." />
-              <LineaTiempo eventos={eventos} zona={config.zona_horaria} />
+              <LineaTiempoCliente eventos={eventos} zona={config.zona_horaria} />
             </Tarjeta>
 
             {agenda ? (
@@ -64,6 +67,15 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           <div className="space-y-4">
             <Tarjeta>
               <TarjetaCabecera titulo="Ficha" descripcion="Lo que el equipo sabe de esta persona." />
+              {ficha.etiquetas.length > 0 ? (
+                <p className="flex flex-wrap gap-1 px-4 pt-3">
+                  {ficha.etiquetas.map((e) => (
+                    <span key={e} className="border border-linea bg-panel-2 px-1.5 text-[11px] leading-5 text-tinta-2">
+                      {e}
+                    </span>
+                  ))}
+                </p>
+              ) : null}
               <Formulario accion={guardarCliente} className="space-y-3 px-4 py-4">
                 <input type="hidden" name="id" value={ficha.id} />
                 <Campo etiqueta="Nombre">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { OpcionTarjeta } from "@/components/catalogo";
 import { AreaTexto, Campo, Entrada } from "@/components/ui/primitivos";
 import type { Herramienta, PlantillaVertical } from "@/lib/tipos";
 
@@ -52,10 +53,7 @@ export function SelectorGiro({
         <legend className="mb-1.5 text-xs font-medium text-tinta-2">Giro</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {plantillas.map((p) => (
-            <label
-              key={p.clave}
-              className="cursor-pointer border border-linea bg-panel px-3 py-2.5 transition has-checked:border-acento has-checked:bg-acento-suave"
-            >
+            <OpcionTarjeta key={p.clave} nombre={p.nombre} detalle={queHace(p.herramientas)}>
               <input
                 type="radio"
                 name="vertical"
@@ -67,11 +65,9 @@ export function SelectorGiro({
                 }}
                 className="sr-only"
               />
-              <span className="block text-[13px] font-medium text-tinta">{p.nombre}</span>
-              <span className="mt-0.5 block text-[11px] text-tinta-3">{queHace(p.herramientas)}</span>
-            </label>
+            </OpcionTarjeta>
           ))}
-          <label className="cursor-pointer border border-dashed border-linea-fuerte bg-panel px-3 py-2.5 transition has-checked:border-solid has-checked:border-acento has-checked:bg-acento-suave">
+          <OpcionTarjeta nombre="Otro giro" detalle="Tú dices qué es y qué hace el agente" punteada>
             <input
               type="radio"
               name="vertical"
@@ -83,14 +79,12 @@ export function SelectorGiro({
               }}
               className="sr-only"
             />
-            <span className="block text-[13px] font-medium text-tinta">Otro giro</span>
-            <span className="mt-0.5 block text-[11px] text-tinta-3">Tú dices qué es y qué hace el agente</span>
-          </label>
+          </OpcionTarjeta>
         </div>
       </fieldset>
 
       {propio ? (
-        <div className="space-y-3 border border-linea bg-panel-2 px-4 py-4">
+        <div className="entra space-y-3 border border-linea bg-panel-2 px-4 py-4">
           <Campo etiqueta="Nombre del giro" ayuda="Como lo dirías en una frase: veterinaria, despacho contable, gimnasio.">
             <Entrada
               name="giro_nombre"
@@ -107,10 +101,7 @@ export function SelectorGiro({
             <legend className="mb-1.5 text-xs font-medium text-tinta-2">Qué hace el agente</legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {CAPACIDADES.map((c) => (
-                <label
-                  key={c.valor}
-                  className="cursor-pointer border border-linea bg-panel px-3 py-2.5 transition has-checked:border-acento has-checked:bg-acento-suave"
-                >
+                <OpcionTarjeta key={c.valor} nombre={c.nombre} detalle={c.detalle}>
                   <input
                     type="checkbox"
                     name="giro_herramientas"
@@ -125,9 +116,7 @@ export function SelectorGiro({
                     }}
                     className="sr-only"
                   />
-                  <span className="block text-[13px] font-medium text-tinta">{c.nombre}</span>
-                  <span className="mt-0.5 block text-[11px] text-tinta-3">{c.detalle}</span>
-                </label>
+                </OpcionTarjeta>
               ))}
             </div>
           </fieldset>

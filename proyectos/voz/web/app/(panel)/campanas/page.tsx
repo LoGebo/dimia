@@ -1,15 +1,59 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
-import { Boton, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { Formulario } from "@/components/formulario";
-import { cambiarEstadoCampana } from "@/lib/acciones";
+import { TarjetaInsight, type Insight } from "@/components/kit";
+import { FilaCampana, FilasCampana } from "@/components/kit/relacion-campanas";
+import { Tarjeta, Vacio } from "@/components/ui/primitivos";
 import { campanas, negocio } from "@/lib/consultas";
-import { fechaCorta } from "@/lib/formato";
 import { contexto } from "@/lib/sesion";
-import { NOMBRE_TIPO_CAMPANA, type Campana } from "@/lib/tipos";
+import type { Campana } from "@/lib/tipos";
 
-const TONO_ESTADO = { borrador: "neutro", activa: "bueno", pausada: "alerta", terminada: "neutro" } as const;
-const NOMBRE_ESTADO = { borrador: "Borrador", activa: "Activa", pausada: "Pausada", terminada: "Terminada" } as const;
+/** Lo que las campañas han dejado, en tres lecturas: citas recuperadas, respuesta y lo que falta. */
+function insightsDe(lista: Campana[]): Insight[] {
+  const cronologicas = [...lista].sort((a, b) => a.creado.localeCompare(b.creado));
+  const acumulado = (toma: (c: Campana) => number) => {
+    let suma = 0;
+    return [0, ...cronologicas.map((c) => (suma += toma(c)))];
+  };
+  const enviados = lista.reduce((s, c) => s + c.enviados, 0);
+  const contestados = lista.reduce((s, c) => s + c.contestados, 0);
+  const agendaron = lista.reduce((s, c) => s + c.agendaron, 0);
+  const pendientes = lista.filter((c) => c.estado === "activa").reduce((s, c) => s + c.pendientes, 0);
+  const sinRespuesta = lista.reduce((s, c) => s + c.sin_respuesta, 0);
+  const tasa = enviados > 0 ? Math.round((contestados / enviados) * 100) : 0;
+  const mejor = [...lista].sort((a, b) => b.agendaron - a.agendaron)[0];
+
+  return [
+    {
+      id: "agendaron",
+      titulo: "Citas recuperadas por campañas",
+      cifra: String(agendaron),
+      unidad: agendaron === 1 ? "cita" : "citas",
+      variacion: { texto: `${contestados} contestaron`, tono: contestados > 0 ? "bueno" : "neutro" },
+      serie: acumulado((c) => c.agendaron),
+      nota: mejor && mejor.agendaron > 0 ? `La que más trajo: ${mejor.nombre}.` : "Todavía ninguna trae citas; el agente sigue marcando.",
+      accion: { texto: "Ver clientes que faltaron", href: "/clientes?ver=faltan" },
+    },
+    {
+      id: "respuesta",
+      titulo: "De cada 100 personas contactadas, contestaron",
+      cifra: String(tasa),
+      unidad: "%",
+      variacion: { texto: `${enviados} contactadas`, tono: "neutro" },
+      serie: acumulado((c) => c.contestados),
+      nota: sinRespuesta > 0 ? `${sinRespuesta} sin respuesta; se reintentan al día siguiente.` : "Sin pendientes de respuesta.",
+    },
+    {
+      id: "pendientes",
+      titulo: "Personas por contactar en campañas activas",
+      cifra: String(pendientes),
+      unidad: pendientes === 1 ? "persona" : "personas",
+      variacion: { texto: `${lista.filter((c) => c.estado === "activa").length} activas`, tono: pendientes > 0 ? "alerta" : "neutro" },
+      serie: acumulado((c) => c.total),
+      nota: "El agente sale en la ventana de horario de cada campaña.",
+      accion: { texto: "Nueva campaña", href: "/campanas/nueva" },
+    },
+  ];
+}
 
 export default async function Campanas() {
   const { giro } = await contexto();
@@ -24,12 +68,12 @@ export default async function Campanas() {
         descripcion="El agente sale a buscar: a quien faltó, a quien no ha vuelto, a quien debe. Por WhatsApp o marcando."
         giro={giro.nombre}
         principal={
-          <Link href="/campanas/nueva" className="inline-flex h-8 items-center gap-1.5 border border-transparent bg-acento px-3 text-[13px] font-medium text-acento-tinta transition hover:brightness-110">
+          <Link href="/campanas/nueva" className="inline-flex h-8 items-center gap-1.5 border border-transparent bg-acento px-3 text-[13px] font-medium text-acento-tinta transition-[filter] duration-150 hover:brightness-110">
             <span aria-hidden="true" className="font-mono">+</span> Nueva campaña
           </Link>
         }
       />
-      <div className="space-y-4 px-5 py-5">
+      <div className="px-5 py-5">
         {lista.length === 0 ? (
           <Tarjeta>
             <Vacio
@@ -42,68 +86,26 @@ export default async function Campanas() {
               }
             />
           </Tarjeta>
-        ) : null}
-        {[
-          { titulo: "Activas", items: activas },
-          { titulo: "Las demás", items: otras },
-        ]
-          .filter((g) => g.items.length > 0)
-          .map((g) => (
-            <Tarjeta key={g.titulo}>
-              <TarjetaCabecera titulo={g.titulo} />
-              <ul className="divide-y divide-linea">
-                {g.items.map((c) => (
-                  <Renglon key={c.id} campana={c} zona={config.zona_horaria} />
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="space-y-4">
+              {[
+                { titulo: "Activas", items: activas },
+                { titulo: "Las demás", items: otras },
+              ]
+                .filter((g) => g.items.length > 0)
+                .map((g) => (
+                  <FilasCampana key={g.titulo} rotulo={g.titulo} conteo={g.items.length}>
+                    {g.items.map((c) => (
+                      <FilaCampana key={c.id} campana={c} zona={config.zona_horaria} />
+                    ))}
+                  </FilasCampana>
                 ))}
-              </ul>
-            </Tarjeta>
-          ))}
+            </div>
+            <TarjetaInsight rotulo="Resultados" insights={insightsDe(lista)} />
+          </div>
+        )}
       </div>
     </>
-  );
-}
-
-function Renglon({ campana: c, zona }: { campana: Campana; zona: string }) {
-  const avance = c.total > 0 ? Math.round(((c.total - c.pendientes) / c.total) * 100) : 0;
-  return (
-    <li className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
-      <div className="min-w-[220px] flex-1">
-        <Link href={`/campanas/${c.id}`} className="text-[13px] font-medium text-tinta transition hover:text-acento">
-          {c.nombre}
-        </Link>
-        <p className="text-[11.5px] text-tinta-3">
-          {NOMBRE_TIPO_CAMPANA[c.tipo].nombre} · {c.canal === "llamada" ? "llamada" : "WhatsApp"} · {fechaCorta(c.creado, zona)}
-        </p>
-      </div>
-      <div className="flex min-w-[260px] flex-1 items-center gap-3">
-        <div className="h-[3px] flex-1 bg-linea">
-          <div className="h-full bg-acento" style={{ width: `${avance}%` }} />
-        </div>
-        <span className="numeros font-mono text-[11px] text-tinta-3">
-          {c.total - c.pendientes}/{c.total}
-        </span>
-      </div>
-      <div className="numeros flex gap-3 font-mono text-[11px]">
-        <span className="text-tinta-2" title="Contestaron">{c.contestados} contestaron</span>
-        <span className="text-bueno" title="Agendaron">{c.agendaron} agendaron</span>
-      </div>
-      <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
-      <div className="flex gap-1">
-        {c.estado === "borrador" || c.estado === "pausada" ? (
-          <Formulario accion={cambiarEstadoCampana}>
-            <input type="hidden" name="id" value={c.id} />
-            <input type="hidden" name="estado" value="activa" />
-            <Boton variante="solido" className="!h-7">Activar</Boton>
-          </Formulario>
-        ) : null}
-        {c.estado === "activa" ? (
-          <Formulario accion={cambiarEstadoCampana}>
-            <input type="hidden" name="id" value={c.id} />
-            <input type="hidden" name="estado" value="pausada" />
-            <Boton variante="fantasma" className="!h-7">Pausar</Boton>
-          </Formulario>
-        ) : null}
-      </div>
-    </li>
   );
 }

@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
-import { Boton, Insignia, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { Formulario } from "@/components/formulario";
-import { alternarRecado } from "@/lib/acciones";
+import { TablaRecados } from "@/components/kit/relacion-recados";
+import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { negocio, recados } from "@/lib/consultas";
-import { fechaCorta, hora, telefono } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
-import type { Recado } from "@/lib/tipos";
 
 export default async function Recados({
   searchParams,
@@ -26,7 +23,7 @@ export default async function Recados({
         descripcion="Quién llamó, qué necesita y a qué número regresarle la llamada."
         giro={giro.nombre}
         acciones={
-          <div className="flex overflow-hidden border border-linea bg-panel">
+          <div className="flex border border-linea bg-panel">
             {[
               { valor: "pendientes", nombre: "Pendientes" },
               { valor: "todos", nombre: "Todos" },
@@ -34,10 +31,11 @@ export default async function Recados({
               <Link
                 key={v.valor}
                 href={`/recados?ver=${v.valor}`}
-                className={`px-2.5 py-1 text-xs transition ${
+                aria-current={(v.valor === "todos") === !soloPendientes ? "page" : undefined}
+                className={`px-2.5 py-1 text-xs transition-colors duration-150 ${
                   (v.valor === "todos") === !soloPendientes
                     ? "bg-acento-suave font-medium text-acento"
-                    : "text-tinta-2 hover:bg-panel-2"
+                    : "text-tinta-2 hover:bg-panel-2 hover:text-tinta"
                 }`}
               >
                 {v.nombre}
@@ -50,56 +48,12 @@ export default async function Recados({
       <div className="px-5 py-5">
         <Tarjeta>
           <TarjetaCabecera
-            titulo={`${pendientes} sin atender`}
+            titulo={pendientes === 1 ? "1 sin atender" : `${pendientes} sin atender`}
             descripcion="Cada uno lo tomó el agente cuando no pudo resolver la llamada."
           />
-          {lista.length === 0 ? (
-            <Vacio
-              titulo={soloPendientes ? "Nada pendiente" : "Sin recados"}
-              detalle="Cuando el agente no pueda resolver algo, toma nombre, teléfono y el asunto, y aquí lo vas a ver."
-            />
-          ) : (
-            <ul className="divide-y divide-linea">
-              {lista.map((r) => (
-                <FilaRecado key={r.id} recado={r} zona={config.zona_horaria} />
-              ))}
-            </ul>
-          )}
+          <TablaRecados lista={lista} zona={config.zona_horaria} soloPendientes={soloPendientes} />
         </Tarjeta>
       </div>
     </>
-  );
-}
-
-function FilaRecado({ recado, zona }: { recado: Recado; zona: string }) {
-  const extras = Object.entries(recado.campos).filter(([, valor]) => valor !== null && valor !== "");
-  return (
-    <li className={`flex flex-wrap items-start gap-x-4 gap-y-2 px-4 py-3 ${recado.atendido ? "opacity-55" : ""}`}>
-      <div className="numeros w-[92px] shrink-0">
-        <span className="block text-[11px] text-tinta-3">{fechaCorta(recado.creado, zona)}</span>
-        <span className="text-[13px] font-medium text-tinta">{hora(recado.creado, zona)}</span>
-      </div>
-      <div className="min-w-[160px] flex-1">
-        <p className="truncate text-[13px] font-medium text-tinta">{recado.nombre ?? "Sin nombre"}</p>
-        <p className="numeros truncate text-[13px] text-tinta-2">{telefono(recado.telefono)}</p>
-      </div>
-      <div className="min-w-[220px] flex-[2]">
-        <p className="text-[13px] text-tinta">{recado.asunto}</p>
-        {recado.detalle ? <p className="mt-0.5 text-[12px] text-tinta-2">{recado.detalle}</p> : null}
-        {extras.length > 0 ? (
-          <p className="mt-1 flex flex-wrap gap-1">
-            {extras.map(([clave, valor]) => (
-              <Insignia key={clave}>{`${clave}: ${String(valor)}`}</Insignia>
-            ))}
-          </p>
-        ) : null}
-      </div>
-      <Formulario accion={alternarRecado}>
-        <input type="hidden" name="id" value={recado.id} />
-        <Boton variante={recado.atendido ? "fantasma" : "solido"}>
-          {recado.atendido ? "Reabrir" : "Marcar atendido"}
-        </Boton>
-      </Formulario>
-    </li>
   );
 }

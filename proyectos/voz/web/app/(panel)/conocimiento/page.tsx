@@ -1,11 +1,9 @@
-import { BotonPeligro } from "@/components/boton-peligro";
 import { Encabezado } from "@/components/encabezado";
 import { FormularioFaq } from "@/components/faq";
-import { Formulario } from "@/components/formulario";
-import { Boton, Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { eliminarFaq } from "@/lib/acciones";
+import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { faq } from "@/lib/consultas";
 import { contexto } from "@/lib/sesion";
+import { TablaRespuestas } from "./tabla";
 
 const SUGERENCIAS = [
   "¿Dónde están?",
@@ -41,7 +39,8 @@ export default async function Conocimiento() {
               <TarjetaCabecera titulo="Te faltan las más pedidas" descripcion="Casi toda llamada trae una de estas." />
               <ul className="divide-y divide-linea">
                 {faltantes.map((s) => (
-                  <li key={s} className="px-4 py-2 text-[13px] text-tinta-2">
+                  <li key={s} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-tinta-2">
+                    <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-alerta" />
                     {s}
                   </li>
                 ))}
@@ -51,38 +50,11 @@ export default async function Conocimiento() {
         </div>
 
         <Tarjeta>
-          <TarjetaCabecera titulo={`${entradas.length} respuestas`} descripcion="Ordenadas por prioridad." />
-          {entradas.length === 0 ? (
-            <Vacio
-              titulo="Todavía no hay respuestas"
-              detalle="Sin esto el agente transfiere cualquier pregunta que no sea agendar. Con cinco respuestas cubres casi todo."
-            />
-          ) : (
-            <div>
-              {entradas.map((e) => (
-                <details key={e.id} className="group border-b border-linea last:border-0">
-                  <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-2.5 hover:bg-panel-2">
-                    <span className="numeros mt-0.5 w-5 shrink-0 text-[11px] text-tinta-3">{e.prioridad}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-medium text-tinta">{e.pregunta}</span>
-                      <span className="block truncate text-[12px] text-tinta-3">{e.respuesta}</span>
-                    </span>
-                    <span className="text-[11px] text-tinta-3 group-open:text-acento">
-                      <span className="group-open:hidden">Editar</span>
-                      <span className="hidden group-open:inline">Cerrar</span>
-                    </span>
-                  </summary>
-                  <div className="border-t border-linea bg-panel-2 px-4 py-4">
-                    <FormularioFaq entrada={e} />
-                    <Formulario accion={eliminarFaq} className="mt-3 border-t border-linea pt-3">
-                      <input type="hidden" name="id" value={e.id} />
-                      <BotonPeligro>Eliminar respuesta</BotonPeligro>
-                    </Formulario>
-                  </div>
-                </details>
-              ))}
-            </div>
-          )}
+          <TarjetaCabecera
+            titulo={`${entradas.length} ${entradas.length === 1 ? "respuesta" : "respuestas"}`}
+            descripcion="Ordenadas por prioridad. Toca una para editarla."
+          />
+          <TablaRespuestas entradas={entradas} />
         </Tarjeta>
       </div>
     </>
