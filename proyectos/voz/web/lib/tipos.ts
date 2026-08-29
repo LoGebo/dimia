@@ -556,6 +556,7 @@ export const ETIQUETAS_RECURSO: Record<string, EtiquetasRecurso> = {
   taller: { recurso: "Bahía o técnico", plural: "Bahías", ejemplos: "Bahía 1, Rampa 2" },
   inmobiliaria: { recurso: "Asesor", plural: "Asesores", ejemplos: "Asesor Norte, Asesor Centro" },
   recepcion: { recurso: "Línea o agente", plural: "Líneas", ejemplos: "Línea 1, Recepción" },
+  consultora: { recurso: "Asesor", plural: "Asesores", ejemplos: "Gabriel, Roger" },
 };
 
 export function etiquetasRecurso(vertical: Vertical): EtiquetasRecurso {

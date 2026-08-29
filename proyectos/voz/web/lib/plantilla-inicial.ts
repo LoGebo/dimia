@@ -30,6 +30,25 @@ const GENERICA: Plantilla = {
 };
 
 const PLANTILLAS: Record<string, Plantilla> = {
+  consultora: {
+    recursos: [
+      { nombre: "Asesor 1", capacidad: 1 },
+      { nombre: "Asesor 2", capacidad: 1 },
+    ],
+    servicios: [
+      { nombre: "Demostración", duracion: 30, precio: null, alias: ["demo", "presentación", "conocer el servicio"] },
+      { nombre: "Sesión de arranque", duracion: 60, precio: null, alias: ["onboarding", "configuración", "arranque"] },
+      { nombre: "Soporte", duracion: 30, precio: null, alias: ["ayuda", "duda", "revisión"] },
+    ],
+    faq: [
+      { pregunta: "¿Qué hacen exactamente?", respuesta: "[ Qué vende la consultora, en dos frases ]" },
+      { pregunta: "¿Cuánto cuesta?", respuesta: "[ Planes y desde cuánto; si depende, decir que la demo lo aclara ]" },
+      { pregunta: "¿Cómo empiezo?", respuesta: "[ Pasos: demo, alta, arranque ]" },
+      { pregunta: "¿Cómo pago?", respuesta: "[ Transferencia, tarjeta, enlace de pago ]" },
+      { pregunta: "¿Dónde están?", respuesta: "[ Ciudad; si es remoto, decirlo ]" },
+    ],
+    horario: [{ dias: [1, 2, 3, 4, 5], abre: "09:00", cierra: "18:00" }],
+  },
   clinica: {
     recursos: [
       { nombre: "Consultorio 1", capacidad: 1 },
