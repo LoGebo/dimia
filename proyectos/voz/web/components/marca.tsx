@@ -1,5 +1,3 @@
-import { SoloAbierto } from "@/components/kit/lateral";
-
 /** El ícono de Dimia: las dos i recortadas del logotipo. */
 export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
   return (
@@ -12,14 +10,12 @@ export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
   );
 }
 
-/** Cabecera de la barra lateral: el ícono y el nombre del producto. Plegada, solo el ícono. */
+/** Cabecera del menú: el ícono y el nombre del producto. */
 export function MarcaDimia() {
   return (
-    <div className="flex h-[52px] items-center gap-2.5 border-b border-linea px-4 text-tinta in-[[data-plegado]]:justify-center in-[[data-plegado]]:px-0">
+    <div className="flex h-[52px] items-center gap-2.5 border-b border-linea px-4 text-tinta">
       <IconoDimia tamano={20} />
-      <SoloAbierto>
-        <p className="text-[14px] font-semibold tracking-tight">Dimia Línea</p>
-      </SoloAbierto>
+      <p className="text-[14px] font-semibold tracking-tight">Dimia Línea</p>
     </div>
   );
 }

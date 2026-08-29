@@ -206,11 +206,11 @@ export default async function Hoy() {
           <Kpi
             etiqueta="Llamadas en 7 días"
             valor={llamadas7.total}
-            unidad={contencion === null ? undefined : `${porcentaje(contencion)} resueltas solas`}
+            unidad={contencion === null ? undefined : `${porcentaje(contencion)} solas`}
             variacion={
               variacionLlamadas === null
                 ? undefined
-                : { texto: `${variacionLlamadas >= 0 ? "+" : ""}${Math.round(variacionLlamadas * 100)}% vs. semana previa`, tono: variacionLlamadas >= 0 ? "bueno" : "neutro" }
+                : { texto: `${variacionLlamadas >= 0 ? "+" : ""}${Math.round(variacionLlamadas * 100)}% vs. la anterior`, tono: variacionLlamadas >= 0 ? "bueno" : "neutro" }
             }
           >
             <Chispa serie={ultimos7.map((d) => d.total)} alto={28} className="h-7" />
