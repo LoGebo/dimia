@@ -24,3 +24,7 @@ node_modules/
 .venv-pruebas/
 **/supabase/.temp/
 **/supabase/.branches/
+
+# Capturas de Playwright en la raíz
+/.playwright-mcp/
+/*.png
