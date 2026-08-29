@@ -63,12 +63,12 @@ export function FilaTarea({
         <span className={`min-w-0 flex-1 truncate text-[13px] ${estado === "pendiente" ? "text-tinta-2" : "font-medium text-tinta"}`}>
           {titulo}
         </span>
-        {dato ? <span className="numeros font-mono text-[12px] text-tinta-2">{dato}</span> : null}
+        {dato ? <span className="numeros text-[12px] text-tinta-2">{dato}</span> : null}
         <span className={`w-16 text-right text-[11.5px] ${r.clase}`}>{r.texto}</span>
         {desplegable ? (
           <span
             aria-hidden="true"
-            className={`font-mono text-[11px] text-tinta-3 transition-transform duration-150 ${abierta ? "rotate-90" : ""}`}
+            className={`text-[11px] text-tinta-3 transition-transform duration-150 ${abierta ? "rotate-90" : ""}`}
           >
             ›
           </span>
@@ -86,7 +86,7 @@ export function FilaTarea({
               {pasos!.map((p) => (
                 <li key={p.texto} className="flex items-center justify-between gap-3 py-1 text-[12px] text-tinta-2">
                   <span>{p.texto}</span>
-                  {p.dato ? <span className="numeros font-mono text-[11.5px] text-tinta-3">{p.dato}</span> : null}
+                  {p.dato ? <span className="numeros text-[11.5px] text-tinta-3">{p.dato}</span> : null}
                 </li>
               ))}
             </ul>

@@ -68,7 +68,7 @@ export function TarjetaInsight({ insights, rotulo = "Insights" }: { insights: In
       <header className="flex items-center justify-between border-b border-linea px-4 py-2.5">
         <span className="flex items-baseline gap-2">
           <span className="text-[13px] font-semibold text-tinta">{rotulo}</span>
-          <span className="numeros font-mono text-[11px] text-tinta-3">
+          <span className="numeros text-[11px] text-tinta-3">
             {i + 1} / {total}
           </span>
         </span>
@@ -98,12 +98,12 @@ export function TarjetaInsight({ insights, rotulo = "Insights" }: { insights: In
       <div key={actual.id} className="entra flex flex-1 flex-col px-4 pt-3.5 pb-4">
         <p className="text-[12.5px] leading-snug text-tinta-2">{actual.titulo}</p>
         <p className="mt-2 flex items-baseline gap-2">
-          <span className="numeros font-mono text-[26px] leading-none font-medium tracking-[-0.02em] text-tinta">
+          <span className="numeros text-[26px] leading-none font-medium tracking-[-0.02em] text-tinta">
             {actual.cifra}
           </span>
           {actual.unidad ? <span className="text-[12px] text-tinta-3">{actual.unidad}</span> : null}
           {actual.variacion ? (
-            <span className={`numeros ml-auto font-mono text-[12px] ${TONO[actual.variacion.tono]}`}>
+            <span className={`numeros ml-auto text-[12px] ${TONO[actual.variacion.tono]}`}>
               {actual.variacion.texto}
             </span>
           ) : null}

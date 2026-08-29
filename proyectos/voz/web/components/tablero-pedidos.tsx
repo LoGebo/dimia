@@ -88,10 +88,10 @@ function TarjetaPedido({
     >
       <header className="flex items-start justify-between gap-3 border-b border-linea px-4 py-3">
         <div className="min-w-0">
-          <p className="numeros font-mono text-[30px] leading-none font-medium tracking-[0.12em] text-tinta">
+          <p className="numeros text-[30px] leading-none font-medium tracking-[0.12em] text-tinta">
             {pedido.codigo}
           </p>
-          <p className="numeros mt-2 font-mono text-[12px] text-tinta-3">
+          <p className="numeros mt-2 text-[12px] text-tinta-3">
             {hora(pedido.creado, zona)} · hace {minutos < 60 ? `${minutos} min` : minutos < 1440 ? `${Math.round(minutos / 60)} h` : `${Math.round(minutos / 1440)} d`}
           </p>
         </div>
@@ -107,7 +107,7 @@ function TarjetaPedido({
         <p className="truncate text-[17px] font-semibold text-tinta">
           {pedido.cliente_nombre ?? "Sin nombre todavía"}
         </p>
-        <p className="numeros font-mono text-[13px] text-tinta-2">
+        <p className="numeros text-[13px] text-tinta-2">
           {telefono(pedido.telefono)}
         </p>
         <p className="mt-1.5 flex items-center gap-2 text-[15px] font-medium text-tinta">
@@ -128,7 +128,7 @@ function TarjetaPedido({
 
       <div className="flex items-center justify-between border-b border-linea px-4 py-1.5">
         <span className="text-[12px] text-tinta-2">Lo que pidió</span>
-        <span className="numeros font-mono text-[11px] text-tinta-3">
+        <span className="numeros text-[11px] text-tinta-3">
           {cosas} {cosas === 1 ? "cosa" : "cosas"}
         </span>
       </div>
@@ -138,7 +138,7 @@ function TarjetaPedido({
             key={`${item.nombre}-${i}`}
             className="flex items-baseline gap-3 px-4 py-2"
           >
-            <span className="numeros w-9 shrink-0 font-mono text-[22px] leading-none font-medium text-tinta">
+            <span className="numeros w-9 shrink-0 text-[22px] leading-none font-medium text-tinta">
               {item.cantidad}×
             </span>
             <span className="min-w-0 flex-1">
@@ -151,7 +151,7 @@ function TarjetaPedido({
                 </span>
               ) : null}
             </span>
-            <span className="numeros shrink-0 font-mono text-[14px] text-tinta-2">
+            <span className="numeros shrink-0 text-[14px] text-tinta-2">
               {moneda(item.subtotal)}
             </span>
           </li>
@@ -177,7 +177,7 @@ function TarjetaPedido({
           <span className="text-[12.5px] text-tinta-2">Total</span>
         )}
         <span
-          className={`numeros font-mono text-[26px] leading-none font-medium tracking-[-0.02em] ${cobrado ? "text-bueno" : "text-tinta"}`}
+          className={`numeros text-[26px] leading-none font-medium tracking-[-0.02em] ${cobrado ? "text-bueno" : "text-tinta"}`}
         >
           {moneda(cobrado ?? pedido.total)}
         </span>

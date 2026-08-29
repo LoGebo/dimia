@@ -36,9 +36,9 @@ export function ChipHerramienta({
       <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${CUADRO[estado]}`} />
       <span className="sr-only">{ROTULO[estado]}:</span>
       <span className="truncate">{children}</span>
-      {dato ? <span className="numeros font-mono text-[11.5px] text-tinta">{dato}</span> : null}
+      {dato ? <span className="numeros text-[11.5px] text-tinta">{dato}</span> : null}
       {duracion !== undefined ? (
-        <span className="numeros font-mono text-[10.5px] text-tinta-3">
+        <span className="numeros text-[10.5px] text-tinta-3">
           {duracion >= 1000 ? `${(duracion / 1000).toFixed(1)} s` : `${duracion} ms`}
         </span>
       ) : null}
@@ -51,7 +51,7 @@ export function ChipsHerramienta({ children, total }: { children: ReactNode; tot
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {total !== undefined ? (
-        <span className="numeros mr-1 font-mono text-[11px] text-tinta-3">
+        <span className="numeros mr-1 text-[11px] text-tinta-3">
           {total} {total === 1 ? "llamada" : "llamadas"}
         </span>
       ) : null}

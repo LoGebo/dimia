@@ -53,7 +53,7 @@ export default async function Agente() {
               titulo="Listo para contestar"
               descripcion={progreso.completo ? "Todo en su lugar." : `Faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`}
               accion={
-                <span className="numeros font-mono text-[13px] text-tinta">
+                <span className="numeros text-[13px] text-tinta">
                   {progreso.cumplidos}
                   <span className="text-tinta-3">/{progreso.total}</span>
                 </span>
@@ -179,7 +179,7 @@ export default async function Agente() {
                 {listaLineas.map((l) => (
                   <li key={l.id} className="flex h-9 items-center gap-3 px-4 transition-colors duration-150 hover:bg-panel-2">
                     <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${l.activo ? "bg-bueno" : "bg-tinta-3"}`} />
-                    <span className="numeros font-mono text-[12px] text-tinta">{l.telefono}</span>
+                    <span className="numeros text-[12px] text-tinta">{l.telefono}</span>
                     <span className="min-w-0 flex-1 truncate text-[12px] text-tinta-2">{l.etiqueta}</span>
                     <Formulario accion={eliminarLinea} silencioso>
                       <input type="hidden" name="id" value={l.id} />
@@ -233,7 +233,7 @@ export default async function Agente() {
                 placeholder={saludoDelGiro(plantilla, config.vertical).replaceAll("{nombre}", config.nombre)}
               />
               <p className="text-[12px] text-tinta-3">
-                Puedes escribir <code className="font-mono">{"{nombre}"}</code> y se sustituye por el nombre del negocio.
+                Puedes escribir <code className="">{"{nombre}"}</code> y se sustituye por el nombre del negocio.
               </p>
               <BotonEnviar>Guardar saludo</BotonEnviar>
             </Formulario>
@@ -259,7 +259,7 @@ export default async function Agente() {
                 name="prompt_base"
                 defaultValue={propio || fabrica}
                 rows={22}
-                className="font-mono text-[11.5px] leading-[1.6]"
+                className="text-[11.5px] leading-[1.6]"
                 spellCheck={false}
               />
               <p className="text-[12px] text-tinta-3">
@@ -276,7 +276,7 @@ export default async function Agente() {
               descripcion="Tus instrucciones más los bloques que se arman con tus datos."
               accion={<Copiar texto={prompt} />}
             />
-            <pre className="max-h-[420px] overflow-auto px-4 py-4 font-mono text-[11.5px] leading-[1.6] whitespace-pre-wrap text-tinta-2">
+            <pre className="max-h-[420px] overflow-auto px-4 py-4 text-[11.5px] leading-[1.6] whitespace-pre-wrap text-tinta-2">
               {prompt}
             </pre>
           </Tarjeta>

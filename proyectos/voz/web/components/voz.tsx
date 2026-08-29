@@ -189,7 +189,7 @@ export function ConfiguracionVoz({
       {invalida ? (
         <p className="border border-alerta/30 bg-alerta/10 px-2.5 py-1.5 text-[11px] text-alerta">
           Ese ID no tiene el formato de {formato.formato} que espera el proveedor. Ejemplo:{" "}
-          <span className="font-mono">{formato.ejemplo}</span>.
+          <span className="">{formato.ejemplo}</span>.
         </p>
       ) : null}
 

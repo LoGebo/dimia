@@ -143,7 +143,7 @@ export function PaletaComandos({
             placeholder={marcador}
             className="min-w-0 flex-1 bg-transparent text-[14px] text-tinta outline-none placeholder:text-tinta-3"
           />
-          <kbd className="border border-linea px-1.5 font-mono text-[10px] leading-4 text-tinta-3">Esc</kbd>
+          <kbd className="border border-linea px-1.5 text-[10px] leading-4 text-tinta-3">Esc</kbd>
         </div>
 
         <div ref={lista} id={idLista} role="listbox" className="max-h-[52vh] overflow-y-auto py-1">
@@ -178,7 +178,7 @@ export function PaletaComandos({
                         {c.detalle ? <span className="ml-2 text-[12px] text-tinta-3">{c.detalle}</span> : null}
                       </span>
                       {c.atajo ? (
-                        <kbd className="numeros font-mono text-[10.5px] text-tinta-3">{c.atajo}</kbd>
+                        <kbd className="numeros text-[10.5px] text-tinta-3">{c.atajo}</kbd>
                       ) : null}
                     </div>
                   );
@@ -188,7 +188,7 @@ export function PaletaComandos({
           )}
         </div>
 
-        <div className="flex items-center gap-4 border-t border-linea px-4 py-2 font-mono text-[10.5px] text-tinta-3">
+        <div className="flex items-center gap-4 border-t border-linea px-4 py-2 text-[10.5px] text-tinta-3">
           <span>
             <kbd>↑↓</kbd> moverse
           </span>

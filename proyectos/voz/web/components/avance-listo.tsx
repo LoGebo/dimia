@@ -19,7 +19,7 @@ export function AvanceListo({ avance }: { avance: Avance }) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center gap-2.5">
           <span className="etiqueta">Listo para contestar</span>
-          <span className="font-mono text-[13px] text-tinta numeros">
+          <span className="text-[13px] text-tinta numeros">
             {avance.cumplidos}/{avance.total}
           </span>
         </div>

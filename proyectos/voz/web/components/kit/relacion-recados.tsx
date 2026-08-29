@@ -58,7 +58,7 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       ancho: "120px",
       valor: (r) => r.creado,
       render: (r) => (
-        <span className="numeros flex flex-col py-2 font-mono leading-tight">
+        <span className="numeros flex flex-col py-2 leading-tight">
           <span className="text-[12.5px] text-tinta">{hora(r.creado, zona)}</span>
           <span className="text-[10.5px] text-tinta-3">{fechaCorta(r.creado, zona)}</span>
         </span>
@@ -72,7 +72,7 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       render: (r) => (
         <span className="flex flex-col py-2 leading-tight">
           <span className={`font-medium ${r.atendido ? "text-tinta-2" : "text-tinta"}`}>{r.nombre ?? "Sin nombre"}</span>
-          <span className="numeros font-mono text-[11.5px] text-tinta-3">{telefono(r.telefono)}</span>
+          <span className="numeros text-[11.5px] text-tinta-3">{telefono(r.telefono)}</span>
         </span>
       ),
     },

@@ -40,7 +40,7 @@ export function ItemLateral({
       </span>
       {conteo > 0 ? (
         <span
-          className={`numeros min-w-5 px-1.5 text-center font-mono text-[11px] leading-5 ${
+          className={`numeros min-w-5 px-1.5 text-center text-[11px] leading-5 ${
             activo ? "bg-acento text-acento-tinta" : "bg-acento-suave text-acento"
           }`}
         >

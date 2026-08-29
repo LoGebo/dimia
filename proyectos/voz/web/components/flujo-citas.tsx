@@ -155,19 +155,19 @@ function ResumenAtendidas({
       <dl className="grid grid-cols-3 gap-3">
         <div>
           <dt className="text-[11.5px] text-tinta-3">Atendidas</dt>
-          <dd className="numeros mt-0.5 font-mono text-[18px] leading-none text-tinta">
+          <dd className="numeros mt-0.5 text-[18px] leading-none text-tinta">
             {lista.length}
           </dd>
         </div>
         <div>
           <dt className="text-[11.5px] text-tinta-3">Personas</dt>
-          <dd className="numeros mt-0.5 font-mono text-[18px] leading-none text-tinta">
+          <dd className="numeros mt-0.5 text-[18px] leading-none text-tinta">
             {personas}
           </dd>
         </div>
         <div>
           <dt className="text-[11.5px] text-tinta-3">Cobrado</dt>
-          <dd className="numeros mt-0.5 font-mono text-[18px] leading-none text-tinta">
+          <dd className="numeros mt-0.5 text-[18px] leading-none text-tinta">
             {conPrecio > 0 ? moneda(ingreso) : "—"}
           </dd>
         </div>
@@ -184,7 +184,7 @@ function ResumenAtendidas({
           style={{ width: `${avance}%` }}
         />
       </div>
-      <p className="numeros mt-1.5 font-mono text-[11px] text-tinta-3">
+      <p className="numeros mt-1.5 text-[11px] text-tinta-3">
         {avance}% de las citas del día
       </p>
     </div>
@@ -287,7 +287,7 @@ function Tarjeta({
               {paso === "cancelada" ? "Cancelada" : "No llegó"}
             </Estampa>
           ) : (
-            <span className="numeros font-mono text-[11px] text-tinta-3">
+            <span className="numeros text-[11px] text-tinta-3">
               {r.codigo}
             </span>
           )}
@@ -296,7 +296,7 @@ function Tarjeta({
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-tinta-3">
           <span className="truncate">{r.recurso}</span>
           <span aria-hidden="true">·</span>
-          <span className="numeros font-mono">{hora(r.inicio, zona)}</span>
+          <span className="numeros ">{hora(r.inicio, zona)}</span>
           <span className="ml-auto">
             <Estampa
               tono={tiempo.tono}
@@ -370,7 +370,7 @@ function Tarjeta({
                 compacto
               />
             )}
-            <span className="numeros ml-auto px-2 py-1 font-mono text-[11px] text-tinta-3">
+            <span className="numeros ml-auto px-2 py-1 text-[11px] text-tinta-3">
               Entró {r.llegada ? hora(r.llegada, zona) : "—"}
             </span>
           </>

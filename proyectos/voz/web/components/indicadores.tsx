@@ -22,7 +22,7 @@ export function TiraIndicadores({ children }: { children: ReactNode }) {
   return (
     <section
       aria-label="Cifras del día"
-      className="grid divide-y divide-linea border border-linea sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]"
+      className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4"
     >
       {children}
     </section>
@@ -51,7 +51,7 @@ export function Cifra({
   glifo?: ReactNode;
 }) {
   const cifra =
-    "numeros font-mono text-[30px] leading-none font-medium tracking-[-0.02em] text-tinta";
+    "numeros text-[30px] leading-none font-medium tracking-[-0.02em] text-tinta";
   void glifo;
   return (
     <div className="min-w-0 bg-panel px-5 py-4">
@@ -192,7 +192,7 @@ export function Chip({
       {children}
       {conteo !== undefined ? (
         <span
-          className={`numeros px-1 font-mono text-[10px] leading-4 ${
+          className={`numeros px-1 text-[10px] leading-4 ${
             activo ? "bg-paper/15 text-paper" : "bg-panel-2 text-tinta-3"
           }`}
         >

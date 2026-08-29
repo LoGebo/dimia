@@ -130,7 +130,7 @@ export function GraficaLineas({
       </div>
 
       <div className="mt-3 flex gap-2">
-        <div className="numeros flex w-9 flex-none flex-col justify-between text-right font-mono text-[10.5px] text-tinta-3" style={{ height: H }}>
+        <div className="numeros flex w-9 flex-none flex-col justify-between text-right text-[10.5px] text-tinta-3" style={{ height: H }}>
           {[...guias].reverse().map((g) => (
             <span key={g} className="leading-none">
               {formato(g)}
@@ -191,7 +191,7 @@ export function GraficaLineas({
                   <li key={s.nombre} className="flex items-center gap-2 text-[12px]">
                     <span aria-hidden="true" className="h-1.5 w-1.5 flex-none" style={{ background: s.color }} />
                     <span className="flex-1 text-tinta-2">{s.nombre}</span>
-                    <span className="numeros font-mono text-tinta">{formato(s.valores[activo] ?? 0)}</span>
+                    <span className="numeros text-tinta">{formato(s.valores[activo] ?? 0)}</span>
                   </li>
                 ))}
               </ul>
@@ -199,7 +199,7 @@ export function GraficaLineas({
           ) : null}
         </div>
       </div>
-      <div className="numeros mt-1.5 ml-11 flex justify-between font-mono text-[10.5px] text-tinta-3">
+      <div className="numeros mt-1.5 ml-11 flex justify-between text-[10.5px] text-tinta-3">
         {etiquetas.map((e, i) => (
           <span key={`${e}-${i}`} className={i === 0 || i === n - 1 || n <= 8 || i % Math.ceil(n / 8) === 0 ? "" : "invisible"}>
             {e}
@@ -321,12 +321,12 @@ export function Kpi({
 }) {
   const TONO = { bueno: "text-bueno", alerta: "text-alerta", critico: "text-critico", neutro: "text-tinta-3" } as const;
   return (
-    <div className={`flex min-w-0 flex-col px-5 py-4 ${className}`}>
-      <p className="text-[12px] text-tinta-3">{etiqueta}</p>
+    <div className={`flex min-w-0 flex-col rounded-xl border border-linea bg-panel px-4 py-4 ${className}`}>
+      <p className="text-[13px] font-semibold text-tinta-2">{etiqueta}</p>
       <p className="mt-1.5 flex items-baseline gap-2">
-        <CifraAnimada valor={valor} formato={FORMATOS[formato]} className="text-[26px] leading-none font-medium tracking-[-0.02em] text-tinta" />
+        <CifraAnimada valor={valor} formato={FORMATOS[formato]} className="text-[26px] leading-none font-bold tracking-[-0.01em] text-tinta" />
         {unidad ? <span className="text-[12px] text-tinta-3">{unidad}</span> : null}
-        {variacion ? <span className={`numeros ml-auto font-mono text-[11.5px] ${TONO[variacion.tono]}`}>{variacion.texto}</span> : null}
+        {variacion ? <span className={`numeros ml-auto text-[12px] font-semibold ${TONO[variacion.tono]}`}>{variacion.texto}</span> : null}
       </p>
       {children ? <div className="mt-3">{children}</div> : null}
     </div>
@@ -336,7 +336,7 @@ export function Kpi({
 /** Fila de cifras separadas por reglas verticales; en móvil se apilan con regla horizontal. */
 export function FilaKpis({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`grid divide-y divide-linea sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] ${className}`}>
+    <div className={`grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4 ${className}`}>
       {children}
     </div>
   );
@@ -360,9 +360,9 @@ export function ListaConceptos({
           {f.color ? <span aria-hidden="true" className="h-1.5 w-1.5 flex-none" style={{ background: f.color }} /> : null}
           <span className="text-tinta-2">{f.nombre}</span>
           <span aria-hidden="true" className="mx-1 flex-1 border-b border-dotted border-linea-fuerte" />
-          <span className="numeros font-mono text-tinta">{formato(f.valor)}</span>
+          <span className="numeros text-tinta">{formato(f.valor)}</span>
           {f.porcentaje !== undefined ? (
-            <span className="numeros w-10 text-right font-mono text-[11.5px] text-tinta-3">{Math.round(f.porcentaje * 100)}%</span>
+            <span className="numeros w-10 text-right text-[11.5px] text-tinta-3">{Math.round(f.porcentaje * 100)}%</span>
           ) : null}
         </li>
       ))}

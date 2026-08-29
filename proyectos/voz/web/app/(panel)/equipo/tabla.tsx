@@ -18,7 +18,7 @@ export function TablaProduccion({ produccion, personas }: { produccion: Producti
             return (
               <span className="block py-1">
                 <span className="block font-medium text-tinta">{p.nombre}</span>
-                <span className="numeros block font-mono text-[11px] text-tinta-3">
+                <span className="numeros block text-[11px] text-tinta-3">
                   {persona?.telefono ? telefono(persona.telefono) : ""}
                   {p.comision_pct ? `${persona?.telefono ? " · " : ""}${Number(p.comision_pct)} % comisión` : ""}
                 </span>

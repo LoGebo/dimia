@@ -92,7 +92,7 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
               <span className="flex items-center justify-between gap-2 peer-checked:[&>span:first-child]:text-acento">
                 <span className="text-[13px] font-medium text-tinta transition-colors duration-150">{NOMBRE_TIPO_CAMPANA[t].nombre}</span>
                 {alcances[t] !== undefined && !(calculando && t === tipo) ? (
-                  <span className="numeros font-mono text-[11.5px] text-tinta-2">{alcances[t]}</span>
+                  <span className="numeros text-[11.5px] text-tinta-2">{alcances[t]}</span>
                 ) : null}
               </span>
               <span className="mt-0.5 block text-[11px] text-tinta-3">{NOMBRE_TIPO_CAMPANA[t].detalle}</span>
@@ -160,7 +160,7 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
           </span>
         ) : alcance !== undefined ? (
           <span className="text-[12px] text-tinta-2">
-            Alcanzaría a <span className="numeros font-mono text-[12.5px] text-tinta">{alcance}</span> {alcance === 1 ? "persona" : "personas"} hoy.
+            Alcanzaría a <span className="numeros text-[12.5px] text-tinta">{alcance}</span> {alcance === 1 ? "persona" : "personas"} hoy.
           </span>
         ) : null}
         <p className="text-[12px] text-tinta-3">Se crea en borrador; tú la activas cuando quieras.</p>

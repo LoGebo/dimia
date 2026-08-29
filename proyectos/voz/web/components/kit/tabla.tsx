@@ -59,9 +59,9 @@ export function ChipFiltro({
       type="button"
       aria-pressed={activo}
       onClick={onClick}
-      className={`inline-flex h-7 flex-none items-center gap-1.5 border px-2.5 text-[12px] font-medium transition-colors duration-150 ${
+      className={`inline-flex h-8 flex-none items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium transition-colors duration-150 ${
         activo
-          ? "border-tinta bg-tinta text-paper"
+          ? "border-acento bg-acento-suave text-acento"
           : "border-linea bg-panel text-tinta-2 hover:border-linea-fuerte hover:text-tinta"
       }`}
     >
@@ -69,7 +69,7 @@ export function ChipFiltro({
       {children}
       {conteo !== undefined ? (
         <span
-          className={`numeros px-1 font-mono text-[10px] leading-4 ${activo ? "bg-paper/15 text-paper" : "bg-panel-2 text-tinta-3"}`}
+          className={`numeros rounded px-1 text-[11px] leading-4 font-semibold ${activo ? "bg-acento/15 text-acento" : "bg-panel-2 text-tinta-3"}`}
         >
           {conteo}
         </span>
@@ -128,7 +128,7 @@ export function TablaRegistros<T>({
   }
 
   return (
-    <div className={`border border-linea bg-panel ${className}`}>
+    <div className={`overflow-hidden rounded-lg border border-linea bg-panel ${className}`}>
       {filtros?.length ? (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-linea px-3 py-2">
           <ChipFiltro activo={filtro === "todos"} conteo={filas.length} onClick={() => setFiltro("todos")}>
@@ -145,7 +145,7 @@ export function TablaRegistros<T>({
               {f.nombre}
             </ChipFiltro>
           ))}
-          <span className="numeros ml-auto font-mono text-[11px] text-tinta-3">
+          <span className="numeros ml-auto text-[11px] text-tinta-3">
             {visibles.length} de {filas.length}
           </span>
         </div>
@@ -154,7 +154,7 @@ export function TablaRegistros<T>({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
-            <tr className="border-b border-linea">
+            <tr className="border-b border-linea bg-panel-2">
               {columnas.map((c) => {
                 const activa = orden?.clave === c.clave;
                 const ariaSort = activa ? (orden!.dir === "asc" ? "ascending" : "descending") : undefined;
@@ -164,7 +164,7 @@ export function TablaRegistros<T>({
                     scope="col"
                     aria-sort={ariaSort}
                     style={c.ancho ? { width: c.ancho } : undefined}
-                    className={`h-8 px-3 text-[12px] font-medium whitespace-nowrap text-tinta-3 ${c.numerica ? "text-right" : "text-left"}`}
+                    className={`h-9 px-3 text-[12px] font-bold whitespace-nowrap text-tinta-2 ${c.numerica ? "text-right" : "text-left"}`}
                   >
                     {c.valor ? (
                       <button
@@ -177,7 +177,7 @@ export function TablaRegistros<T>({
                         <span>{c.titulo}</span>
                         <span
                           aria-hidden="true"
-                          className={`font-mono text-[10px] transition-opacity duration-150 ${
+                          className={`text-[10px] transition-opacity duration-150 ${
                             activa ? "text-acento opacity-100" : "opacity-0 group-hover:opacity-60"
                           }`}
                         >
@@ -206,8 +206,8 @@ export function TablaRegistros<T>({
                 {columnas.map((c) => (
                   <td
                     key={c.clave}
-                    className={`h-9 px-3 whitespace-nowrap ${
-                      c.numerica ? "numeros text-right font-mono text-[12.5px] text-tinta" : "text-tinta"
+                    className={`h-10 px-3 whitespace-nowrap ${
+                      c.numerica ? "numeros text-right text-[13px] text-tinta" : "text-tinta"
                     }`}
                   >
                     {c.render ? c.render(fila) : (c.valor?.(fila) ?? "")}

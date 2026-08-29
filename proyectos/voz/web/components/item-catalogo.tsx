@@ -154,7 +154,7 @@ export function TablaCatalogo({
             render: (i) =>
               i.disponible ? (
                 i.existencias !== null ? (
-                  <span className={`numeros font-mono text-[11.5px] ${i.existencias <= 3 ? "text-alerta" : "text-tinta-3"}`}>
+                  <span className={`numeros text-[11.5px] ${i.existencias <= 3 ? "text-alerta" : "text-tinta-3"}`}>
                     {i.existencias} en existencia
                   </span>
                 ) : (

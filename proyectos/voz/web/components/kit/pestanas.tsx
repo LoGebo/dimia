@@ -72,7 +72,7 @@ export function Pestanas({
             {p.nombre}
             {p.conteo !== undefined ? (
               <span
-                className={`numeros px-1 font-mono text-[10px] leading-4 transition-colors duration-150 ${
+                className={`numeros px-1 text-[10px] leading-4 transition-colors duration-150 ${
                   es ? "bg-acento-suave text-acento" : "bg-panel-2 text-tinta-3"
                 }`}
               >

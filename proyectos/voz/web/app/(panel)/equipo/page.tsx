@@ -38,7 +38,7 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
                 key={r}
                 href={`/equipo?dias=${r}`}
                 aria-current={r === dias ? "true" : undefined}
-                className={`numeros flex h-[30px] items-center gap-1.5 px-2.5 font-mono text-[11.5px] transition-colors duration-150 ${
+                className={`numeros flex h-[30px] items-center gap-1.5 px-2.5 text-[11.5px] transition-colors duration-150 ${
                   r === dias ? "bg-acento-suave font-medium text-acento" : "text-tinta-2 hover:bg-panel-2 hover:text-tinta"
                 }`}
               >
@@ -117,7 +117,7 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
                   {faltas.map((a) => (
                     <li key={a.id} className="flex h-9 items-center gap-3 px-4 transition-colors duration-150 hover:bg-panel-2">
                       <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-alerta" />
-                      <span className="numeros w-16 font-mono text-[12px] text-tinta-2">{fechaCorta(`${a.fecha}T12:00:00Z`, "UTC")}</span>
+                      <span className="numeros w-16 text-[12px] text-tinta-2">{fechaCorta(`${a.fecha}T12:00:00Z`, "UTC")}</span>
                       <span className="min-w-0 flex-1 truncate text-[13px] text-tinta">
                         {lista.find((r) => r.id === a.resource_id)?.nombre ?? "Todo el negocio"}
                         {a.motivo ? <span className="text-tinta-3"> · {a.motivo}</span> : null}

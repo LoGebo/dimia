@@ -1,14 +1,10 @@
 import type { ReactNode } from "react";
-import { HerramientasGlobales } from "@/components/herramientas-globales";
-import { Pestanas } from "@/components/pestanas";
-import { contexto } from "@/lib/sesion";
 
 /**
- * La cabecera de cada pantalla: título en Newsreader con remate cuadrado, una
- * línea que dice para qué sirve, las acciones de la pantalla, buscar y avisos,
- * y las pestañas de la sección.
+ * La cabecera de cada pantalla: título de 24 px en negrita, una línea que
+ * dice para qué sirve y, a la derecha, las acciones de la pantalla.
  */
-export async function Encabezado({
+export function Encabezado({
   titulo,
   descripcion,
   acciones,
@@ -22,26 +18,13 @@ export async function Encabezado({
   principal?: ReactNode;
   busqueda?: string;
 }) {
-  const { giro } = await contexto();
-
   return (
-    <header className="sticky top-0 z-20 border-b border-linea bg-panel">
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-2 px-5 pt-4 pb-3">
-        <div className="min-w-0">
-          <h1 className="titular flex items-baseline gap-1.5 text-[24px] text-tinta">
-            {titulo}
-            <i className="cuadrado" aria-hidden="true" />
-          </h1>
-          {descripcion ? <p className="mt-1.5 text-[12.5px] text-tinta-3">{descripcion}</p> : null}
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {acciones}
-          {principal}
-          {acciones || principal ? <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-linea md:block" /> : null}
-          <HerramientasGlobales />
-        </div>
+    <header className="mb-4 flex flex-wrap items-end gap-x-4 gap-y-3">
+      <div className="min-w-0">
+        <h1 className="titular text-tinta">{titulo}</h1>
+        {descripcion ? <p className="mt-1 text-[13px] text-tinta-3">{descripcion}</p> : null}
       </div>
-      <Pestanas herramientas={giro.herramientas} />
+      {acciones || principal ? <div className="ml-auto flex flex-wrap items-center gap-2">{acciones}{principal}</div> : null}
     </header>
   );
 }

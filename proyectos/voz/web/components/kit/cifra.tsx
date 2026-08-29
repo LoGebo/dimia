@@ -55,7 +55,7 @@ export function CifraAnimada({
   const texto = formato(mostrado);
 
   return (
-    <span className={`numeros inline-flex font-mono ${className}`} aria-label={formato(valor)}>
+    <span className={`numeros inline-flex ${className}`} aria-label={formato(valor)}>
       {contando
         ? texto
         : Array.from(texto).map((ch, i) => (

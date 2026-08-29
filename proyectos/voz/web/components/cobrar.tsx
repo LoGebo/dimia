@@ -121,7 +121,7 @@ function FormaCobro({
                 defaultValue={montoSugerido}
                 required
                 autoFocus
-                className="numeros font-mono text-[16px]"
+                className="numeros text-[16px]"
               />
             </Campo>
             <Campo etiqueta="Cómo pagó">

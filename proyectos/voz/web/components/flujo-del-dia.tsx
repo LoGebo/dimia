@@ -253,7 +253,7 @@ export async function FlujoDelDia({
         >
           Por espera
         </Chip>
-        <span className="numeros ml-auto font-mono text-[11px] text-tinta-3">
+        <span className="numeros ml-auto text-[11px] text-tinta-3">
           {visibles.length} de {delDia.length}
         </span>
       </div>

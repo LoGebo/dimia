@@ -90,7 +90,7 @@ export function FilaAviso({
           {texto}
         </span>
         {dato ? (
-          <span className="numeros font-mono text-[12px] text-tinta">
+          <span className="numeros text-[12px] text-tinta">
             {dato}
           </span>
         ) : null}
@@ -128,7 +128,7 @@ export function FilaLista({
   const contenido = (
     <>
       {hora ? (
-        <span className="numeros w-[72px] flex-none font-mono text-[12px] whitespace-nowrap text-tinta-2">
+        <span className="numeros w-[72px] flex-none text-[12.5px] font-medium whitespace-nowrap text-tinta-2">
           {hora}
         </span>
       ) : null}
@@ -180,7 +180,7 @@ export function CabeceraColumna({
       />
       <h2 className="text-[13px] font-semibold text-tinta">{nombre}</h2>
       <span
-        className={`numeros font-mono text-[12px] ${conteo > 0 ? "text-tinta" : "text-tinta-3"}`}
+        className={`numeros text-[12px] ${conteo > 0 ? "text-tinta" : "text-tinta-3"}`}
       >
         {conteo}
       </span>

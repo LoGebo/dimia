@@ -67,7 +67,7 @@ export default async function Campanas() {
         giro={giro.nombre}
         principal={
           <Link href="/campanas/nueva" className="inline-flex h-8 items-center gap-1.5 border border-transparent bg-acento px-3 text-[13px] font-medium text-acento-tinta transition-[filter] duration-150 hover:brightness-110">
-            <span aria-hidden="true" className="font-mono">+</span> Nueva campaña
+            <span aria-hidden="true" className="">+</span> Nueva campaña
           </Link>
         }
       />

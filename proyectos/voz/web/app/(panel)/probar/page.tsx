@@ -30,7 +30,7 @@ export default async function Probar() {
             <div className="space-y-4 px-4 py-4">
               <p className="text-[13px] leading-relaxed text-tinta-2">
                 La sección funciona en cuanto existan estas variables en el entorno del panel (
-                <span className="font-mono text-[12px]">web/.env.local</span> en desarrollo):
+                <span className="text-[12px]">web/.env.local</span> en desarrollo):
               </p>
               <FilasTarea rotulo={`${VARIABLES.length - faltantes.length} de ${VARIABLES.length} en su lugar`}>
                 {VARIABLES.map((nombre) => (
@@ -45,10 +45,10 @@ export default async function Probar() {
               <p className="text-[13px] leading-relaxed text-tinta-2">
                 Los tres valores salen del proyecto de LiveKit Cloud, en Settings → Keys. Son los mismos que usa el
                 worker de voz, así que si el agente ya contesta llamadas reales, cópialos del{" "}
-                <span className="font-mono text-[12px]">.env</span> de la raíz.
+                <span className="text-[12px]">.env</span> de la raíz.
               </p>
               <p className="text-[13px] leading-relaxed text-tinta-2">
-                También necesitas el worker corriendo: <span className="font-mono text-[12px]">python -m agent.agent dev</span>.
+                También necesitas el worker corriendo: <span className="text-[12px]">python -m agent.agent dev</span>.
                 Sin él la sala se abre y nadie contesta.
               </p>
               <p className="text-[11px] text-tinta-3">

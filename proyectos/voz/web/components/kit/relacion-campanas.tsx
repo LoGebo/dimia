@@ -32,7 +32,7 @@ export function FilasCampana({ children, rotulo, conteo }: { children: ReactNode
     <div className="border border-linea bg-panel">
       <p className="flex items-baseline gap-2 border-b border-linea px-4 py-2">
         <span className="text-[13px] font-medium text-tinta">{rotulo}</span>
-        {conteo !== undefined ? <span className="numeros font-mono text-[11px] text-tinta-3">{conteo}</span> : null}
+        {conteo !== undefined ? <span className="numeros text-[11px] text-tinta-3">{conteo}</span> : null}
       </p>
       <ul className="divide-y divide-linea">{children}</ul>
     </div>
@@ -81,11 +81,11 @@ export function FilaCampana({ campana: c, zona }: { campana: Campana; zona: stri
           <div className="h-[3px] flex-1 bg-linea" role="progressbar" aria-valuenow={avance} aria-valuemin={0} aria-valuemax={100}>
             <div className="kit-barra h-full bg-acento" style={{ width: `${avance}%`, transitionDuration: "600ms" }} />
           </div>
-          <span className="numeros w-14 text-right font-mono text-[11px] text-tinta-2">
+          <span className="numeros w-14 text-right text-[11px] text-tinta-2">
             {hechas}/{c.total}
           </span>
         </div>
-        <div className="numeros hidden gap-3 font-mono text-[11px] md:flex">
+        <div className="numeros hidden gap-3 text-[11px] md:flex">
           <span className="text-tinta-2">{c.contestados} contestaron</span>
           <span className={c.agendaron > 0 ? "text-bueno" : "text-tinta-3"}>{c.agendaron} agendaron</span>
         </div>
@@ -111,7 +111,7 @@ export function FilaCampana({ campana: c, zona }: { campana: Campana; zona: stri
           onClick={() => setAbierta((v) => !v)}
           aria-expanded={abierta}
           aria-label={abierta ? "Ocultar detalle" : "Ver detalle"}
-          className={`font-mono text-[11px] text-tinta-3 transition-transform duration-150 ${abierta ? "rotate-90" : ""}`}
+          className={`text-[11px] text-tinta-3 transition-transform duration-150 ${abierta ? "rotate-90" : ""}`}
         >
           ›
         </button>
@@ -125,7 +125,7 @@ export function FilaCampana({ campana: c, zona }: { campana: Campana; zona: stri
             {pasos.map((p) => (
               <li key={p.texto} className="flex items-center justify-between gap-3 py-1 text-[12px] text-tinta-2">
                 <span>{p.texto}</span>
-                <span className={`numeros font-mono text-[11.5px] ${p.dato > 0 && p.tono ? p.tono : "text-tinta-3"}`}>{p.dato}</span>
+                <span className={`numeros text-[11.5px] ${p.dato > 0 && p.tono ? p.tono : "text-tinta-3"}`}>{p.dato}</span>
               </li>
             ))}
           </ul>
@@ -169,7 +169,7 @@ export function TablaContactos({ contactos, zona }: { contactos: CampanaContacto
           <Link href={`/clientes/${p.cliente_id}`} className="font-medium text-tinta transition-colors duration-150 hover:text-acento">
             {p.cliente_nombre ?? "Sin nombre"}
           </Link>
-          <span className="numeros font-mono text-[11px] text-tinta-3">{p.cliente_telefono ? telefono(p.cliente_telefono) : "—"}</span>
+          <span className="numeros text-[11px] text-tinta-3">{p.cliente_telefono ? telefono(p.cliente_telefono) : "—"}</span>
         </span>
       ),
     },
@@ -189,7 +189,7 @@ export function TablaContactos({ contactos, zona }: { contactos: CampanaContacto
       ancho: "150px",
       valor: (p) => p.ultimo_intento ?? "",
       render: (p) => (
-        <span className="numeros font-mono text-[11.5px] text-tinta-3">
+        <span className="numeros text-[11.5px] text-tinta-3">
           {p.ultimo_intento ? `${fechaCorta(p.ultimo_intento, zona)} ${hora(p.ultimo_intento, zona)}` : `intento ${p.intentos}`}
         </span>
       ),
@@ -397,7 +397,7 @@ export function TablaCampanas({ lista, zona }: { lista: Campana[]; zona: string 
             <span className="h-[3px] w-24 bg-linea" role="progressbar" aria-valuenow={avance} aria-valuemin={0} aria-valuemax={100}>
               <span className="block h-full bg-acento" style={{ width: `${avance}%` }} />
             </span>
-            <span className="numeros font-mono text-[11.5px] text-tinta-2">
+            <span className="numeros text-[11.5px] text-tinta-2">
               {hechas}/{c.total}
             </span>
           </span>
@@ -425,7 +425,7 @@ export function TablaCampanas({ lista, zona }: { lista: Campana[]; zona: string 
       titulo: "Creada",
       ancho: "90px",
       valor: (c) => new Date(c.creado).getTime(),
-      render: (c) => <span className="numeros font-mono text-[12px] text-tinta-2">{fechaCorta(c.creado, zona)}</span>,
+      render: (c) => <span className="numeros text-[12px] text-tinta-2">{fechaCorta(c.creado, zona)}</span>,
     },
     {
       clave: "estado",

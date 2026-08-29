@@ -26,7 +26,7 @@ export function TablaMensajes({ lista, zona }: { lista: MensajeSaliente[]; zona:
           ancho: "170px",
           valor: (m) => m.destino,
           render: (m) => (
-            <span className="numeros font-mono text-[12.5px] text-tinta">
+            <span className="numeros text-[12.5px] text-tinta">
               {m.destino.startsWith("+") ? formatearTelefono(m.destino) : m.destino}
             </span>
           ),
@@ -51,7 +51,7 @@ export function TablaMensajes({ lista, zona }: { lista: MensajeSaliente[]; zona:
               <Estado mensaje={m} />
               {m.ultimo_error ? <span className="max-w-[320px] text-[11px] leading-snug text-tinta-3">{m.ultimo_error}</span> : null}
               {m.estado === "pendiente" && m.intentos > 0 ? (
-                <span className="numeros font-mono text-[11px] text-tinta-3">
+                <span className="numeros text-[11px] text-tinta-3">
                   intento {m.intentos} de {m.max_intentos}
                 </span>
               ) : null}

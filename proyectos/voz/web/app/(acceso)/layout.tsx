@@ -26,7 +26,7 @@ export default function AccesoLayout({ children }: { children: React.ReactNode }
               ["24/7", "sin buzón"],
             ].map(([valor, texto]) => (
               <div key={texto} className="bg-panel px-3 py-3">
-                <dt className="numeros font-mono text-[19px] text-tinta">{valor}</dt>
+                <dt className="numeros text-[19px] text-tinta">{valor}</dt>
                 <dd className="etiqueta mt-1">{texto}</dd>
               </div>
             ))}

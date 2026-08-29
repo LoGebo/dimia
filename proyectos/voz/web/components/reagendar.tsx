@@ -121,7 +121,7 @@ function Mover({
                   key={`${s.inicio}-${s.resource_id}`}
                   onClick={() => mover(s)}
                   disabled={cargando || movida !== null}
-                  className="numeros border border-linea bg-panel-2 px-2 py-1.5 font-mono text-[12px] text-tinta transition-colors duration-150 hover:border-acento hover:bg-acento-suave hover:text-acento"
+                  className="numeros border border-linea bg-panel-2 px-2 py-1.5 text-[12px] text-tinta transition-colors duration-150 hover:border-acento hover:bg-acento-suave hover:text-acento"
                 >
                   {formatoHora.format(new Date(s.inicio))}
                   <span className="block text-[10px] text-tinta-3">

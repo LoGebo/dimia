@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bell } from "lucide-react";
 import { BuscadorGlobal, type DestinoPaleta } from "@/components/buscador-global";
 import { contadores, negocio, reservasEntre } from "@/lib/consultas";
 import { hora, isoDia, telefono } from "@/lib/formato";
@@ -7,7 +8,7 @@ import { contexto } from "@/lib/sesion";
 
 const ATAJO: Record<string, string> = { "/hoy": "G H", "/bandeja": "G M", "/clientes": "G C", "/agente": "G A" };
 
-/** Buscar (⌘K) y el aviso de pendientes: van en la cabecera de cada pantalla. */
+/** Buscar (⌘K) y el aviso de pendientes. */
 export async function HerramientasGlobales() {
   const [{ giro }, avisos, config] = await Promise.all([contexto(), contadores(), negocio()]);
   const conAgenda = giro.herramientas.includes("agendar");
@@ -46,14 +47,11 @@ export async function HerramientasGlobales() {
         href={avisos.bandeja > 0 || avisos.recados === 0 ? "/bandeja" : "/recados"}
         aria-label={pendientes > 0 ? `${pendientes} pendientes` : "Sin pendientes"}
         title={`${avisos.bandeja} sin leer · ${avisos.recados} recados`}
-        className="relative flex h-8 w-8 items-center justify-center border border-linea text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta focus-visible:border-acento focus-visible:outline-none"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-linea bg-panel text-tinta-2 transition-colors duration-100 hover:bg-panel-2 hover:text-tinta focus-visible:border-acento focus-visible:outline-none"
       >
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4">
-          <path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11L4 11Z" />
-          <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" />
-        </svg>
+        <Bell size={18} strokeWidth={1.75} aria-hidden="true" />
         {pendientes > 0 ? (
-          <span className="numeros absolute -top-1.5 -right-1.5 min-w-4 bg-acento px-1 text-center font-mono text-[10px] leading-4 text-acento-tinta">
+          <span className="numeros absolute -top-1.5 -right-1.5 min-w-4 rounded-md bg-acento px-1 text-center text-[10px] leading-4 font-bold text-acento-tinta">
             {pendientes}
           </span>
         ) : null}

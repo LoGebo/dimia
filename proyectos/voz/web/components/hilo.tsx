@@ -62,7 +62,7 @@ export function Hilo({
             {c.estado === "abierta" && enVivo ? <ChipHerramienta estado="en-curso">en curso</ChipHerramienta> : null}
           </div>
           {c.contacto.startsWith("+") ? (
-            <p className="numeros mt-0.5 font-mono text-[12px] text-tinta-3">
+            <p className="numeros mt-0.5 text-[12px] text-tinta-3">
               {formatearTelefono(c.contacto)}
               {c.cliente_id ? (
                 <>
@@ -86,7 +86,7 @@ export function Hilo({
           {c.booking_id ? (
             <Link href={enlaceCita} className="inline-flex h-7 items-center gap-1.5 border border-linea bg-panel px-2.5 text-[12px] font-medium text-tinta transition-colors duration-150 hover:border-linea-fuerte hover:text-acento">
               Ver la cita
-              {c.booking_codigo ? <span className="numeros font-mono text-[11px] text-tinta-3">{c.booking_codigo}</span> : null}
+              {c.booking_codigo ? <span className="numeros text-[11px] text-tinta-3">{c.booking_codigo}</span> : null}
             </Link>
           ) : null}
         </div>
@@ -148,7 +148,7 @@ export function Hilo({
                 <div className={`max-w-[min(560px,80%)] px-3 py-2 ${BURBUJA[m.autor]}`}>
                   <div className="flex items-baseline justify-between gap-3 text-[11px] text-tinta-3">
                     <span>{QUIEN[m.autor]}</span>
-                    <span className="numeros font-mono text-[10px] text-tinta-3">{hora(m.creado, zona)}</span>
+                    <span className="numeros text-[10px] text-tinta-3">{hora(m.creado, zona)}</span>
                   </div>
                   {m.id === enVivo ? (
                     <TextoFluye texto={m.texto} className="mt-1 whitespace-pre-wrap" />

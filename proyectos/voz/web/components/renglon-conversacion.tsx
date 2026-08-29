@@ -30,13 +30,13 @@ export function RenglonConversacion({ conversacion: c, zona }: { conversacion: C
           {sinLeer ? <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-acento" /> : null}
           <span className="truncate">{nombreDe(c)}</span>
         </span>
-        <span className="numeros shrink-0 font-mono text-[11px] text-tinta-3">{hace(c.ultimo_mensaje_en, zona)}</span>
+        <span className="numeros shrink-0 text-[11px] text-tinta-3">{hace(c.ultimo_mensaje_en, zona)}</span>
       </div>
       <p className={`mt-1 truncate text-[12px] ${sinLeer ? "text-tinta-2" : "text-tinta-3"}`}>{c.ultimo_mensaje ?? "Sin mensajes todavía."}</p>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-tinta-3">
         <span>{NOMBRE_CANAL[c.canal]}</span>
         {sinLeer ? (
-          <span className="numeros font-mono text-tinta-2">
+          <span className="numeros text-tinta-2">
             {c.mensajes_sin_leer} sin leer
           </span>
         ) : null}

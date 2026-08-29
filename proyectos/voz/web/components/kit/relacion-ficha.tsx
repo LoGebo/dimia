@@ -202,7 +202,7 @@ export function LineaTiempoCliente({ eventos, zona }: { eventos: Evento[]; zona:
                       )}
                       {notas.length > 0 ? <span className="font-normal text-tinta-2"> · {notas.map((n) => n.verbo).join(" · ")}</span> : null}
                     </p>
-                    <p className="numeros font-mono text-[11px] text-tinta-3">
+                    <p className="numeros text-[11px] text-tinta-3">
                       {hora(e.creado, zona)} · {AUTOR[e.autor]}
                     </p>
                   </div>

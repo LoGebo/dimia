@@ -61,14 +61,14 @@ const COLUMNAS: Columna<Cita>[] = [
     titulo: "Código",
     ancho: "80px",
     valor: (c) => c.codigo,
-    render: (c) => <span className="numeros font-mono text-[12px] text-tinta-2">{c.codigo}</span>,
+    render: (c) => <span className="numeros text-[12px] text-tinta-2">{c.codigo}</span>,
   },
   { clave: "cliente", titulo: "Cliente", valor: (c) => c.cliente, render: (c) => <span className="font-medium">{c.cliente}</span> },
   {
     clave: "telefono",
     titulo: "Teléfono",
     valor: (c) => c.telefono,
-    render: (c) => <span className="numeros font-mono text-[12px] text-tinta-2">{c.telefono}</span>,
+    render: (c) => <span className="numeros text-[12px] text-tinta-2">{c.telefono}</span>,
   },
   { clave: "servicio", titulo: "Servicio", valor: (c) => c.servicio },
   { clave: "hora", titulo: "Hora", numerica: true, ancho: "72px", valor: (c) => c.hora },
@@ -160,7 +160,7 @@ function Seccion({ n, titulo, fuente, children, ancho = "" }: { n: string; titul
   return (
     <section className={`border-t border-linea pt-4 ${ancho}`}>
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="numeros font-mono text-[10.5px] tracking-[0.24em] whitespace-nowrap text-laton uppercase">{n}</span>
+        <span className="numeros text-[10.5px] tracking-[0.24em] whitespace-nowrap text-laton uppercase">{n}</span>
         <h2 className="text-[13.5px] font-semibold tracking-tight whitespace-nowrap text-tinta">{titulo}</h2>
         <span className="text-[11.5px] text-tinta-3">{fuente}</span>
       </div>
@@ -229,7 +229,7 @@ function Cuerpo() {
             hora="09:43"
             propuesta={
               <span>
-                Valoración · <span className="numeros font-mono">mié 27, 10:00</span> → <span className="numeros font-mono">jue 28, 10:00</span>
+                Valoración · <span className="numeros ">mié 27, 10:00</span> → <span className="numeros ">jue 28, 10:00</span>
               </span>
             }
             onAprobar={() => avisar({ titulo: "Cita reagendada", detalle: "Se le confirmó por WhatsApp.", tono: "bueno" })}
@@ -278,7 +278,7 @@ function Cuerpo() {
               className="inline-flex h-8 items-center gap-3 border border-linea bg-panel-2 pr-2 pl-3 text-[13px] text-tinta-3 transition-colors duration-150 hover:border-linea-fuerte hover:text-tinta"
             >
               Buscar o ejecutar
-              <kbd className="border border-linea px-1.5 font-mono text-[10px] leading-4">⌘K</kbd>
+              <kbd className="border border-linea px-1.5 text-[10px] leading-4">⌘K</kbd>
             </button>
             <button
               type="button"
@@ -324,7 +324,7 @@ function Cuerpo() {
                   autoFocus
                   defaultValue="850"
                   inputMode="decimal"
-                  className="numeros w-full border border-linea bg-panel-2 px-2.5 py-1.5 font-mono text-[13px] text-tinta outline-none focus:border-acento focus:bg-panel"
+                  className="numeros w-full border border-linea bg-panel-2 px-2.5 py-1.5 text-[13px] text-tinta outline-none focus:border-acento focus:bg-panel"
                 />
               </label>
               <label className="block">

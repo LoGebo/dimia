@@ -22,7 +22,7 @@ export function NombreNegocio({
       <p className="truncate text-[13.5px] font-semibold tracking-tight text-tinta">{membresia.nombre}</p>
       <p className="mt-0.5 truncate text-[12px] text-tinta-3">{membresia.vertical_nombre}</p>
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <p className="numeros truncate font-mono text-[12px] text-tinta-2">{telefono ?? "Sin línea asignada"}</p>
+        <p className="numeros truncate text-[12px] text-tinta-2">{telefono ?? "Sin línea asignada"}</p>
         <EstadoLinea estado={estado} />
       </div>
       {fecha ? <p className="mt-2 text-[11.5px] text-tinta-3">{fecha}</p> : null}

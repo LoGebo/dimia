@@ -29,7 +29,7 @@ export function TablaExcepciones({ excepciones }: { excepciones: Regla[] }) {
           titulo: "Fecha",
           ancho: "120px",
           valor: (r) => r.fecha ?? "",
-          render: (r) => <span className="numeros font-mono text-[12.5px] font-medium text-tinta">{fechaCorta(`${r.fecha}T12:00:00Z`, "UTC")}</span>,
+          render: (r) => <span className="numeros text-[12.5px] font-medium text-tinta">{fechaCorta(`${r.fecha}T12:00:00Z`, "UTC")}</span>,
         },
         {
           clave: "tipo",

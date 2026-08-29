@@ -91,7 +91,7 @@ export function TablaPagos({
       ancho: "84px",
       valor: (p) => (conFecha ? p.creado : (p.pagado_en ?? p.creado)),
       render: (p) => (
-        <span className="numeros font-mono text-[12px] text-tinta-3">
+        <span className="numeros text-[12px] text-tinta-3">
           {conFecha ? fechaCorta(p.creado, zona) : hora(p.pagado_en ?? p.creado, zona)}
         </span>
       ),

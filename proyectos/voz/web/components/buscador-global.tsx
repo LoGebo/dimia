@@ -110,7 +110,7 @@ export function BuscadorGlobal({
           <path d="M10.5 10.5 14 14" />
         </svg>
         <span className="hidden flex-1 text-left md:inline">{destinoBusqueda ? "Buscar cita o ir a" : "Ir a una pantalla"}</span>
-        <kbd className="hidden border border-linea bg-panel px-1 font-mono text-[10px] leading-4 text-tinta-3 transition-colors duration-150 group-hover:border-linea-fuerte md:inline">
+        <kbd className="hidden border border-linea bg-panel px-1 text-[10px] leading-4 text-tinta-3 transition-colors duration-150 group-hover:border-linea-fuerte md:inline">
           ⌘K
         </kbd>
       </button>

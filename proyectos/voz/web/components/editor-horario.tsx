@@ -210,12 +210,12 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
           <Boton onClick={() => preajuste(9, 19, 5)}>9–19 L-V</Boton>
           <Boton onClick={() => preajuste(13, 23, 6)}>13–23 L-S</Boton>
         </div>
-        <span className="numeros ml-auto font-mono text-xs text-tinta-3">
+        <span className="numeros ml-auto text-xs text-tinta-3">
           <span className="text-tinta">{totalHoras.toFixed(1)}</span> h por semana
         </span>
         {mensaje?.tono === "ok" && !sucio ? <MarcaExito key={mensaje.vez} tamano={16} /> : null}
         {sucio ? (
-          <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.16em] text-alerta uppercase">
+          <span className="flex items-center gap-1.5 text-[10px] tracking-[0.16em] text-alerta uppercase">
             <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" />
             Sin guardar
           </span>
@@ -252,7 +252,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
             <div className="relative">
               {Array.from({ length: FILAS }).map((_, fila) =>
                 fila % 2 === 0 ? (
-                  <div key={fila} className="numeros h-[13px] text-right font-mono text-[10px] leading-[13px] text-tinta-3">
+                  <div key={fila} className="numeros h-[13px] text-right text-[10px] leading-[13px] text-tinta-3">
                     {horaHablada(inicio + fila * PASO)}
                   </div>
                 ) : (

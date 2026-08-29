@@ -79,11 +79,11 @@ export function Dialogo({
         aria-describedby={descripcion ? idDesc : undefined}
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`kit-revela w-full border border-linea-fuerte bg-panel outline-none ${ancho}`}
+        className={`kit-revela w-full rounded-2xl border border-linea bg-panel outline-none ${ancho}`}
       >
-        <header className="flex items-start gap-3 border-b border-linea px-5 py-3.5">
+        <header className="flex items-start gap-3 border-b border-linea px-5 py-4">
           <div className="min-w-0 flex-1">
-            <h2 id={idTitulo} className="flex items-baseline gap-1.5 font-display text-[20px] leading-tight font-light tracking-[-0.012em] text-tinta">
+            <h2 id={idTitulo} className="text-[18px] leading-tight font-bold tracking-tight text-tinta">
               {titulo}
               <i className="cuadrado" aria-hidden="true" />
             </h2>
@@ -97,7 +97,7 @@ export function Dialogo({
             type="button"
             onClick={cerrar}
             aria-label="Cerrar"
-            className="flex h-7 w-7 flex-none items-center justify-center border border-linea text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"
           >
             <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.3">
               <path d="M2 2l8 8M10 2l-8 8" />
@@ -105,7 +105,7 @@ export function Dialogo({
           </button>
         </header>
         <div className="px-5 py-4">{children}</div>
-        {pie ? <footer className="flex justify-end gap-2 border-t border-linea bg-panel-2 px-5 py-3">{pie}</footer> : null}
+        {pie ? <footer className="flex justify-end gap-2 rounded-b-2xl border-t border-linea px-5 py-4">{pie}</footer> : null}
       </div>
     </div>
   );

@@ -95,7 +95,7 @@ export function LineaTiempo({ eventos, zona }: { eventos: Evento[]; zona: string
                 )}
                 {texto ? <span className="text-tinta-2"> · {texto}</span> : null}
               </p>
-              <p className="numeros mt-0.5 font-mono text-[11px] text-tinta-3">
+              <p className="numeros mt-0.5 text-[11px] text-tinta-3">
                 {fechaCorta(e.creado, zona)} {hora(e.creado, zona)} · {AUTOR[e.autor]}
               </p>
             </div>

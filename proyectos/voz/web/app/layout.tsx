@@ -1,19 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const archivo = Archivo({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "800"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--fuente-sans",
-  display: "swap",
-});
-
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
-  variable: "--fuente-display",
   display: "swap",
 });
 
@@ -46,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="es-MX"
-      className={`${archivo.variable} ${newsreader.variable} ${plexMono.variable}`}
+      className={`${jakarta.variable} ${plexMono.variable}`}
       suppressHydrationWarning
     >
       <head>

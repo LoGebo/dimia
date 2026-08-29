@@ -137,16 +137,16 @@ export default async function Hoy() {
     <>
       <Encabezado titulo="Hoy" descripcion={`${saludo}. ${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · así va el día.`} />
 
-      <div className="entra">
+      <div className="entra space-y-4">
         {avisos.length > 0 ? (
-          <section aria-label="Necesita atención" className="border-b border-linea">
+          <section aria-label="Necesita atención" className="overflow-hidden rounded-lg border border-linea bg-panel">
             <ul className="divide-y divide-linea">
               {avisos.map((a) => (
                 <li key={a.texto}>
                   <Link href={a.href} className="flex h-10 items-center gap-3 px-5 transition-colors duration-150 hover:bg-panel-2 focus-visible:bg-panel-2 focus-visible:outline-none">
                     <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${CUADRO[a.tono]}`} />
                     <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-tinta">{a.texto}</span>
-                    {a.dato ? <span className="numeros font-mono text-[12px] text-tinta">{a.dato}</span> : null}
+                    {a.dato ? <span className="numeros text-[13px] font-semibold text-tinta">{a.dato}</span> : null}
                     <span className={`w-20 text-right text-[12px] ${a.tono === "critico" ? "text-critico" : "text-tinta-3"}`}>{a.rotulo}</span>
                   </Link>
                 </li>
@@ -155,7 +155,7 @@ export default async function Hoy() {
           </section>
         ) : null}
 
-        <FilaKpis className="border-b border-linea">
+        <FilaKpis>
           {agenda ? (
             <Kpi
               etiqueta="Citas de hoy"
@@ -217,14 +217,14 @@ export default async function Hoy() {
           </Kpi>
         </FilaKpis>
 
-        <div className="grid border-b border-linea xl:grid-cols-[minmax(0,1fr)_400px] xl:divide-x xl:divide-linea">
-          <section aria-label="Llamadas de la quincena" className="min-w-0 px-5 pt-4 pb-5">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+          <section aria-label="Llamadas de la quincena" className="min-w-0 rounded-lg border border-linea bg-panel px-5 pt-4 pb-5">
             <header className="flex items-baseline justify-between gap-4">
               <div>
-                <h2 className="text-[15px] font-semibold tracking-tight text-tinta">Llamadas de la quincena</h2>
+                <h2 className="text-[15px] font-bold tracking-tight text-tinta">Llamadas de la quincena</h2>
                 <p className="mt-0.5 text-[12px] text-tinta-3">Cuántas entraron cada día y cuántas resolvió el agente sin pasar a nadie.</p>
               </div>
-              <Link href="/resumen" className="text-[12px] whitespace-nowrap text-tinta-3 transition-colors duration-150 hover:text-acento">
+              <Link href="/resumen" className="text-[13px] font-bold whitespace-nowrap text-acento transition-colors duration-150 hover:text-tinta">
                 Informe completo
               </Link>
             </header>
@@ -241,10 +241,10 @@ export default async function Hoy() {
             />
           </section>
 
-          <section aria-label={agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"} className="flex min-w-0 flex-col">
+          <section aria-label={agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"} className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="flex items-baseline justify-between gap-4 border-b border-linea px-5 pt-4 pb-3">
               <div>
-                <h2 className="text-[15px] font-semibold tracking-tight text-tinta">{agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"}</h2>
+                <h2 className="text-[15px] font-bold tracking-tight text-tinta">{agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"}</h2>
                 <p className="mt-0.5 text-[12px] text-tinta-3">
                   {agenda
                     ? proximas.length === 0
@@ -257,7 +257,7 @@ export default async function Hoy() {
                       : "Los que aún no regresas."}
                 </p>
               </div>
-              <Link href={agenda ? "/agenda" : pedidos ? "/pedidos" : "/recados"} className="text-[12px] whitespace-nowrap text-tinta-3 transition-colors duration-150 hover:text-acento">
+              <Link href={agenda ? "/agenda" : pedidos ? "/pedidos" : "/recados"} className="text-[13px] font-bold whitespace-nowrap text-acento transition-colors duration-150 hover:text-tinta">
                 {agenda ? "Abrir la agenda" : pedidos ? "Abrir pedidos" : "Todos"}
               </Link>
             </header>
@@ -318,7 +318,7 @@ export default async function Hoy() {
                     hora={hora(r.creado, zona)}
                     titulo={r.nombre ?? "Sin nombre"}
                     detalle={`${fechaCorta(r.creado, zona)} · ${r.asunto}`}
-                    estado={<span className="numeros font-mono text-[12px] text-tinta-2">{telefono(r.telefono)}</span>}
+                    estado={<span className="numeros text-[12px] text-tinta-2">{telefono(r.telefono)}</span>}
                   />
                 ))}
               </ul>
@@ -326,14 +326,14 @@ export default async function Hoy() {
           </section>
         </div>
 
-        <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px] xl:divide-x xl:divide-linea">
-          <section aria-label="Lo último que entró" className="min-w-0 border-b border-linea xl:border-b-0">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px]">
+          <section aria-label="Lo último que entró" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="flex items-baseline justify-between gap-4 border-b border-linea px-5 pt-4 pb-3">
               <div>
-                <h2 className="text-[15px] font-semibold tracking-tight text-tinta">Lo último que entró</h2>
+                <h2 className="text-[15px] font-bold tracking-tight text-tinta">Lo último que entró</h2>
                 <p className="mt-0.5 text-[12px] text-tinta-3">Por teléfono, WhatsApp y redes.</p>
               </div>
-              <Link href="/bandeja" className="text-[12px] whitespace-nowrap text-tinta-3 transition-colors duration-150 hover:text-acento">
+              <Link href="/bandeja" className="text-[13px] font-bold whitespace-nowrap text-acento transition-colors duration-150 hover:text-tinta">
                 Abrir mensajes
               </Link>
             </header>
@@ -348,9 +348,9 @@ export default async function Hoy() {
             )}
           </section>
 
-          <section aria-label="Sugerencias" className="min-w-0 border-b border-linea xl:border-b-0">
+          <section aria-label="Sugerencias" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="border-b border-linea px-5 pt-4 pb-3">
-              <h2 className="text-[15px] font-semibold tracking-tight text-tinta">Sugerencias</h2>
+              <h2 className="text-[15px] font-bold tracking-tight text-tinta">Sugerencias</h2>
               <p className="mt-0.5 text-[12px] text-tinta-3">Se calculan con lo que hay en Clientes y Cobros.</p>
             </header>
             {insights.length > 0 ? (
@@ -361,11 +361,11 @@ export default async function Hoy() {
                       <div className="min-w-0 flex-1">
                         <p className="text-[12.5px] leading-snug text-tinta-2">{s.titulo}</p>
                         <p className="mt-1.5 flex items-baseline gap-2">
-                          <span className="numeros font-mono text-[22px] leading-none font-medium tracking-[-0.02em] text-tinta">{s.cifra}</span>
+                          <span className="numeros text-[22px] leading-none font-bold tracking-[-0.01em] text-tinta">{s.cifra}</span>
                           {s.unidad ? <span className="text-[12px] text-tinta-3">{s.unidad}</span> : null}
                         </p>
                         {s.variacion ? (
-                          <p className={`numeros mt-1 font-mono text-[11.5px] ${s.variacion.tono === "critico" ? "text-critico" : s.variacion.tono === "alerta" ? "text-alerta" : s.variacion.tono === "bueno" ? "text-bueno" : "text-tinta-3"}`}>
+                          <p className={`numeros mt-1 text-[11.5px] ${s.variacion.tono === "critico" ? "text-critico" : s.variacion.tono === "alerta" ? "text-alerta" : s.variacion.tono === "bueno" ? "text-bueno" : "text-tinta-3"}`}>
                             {s.variacion.texto}
                           </p>
                         ) : null}
@@ -374,7 +374,7 @@ export default async function Hoy() {
                     </div>
                     {s.nota ? <p className="mt-2 text-[12px] leading-relaxed text-tinta-3">{s.nota}</p> : null}
                     {s.accion?.href ? (
-                      <Link href={s.accion.href} className="mt-2.5 inline-flex h-7 items-center bg-acento px-2.5 text-[12px] font-semibold text-acento-tinta transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/40">
+                      <Link href={s.accion.href} className="mt-2.5 inline-flex h-8 items-center rounded-lg bg-acento px-3 text-[13px] font-semibold text-acento-tinta transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/40">
                         {s.accion.texto}
                       </Link>
                     ) : null}
@@ -392,7 +392,7 @@ export default async function Hoy() {
                     <Link href={r.href} className="group flex h-10 items-center gap-3 px-5 transition-colors duration-150 hover:bg-panel-2">
                       <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-bueno" />
                       <span className="min-w-0 flex-1 truncate text-[13px] text-tinta-2 transition-colors duration-150 group-hover:text-tinta">{r.texto}</span>
-                      <span className="numeros font-mono text-[12px] text-tinta-3">{r.dato}</span>
+                      <span className="numeros text-[12px] text-tinta-3">{r.dato}</span>
                     </Link>
                   </li>
                 ))}
@@ -403,9 +403,9 @@ export default async function Hoy() {
             )}
           </section>
 
-          <section aria-label="Cómo les fue" className="min-w-0">
+          <section aria-label="Cómo les fue" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="border-b border-linea px-5 pt-4 pb-3">
-              <h2 className="text-[15px] font-semibold tracking-tight text-tinta">Cómo les fue</h2>
+              <h2 className="text-[15px] font-bold tracking-tight text-tinta">Cómo les fue</h2>
               <p className="mt-0.5 text-[12px] text-tinta-3">{promedio === null ? "Se pregunta por WhatsApp después de cada cita." : `${totalResenas} ${totalResenas === 1 ? "calificación" : "calificaciones"} en 30 días.`}</p>
             </header>
             {promedio === null ? (
@@ -413,7 +413,7 @@ export default async function Hoy() {
             ) : (
               <div className="px-5 pt-4 pb-5">
                 <p className="flex items-baseline gap-2">
-                  <span className="numeros font-mono text-[34px] leading-none font-medium tracking-[-0.02em] text-tinta">{promedio.toFixed(1)}</span>
+                  <span className="numeros text-[34px] leading-none font-bold tracking-[-0.01em] text-tinta">{promedio.toFixed(1)}</span>
                   <span className="text-[13px] text-tinta-3">de 5</span>
                 </p>
                 <Avance valor={promedio} meta={5} className="mt-3" color={promedio >= 4 ? "var(--bueno)" : "var(--alerta)"} />
@@ -422,7 +422,7 @@ export default async function Hoy() {
                     <li key={r.resource_id ?? "sin"}>
                       <div className="flex items-center justify-between gap-3 text-[12.5px]">
                         <span className="truncate text-tinta-2">{r.nombre}</span>
-                        <span className="numeros font-mono text-tinta">{Number(r.promedio).toFixed(1)}</span>
+                        <span className="numeros text-tinta">{Number(r.promedio).toFixed(1)}</span>
                       </div>
                       <Avance valor={Number(r.promedio)} meta={5} className="mt-1.5" color={Number(r.promedio) >= 4 ? "var(--bueno)" : "var(--alerta)"} />
                     </li>
@@ -593,7 +593,7 @@ function ParaEmpezar({
             {progreso.requisitos.map((r, i) => (
               <li key={r.clave} className="flex items-center gap-4 px-4 py-3">
                 <span
-                  className={`flex h-7 w-7 flex-none items-center justify-center font-mono text-[12px] ${r.listo ? "bg-bueno text-white" : "bg-panel-2 text-tinta-2"}`}
+                  className={`flex h-7 w-7 flex-none items-center justify-center text-[12px] ${r.listo ? "bg-bueno text-white" : "bg-panel-2 text-tinta-2"}`}
                 >
                   {r.listo ? "✓" : i + 1}
                 </span>
@@ -617,7 +617,7 @@ function ParaEmpezar({
             ))}
             {progreso.completo && !progreso.tieneNumero ? (
               <li className="flex items-center gap-4 px-4 py-3">
-                <span className="flex h-7 w-7 flex-none items-center justify-center bg-panel-2 font-mono text-[12px] text-tinta-2">
+                <span className="flex h-7 w-7 flex-none items-center justify-center bg-panel-2 text-[12px] text-tinta-2">
                   {progreso.total + 1}
                 </span>
                 <div className="min-w-0 flex-1">

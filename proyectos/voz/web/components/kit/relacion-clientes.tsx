@@ -50,7 +50,7 @@ export function TablaClientes({
       titulo: "Teléfono",
       valor: (c) => c.telefono ?? "",
       render: (c) => (
-        <span className="numeros font-mono text-[12px] text-tinta-2">{c.telefono ? telefono(c.telefono) : "—"}</span>
+        <span className="numeros text-[12px] text-tinta-2">{c.telefono ? telefono(c.telefono) : "—"}</span>
       ),
     },
   ];
@@ -80,7 +80,7 @@ export function TablaClientes({
       titulo: "Último contacto",
       ancho: "140px",
       valor: (c) => c.ultimo_contacto,
-      render: (c) => <span className="numeros font-mono text-[12px] text-tinta-2">{fechaCorta(c.ultimo_contacto, zona)}</span>,
+      render: (c) => <span className="numeros text-[12px] text-tinta-2">{fechaCorta(c.ultimo_contacto, zona)}</span>,
     },
     {
       clave: "origen",

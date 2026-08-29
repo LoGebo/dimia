@@ -41,7 +41,7 @@ export function NuevaCita({
           onClick={() => setAbierto(true)}
           disabled={servicios.length === 0}
         >
-          <span aria-hidden="true" className="font-mono">
+          <span aria-hidden="true" className="">
             +
           </span>{" "}
           Nueva cita
@@ -215,7 +215,7 @@ function FormaCita({
                         key={`${s.inicio}-${s.resource_id}`}
                         onClick={() => setElegido(s)}
                         aria-pressed={activo}
-                        className={`numeros border px-2 py-1.5 font-mono text-[12px] transition-colors duration-150 ${
+                        className={`numeros border px-2 py-1.5 text-[12px] transition-colors duration-150 ${
                           activo
                             ? "border-acento bg-acento text-acento-tinta"
                             : "border-linea bg-panel-2 text-tinta hover:border-acento hover:text-acento"
@@ -247,7 +247,7 @@ function FormaCita({
           ) : null}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-linea bg-panel-2 px-4 py-3">
-          <p className="numeros mr-auto font-mono text-[11px] text-tinta-3">
+          <p className="numeros mr-auto text-[11px] text-tinta-3">
             {elegido
               ? `${formatoHora.format(new Date(elegido.inicio))} · ${elegido.resource_nombre}`
               : "Elige un horario."}

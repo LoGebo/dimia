@@ -144,11 +144,11 @@ export default async function Resumen({
                 {resenas.map((r) => (
                   <li key={r.resource_id ?? "sin"} className="flex items-center gap-3 px-4 py-2.5">
                     <span className="min-w-0 flex-1 truncate text-[13px] text-tinta">{r.nombre}</span>
-                    <span className="numeros font-mono text-[12px] text-tinta-3">{r.total}</span>
-                    <span className={`numeros font-mono text-[14px] font-medium ${Number(r.promedio) >= 4 ? "text-bueno" : Number(r.promedio) >= 3 ? "text-alerta" : "text-critico"}`}>
+                    <span className="numeros text-[12px] text-tinta-3">{r.total}</span>
+                    <span className={`numeros text-[14px] font-medium ${Number(r.promedio) >= 4 ? "text-bueno" : Number(r.promedio) >= 3 ? "text-alerta" : "text-critico"}`}>
                       {Number(r.promedio).toFixed(1)}
                     </span>
-                    {r.bajas > 0 ? <span className="bg-critico/12 px-1.5 py-0.5 font-mono text-[10px] text-critico">{r.bajas} bajas</span> : null}
+                    {r.bajas > 0 ? <span className="bg-critico/12 px-1.5 py-0.5 text-[10px] text-critico">{r.bajas} bajas</span> : null}
                   </li>
                 ))}
               </ul>
@@ -172,9 +172,9 @@ export default async function Resumen({
                   {origenes.map((o) => (
                     <tr key={o.origen}>
                       <td className="px-4 py-2 text-tinta">{o.origen}</td>
-                      <td className="numeros px-4 py-2 text-right font-mono">{o.clientes}</td>
-                      <td className="numeros px-4 py-2 text-right font-mono">{o.citas}</td>
-                      <td className="numeros px-4 py-2 text-right font-mono">{moneda(o.cobrado)}</td>
+                      <td className="numeros px-4 py-2 text-right ">{o.clientes}</td>
+                      <td className="numeros px-4 py-2 text-right ">{o.citas}</td>
+                      <td className="numeros px-4 py-2 text-right ">{moneda(o.cobrado)}</td>
                     </tr>
                   ))}
                 </tbody>
