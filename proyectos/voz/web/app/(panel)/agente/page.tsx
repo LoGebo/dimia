@@ -69,7 +69,7 @@ export default async function Agente() {
                       <span className="block text-[11.5px] text-tinta-3">{r.ayuda}</span>
                     </span>
                     <span
-                      className={`numeros font-mono text-[10.5px] tracking-[0.16em] uppercase ${r.listo ? "text-bueno" : "text-alerta"}`}
+                      className={`text-[11.5px] ${r.listo ? "text-bueno" : "text-alerta"}`}
                     >
                       {r.listo ? "Listo" : "Falta"}
                     </span>
