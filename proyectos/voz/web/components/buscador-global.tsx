@@ -103,14 +103,14 @@ export function BuscadorGlobal({
         onClick={paleta.abrir}
         aria-haspopup="dialog"
         aria-expanded={paleta.abierta}
-        className="group flex h-8 items-center gap-2 border border-linea bg-panel-2 pr-2 pl-2.5 text-[13px] text-tinta-3 transition-colors duration-150 hover:border-linea-fuerte hover:bg-panel hover:text-tinta focus-visible:border-acento focus-visible:outline-none md:w-52"
+        className="group flex h-8 items-center gap-2 border border-linea bg-panel-2 pr-2 pl-2.5 text-[13px] text-tinta-3 transition-colors duration-150 hover:border-linea-fuerte hover:bg-panel hover:text-tinta focus-visible:border-acento focus-visible:outline-none xl:w-52"
       >
         <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5 flex-none" fill="none" stroke="currentColor" strokeWidth="1.4">
           <circle cx="7" cy="7" r="4.5" />
           <path d="M10.5 10.5 14 14" />
         </svg>
-        <span className="hidden flex-1 text-left md:inline">{destinoBusqueda ? "Buscar cita o ir a" : "Ir a una pantalla"}</span>
-        <kbd className="hidden border border-linea bg-panel px-1 text-[10px] leading-4 text-tinta-3 transition-colors duration-150 group-hover:border-linea-fuerte md:inline">
+        <span className="hidden flex-1 text-left xl:inline">{destinoBusqueda ? "Buscar cita o ir a" : "Ir a una pantalla"}</span>
+        <kbd className="hidden border border-linea bg-panel px-1 text-[10px] leading-4 text-tinta-3 transition-colors duration-150 group-hover:border-linea-fuerte xl:inline">
           ⌘K
         </kbd>
       </button>

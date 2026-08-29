@@ -46,7 +46,7 @@ export function TarjetaPasarela({
   }
 
   return (
-    <Tarjeta className="flex flex-col">
+    <Tarjeta className="flex min-w-0 flex-col overflow-hidden">
       <TarjetaCabecera
         titulo={NOMBRE_PROVEEDOR[proveedor]}
         descripcion={DESCRIPCION[proveedor]}
@@ -59,7 +59,9 @@ export function TarjetaPasarela({
             <Entrada
               name={c.clave}
               type={c.secreto ? "password" : "text"}
-              autoComplete="off"
+              autoComplete={c.secreto ? "new-password" : "off"}
+              data-1p-ignore
+              data-lpignore="true"
               placeholder={guardadas.includes(c.clave) ? "••••••••" : ""}
             />
           </Campo>
