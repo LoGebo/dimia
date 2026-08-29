@@ -117,7 +117,7 @@ export function ProveedorAvisos({ children, maximo = 3 }: { children: ReactNode;
       <div
         aria-live="polite"
         aria-relevant="additions"
-        className="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed top-4 right-4 z-[60] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
       >
         {avisos.map((a) => (
           <TarjetaAviso

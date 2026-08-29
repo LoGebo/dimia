@@ -10,7 +10,7 @@ const CLAVE_ACUERDO = "chat_agente_acuerdo";
 
 /**
  * El chat flotante para hablar con el agente del negocio. Botón redondo abajo
- * a la izquierda; el panel crece desde ahí con cabecera azul, burbujas y caja
+ * a la derecha, lejos del menú; el panel crece desde ahí con cabecera azul, burbujas y caja
  * para escribir. Sin backend todavía: el agente contesta que aún no está
  * conectado. Cuando exista la arquitectura de contexto, `responder` se cambia.
  */
@@ -79,10 +79,10 @@ export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; neg
         <section
           role="dialog"
           aria-label={`Chat con ${nombre}`}
-          className={`aparece-escala fixed bottom-24 left-5 z-40 flex flex-col overflow-hidden rounded-2xl border border-linea bg-panel ${
+          className={`aparece-escala fixed right-5 bottom-24 z-40 flex flex-col overflow-hidden rounded-2xl border border-linea bg-panel ${
             grande ? "h-[min(720px,calc(100vh-8rem))] w-[min(560px,calc(100vw-2.5rem))]" : "h-[min(560px,calc(100vh-8rem))] w-[min(380px,calc(100vw-2.5rem))]"
           }`}
-          style={{ transformOrigin: "bottom left", transition: "width 220ms cubic-bezier(0.22,1,0.36,1), height 220ms cubic-bezier(0.22,1,0.36,1)" }}
+          style={{ transformOrigin: "bottom right", transition: "width 220ms cubic-bezier(0.22,1,0.36,1), height 220ms cubic-bezier(0.22,1,0.36,1)" }}
         >
           <header className="flex items-center gap-3 bg-acento px-4 py-3 text-acento-tinta">
             <span className="relative flex h-11 w-11 flex-none items-center justify-center rounded-full bg-panel text-tinta">
@@ -186,7 +186,7 @@ export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; neg
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
         aria-label={abierto ? "Cerrar el chat" : `Chatear con ${nombre}`}
-        className="fixed bottom-5 left-5 z-40 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-acento text-acento-tinta transition-[transform,filter] duration-200 hover:scale-105 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-acento/30"
+        className="fixed right-5 bottom-5 z-40 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-acento text-acento-tinta transition-[transform,filter] duration-200 hover:scale-105 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-acento/30"
       >
         <span key={String(abierto)} className="pop flex">
           {abierto ? <X size={26} /> : <MessageCircle size={26} />}
