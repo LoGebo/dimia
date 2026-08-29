@@ -7,6 +7,7 @@ import { BarraContenido } from "@/components/barra-contenido";
 import { MarcaDimia } from "@/components/marca";
 import { MenuLateral } from "@/components/menu-lateral";
 import { ProveedorAvisos } from "@/components/kit";
+import { PantallaCarga } from "@/components/pantalla-carga";
 import { secciones } from "@/lib/giro";
 import { avance } from "@/lib/listo";
 import { telefono } from "@/lib/formato";
@@ -19,6 +20,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
   return (
     <ProveedorAvisos>
+      <PantallaCarga />
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="hidden flex-col border-r border-linea bg-panel-2 lg:sticky lg:top-0 lg:flex lg:h-screen">
           <MarcaDimia />

@@ -321,7 +321,7 @@ export function Kpi({
 }) {
   const TONO = { bueno: "text-bueno", alerta: "text-alerta", critico: "text-critico", neutro: "text-tinta-3" } as const;
   return (
-    <div className={`flex min-w-0 flex-col rounded-xl border border-linea bg-panel px-4 py-4 ${className}`}>
+    <div className={`flex min-w-0 flex-col rounded-xl border border-linea bg-panel px-4 py-4 transition-[border-color] duration-200 hover:border-linea-fuerte ${className}`}>
       <p className="text-[13px] font-semibold text-tinta-2">{etiqueta}</p>
       <p className="mt-1.5 flex items-baseline gap-2">
         <CifraAnimada valor={valor} formato={FORMATOS[formato]} className="text-[26px] leading-none font-bold tracking-[-0.01em] text-tinta" />

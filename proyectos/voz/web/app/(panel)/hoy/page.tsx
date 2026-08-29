@@ -137,7 +137,7 @@ export default async function Hoy() {
     <>
       <Encabezado titulo="Hoy" descripcion={`${saludo}. ${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · así va el día.`} />
 
-      <div className="entra space-y-4">
+      <div className="escalonado space-y-4">
         {avisos.length > 0 ? (
           <section aria-label="Necesita atención" className="overflow-hidden rounded-lg border border-linea bg-panel">
             <ul className="divide-y divide-linea">

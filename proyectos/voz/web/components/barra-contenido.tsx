@@ -30,7 +30,7 @@ export function BarraContenido({
     <div className="flex h-[70px] items-center justify-end gap-2.5 border-b border-linea bg-panel-2 px-6">
       <Link
         href={principal.href}
-        className="inline-flex h-9 items-center rounded-lg bg-acento px-4 text-[15px] font-semibold text-acento-tinta transition-[filter] duration-100 hover:brightness-110 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/30"
+        className="inline-flex h-9 items-center rounded-lg bg-acento px-4 text-[15px] font-semibold text-acento-tinta transition-[filter] duration-100 hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/30"
       >
         {principal.texto}
       </Link>

@@ -70,7 +70,7 @@ export function Dialogo({
   if (!abierto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-tinta/40 px-4" onMouseDown={cerrar}>
+    <div className="entra fixed inset-0 z-50 flex items-center justify-center bg-tinta/40 px-4 backdrop-blur-[2px]" onMouseDown={cerrar}>
       <div
         ref={caja}
         role="dialog"
@@ -79,7 +79,7 @@ export function Dialogo({
         aria-describedby={descripcion ? idDesc : undefined}
         tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`kit-revela w-full rounded-2xl border border-linea bg-panel outline-none ${ancho}`}
+        className={`aparece-escala w-full rounded-2xl border border-linea bg-panel outline-none ${ancho}`}
       >
         <header className="flex items-start gap-3 border-b border-linea px-5 py-4">
           <div className="min-w-0 flex-1">

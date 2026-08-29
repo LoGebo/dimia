@@ -192,7 +192,7 @@ export function TablaRegistros<T>({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-linea">
+          <tbody className="escalonado divide-y divide-linea">
             {visibles.map((fila) => (
               <tr
                 key={clave(fila)}

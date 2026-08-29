@@ -159,7 +159,7 @@ function TarjetaAviso({
       role="status"
       onMouseEnter={pausar}
       onMouseLeave={reanudar}
-      className={`pointer-events-auto relative overflow-hidden rounded-lg border border-linea bg-panel ${saliendo ? "kit-sale" : "kit-revela"}`}
+      className={`pointer-events-auto relative overflow-hidden rounded-lg border border-linea bg-panel ${saliendo ? "kit-sale" : "aparece-derecha"}`}
     >
       <div className="flex items-start gap-3 px-3.5 py-3">
         <i aria-hidden="true" className={`mt-1.5 h-1.5 w-1.5 flex-none ${CUADRO[tono]}`} />

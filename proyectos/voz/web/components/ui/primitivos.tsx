@@ -18,7 +18,7 @@ export function Boton({
   return (
     <button
       {...props}
-      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[14px] font-medium transition-[background-color,border-color,color,filter] duration-100 active:translate-y-px focus-visible:border-acento focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/25 disabled:pointer-events-none disabled:opacity-100 ${variantes[variante]} ${className}`}
+      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3.5 text-[14px] font-medium transition-[background-color,border-color,color,filter] duration-100 active:scale-[0.98] focus-visible:border-acento focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/25 disabled:pointer-events-none disabled:opacity-100 ${variantes[variante]} ${className}`}
     />
   );
 }

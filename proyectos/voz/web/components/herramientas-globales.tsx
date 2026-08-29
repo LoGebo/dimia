@@ -51,7 +51,7 @@ export async function HerramientasGlobales() {
       >
         <Bell size={18} strokeWidth={1.75} aria-hidden="true" />
         {pendientes > 0 ? (
-          <span className="numeros absolute -top-1.5 -right-1.5 min-w-4 rounded-md bg-acento px-1 text-center text-[10px] leading-4 font-bold text-acento-tinta">
+          <span className="numeros pop absolute -top-1.5 -right-1.5 min-w-4 rounded-md bg-acento px-1 text-center text-[10px] leading-4 font-bold text-acento-tinta">
             {pendientes}
           </span>
         ) : null}
