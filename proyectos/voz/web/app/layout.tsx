@@ -18,8 +18,8 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Dimia Línea · Panel",
-    template: "%s · Dimia Línea",
+    default: "Dimia Panel",
+    template: "%s · Dimia Panel",
   },
   description:
     "El panel del agente de voz de Dimia: agenda, horarios, servicios y métricas de cada llamada.",

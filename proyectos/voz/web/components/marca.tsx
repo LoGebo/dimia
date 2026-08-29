@@ -13,10 +13,10 @@ export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
 /** Cabecera del menú: el ícono y el nombre del producto, a la altura de la barra. */
 export function MarcaDimia() {
   return (
-    <div className="flex h-[70px] items-center gap-2.5 border-b border-linea px-5 text-tinta">
-      <IconoDimia tamano={22} />
-      <p className="text-[16px] font-extrabold tracking-tight">
-        Dimia <span className="font-medium text-tinta-2">Línea</span>
+    <div className="flex h-[70px] items-center gap-3 border-b border-linea px-5 text-tinta">
+      <IconoDimia tamano={32} />
+      <p className="text-[20px] font-extrabold tracking-tight">
+        Dimia <span className="font-medium text-tinta-2">Panel</span>
       </p>
     </div>
   );

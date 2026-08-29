@@ -55,7 +55,7 @@ function Marca() {
   return (
     <Link href="/" className="inline-flex items-center gap-2.5 text-tinta">
       <IconoDimia tamano={22} />
-      <span className="text-[14px] font-semibold tracking-tight">Dimia Línea</span>
+      <span className="text-[14px] font-semibold tracking-tight">Dimia Panel</span>
     </Link>
   );
 }

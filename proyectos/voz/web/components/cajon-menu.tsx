@@ -62,7 +62,7 @@ export function CajonMenu({
     <div className="lg:hidden">
       <div className="sticky top-0 z-30 flex h-[64px] items-center gap-2 border-b border-linea bg-panel-2 px-4">
         <Link href="/hoy" aria-label="Inicio" className="flex items-center text-tinta">
-          <IconoDimia tamano={26} />
+          <IconoDimia tamano={30} />
         </Link>
         <div className="ml-auto flex items-center gap-2">
           <Link

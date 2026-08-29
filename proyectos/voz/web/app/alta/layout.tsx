@@ -9,7 +9,7 @@ export default function AltaLayout({ children }: { children: React.ReactNode }) 
           <div className="flex items-center gap-2.5 text-tinta">
             <IconoDimia tamano={20} />
             <div className="leading-tight">
-              <p className="text-[13px] font-semibold tracking-tight">Dimia Línea</p>
+              <p className="text-[13px] font-semibold tracking-tight">Dimia Panel</p>
               <p className="etiqueta mt-0.5">Alta de negocio</p>
             </div>
           </div>
