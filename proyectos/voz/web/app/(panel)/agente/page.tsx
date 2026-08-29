@@ -6,7 +6,7 @@ import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera
 import { eliminarLinea, guardarLinea, guardarNegocio, guardarPrompt, guardarResenas, guardarSaludo } from "@/lib/acciones";
 import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
 import { campanas, catalogo, faq, lineas, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
-import { baseDeFabrica, construirPrompt, saludo, saludoDelGiro } from "@/lib/prompt";
+import { baseDeFabrica, construirPrompt, saludo } from "@/lib/prompt";
 import { avance } from "@/lib/listo";
 import { contexto } from "@/lib/sesion";
 import { etiquetaTipo, ZONAS_HORARIAS } from "@/lib/tipos";
@@ -219,21 +219,20 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Cómo contesta"
-              descripcion="Primera frase de cada llamada. Vacío usa la del giro."
+              descripcion="La primera frase de cada llamada. Edítala aquí; vacía, el agente usa la del giro."
               accion={config.saludo?.trim() ? <Insignia tono="alerta">Propio</Insignia> : null}
             />
-            <p className="border-b border-linea px-4 py-4 font-display text-[17px] leading-relaxed text-tinta">
-              “{saludo(config, plantilla)}”
-            </p>
             <Formulario accion={guardarSaludo} className="space-y-3 px-4 py-4">
               <AreaTexto
                 name="saludo"
                 defaultValue={config.saludo ?? ""}
                 rows={2}
-                placeholder={saludoDelGiro(plantilla, config.vertical).replaceAll("{nombre}", config.nombre)}
+                placeholder={saludo(config, plantilla)}
+                className="text-[17px] leading-relaxed"
+                aria-label="Saludo del agente"
               />
               <p className="text-[12px] text-tinta-3">
-                Puedes escribir <code className="">{"{nombre}"}</code> y se sustituye por el nombre del negocio.
+                Escribe <code>{"{nombre}"}</code> donde vaya el nombre del negocio.
               </p>
               <BotonEnviar>Guardar saludo</BotonEnviar>
             </Formulario>
