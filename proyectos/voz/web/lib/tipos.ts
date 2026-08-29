@@ -314,6 +314,7 @@ export const NOMBRE_METODO: Record<MetodoPago, string> = {
 
 export type Pago = {
   id: string;
+  datos?: Record<string, string>;
   cliente_id: string | null;
   cliente_nombre: string | null;
   booking_id: string | null;

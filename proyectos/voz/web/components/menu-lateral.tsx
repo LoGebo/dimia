@@ -21,6 +21,7 @@ import {
   Package,
   PhoneCall,
   Receipt,
+  CreditCard,
   Settings,
   ShoppingBag,
   UserRound,
@@ -58,6 +59,7 @@ const ICONO_PANTALLA: Record<string, LucideIcon> = {
   "/conocimiento": BookOpen,
   "/mensajes": BellRing,
   "/probar": PhoneCall,
+  "/pagos": CreditCard,
 };
 
 /**

@@ -1154,3 +1154,245 @@ export async function cambiarNegocio(formData: FormData): Promise<void> {
   await elegirNegocio(id);
   redirect("/hoy");
 }
+
+// ---------------------------------------------------------------
+// Pagos: pasarelas, enlaces y terminales.
+// ---------------------------------------------------------------
+
+import { headers } from "next/headers";
+import { CAMPOS_CREDENCIALES, CAPACIDADES, esProveedor, pasarela, urlWebhook, type Credenciales, type Proveedor, type Terminal } from "@/lib/pagos";
+
+async function origenPublico(): Promise<string> {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  return process.env.PANEL_URL ?? `${proto}://${host}`;
+}
+
+async function integracionDe(q: Consulta, negocioId: string, proveedor: Proveedor) {
+  const filas = await q<{ credenciales: Credenciales; config: Record<string, string> }>(
+    `select credenciales, config from integracion where tenant_id = $1 and proveedor = $2 and activo`,
+    [negocioId, proveedor],
+  );
+  return filas[0] ?? null;
+}
+
+export async function guardarIntegracion(_previo: Estado, fd: FormData): Promise<Estado> {
+  const proveedor = texto(fd, "proveedor");
+  if (!esProveedor(proveedor)) return { error: "Pasarela desconocida." };
+  const credenciales: Credenciales = {};
+  for (const campo of CAMPOS_CREDENCIALES[proveedor]) {
+    const v = texto(fd, campo.clave);
+    if (v && v !== "••••••••") credenciales[campo.clave] = v;
+  }
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      const previa = await q<{ credenciales: Credenciales }>(`select credenciales from integracion where tenant_id = $1 and proveedor = $2`, [
+        negocioId,
+        proveedor,
+      ]);
+      const fusion = { ...(previa[0]?.credenciales ?? {}), ...credenciales };
+      const obligatorio = CAMPOS_CREDENCIALES[proveedor][0]!.clave;
+      if (!fusion[obligatorio]) return { error: `Falta ${CAMPOS_CREDENCIALES[proveedor][0]!.nombre.toLowerCase()}.` };
+      await q(
+        `insert into integracion (tenant_id, proveedor, credenciales, activo)
+         values ($1, $2, $3::jsonb, true)
+         on conflict (tenant_id, proveedor) do update set credenciales = excluded.credenciales, activo = true`,
+        [negocioId, proveedor, JSON.stringify(fusion)],
+      );
+      revalidatePath("/pagos");
+      return { ok: "Pasarela conectada." };
+    }),
+  );
+}
+
+export async function apagarIntegracion(fd: FormData): Promise<void> {
+  const proveedor = texto(fd, "proveedor");
+  if (!esProveedor(proveedor)) return;
+  await datos((q, negocioId) => q(`update integracion set activo = false where tenant_id = $1 and proveedor = $2`, [negocioId, proveedor]));
+  revalidatePath("/pagos");
+}
+
+export async function guardarTerminalPredeterminada(fd: FormData): Promise<void> {
+  const proveedor = texto(fd, "proveedor");
+  const terminal = texto(fd, "terminal");
+  if (!esProveedor(proveedor)) return;
+  await datos((q, negocioId) =>
+    q(`update integracion set config = config || jsonb_build_object('terminal', $3::text) where tenant_id = $1 and proveedor = $2`, [
+      negocioId,
+      proveedor,
+      terminal,
+    ]),
+  );
+  revalidatePath("/pagos");
+}
+
+/** Prueba la conexión: con terminal, lista los dispositivos; sin terminal, valida creando nada. */
+export async function probarIntegracion(proveedor: Proveedor): Promise<{ ok: boolean; mensaje: string; terminales?: Terminal[] }> {
+  if (!esProveedor(proveedor)) return { ok: false, mensaje: "Pasarela desconocida." };
+  try {
+    return await datos(async (q, negocioId) => {
+      const i = await integracionDe(q, negocioId, proveedor);
+      if (!i) return { ok: false, mensaje: "Aún no hay credenciales guardadas." };
+      const p = pasarela(proveedor);
+      if (p.listarTerminales) {
+        const terminales = await p.listarTerminales(i.credenciales);
+        return {
+          ok: true,
+          mensaje: terminales.length ? `${terminales.length} ${terminales.length === 1 ? "terminal encontrada" : "terminales encontradas"}.` : "Conecta, pero no hay terminales ligadas a esta cuenta.",
+          terminales,
+        };
+      }
+      return { ok: true, mensaje: "Credenciales guardadas. La prueba real es el primer enlace." };
+    });
+  } catch (e) {
+    return { ok: false, mensaje: e instanceof Error ? e.message : "No se pudo conectar." };
+  }
+}
+
+export type OpcionesCobro = {
+  enlaces: Proveedor[];
+  terminales: { proveedor: Proveedor; id: string; nombre: string; predeterminada: boolean }[];
+};
+
+/** Qué formas de cobrar tiene este negocio además de efectivo: para armar el diálogo. */
+export async function opcionesCobro(): Promise<OpcionesCobro> {
+  return datos(async (q, negocioId) => {
+    const filas = await q<{ proveedor: Proveedor; credenciales: Credenciales; config: Record<string, string> }>(
+      `select proveedor, credenciales, config from integracion where tenant_id = $1 and activo`,
+      [negocioId],
+    );
+    const enlaces = filas.filter((f) => CAPACIDADES[f.proveedor].enlace).map((f) => f.proveedor);
+    const terminales: OpcionesCobro["terminales"] = [];
+    for (const f of filas) {
+      const p = pasarela(f.proveedor);
+      if (!CAPACIDADES[f.proveedor].terminal || !p.listarTerminales) continue;
+      try {
+        const lista = await p.listarTerminales(f.credenciales);
+        for (const t of lista) terminales.push({ proveedor: f.proveedor, id: t.id, nombre: t.nombre, predeterminada: f.config.terminal === t.id });
+      } catch {}
+    }
+    return { enlaces, terminales };
+  });
+}
+
+export type EstadoCobroIniciado = Estado & { pagoId?: string; enlace?: string; referencia?: string; modo?: "enlace" | "terminal" };
+
+/**
+ * Cobra por enlace o en terminal: crea el pago pendiente con la referencia de
+ * la pasarela; el webhook (o la consulta de estado) lo marca pagado.
+ */
+export async function iniciarCobro(_previo: EstadoCobroIniciado, fd: FormData): Promise<EstadoCobroIniciado> {
+  const monto = numero(fd, "monto", 0);
+  if (!(monto > 0)) return { error: "Escribe un monto mayor a cero." };
+  const modo = texto(fd, "modo");
+  const proveedor = texto(fd, "proveedor");
+  if (!esProveedor(proveedor)) return { error: "Elige con qué cobrar." };
+  const terminalId = opcional(fd, "terminal");
+  if (modo === "terminal" && !terminalId) return { error: "Elige la terminal." };
+  const bookingId = opcional(fd, "booking_id");
+  const pedidoId = opcional(fd, "pedido_id");
+  const concepto = texto(fd, "concepto") || "Cobro";
+  const origen = await origenPublico();
+
+  try {
+    return await datos(async (q, negocioId) => {
+      const i = await integracionDe(q, negocioId, proveedor);
+      if (!i) return { error: "Esa pasarela no está conectada." };
+      const p = pasarela(proveedor);
+      const pagoId = crypto.randomUUID();
+      const clienteId = (
+        await q<{ cliente_id: string | null }>(
+          `select coalesce((select cliente_id from booking where id = $1 and tenant_id = $3), (select cliente_id from pedido where id = $2 and tenant_id = $3)) as cliente_id`,
+          [bookingId, pedidoId, negocioId],
+        )
+      )[0]?.cliente_id;
+
+      if (modo === "enlace") {
+        const enlace = await p.crearEnlace(i.credenciales, {
+          pagoId,
+          monto,
+          moneda: "MXN",
+          concepto,
+          urlWebhook: urlWebhook(origen, proveedor, negocioId),
+          urlVolver: `${origen}/gracias`,
+        });
+        await q(
+          `insert into pago (id, tenant_id, cliente_id, booking_id, pedido_id, concepto, monto, metodo, estado, proveedor, enlace_url, referencia_externa, datos)
+           values ($1, $2, $3, $4, $5, $6, $7, 'enlace', 'pendiente', $8, $9, $10, jsonb_build_object('preferencia', $10::text))`,
+          [pagoId, negocioId, clienteId ?? null, bookingId, pedidoId, concepto, monto, proveedor, enlace.url, enlace.referencia],
+        );
+        revalidatePath("/cobros");
+        return { ok: clienteId ? "Enlace creado y enviado por WhatsApp." : "Enlace creado.", pagoId, enlace: enlace.url, modo: "enlace" };
+      }
+
+      if (!p.cobrarEnTerminal) return { error: "Esa pasarela no cobra en terminal." };
+      const intento = await p.cobrarEnTerminal(i.credenciales, { terminalId: terminalId!, pagoId, monto, concepto });
+      await q(
+        `insert into pago (id, tenant_id, cliente_id, booking_id, pedido_id, concepto, monto, metodo, estado, proveedor, referencia_externa, datos)
+         values ($1, $2, $3, $4, $5, $6, $7, 'tarjeta', 'pendiente', $8, $9, jsonb_build_object('intento', $9::text, 'terminal', $10::text))`,
+        [pagoId, negocioId, clienteId ?? null, bookingId, pedidoId, concepto, monto, proveedor, intento.referencia, terminalId],
+      );
+      return { ok: "Monto enviado a la terminal.", pagoId, referencia: intento.referencia, modo: "terminal" };
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "La pasarela no respondió." };
+  }
+}
+
+/** Pregunta a la pasarela cómo va un cobro en terminal y cierra el pago si ya se aprobó. */
+export async function estadoCobro(pagoId: string): Promise<{ estado: "abierto" | "pagado" | "cancelado" | "error"; mensaje?: string }> {
+  try {
+    return await datos(async (q, negocioId) => {
+      const fila = (
+        await q<{ estado: string; proveedor: Proveedor | null; referencia_externa: string | null; datos: { intento?: string; terminal?: string } }>(
+          `select estado, proveedor, referencia_externa, datos from pago where id = $1 and tenant_id = $2`,
+          [pagoId, negocioId],
+        )
+      )[0];
+      if (!fila) return { estado: "error", mensaje: "No encuentro el pago." };
+      if (fila.estado === "pagado") return { estado: "pagado" };
+      if (fila.estado === "cancelado") return { estado: "cancelado" };
+      if (!fila.proveedor) return { estado: "abierto" };
+      const i = await integracionDe(q, negocioId, fila.proveedor);
+      const p = pasarela(fila.proveedor);
+      const ref = fila.datos.intento ?? fila.referencia_externa;
+      if (!i || !p.estadoIntento || !ref) return { estado: "abierto" };
+      const r = await p.estadoIntento(i.credenciales, ref);
+      if (r.estado === "pagado") {
+        await q(
+          `update pago set estado = 'pagado', pagado_en = now(), referencia_externa = coalesce($3, referencia_externa) where id = $1 and tenant_id = $2 and estado = 'pendiente'`,
+          [pagoId, negocioId, r.referenciaPago ?? null],
+        );
+        revalidatePath("/cobros");
+        revalidatePath("/agenda");
+        revalidatePath("/pedidos");
+      } else if (r.estado === "cancelado" || r.estado === "error") {
+        await q(`update pago set estado = 'cancelado' where id = $1 and tenant_id = $2 and estado = 'pendiente'`, [pagoId, negocioId]);
+      }
+      return { estado: r.estado };
+    });
+  } catch (e) {
+    return { estado: "error", mensaje: e instanceof Error ? e.message : "Sin respuesta." };
+  }
+}
+
+/** Cancela un cobro que sigue abierto en la terminal. */
+export async function cancelarCobroTerminal(pagoId: string): Promise<Estado> {
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      const fila = (
+        await q<{ proveedor: Proveedor | null; datos: { intento?: string; terminal?: string } }>(
+          `select proveedor, datos from pago where id = $1 and tenant_id = $2 and estado = 'pendiente'`,
+          [pagoId, negocioId],
+        )
+      )[0];
+      if (!fila?.proveedor || !fila.datos.intento || !fila.datos.terminal) return { error: "Ese cobro ya no está abierto." };
+      const i = await integracionDe(q, negocioId, fila.proveedor);
+      const p = pasarela(fila.proveedor);
+      if (i && p.cancelarIntento) await p.cancelarIntento(i.credenciales, fila.datos.terminal, fila.datos.intento).catch(() => undefined);
+      await q(`update pago set estado = 'cancelado' where id = $1 and tenant_id = $2`, [pagoId, negocioId]);
+      return { ok: "Cobro cancelado." };
+    }),
+  );
+}
