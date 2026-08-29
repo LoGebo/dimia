@@ -79,8 +79,8 @@ export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; neg
         <section
           role="dialog"
           aria-label={`Chat con ${nombre}`}
-          className={`aparece-escala fixed right-5 bottom-24 z-40 flex flex-col overflow-hidden rounded-2xl border border-linea bg-panel ${
-            grande ? "h-[min(720px,calc(100vh-8rem))] w-[min(560px,calc(100vw-2.5rem))]" : "h-[min(560px,calc(100vh-8rem))] w-[min(380px,calc(100vw-2.5rem))]"
+          className={`aparece-escala fixed right-3 bottom-24 left-3 z-40 flex flex-col overflow-hidden rounded-2xl border border-linea bg-panel sm:left-auto ${
+            grande ? "h-[min(720px,calc(100vh-8rem))] sm:w-[min(560px,calc(100vw-2.5rem))]" : "h-[min(560px,calc(100vh-8rem))] sm:w-[min(380px,calc(100vw-2.5rem))]"
           }`}
           style={{ transformOrigin: "bottom right", transition: "width 220ms cubic-bezier(0.22,1,0.36,1), height 220ms cubic-bezier(0.22,1,0.36,1)" }}
         >

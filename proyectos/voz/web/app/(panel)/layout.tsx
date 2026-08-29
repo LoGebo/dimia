@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { contexto } from "@/lib/sesion";
 import { contadores, negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
@@ -9,7 +8,7 @@ import { MenuLateral } from "@/components/menu-lateral";
 import { ProveedorAvisos } from "@/components/kit";
 import { PantallaCarga } from "@/components/pantalla-carga";
 import { ChatAgente } from "@/components/chat-agente";
-import { secciones } from "@/lib/giro";
+import { CajonMenu } from "@/components/cajon-menu";
 import { avance } from "@/lib/listo";
 import { telefono } from "@/lib/formato";
 
@@ -18,6 +17,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const [actual, progreso, avisos] = await Promise.all([negocio(), avance(giro.herramientas), contadores()]);
   const membresia = membresias.find((m) => m.tenant_id === negocioId);
   const estadoLinea = !actual.telefono_entrada ? "sin" : actual.activo ? "activo" : "pausado";
+  const principal = giro.herramientas.includes("agendar")
+    ? { href: "/agenda?nueva=1", texto: "Nueva cita" }
+    : giro.herramientas.includes("pedido")
+      ? { href: "/pedidos", texto: "Ver pedidos" }
+      : { href: "/bandeja", texto: "Ver mensajes" };
 
   return (
     <ProveedorAvisos>
@@ -36,15 +40,20 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           />
         </aside>
 
-        <nav aria-label="Secciones" className="flex gap-1 overflow-x-auto border-b border-linea bg-panel px-3 lg:hidden">
-          {secciones(giro.herramientas).map((s) => (
-            <Link key={s.href} href={s.href} className="px-2 py-3 text-[14px] font-medium whitespace-nowrap text-tinta-2">
-              {s.nombre}
-            </Link>
-          ))}
-        </nav>
-
         <div className="flex min-w-0 flex-col">
+          <CajonMenu
+            email={usuario.email}
+            negocio={membresia?.nombre ?? actual.nombre}
+            giro={membresia?.vertical_nombre ?? giro.nombre}
+            telefono={actual.telefono_entrada ? telefono(actual.telefono_entrada) : null}
+            estado={estadoLinea}
+            herramientas={giro.herramientas}
+            contadores={{ "/bandeja": avisos.bandeja + avisos.recados, "/hoy": avisos.pedidos }}
+            pendientes={avisos.bandeja + avisos.recados}
+            principal={principal}
+            salir={salir}
+          />
+
           <BarraContenido
             email={usuario.email}
             telefono={actual.telefono_entrada ? telefono(actual.telefono_entrada) : null}
@@ -52,7 +61,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             herramientas={giro.herramientas}
           />
           <AvanceListo avance={progreso} />
-          <main className="flex min-w-0 flex-1 flex-col px-6 py-6">{children}</main>
+          <main className="flex min-w-0 flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">{children}</main>
         </div>
       </div>
       <ChatAgente negocio={membresia?.nombre ?? actual.nombre} />
