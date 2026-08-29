@@ -7,6 +7,8 @@ import { Bell, CircleHelp, Menu, X } from "lucide-react";
 import { IconoDimia } from "@/components/marca";
 import { MenuLateral } from "@/components/menu-lateral";
 import { EstadoLinea } from "@/components/kit/lateral";
+import { NombreNegocio } from "@/components/selector-negocio";
+import type { Membresia } from "@/lib/tipos";
 import type { Herramienta } from "@/lib/tipos";
 
 /**
@@ -18,6 +20,8 @@ export function CajonMenu({
   email,
   negocio,
   giro,
+  membresias,
+  negocioId,
   telefono,
   estado,
   herramientas,
@@ -29,6 +33,8 @@ export function CajonMenu({
   email: string;
   negocio: string;
   giro: string;
+  membresias: Membresia[];
+  negocioId: string;
   telefono: string | null;
   estado: "activo" | "pausado" | "sin";
   herramientas: Herramienta[];
@@ -132,6 +138,7 @@ export function CajonMenu({
             <X size={22} aria-hidden="true" />
           </button>
         </div>
+        {membresias.length > 1 ? <NombreNegocio membresias={membresias} negocioId={negocioId} nombre={negocio} giro={giro} /> : null}
         <div className="flex items-center justify-between gap-2 border-b border-linea px-4 py-2.5 text-[13px]">
           {telefono ? <span className="numeros font-semibold text-tinta">{telefono}</span> : <span className="text-tinta-3">Aún sin número</span>}
           <EstadoLinea estado={estado} />

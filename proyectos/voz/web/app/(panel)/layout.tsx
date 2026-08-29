@@ -5,6 +5,7 @@ import { AvanceListo } from "@/components/avance-listo";
 import { BarraContenido } from "@/components/barra-contenido";
 import { MarcaDimia } from "@/components/marca";
 import { MenuLateral } from "@/components/menu-lateral";
+import { NombreNegocio } from "@/components/selector-negocio";
 import { ProveedorAvisos } from "@/components/kit";
 import { PantallaCarga } from "@/components/pantalla-carga";
 import { ChatAgente } from "@/components/chat-agente";
@@ -29,10 +30,12 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="hidden flex-col border-r border-linea bg-panel-2 lg:sticky lg:top-0 lg:flex lg:h-screen">
           <MarcaDimia />
-          <div className="border-b border-linea px-5 py-3">
-            <p className="truncate text-[13.5px] font-bold text-tinta">{membresia?.nombre ?? actual.nombre}</p>
-            <p className="mt-0.5 truncate text-[12px] text-tinta-3">{membresia?.vertical_nombre ?? giro.nombre}</p>
-          </div>
+          <NombreNegocio
+            membresias={membresias}
+            negocioId={negocioId}
+            nombre={membresia?.nombre ?? actual.nombre}
+            giro={membresia?.vertical_nombre ?? giro.nombre}
+          />
           <MenuLateral
             herramientas={giro.herramientas}
             contadores={{ "/bandeja": avisos.bandeja + avisos.recados, "/hoy": avisos.pedidos }}
@@ -45,6 +48,8 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             email={usuario.email}
             negocio={membresia?.nombre ?? actual.nombre}
             giro={membresia?.vertical_nombre ?? giro.nombre}
+            membresias={membresias}
+            negocioId={negocioId}
             telefono={actual.telefono_entrada ? telefono(actual.telefono_entrada) : null}
             estado={estadoLinea}
             herramientas={giro.herramientas}

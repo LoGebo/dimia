@@ -1145,3 +1145,12 @@ export async function alternarRecado(_previo: Estado, fd: FormData): Promise<Est
     datos((q, negocioId) => q("update lead set atendido = not atendido where id = $2 and tenant_id = $1", [negocioId, texto(fd, "id")])),
   );
 }
+
+/** Cambia el negocio activo de la cuenta, solo entre los que tiene. */
+export async function cambiarNegocio(formData: FormData): Promise<void> {
+  const id = String(formData.get("negocio") ?? "");
+  const { membresias: lista } = await contexto();
+  if (!lista.some((m) => m.tenant_id === id)) return;
+  await elegirNegocio(id);
+  redirect("/hoy");
+}
