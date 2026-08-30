@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     modelo_por_proveedor: dict[str, str] = {
         "openai": "gpt-4.1-mini",
         "anthropic": "claude-haiku-4-5-20251001",
-        "google": "gemini-2.5-flash",
+        "google": "gemini-3.6-flash",
     }
 
     # Canales de texto y cierres: por omision GPT-4.1 mini, el mas barato del stack.

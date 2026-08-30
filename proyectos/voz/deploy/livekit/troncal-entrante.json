@@ -1,7 +1,10 @@
 {
   "trunk": {
     "name": "telnyx-mx-entrante",
-    "numbers": ["+528112345678"],
+    "numbers": [
+      "+528112345678",
+      "528112345678"
+    ],
     "allowed_addresses": [
       "REEMPLAZAR_CON_RANGOS_SIP_DE_TELNYX/24"
     ],

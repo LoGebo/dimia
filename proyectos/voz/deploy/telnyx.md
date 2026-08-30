@@ -42,7 +42,7 @@ idéntica.
 | Campo | Valor | Por qué |
 |---|---|---|
 | Connection Type | FQDN | Autenticación por IP, sin credenciales que rotar |
-| FQDN / IP | IP pública del VPS de LiveKit, puerto 5060 | Ahí escucha `livekit-sip` |
+| FQDN / IP | En LiveKit Cloud: el **SIP URI del proyecto** (Settings → Project → SIP URI, p. ej. `33boqvydp3j.sip.livekit.cloud`), puerto 5060, registro A. En VPS propio: la IP pública, puerto 5060 | Ahí escucha `livekit-sip`. Ojo: `*.sip.livekit.cloud` resuelve por comodín; si pones el subdominio de la URL wss (`voiceai-xxxx.sip.livekit.cloud`) el DNS contesta igual pero LiveKit responde `404 No trunk found` |
 | Transport | UDP | Lo que espera el puente por defecto |
 | Anchorsite | Dallas, o *Latency Based* | No hay anchorsite en México; Dallas es el de menor RTT hacia el país |
 | DTMF Type | RFC 2833 | Tonos fuera de banda; en audio se pierden con el códec |
@@ -110,6 +110,16 @@ lk sip inbound update ST_xxxx --numbers +528112345678,+525587654321
 exacto en `tenant.telefono_entrada`. **Siempre E.164, siempre con `+52`**, sin
 espacios, sin `01`, sin paréntesis. El 90 % de los "no contesta el agente" son
 un número guardado con otro formato.
+
+**El troncal de LiveKit lleva el número dos veces: con `+` y sin `+`.** Telnyx
+manda el INVITE a `sip:12487479738@...` aunque la conexión esté en E.164; si el
+troncal solo tiene `+12487479738`, LiveKit contesta `404 No trunk found` y el
+operador de quien llama reproduce "el número no existe". El worker normaliza
+los dos al mismo `+1...`, así que la base solo guarda la forma con `+`.
+
+```bash
+lk sip inbound update --id ST_xxxx --numbers +528112345678 --numbers 528112345678
+```
 
 ## 6. Prueba de humo
 

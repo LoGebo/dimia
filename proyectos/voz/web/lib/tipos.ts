@@ -668,7 +668,7 @@ export const PROVEEDORES_LLM: {
   porDefecto: string;
 }[] = [
   { valor: "openai", nombre: "OpenAI", detalle: "El más probado en llamadas", porDefecto: "gpt-4.1-mini" },
-  { valor: "google", nombre: "Google Gemini", detalle: "El más rápido y barato", porDefecto: "gemini-2.5-flash" },
+  { valor: "google", nombre: "Google Gemini", detalle: "El más rápido y barato", porDefecto: "gemini-3.6-flash" },
   { valor: "anthropic", nombre: "Anthropic", detalle: "El que mejor sigue instrucciones largas", porDefecto: "claude-haiku-4-5-20251001" },
 ];
 
@@ -682,9 +682,9 @@ export const MODELOS_LLM: Record<
     { id: "gpt-4.1", nombre: "GPT-4.1", detalle: "Más fino, ocho veces más caro", costoMinuto: 0.032 },
   ],
   google: [
-    { id: "gemini-2.5-flash", nombre: "Gemini 2.5 Flash", detalle: "El mejor equilibrio velocidad, costo y herramientas", costoMinuto: 0.003 },
-    { id: "gemini-2.5-flash-lite", nombre: "Gemini 2.5 Flash-Lite", detalle: "El de menor latencia del mercado; algo más simple", costoMinuto: 0.001 },
-    { id: "gemini-3-flash-preview", nombre: "Gemini 3 Flash (preview)", detalle: "Muy conciso, pero da 504 seguido: no lo dejes en producción", costoMinuto: 0.005 },
+    { id: "gemini-3.6-flash", nombre: "Gemini 3.6 Flash", detalle: "El equilibrio actual de Google; 2.5 Flash ya no se ofrece a cuentas nuevas", costoMinuto: 0.003 },
+    { id: "gemini-3.5-flash-lite", nombre: "Gemini 3.5 Flash Lite", detalle: "El de menor latencia; algo más simple", costoMinuto: 0.001 },
+    { id: "gemini-3.7-flash", nombre: "Gemini 3.7 Flash", detalle: "El más reciente; probarlo antes de dejarlo en producción", costoMinuto: 0.005 },
   ],
   anthropic: [
     { id: "claude-haiku-4-5-20251001", nombre: "Claude Haiku 4.5", detalle: "Rápido y muy obediente", costoMinuto: 0.004 },
