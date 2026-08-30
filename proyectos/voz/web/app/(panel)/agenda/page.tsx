@@ -6,7 +6,7 @@ import { NavegarDia } from "@/components/navegar-dia";
 import { NuevaCita } from "@/components/nueva-cita";
 import { OcupacionSemanal } from "@/components/graficas";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
-import { buscarReservas, negocio, reservasEntre, servicios } from "@/lib/consultas";
+import { buscarReservas, negocio, proximasReservas, reservasEntre, servicios } from "@/lib/consultas";
 import { diaValido, fechaLarga, isoDia, lunesDe, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import { DIAS } from "@/lib/tipos";
@@ -139,16 +139,35 @@ export default async function Agenda({
     );
   }
 
+  // Un día vacío no significa agenda vacía: si no hay citas hoy, se enseñan las
+  // que vienen, con su fecha, para que nadie crea que el agente no agendó nada.
+  const proximas = cuenta(reservas) === 0 ? await proximasReservas(dia) : [];
+  const siguiente = proximas[0];
+  const diaSiguiente = siguiente ? isoDia(new Date(siguiente.inicio), config.zona_horaria) : null;
+  const descripcion = siguiente
+    ? `${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · sin citas este día; la siguiente es el ${fechaLarga(siguiente.inicio, config.zona_horaria)}.`
+    : `${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · marca Llegó cuando entre cada persona y Atendida al terminar.`;
+
   return (
     <>
-      <Encabezado
-        titulo="Agenda"
-        descripcion={`${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · marca Llegó cuando entre cada persona y Atendida al terminar.`}
-        giro={giro.nombre}
-        acciones={navegacion}
-        principal={nueva}
-      />
+      <Encabezado titulo="Agenda" descripcion={descripcion} giro={giro.nombre} acciones={navegacion} principal={nueva} />
       <div className="space-y-4 px-5 py-5">
+        {proximas.length > 0 ? (
+          <Tarjeta>
+            <TarjetaCabecera
+              titulo="Próximas citas"
+              descripcion={`${proximas.length === 1 ? "La siguiente cita" : `Las siguientes ${proximas.length} citas`} en la agenda.`}
+              accion={
+                diaSiguiente ? (
+                  <Link href={enlace({ dia: diaSiguiente, vista: "dia" })} className="text-xs text-tinta-3 transition hover:text-acento">
+                    Ir a ese día
+                  </Link>
+                ) : null
+              }
+            />
+            <ListaReservas reservas={proximas} zona={config.zona_horaria} mostrarFecha />
+          </Tarjeta>
+        ) : null}
         <FlujoDelDia dia={dia} base="/agenda" parametros={parametros} giro={giro} zona={config.zona_horaria} extra={{ dia, vista }} />
       </div>
     </>

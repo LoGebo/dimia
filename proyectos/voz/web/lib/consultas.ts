@@ -141,6 +141,21 @@ export function reservasEntre(desde: string, hasta: string): Promise<Reserva[]> 
   );
 }
 
+export function proximasReservas(despuesDe: string, limite = 8): Promise<Reserva[]> {
+  return datos((q, id) =>
+    q<Reserva>(
+      `${SELECT_RESERVA}
+        join tenant t on t.id = b.tenant_id
+        where b.tenant_id = $1
+          and b.estado = 'confirmada'
+          and (b.inicio at time zone t.zona_horaria)::date > $2::date
+        order by b.inicio
+        limit $3`,
+      [id, despuesDe, limite],
+    ),
+  );
+}
+
 export function buscarReservas(termino: string): Promise<Reserva[]> {
   const limpio = termino.trim();
   if (!limpio) return Promise.resolve([]);
