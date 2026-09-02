@@ -65,6 +65,7 @@ class Recepcionista(Agent):
         self.pedido_id: uuid.UUID | None = None
         self.pedido_cerrado = False
         self.recado = False
+        self._duplicado_avisado = False
         self.escalado = False
         self.motivo_escalamiento: str | None = None
         self._t0 = time.monotonic()
@@ -164,6 +165,32 @@ class Recepcionista(Agent):
         servicio = self._servicio(servicio_id)
         if servicio is None:
             return "Servicio invalido."
+
+        # La misma persona no debe acumular citas sin darse cuenta: si ya tiene
+        # una vigente, el modelo se entera ANTES de apartar otra y pregunta si
+        # quiere las dos o mover la que tenia. Una sola vez por llamada.
+        if self.telefono and not self._duplicado_avisado:
+            try:
+                vigentes = await agenda.buscar_reserva(self.tenant.id, telefono=self.telefono)
+            except Exception:
+                vigentes = []
+            futuras = [
+                v for v in vigentes
+                if v.get("inicio") and v["inicio"] > datetime.now(self.tenant.tz)
+            ]
+            if futuras:
+                self._duplicado_avisado = True
+                lista = "; ".join(
+                    f"{v['servicio']} el {v['inicio'].astimezone(self.tenant.tz).strftime('%d/%m a las %H:%M')} (codigo {v['codigo']})"
+                    for v in futuras[:3]
+                )
+                return (
+                    "OJO: esta persona YA tiene cita apartada: " + lista + ". "
+                    "Diselo y pregunta si quiere una cita adicional, mover la que ya "
+                    "tiene, o dejarla como esta. Si quiere moverla, cancela la "
+                    "anterior con su codigo y luego reserva la nueva. Solo si "
+                    "confirma que quiere OTRA cita mas, vuelve a llamar reservar."
+                )
 
         try:
             res = await agenda.reservar(
