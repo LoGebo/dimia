@@ -1,6 +1,8 @@
 """Agente de voz LiveKit. Un worker sirve a todos los negocios."""
 from __future__ import annotations
 
+import sys
+
 import asyncio
 import json
 import logging
@@ -15,7 +17,7 @@ from dotenv import load_dotenv
 from livekit import api
 from livekit.agents import (
     Agent, AgentSession, JobContext, JobProcess, RoomInputOptions,
-    RunContext, WorkerOptions, cli, function_tool,
+    JobExecutorType, RunContext, WorkerOptions, cli, function_tool,
 )
 from livekit.plugins import deepgram, elevenlabs, openai, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
@@ -957,10 +959,16 @@ async def entrypoint(ctx: JobContext) -> None:
 
 
 if __name__ == "__main__":
+    # En macOS el runtime nativo de LiveKit (liblivekit_ffi) segfaultea a veces al
+    # arrancar el proceso hijo de un job y la llamada entra hasta el reintento,
+    # veinte segundos despues. En hilos no pasa. En Linux (Fly) se queda el
+    # esquema de procesos, que aisla mejor una llamada de otra.
+    en_mac = sys.platform == "darwin"
     cli.run_app(
         WorkerOptions(
             entrypoint_fnc=entrypoint,
             prewarm_fnc=prewarm,
             num_idle_processes=cfg.procesos_precalentados,
+            job_executor_type=JobExecutorType.THREAD if en_mac else JobExecutorType.PROCESS,
         )
     )
