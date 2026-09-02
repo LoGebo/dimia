@@ -1,6 +1,8 @@
 """Cliente delgado sobre las funciones RPC del motor en Postgres."""
 from __future__ import annotations
 
+import asyncio
+
 import json
 import uuid
 from dataclasses import dataclass
@@ -79,34 +81,43 @@ def _tenant(fila: asyncpg.Record | None) -> Tenant | None:
 
 
 class Agenda:
-    """Pool compartido por todo el proceso del agente."""
+    """Un pool por event loop.
+
+    Con el ejecutor de procesos habia un solo loop y bastaba un pool. Con el
+    ejecutor de hilos (macOS) cada llamada corre en su propio hilo con su
+    propio loop; un pool de asyncpg no puede cruzar loops y truena con
+    "another operation is in progress". Se guarda un pool por loop y se crea
+    la primera vez que ese loop lo pide.
+    """
 
     def __init__(self) -> None:
-        self._pool: asyncpg.Pool | None = None
+        self._pools: dict[int, asyncpg.Pool] = {}
 
     async def conectar(self) -> None:
-        if self._pool is None:
-            self._pool = await asyncpg.create_pool(
+        llave = id(asyncio.get_running_loop())
+        if llave not in self._pools:
+            self._pools[llave] = await asyncpg.create_pool(
                 settings().pg_dsn,
-                min_size=2,
-                max_size=10,
+                min_size=1,
+                max_size=4,
                 statement_cache_size=0,
                 command_timeout=5,
             )
 
     def adoptar_pool(self, pool: asyncpg.Pool) -> None:
-        self._pool = pool
+        self._pools[id(asyncio.get_running_loop())] = pool
 
     async def cerrar(self) -> None:
-        if self._pool:
-            await self._pool.close()
-            self._pool = None
+        pool = self._pools.pop(id(asyncio.get_running_loop()), None)
+        if pool:
+            await pool.close()
 
     @property
     def pool(self) -> asyncpg.Pool:
-        if self._pool is None:
+        pool = self._pools.get(id(asyncio.get_running_loop()))
+        if pool is None:
             raise RuntimeError("llama conectar() antes")
-        return self._pool
+        return pool
 
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:

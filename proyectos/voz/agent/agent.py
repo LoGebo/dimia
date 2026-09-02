@@ -955,7 +955,17 @@ async def entrypoint(ctx: JobContext) -> None:
         except Exception:
             log.exception("no se pudo cerrar la llamada")
 
+    async def cerrar_pool() -> None:
+        # Con el ejecutor de hilos cada llamada tiene su propio pool: si no se
+        # cierra al colgar, Postgres se queda sin conexiones en unas cuantas
+        # llamadas ("too many clients").
+        try:
+            await agenda.cerrar()
+        except Exception:
+            log.exception("no se pudo cerrar el pool")
+
     ctx.add_shutdown_callback(al_colgar)
+    ctx.add_shutdown_callback(cerrar_pool)
 
 
 if __name__ == "__main__":
