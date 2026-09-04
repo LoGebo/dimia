@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RenglonConversacion } from "@/components/renglon-conversacion";
 import { Encabezado } from "@/components/encabezado";
+import { Bloque, TableroHoy } from "@/components/tablero";
 import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { MINUTOS_TOLERANCIA, minutosDesde, minutosLegibles } from "@/components/flujo-citas";
 import { Avance, BarraSegmentada, BarrasMini, Chispa, FilaKpis, GraficaLineas, Kpi, type Insight } from "@/components/kit";
@@ -34,7 +35,7 @@ const DIAS_GRAFICA = 14;
  * sugerencias y cómo les fue. Para operar el día se va a Agenda o a Pedidos.
  */
 export default async function Hoy() {
-  const { giro } = await contexto();
+  const { giro, negocioId } = await contexto();
   const [config, progreso] = await Promise.all([negocio(), avance(giro.herramientas)]);
   const hoy = isoDia(new Date(), config.zona_horaria);
   const zona = config.zona_horaria;
@@ -137,8 +138,8 @@ export default async function Hoy() {
     <>
       <Encabezado titulo="Hoy" descripcion={`${saludo}. ${fechaLarga(`${hoy}T12:00:00Z`, "UTC")} · así va el día.`} />
 
-      <div className="escalonado space-y-4">
-        {avisos.length > 0 ? (
+      <TableroHoy negocioId={negocioId}>
+        <Bloque id="avisos" titulo="Necesita atención">{avisos.length > 0 ? (
           <section aria-label="Necesita atención" className="overflow-hidden rounded-lg border border-linea bg-panel">
             <ul className="divide-y divide-linea">
               {avisos.map((a) => (
@@ -153,9 +154,9 @@ export default async function Hoy() {
               ))}
             </ul>
           </section>
-        ) : null}
+        ) : null}</Bloque>
 
-        <FilaKpis>
+        <Bloque id="kpis" titulo="Indicadores"><FilaKpis>
           {agenda ? (
             <Kpi
               etiqueta="Citas de hoy"
@@ -215,10 +216,10 @@ export default async function Hoy() {
           >
             <Chispa serie={ultimos7.map((d) => d.total)} alto={28} className="h-7" />
           </Kpi>
-        </FilaKpis>
+        </FilaKpis></Bloque>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
-          <section aria-label="Llamadas de la quincena" className="min-w-0 rounded-lg border border-linea bg-panel px-5 pt-4 pb-5">
+          <Bloque id="llamadas" titulo="Llamadas de la quincena"><section aria-label="Llamadas de la quincena" className="min-w-0 rounded-lg border border-linea bg-panel px-5 pt-4 pb-5">
             <header className="flex items-baseline justify-between gap-4">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight text-tinta">Llamadas de la quincena</h2>
@@ -239,9 +240,9 @@ export default async function Hoy() {
               titulos={porDia.map((d) => fechaLarga(`${d.dia}T12:00:00Z`, "UTC"))}
               alto={210}
             />
-          </section>
+          </section></Bloque>
 
-          <section aria-label={agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"} className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-linea bg-panel">
+          <Bloque id="agenda" titulo="Lo que viene"><section aria-label={agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"} className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="flex items-baseline justify-between gap-4 border-b border-linea px-5 pt-4 pb-3">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight text-tinta">{agenda ? "Lo que viene" : pedidos ? "Por sacar" : "Recados por regresar"}</h2>
@@ -323,11 +324,11 @@ export default async function Hoy() {
                 ))}
               </ul>
             )}
-          </section>
+          </section></Bloque>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px]">
-          <section aria-label="Lo último que entró" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
+          <Bloque id="entradas" titulo="Lo último que entró"><section aria-label="Lo último que entró" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="flex items-baseline justify-between gap-4 border-b border-linea px-5 pt-4 pb-3">
               <div>
                 <h2 className="text-[15px] font-bold tracking-tight text-tinta">Lo último que entró</h2>
@@ -346,9 +347,9 @@ export default async function Hoy() {
                 ))}
               </div>
             )}
-          </section>
+          </section></Bloque>
 
-          <section aria-label="Sugerencias" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
+          <Bloque id="sugerencias" titulo="Sugerencias"><section aria-label="Sugerencias" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="border-b border-linea px-5 pt-4 pb-3">
               <h2 className="text-[15px] font-bold tracking-tight text-tinta">Sugerencias</h2>
               <p className="mt-0.5 text-[12px] text-tinta-3">Se calculan con lo que hay en Clientes y Cobros.</p>
@@ -401,9 +402,9 @@ export default async function Hoy() {
                 </li>
               </ul>
             )}
-          </section>
+          </section></Bloque>
 
-          <section aria-label="Cómo les fue" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
+          <Bloque id="resenas" titulo="Cómo les fue"><section aria-label="Cómo les fue" className="min-w-0 overflow-hidden rounded-lg border border-linea bg-panel">
             <header className="border-b border-linea px-5 pt-4 pb-3">
               <h2 className="text-[15px] font-bold tracking-tight text-tinta">Cómo les fue</h2>
               <p className="mt-0.5 text-[12px] text-tinta-3">{promedio === null ? "Se pregunta por WhatsApp después de cada cita." : `${totalResenas} ${totalResenas === 1 ? "calificación" : "calificaciones"} en 30 días.`}</p>
@@ -430,9 +431,9 @@ export default async function Hoy() {
                 </ul>
               </div>
             )}
-          </section>
+          </section></Bloque>
         </div>
-      </div>
+      </TableroHoy>
     </>
   );
 }
