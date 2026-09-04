@@ -757,6 +757,56 @@ export async function eliminarFaq(_previo: Estado, fd: FormData): Promise<Estado
   );
 }
 
+/** La bienvenida de WhatsApp es una sola por negocio; vacía se borra. */
+export async function guardarBienvenidaWa(_previo: Estado, fd: FormData): Promise<Estado> {
+  const respuesta = opcional(fd, "respuesta")?.trim() ?? "";
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      await q("delete from wa_regla where tenant_id = $1 and tipo = 'bienvenida'", [negocioId]);
+      if (respuesta) {
+        await q("insert into wa_regla (tenant_id, tipo, respuesta) values ($1, 'bienvenida', $2)", [negocioId, respuesta]);
+      }
+      return { ok: respuesta ? "Bienvenida guardada." : "Bienvenida quitada; abre la IA directamente." };
+    }),
+  );
+}
+
+export async function guardarReglaWa(_previo: Estado, fd: FormData): Promise<Estado> {
+  const disparador = texto(fd, "disparador");
+  const respuesta = texto(fd, "respuesta");
+  if (!disparador || !respuesta) return { error: "Faltan las palabras o la respuesta." };
+  const id = opcional(fd, "id");
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      if (id) {
+        await q("update wa_regla set disparador = $2, respuesta = $3 where id = $1 and tenant_id = $4", [
+          id, disparador, respuesta, negocioId,
+        ]);
+      } else {
+        await q(
+          "insert into wa_regla (tenant_id, tipo, disparador, respuesta, orden) values ($1, 'palabra', $2, $3, coalesce((select max(orden) + 1 from wa_regla where tenant_id = $1 and tipo = 'palabra'), 0))",
+          [negocioId, disparador, respuesta],
+        );
+      }
+      return { ok: "Regla guardada." };
+    }),
+  );
+}
+
+export async function alternarReglaWa(fd: FormData): Promise<void> {
+  await datos((q, negocioId) =>
+    q("update wa_regla set activo = not activo where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]),
+  );
+  revalidatePath("/whatsapp");
+}
+
+export async function eliminarReglaWa(fd: FormData): Promise<void> {
+  await datos((q, negocioId) =>
+    q("delete from wa_regla where id = $1 and tenant_id = $2 and tipo = 'palabra'", [texto(fd, "id"), negocioId]),
+  );
+  revalidatePath("/whatsapp");
+}
+
 export async function cancelarReserva(_previo: Estado, fd: FormData): Promise<Estado> {
   return intentar(() =>
     datos((q, negocioId) => q("select public.cancelar_reserva($1, $2)", [negocioId, texto(fd, "id")])),

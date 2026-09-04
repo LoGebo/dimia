@@ -78,6 +78,27 @@ export const leer = {
     )) satisfies Lector<Faq[]>,
 };
 
+export function lineaWhatsApp(): Promise<string | null> {
+  return datos(async (q, id) => {
+    const filas = await q<{ telefono: string }>(
+      "select telefono from linea where tenant_id = $1 and activo and etiqueta like 'whatsapp%' order by creado limit 1",
+      [id],
+    );
+    return filas[0]?.telefono ?? null;
+  });
+}
+
+export type ReglaWa = { id: string; tipo: "bienvenida" | "palabra"; disparador: string | null; respuesta: string; activo: boolean; orden: number };
+
+export function reglasWa(): Promise<ReglaWa[]> {
+  return datos((q, id) =>
+    q<ReglaWa>(
+      "select id, tipo, disparador, respuesta, activo, orden from wa_regla where tenant_id = $1 order by tipo, orden, creado",
+      [id],
+    ),
+  );
+}
+
 /** Una vez por petición: casi todas las pantallas lo piden para la zona horaria. */
 export const negocio = cache((): Promise<Negocio> => datos(leer.negocio));
 

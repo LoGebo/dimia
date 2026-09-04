@@ -28,6 +28,7 @@ import {
   Users,
   Voicemail,
   Wallet,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import { secciones } from "@/lib/giro";
@@ -60,6 +61,7 @@ const ICONO_PANTALLA: Record<string, LucideIcon> = {
   "/mensajes": BellRing,
   "/probar": PhoneCall,
   "/pagos": CreditCard,
+  "/whatsapp": MessageCircle,
 };
 
 /**

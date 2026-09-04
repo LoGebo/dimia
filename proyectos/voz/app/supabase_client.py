@@ -470,6 +470,23 @@ class Agenda:
             for f in filas
         ]
 
+    async def wa_reglas(self, tenant_id: uuid.UUID) -> list[dict]:
+        """Las reglas deterministas de WhatsApp del negocio, en orden."""
+        filas = await self.pool.fetch(
+            """select tipo, disparador, respuesta from wa_regla
+               where tenant_id = $1 and activo order by orden, creado""",
+            tenant_id,
+        )
+        return [dict(f) for f in filas]
+
+    async def conversacion_abierta(
+        self, tenant_id: uuid.UUID, canal: str, contacto: str
+    ) -> bool:
+        return bool(await self.pool.fetchval(
+            "select conversacion_abierta($1, $2::canal_conversacion, $3)",
+            tenant_id, canal, contacto,
+        ))
+
     async def faq(self, tenant_id: uuid.UUID, limite: int = 30) -> list[dict]:
         filas = await self.pool.fetch(
             """select pregunta, respuesta from knowledge

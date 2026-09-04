@@ -30,7 +30,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
 
   const ajustes: Pestana[] = [{ href: "/agente", nombre: "Negocio y agente" }];
   if (agenda || pedidos) ajustes.push({ href: "/horarios", nombre: "Horarios" });
-  ajustes.push({ href: "/pagos", nombre: "Pagos" });
+  ajustes.push({ href: "/whatsapp", nombre: "WhatsApp" }, { href: "/pagos", nombre: "Pagos" });
   if (agenda) ajustes.push({ href: "/servicios", nombre: "Servicios" }, { href: "/equipo", nombre: "Equipo" });
   ajustes.push(
     { href: "/catalogo", nombre: "Catálogo" },

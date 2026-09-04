@@ -9,7 +9,7 @@ from typing import Any, Protocol
 from app.supabase_client import Agenda, Tenant
 from app.supabase_client import agenda as agenda_global
 from channels import nucleo
-from channels.whatsapp import plantilla
+from channels.whatsapp import deterministas, plantilla
 from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
@@ -42,6 +42,7 @@ class ContextoNegocio:
     servicios: list[dict]
     faq: list[dict]
     cargado: float
+    reglas: list[dict] = field(default_factory=list)
     catalogo: list[dict] = field(default_factory=list)
     plantilla: dict | None = None
     herramientas_giro: list[str] = field(default_factory=list)
@@ -78,14 +79,16 @@ class AgenteWhatsApp:
         tenant = await self.agenda.tenant_por_telefono(numero_negocio)
         if tenant is None:
             return None
-        servicios, faq, catalogo, plantilla = await asyncio.gather(
+        servicios, faq, catalogo, plantilla, reglas = await asyncio.gather(
             self.agenda.servicios(tenant.id),
             self.agenda.faq(tenant.id),
             self.agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
             self.agenda.plantilla_vertical(tenant.vertical),
+            self.agenda.wa_reglas(tenant.id),
         )
         contexto = ContextoNegocio(
             tenant, servicios, faq, time.monotonic(),
+            reglas=reglas,
             catalogo=catalogo,
             plantilla=plantilla,
             herramientas_giro=list((plantilla or {}).get("herramientas", [])),
@@ -105,6 +108,10 @@ class AgenteWhatsApp:
         resena = await self._resena(contexto, entrante)
         if resena is not None:
             return resena
+
+        fija = await self._determinista(contexto, entrante)
+        if fija is not None:
+            return fija
 
         sesion = self.registro.obtener(
             contexto.tenant.id, entrante.telefono, entrante.nombre_perfil
@@ -161,6 +168,46 @@ class AgenteWhatsApp:
             respuesta=respuesta,
             nombre=entrante.nombre_perfil,
             herramienta="resena",
+            externo_id=entrante.mensaje_id,
+            escalado=False,
+            motivo=None,
+            log=log,
+        )
+        return [SalidaTexto(destino=entrante.wa_id, texto=respuesta)]
+
+    async def _determinista(
+        self, contexto: ContextoNegocio, entrante: MensajeEntrante
+    ) -> list[Salida] | None:
+        """Las reglas fijas del panel, antes de despertar al modelo.
+
+        Si una regla atrapa el mensaje, la respuesta sale sin tokens y el
+        turno queda escrito en el hilo como cualquier otro. Si consultar las
+        reglas falla, el mensaje sigue su camino normal: una tabla caída no
+        deja a nadie sin respuesta.
+        """
+        if not contexto.reglas:
+            return None
+        try:
+            abierta = await self.agenda.conversacion_abierta(
+                contexto.tenant.id, "whatsapp", entrante.telefono
+            )
+        except Exception:
+            log.exception("no se pudo revisar la conversacion abierta")
+            return None
+        respuesta = deterministas.elegir(
+            contexto.reglas, entrante.texto or "", abierta
+        )
+        if respuesta is None:
+            return None
+        await nucleo.registrar_turno(
+            self.agenda,
+            tenant_id=contexto.tenant.id,
+            canal="whatsapp",
+            contacto=entrante.telefono,
+            entrante=entrante.texto,
+            respuesta=respuesta,
+            nombre=entrante.nombre_perfil,
+            herramienta="determinista",
             externo_id=entrante.mensaje_id,
             escalado=False,
             motivo=None,
