@@ -206,6 +206,12 @@ class AgendaFalsa:
     async def plantilla_vertical(self, vertical: str) -> dict:
         return {"herramientas": ["agendar", "recado"], "instrucciones": "Agenda citas."}
 
+    async def wa_reglas(self, tenant_id: uuid.UUID) -> list[dict]:
+        return getattr(self, "_wa_reglas", [])
+
+    async def conversacion_abierta(self, tenant_id: uuid.UUID, canal: str, contacto: str) -> bool:
+        return getattr(self, "_conversacion_abierta", False)
+
     async def slots_libres(
         self,
         tenant_id: uuid.UUID,
@@ -504,7 +510,7 @@ async def test_envia_texto_al_endpoint_de_la_cuenta(cfg):
     assert await cliente.enviar_texto(NUMERO_CLIENTE, "va") == "wamid.out"
 
     peticion = capturadas[0]
-    assert str(peticion.url).endswith("/v21.0/111222333/messages")
+    assert str(peticion.url).endswith("/v25.0/111222333/messages")
     assert peticion.headers["authorization"] == "Bearer EAA-falso"
     cuerpo = json.loads(peticion.content)
     assert cuerpo["to"] == NUMERO_CLIENTE

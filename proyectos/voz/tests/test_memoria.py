@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import asyncpg
 import pytest
@@ -19,9 +19,9 @@ def _j(v):
 
 
 def _lunes_proximo(hora: int) -> datetime:
-    hoy = datetime.now(timezone.utc).date()
+    hoy = datetime.now(UTC).date()
     lunes = hoy + timedelta(days=(7 - hoy.weekday()) % 7 or 7)
-    return datetime(lunes.year, lunes.month, lunes.day, hora, 0, tzinfo=timezone.utc)
+    return datetime(lunes.year, lunes.month, lunes.day, hora, 0, tzinfo=UTC)
 
 
 @pytest_asyncio.fixture

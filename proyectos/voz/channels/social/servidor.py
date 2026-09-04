@@ -12,9 +12,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from app.llm_texto import cliente_texto
 from fastapi import BackgroundTasks, FastAPI, Request, Response
 
+from app.llm_texto import cliente_texto
 from app.supabase_client import agenda
 from channels.social.agente import AgenteSocial
 from channels.social.cliente import ClienteSocial

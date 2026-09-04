@@ -40,6 +40,10 @@ export const clip: ProveedorPagos = {
   },
 
   verificarWebhook() {
+    // Clip no firma sus webhooks. La URL lleva un token por negocio
+    // (tokenWebhook) que la ruta valida antes de llegar aquí, y el estado se
+    // reconfirma contra la API de Clip antes de marcar el pago: esas dos capas
+    // son la frontera, no el cuerpo del aviso.
     return true;
   },
 

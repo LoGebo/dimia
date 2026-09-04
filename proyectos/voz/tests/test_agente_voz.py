@@ -38,6 +38,7 @@ def agente():
         livekit.agents = _modulo(
             "livekit.agents",
             Agent=_Agente, AgentSession=object, JobContext=object, JobProcess=object,
+            JobExecutorType=type("JobExecutorType", (), {"PROCESS": 1, "THREAD": 2}),
             RoomInputOptions=object, RunContext=object, WorkerOptions=object,
             cli=object(), function_tool=_identidad,
         )

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { elevado } from "@/lib/db";
-import { esProveedor, pasarela, type Credenciales } from "@/lib/pagos";
+import { esProveedor, pasarela, tokenWebhookValido, type Credenciales } from "@/lib/pagos";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ proveed
     cuerpo = crudo ? JSON.parse(crudo) : {};
   } catch {}
   const tenantParam = url.searchParams.get("t");
+  // Si el aviso trae negocio en la URL, exige el token que atamos al crearla:
+  // sin él, cualquiera podría inyectar avisos a nombre de un negocio ajeno
+  // (Clip no firma). Stripe manda a un endpoint sin `t` y se ata por la firma
+  // y el id del pago, así que ahí no aplica.
+  if (tenantParam && !tokenWebhookValido(proveedor, tenantParam, url.searchParams.get("k"))) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
 
   const eventoId = await elevado(async (q) => {
     const r = await q<{ id: string }>(

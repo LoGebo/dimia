@@ -91,7 +91,10 @@ export const mercadopago: ProveedorPagos = {
 
   verificarWebhook(c, _cuerpo, cabeceras, url) {
     const secreto = c.webhook_secret;
-    if (!secreto) return true;
+    // Sin secreto configurado no se puede verificar la firma: se rechaza en
+    // vez de aceptar a ciegas (antes era fail-open). El alta de la pasarela
+    // debe incluir la clave del webhook.
+    if (!secreto) return false;
     const firma = cabeceras.get("x-signature") ?? "";
     const idRequest = cabeceras.get("x-request-id") ?? "";
     const partes = Object.fromEntries(firma.split(",").map((s) => s.trim().split("=") as [string, string]));
