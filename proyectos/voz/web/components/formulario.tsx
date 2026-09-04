@@ -71,8 +71,29 @@ export function BotonEnviar({
   variante?: "solido" | "contorno";
 }) {
   const { pending } = useFormStatus();
+  // Dos clics muy seguidos disparan ambos submits antes de que React marque
+  // `pending` y deshabilite el botón: se creaban registros duplicados. Un ref
+  // síncrono bloquea el segundo clic en el acto; se libera cuando el envío
+  // termina (pending vuelve a false).
+  const enviando = useRef(false);
+  useEffect(() => {
+    if (!pending) enviando.current = false;
+  }, [pending]);
   return (
-    <Boton variante={variante} type="submit" disabled={pending || disabled} className={className} aria-busy={pending}>
+    <Boton
+      variante={variante}
+      type="submit"
+      disabled={pending || disabled}
+      className={className}
+      aria-busy={pending}
+      onClick={(e) => {
+        if (enviando.current) {
+          e.preventDefault();
+          return;
+        }
+        enviando.current = true;
+      }}
+    >
       {pending ? <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" /> : null}
       {pending ? pendienteTexto : children}
     </Boton>
