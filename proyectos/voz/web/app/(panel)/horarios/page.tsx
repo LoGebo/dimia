@@ -29,7 +29,7 @@ export default async function Horarios() {
           <EditorHorario reglas={listaReglas} recursos={listaRecursos.filter((r) => r.activo)} />
         </Tarjeta>
 
-        <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
           <Tarjeta className="self-start">
             <TarjetaCabecera titulo="Agregar excepción" descripcion="Un festivo, un puente, una junta." />
             <Formulario accion={guardarExcepcion} className="space-y-3 px-4 py-4" reiniciar>

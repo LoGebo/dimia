@@ -46,7 +46,7 @@ export default async function Agente() {
         descripcion="Los datos del negocio, cómo suena el agente y a dónde pasa las llamadas que no resuelve."
         giro={giro.nombre}
       />
-      <div className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,420px)_1fr]">
+      <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[minmax(0,420px)_1fr]">
         <div className="space-y-4">
           <Tarjeta>
             <TarjetaCabecera
@@ -96,7 +96,7 @@ export default async function Agente() {
                   ))}
                 </Selector>
               </Campo>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Campo etiqueta="Transferir a" ayuda="A dónde pasa las llamadas difíciles.">
                   <Entrada name="telefono_escalamiento" defaultValue={config.telefono_escalamiento ?? ""} placeholder="+52..." />
                 </Campo>
@@ -116,7 +116,7 @@ export default async function Agente() {
                   />
                 </Campo>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Campo
                   etiqueta="Cuenta de Instagram"
                   ayuda="El ID de tu cuenta profesional. Sin esto, los mensajes de Instagram no saben de qué negocio son."
@@ -127,7 +127,7 @@ export default async function Agente() {
                   <Entrada name="messenger_page_id" defaultValue={config.messenger_page_id ?? ""} placeholder="1020000..." />
                 </Campo>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Campo etiqueta="Cada (min)" ayuda="Salto entre horarios.">
                   <Entrada name="slot_granularidad_min" type="number" min={5} max={120} step={5} defaultValue={config.slot_granularidad_min} />
                 </Campo>
@@ -160,7 +160,7 @@ export default async function Agente() {
                 <input type="checkbox" name="resena_activa" defaultChecked={config.resena_activa} className="h-3.5 w-3.5 accent-[var(--acento)]" />
                 Preguntar cómo le fue
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Campo etiqueta="Esperar (min)" ayuda="Después de marcar atendida.">
                   <Entrada name="resena_espera_min" type="number" min={15} max={1440} step={15} defaultValue={config.resena_espera_min} />
                 </Campo>
@@ -190,7 +190,7 @@ export default async function Agente() {
               </ul>
             ) : null}
             <Formulario accion={guardarLinea} className="space-y-3 px-4 py-4" reiniciar>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Campo etiqueta="Número" ayuda="E.164, con +52.">
                   <Entrada name="telefono" placeholder="+5255..." required />
                 </Campo>

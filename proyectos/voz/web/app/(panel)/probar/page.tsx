@@ -21,7 +21,7 @@ export default async function Probar() {
     return (
       <>
         <Encabezado titulo="Probar el agente" descripcion="Háblale a tu agente desde aquí." giro={giro.nombre} />
-        <div className="grid gap-4 px-5 py-5 lg:grid-cols-[minmax(0,560px)_1fr]">
+        <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[minmax(0,560px)_1fr]">
           <Tarjeta className="self-start">
             <TarjetaCabecera
               titulo="Falta conectar LiveKit"

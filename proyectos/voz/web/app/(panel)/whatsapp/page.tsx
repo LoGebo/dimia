@@ -25,7 +25,7 @@ export default async function WhatsApp() {
         descripcion="Primero contestan tus reglas fijas, sin gastar tokens. Lo que no atrapen lo resuelve el agente con inteligencia artificial."
         giro={giro.nombre}
       />
-      <div className="grid gap-4 px-5 py-5 lg:grid-cols-[380px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[380px_minmax(0,1fr)]">
         <div className="space-y-4">
           <Tarjeta>
             <TarjetaCabecera

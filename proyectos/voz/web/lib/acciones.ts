@@ -533,9 +533,10 @@ export async function alternarDisponible(_previo: Estado, fd: FormData): Promise
 }
 
 export async function eliminarItemCatalogo(_previo: Estado, fd: FormData): Promise<Estado> {
-  return intentar(() =>
-    datos((q, negocioId) => q("delete from catalogo_item where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId])),
-  );
+  return intentar(async () => {
+    await datos((q, negocioId) => q("delete from catalogo_item where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]));
+    return { ok: "Eliminado del catálogo." };
+  });
 }
 
 export async function probarCatalogo(consulta: string, tipo: string | null): Promise<ResultadoCatalogo[]> {
@@ -609,6 +610,19 @@ export async function guardarServicio(_previo: Estado, fd: FormData): Promise<Es
       return { ok: "Servicio guardado." };
     }),
   );
+}
+
+export async function archivarServicio(_previo: Estado, fd: FormData): Promise<Estado> {
+  // Los servicios no se borran en duro: las citas apuntan a su id y perderlas
+  // rompería el historial. Se archivan (activo=false) y dejan de ofrecerse;
+  // desde la pestaña Inactivos se reactivan.
+  const activar = opcional(fd, "activar") === "1";
+  return intentar(async () => {
+    await datos((q, negocioId) =>
+      q("update service set activo = $2 where id = $1 and tenant_id = $3", [texto(fd, "id"), activar, negocioId]),
+    );
+    return { ok: activar ? "Servicio reactivado." : "Servicio archivado." };
+  });
 }
 
 export type ReglaNueva = Omit<Regla, "id">;
@@ -717,9 +731,10 @@ export async function guardarExcepcion(_previo: Estado, fd: FormData): Promise<E
 }
 
 export async function eliminarRegla(_previo: Estado, fd: FormData): Promise<Estado> {
-  return intentar(() =>
-    datos((q, negocioId) => q("delete from schedule_rule where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId])),
-  );
+  return intentar(async () => {
+    await datos((q, negocioId) => q("delete from schedule_rule where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]));
+    return { ok: "Horario eliminado." };
+  });
 }
 
 export async function guardarFaq(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -752,9 +767,13 @@ export async function guardarFaq(_previo: Estado, fd: FormData): Promise<Estado>
 }
 
 export async function eliminarFaq(_previo: Estado, fd: FormData): Promise<Estado> {
-  return intentar(() =>
-    datos((q, negocioId) => q("delete from knowledge where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId])),
-  );
+  // Devuelve un ok explícito: sin él, el Formulario nunca corre su rama de
+  // éxito (no cierra el diálogo ni refleja el borrado) aunque la fila ya no
+  // exista en la base.
+  return intentar(async () => {
+    await datos((q, negocioId) => q("delete from knowledge where id = $1 and tenant_id = $2", [texto(fd, "id"), negocioId]));
+    return { ok: "Respuesta eliminada." };
+  });
 }
 
 /** La bienvenida de WhatsApp es una sola por negocio; vacía se borra. */

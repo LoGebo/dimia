@@ -18,13 +18,13 @@ export default async function Catalogo() {
         descripcion="Qué puede reservar el agente, cuánto dura y con quién."
         giro={giro.nombre}
       />
-      <div className="grid gap-4 px-5 py-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-2">
         <Tarjeta>
           <TarjetaCabecera
             titulo={vertical.plural}
             descripcion={`Lo que se ocupa al reservar. Ejemplos: ${vertical.ejemplos}.`}
             accion={
-              <NuevoEnPanel titulo={`Nuevo ${vertical.recurso.toLowerCase()}`}>
+              <NuevoEnPanel titulo={`Agregar ${vertical.recurso.toLowerCase()}`}>
                 <FormularioRecurso vertical={config.vertical} />
               </NuevoEnPanel>
             }

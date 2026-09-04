@@ -3,9 +3,10 @@
 import { useState, type ReactNode } from "react";
 import { BotonDialogo, Dialogo } from "@/components/dialogo";
 import { BotonEnviar, Formulario } from "@/components/formulario";
+import { BotonPeligro } from "@/components/boton-peligro";
 import { TablaRegistros } from "@/components/kit";
 import { Campo, Entrada, Selector } from "@/components/ui/primitivos";
-import { guardarRecurso, guardarServicio } from "@/lib/acciones";
+import { archivarServicio, guardarRecurso, guardarServicio } from "@/lib/acciones";
 import { ETIQUETAS_RECURSO, type Recurso, type Servicio, type Vertical } from "@/lib/tipos";
 
 export function FormularioRecurso({
@@ -75,7 +76,8 @@ export function FormularioServicio({
   compacto?: boolean;
 }) {
   return (
-    <Formulario accion={guardarServicio} className="space-y-3" reiniciar={!servicio}>
+    <>
+      <Formulario accion={guardarServicio} className="space-y-3" reiniciar={!servicio}>
       {servicio ? <input type="hidden" name="id" value={servicio.id} /> : null}
       <Campo etiqueta="Nombre">
         <Entrada name="nombre" defaultValue={servicio?.nombre} required placeholder="Limpieza dental" autoFocus />
@@ -117,7 +119,19 @@ export function FormularioServicio({
         </div>
       </fieldset>
       <BotonEnviar>{servicio ? "Guardar cambios" : "Agregar servicio"}</BotonEnviar>
-    </Formulario>
+      </Formulario>
+      {servicio ? (
+        <Formulario accion={archivarServicio} className="mt-3 border-t border-linea pt-3" silencioso>
+          <input type="hidden" name="id" value={servicio.id} />
+          <input type="hidden" name="activar" value={servicio.activo ? "0" : "1"} />
+          {servicio.activo ? (
+            <BotonPeligro etiqueta="Sí, archivar">Archivar servicio</BotonPeligro>
+          ) : (
+            <BotonEnviar>Reactivar servicio</BotonEnviar>
+          )}
+        </Formulario>
+      ) : null}
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -103,14 +103,20 @@ function FormaCita({
     });
   }, [servicioId, dia, personas]);
 
+  // El éxito corre una sola vez por reserva: el efecto depende solo de
+  // estado.ok, y un ref evita que un cambio de identidad de cerrar/router lo
+  // vuelva a disparar (era el aviso triplicado).
+  const anunciado = useRef<string | null>(null);
+  const cerrarRef = useRef(cerrar);
+  cerrarRef.current = cerrar;
   useEffect(() => {
-    if (estado.ok) {
-      router.refresh();
-      avisar({ titulo: estado.ok, tono: "bueno" });
-      const t = setTimeout(cerrar, 900);
-      return () => clearTimeout(t);
-    }
-  }, [estado.ok, router, cerrar, avisar]);
+    if (!estado.ok || anunciado.current === estado.ok) return;
+    anunciado.current = estado.ok;
+    router.refresh();
+    avisar({ titulo: estado.ok, tono: "bueno" });
+    const t = setTimeout(() => cerrarRef.current(), 900);
+    return () => clearTimeout(t);
+  }, [estado.ok, router, avisar]);
 
   const formatoHora = new Intl.DateTimeFormat("es-MX", {
     hour: "2-digit",

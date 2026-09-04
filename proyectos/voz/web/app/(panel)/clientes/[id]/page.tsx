@@ -49,7 +49,7 @@ export default async function FichaCliente({ params }: { params: Promise<{ id: s
           {!agenda && !pedidos ? <Cifra etiqueta="Recados pendientes" valor={String(ficha.recados_pendientes)} glifo={Glifos.llamada} tono={ficha.recados_pendientes > 0 ? "alerta" : "bueno"} /> : null}
         </TiraIndicadores>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-4">
             <Tarjeta>
               <TarjetaCabecera titulo="Qué ha pasado" descripcion="Cada cita, pedido, recado, mensaje y llamada, en orden." />
