@@ -32,6 +32,7 @@ export function ConsolaPrueba({
   const [microActivo, setMicroActivo] = useState(true);
   const [avisoMicro, setAvisoMicro] = useState<string | null>(null);
   const [estado, setEstado] = useState<EstadoPrueba | null>(null);
+  const llamando = useRef(false);
   const [nivelMicro, setNivelMicro] = useState(0);
 
   const sala = useRef<Room | null>(null);
@@ -131,13 +132,18 @@ export function ConsolaPrueba({
   }
 
   async function llamar() {
+    // Mientras el navegador muestra el aviso del microfono la fase seguia en
+    // "listo" y un segundo clic abria OTRA llamada: dos agentes hablando a la
+    // vez y la transcripcion duplicada. La fase se toma antes de pedir nada.
+    if (fase !== "listo" || llamando.current) return;
+    llamando.current = true;
+    setFase("conectando");
     const flujoMicro = await abrirMicrofono();
     setError(null);
     setTurnos([]);
     setAcciones([]);
     setLatencias([]);
     setAvisoMicro(null);
-    setFase("conectando");
 
     try {
       const respuesta = await fetch("/api/prueba/token", {
@@ -190,6 +196,7 @@ export function ConsolaPrueba({
       cuarto.on(RoomEvent.Disconnected, () => {
         audios.current?.replaceChildren();
         detenerMedidor();
+        llamando.current = false;
         setFase("listo");
         setNecesitaDesbloqueo(false);
         anotar("Llamada terminada");
@@ -214,7 +221,8 @@ export function ConsolaPrueba({
         setMicroActivo(false);
       }
     } catch (falla) {
-      setFase("listo");
+      llamando.current = false;
+        setFase("listo");
       setError(falla instanceof Error ? falla.message : "No se pudo conectar.");
       sala.current?.disconnect();
       sala.current = null;
