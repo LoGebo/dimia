@@ -123,14 +123,22 @@ class LLMFalso:
 
 
 class AgendaFalsa:
-    def __init__(self, tenant) -> None:
+    def __init__(self, tenant, reglas: list[dict] | None = None, abierta: bool = False) -> None:
         self.tenant = tenant
         self.turnos: list[dict] = []
         self.consultas: list[tuple[str, str]] = []
+        self.reglas = reglas or []
+        self.abierta = abierta
 
     async def tenant_por_red(self, canal: str, cuenta_id: str):
         self.consultas.append((canal, cuenta_id))
         return self.tenant if cuenta_id in (CUENTA_IG, PAGINA_FB) else None
+
+    async def wa_reglas(self, tenant_id) -> list[dict]:
+        return self.reglas
+
+    async def conversacion_abierta(self, tenant_id, canal, contacto) -> bool:
+        return self.abierta
 
     async def servicios(self, tenant_id) -> list[dict]:
         return []
@@ -222,6 +230,36 @@ async def test_el_negocio_se_busca_por_canal_y_cuenta(tenant, cfg):
     await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "hola"))[0])
 
     assert agenda.consultas == [("instagram", CUENTA_IG)]
+
+
+async def test_una_regla_por_palabra_contesta_sin_tocar_el_modelo(tenant, cfg):
+    """Las reglas del panel valen igual en Instagram: sin tokens, al instante."""
+    reglas = [{"tipo": "palabra", "disparador": "precio, cuánto", "respuesta": "Cortes desde $350."}]
+    agenda = AgendaFalsa(tenant, reglas=reglas, abierta=True)
+    llm = LLMFalso([])  # si intentara el modelo, tronaria: no hay guion
+    agente = AgenteSocial(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "¿qué PRECIO tienen?"))[0])
+
+    assert envios == [(CLIENTE, "Cortes desde $350.")]
+    assert llm.llamadas == []
+    assert agenda.turnos[-1]["texto"] == "Cortes desde $350."
+    assert agenda.turnos[-1]["canal"] == "instagram"
+
+
+async def test_la_bienvenida_solo_en_conversacion_nueva(tenant, cfg):
+    reglas = [{"tipo": "bienvenida", "disparador": None, "respuesta": "¡Hola! Soy el asistente."}]
+
+    nueva = AgendaFalsa(tenant, reglas=reglas, abierta=False)
+    agente = AgenteSocial(llm=LLMFalso([]), agenda=nueva, cfg=cfg, registro=RegistroSesiones(cfg))
+    envios = await agente.atender(parse_webhook(_webhook("page", PAGINA_FB, "hola"))[0])
+    assert envios == [(CLIENTE, "¡Hola! Soy el asistente.")]
+
+    abierta = AgendaFalsa(tenant, reglas=reglas, abierta=True)
+    llm = LLMFalso([RespuestaFalsa([{"type": "text", "text": "Claro."}])])
+    agente2 = AgenteSocial(llm=llm, agenda=abierta, cfg=cfg, registro=RegistroSesiones(cfg))
+    envios2 = await agente2.atender(parse_webhook(_webhook("page", PAGINA_FB, "hola"))[0])
+    assert envios2 == [(CLIENTE, "Claro.")]  # ya no manda la bienvenida; contesta el modelo
 
 
 # --- El webhook -------------------------------------------------------------

@@ -16,7 +16,7 @@ class SocialSettings(BaseSettings):
     instagram_access_token: str = ""
     messenger_access_token: str = ""
 
-    api_version: str = "v21.0"
+    api_version: str = "v25.0"
     graph_url: str = "https://graph.facebook.com"
 
     anthropic_api_key: str = ""

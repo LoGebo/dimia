@@ -20,7 +20,7 @@ from app.supabase_client import agenda as agenda_global
 from channels import nucleo
 from channels.social.config import SocialSettings, social_settings
 from channels.social.parser import CanalSocial, MensajeSocial
-from channels.whatsapp import plantilla
+from channels.whatsapp import deterministas, plantilla
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
 from channels.whatsapp.sesion import RegistroSesiones
 
@@ -50,6 +50,7 @@ class ContextoNegocio:
     catalogo: list[dict] = field(default_factory=list)
     plantilla: dict | None = None
     herramientas_giro: list[str] = field(default_factory=list)
+    reglas: list[dict] = field(default_factory=list)
 
 
 class AgenteSocial:
@@ -78,17 +79,19 @@ class AgenteSocial:
         if tenant is None:
             return None
 
-        servicios, faq, catalogo, plantilla_giro = await asyncio.gather(
+        servicios, faq, catalogo, plantilla_giro, reglas = await asyncio.gather(
             self.agenda.servicios(tenant.id),
             self.agenda.faq(tenant.id),
             self.agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
             self.agenda.plantilla_vertical(tenant.vertical),
+            self.agenda.wa_reglas(tenant.id),
         )
         contexto = ContextoNegocio(
             tenant, servicios, faq, time.monotonic(),
             catalogo=catalogo,
             plantilla=plantilla_giro,
             herramientas_giro=list((plantilla_giro or {}).get("herramientas", [])),
+            reglas=reglas,
         )
         self._contextos[clave] = contexto
         return contexto
@@ -103,6 +106,10 @@ class AgenteSocial:
             return []
         if not entrante.soportado:
             return []
+
+        fija = await self._determinista(contexto, entrante)
+        if fija is not None:
+            return fija
 
         sesion = self.registro.obtener(
             contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil
@@ -148,3 +155,43 @@ class AgenteSocial:
         )
 
         return [(entrante.remitente_id, texto)] if texto else []
+
+    async def _determinista(
+        self, contexto: ContextoNegocio, entrante: MensajeSocial
+    ) -> list[tuple[str, str]] | None:
+        """Las mismas reglas fijas del panel que en WhatsApp, antes del modelo.
+
+        Un negocio configura la bienvenida y las respuestas por palabra una vez
+        y valen para todos sus canales de Meta. Si una regla atrapa el mensaje,
+        la respuesta sale sin tokens y el turno queda escrito en el hilo. Si
+        consultar las reglas falla, el mensaje sigue su camino normal.
+        """
+        if not contexto.reglas:
+            return None
+        try:
+            abierta = await self.agenda.conversacion_abierta(
+                contexto.tenant.id, entrante.canal, entrante.remitente_id
+            )
+        except Exception:
+            log.exception("no se pudo revisar la conversacion abierta")
+            return None
+        respuesta = deterministas.elegir(
+            contexto.reglas, entrante.texto or "", abierta
+        )
+        if respuesta is None:
+            return None
+        await nucleo.registrar_turno(
+            self.agenda,
+            tenant_id=contexto.tenant.id,
+            canal=entrante.canal,
+            contacto=entrante.remitente_id,
+            entrante=entrante.texto,
+            respuesta=respuesta,
+            nombre=entrante.nombre_perfil,
+            herramienta="determinista",
+            externo_id=entrante.mensaje_id or None,
+            escalado=False,
+            motivo=None,
+            log=log,
+        )
+        return [(entrante.remitente_id, respuesta)]
