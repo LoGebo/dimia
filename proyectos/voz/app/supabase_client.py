@@ -96,10 +96,11 @@ class Agenda:
     async def conectar(self) -> None:
         llave = id(asyncio.get_running_loop())
         if llave not in self._pools:
+            cfg = settings()
             self._pools[llave] = await asyncpg.create_pool(
-                settings().pg_dsn,
-                min_size=1,
-                max_size=4,
+                cfg.pg_dsn,
+                min_size=cfg.pg_pool_min,
+                max_size=cfg.pg_pool_max,
                 statement_cache_size=0,
                 command_timeout=5,
             )

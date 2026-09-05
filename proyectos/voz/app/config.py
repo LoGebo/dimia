@@ -7,6 +7,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     pg_dsn: str = "postgresql://postgres:postgres@localhost:54322/postgres"
+    # Tamaño del pool de asyncpg, por réplica y por event loop. Se deja chico a
+    # propósito: al escalar en horizontal, `pg_dsn` apunta al pooler en modo
+    # transacción (Supabase pooler / Neon pooled / PgBouncer) y muchas réplicas
+    # multiplexan sobre pocas conexiones reales a Postgres. Subir esto sin pooler
+    # agota Postgres. El código ya es compatible con pooler (statement_cache_size=0).
+    pg_pool_min: int = 1
+    pg_pool_max: int = 4
     supabase_url: str = ""
     supabase_service_key: str = ""
 
