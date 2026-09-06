@@ -22,10 +22,10 @@
 .rotulo {
   flex: 0 0 190px;
   font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--laton);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  color: var(--acero-2);
   margin: 0;
 }
 

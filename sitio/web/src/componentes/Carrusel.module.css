@@ -83,12 +83,18 @@
 }
 
 .marcador {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: var(--acero-2);
+  font-family: var(--fuente-sans), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(15px, 1.5vw, 18px);
+  letter-spacing: -0.01em;
+  color: var(--acero);
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.3;
+  transition: color 150ms var(--curva);
+}
+
+.celda:hover .marcador {
+  color: var(--hueso);
 }
 
 .pie {

@@ -169,20 +169,15 @@ export type Cliente = { nombre: string; logo: string | null };
 export const MOSTRAR_CARRUSEL = true;
 
 export const CLIENTES: Cliente[] = [
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
-  { nombre: "[ logotipo autorizado ]", logo: null },
+  { nombre: "Atos", logo: null },
+  { nombre: "Heineken", logo: null },
+  { nombre: "Arca Continental", logo: null },
+  { nombre: "Tec de Monterrey", logo: null },
+  { nombre: "UR", logo: null },
 ];
 
 export const NOTA_CLIENTES =
-  "Consultorios · Restaurantes · Clínicas · Salones · Despachos. Los logotipos se publican solo con autorización por escrito.";
+  "Organizaciones con las que hemos trabajado. Para el logotipo oficial de cada una, se sustituye este texto por el archivo autorizado.";
 
 export const PRODUCTO = {
   estado: "En operación",
