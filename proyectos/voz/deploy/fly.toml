@@ -1,10 +1,10 @@
 app = "agente-voz"
-primary_region = "qro"
+primary_region = "dfw"
 kill_signal = "SIGTERM"
 kill_timeout = "300s"
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "../Dockerfile"
 
 [env]
   LOG_LEVEL = "INFO"
