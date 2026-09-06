@@ -8,12 +8,43 @@ import css from "./Navegacion.module.css";
 export function Navegacion() {
   const [compacta, setCompacta] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [activo, setActivo] = useState<string>("");
 
   useEffect(() => {
     const alScroll = () => setCompacta(window.scrollY > 40);
     alScroll();
     window.addEventListener("scroll", alScroll, { passive: true });
     return () => window.removeEventListener("scroll", alScroll);
+  }, []);
+
+  // Espía de sección: marca la pestaña de la sección que se está viendo.
+  useEffect(() => {
+    const ids = NAVEGACION.map((e) => e.href.slice(1));
+    const objetivos = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (objetivos.length === 0) return;
+
+    const visibles = new Map<string, number>();
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        for (const e of entradas) {
+          visibles.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0);
+        }
+        let mejor = "";
+        let max = 0;
+        for (const [id, ratio] of visibles) {
+          if (ratio > max) {
+            max = ratio;
+            mejor = id;
+          }
+        }
+        if (mejor) setActivo("#" + mejor);
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.25, 0.5, 1] },
+    );
+    objetivos.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, []);
 
   useEffect(() => {
@@ -42,7 +73,13 @@ export function Navegacion() {
 
           <nav className={css.enlaces} aria-label="Principal">
             {NAVEGACION.map((e) => (
-              <a key={e.href} href={e.href} className={css.enlace}>
+              <a
+                key={e.href}
+                href={e.href}
+                className={css.enlace}
+                data-activo={activo === e.href ? "1" : "0"}
+                aria-current={activo === e.href ? "true" : undefined}
+              >
                 {e.texto}
               </a>
             ))}

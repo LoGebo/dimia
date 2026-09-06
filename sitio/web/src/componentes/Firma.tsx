@@ -4,10 +4,10 @@ import css from "./Firma.module.css";
 
 export function Firma() {
   return (
-    <section className={ui.seccion}>
+    <section id="firma" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={css.entrada}>
-          <p className={ui.rotulo}>{LA_FIRMA.rotulo}</p>
+          <p data-revelar className={ui.rotulo}>{LA_FIRMA.rotulo}</p>
           <div className={css.texto}>
             <p data-revelar className={css.declaracion}>
               {LA_FIRMA.entrada}

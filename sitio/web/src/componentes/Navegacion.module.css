@@ -46,6 +46,7 @@
 }
 
 .enlace {
+  position: relative;
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.18em;
@@ -54,11 +55,33 @@
   display: flex;
   align-items: center;
   height: 44px;
-  transition: color 150ms var(--curva);
+  transition: color 200ms var(--curva);
+}
+
+/* Subrayado de acento: se desliza bajo la pestaña de la sección actual */
+.enlace::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 6px;
+  width: 100%;
+  height: 2px;
+  background: var(--acento);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms var(--curva);
 }
 
 .enlace:hover {
   color: var(--hueso);
+}
+
+.enlace[data-activo="1"] {
+  color: var(--hueso);
+}
+
+.enlace[data-activo="1"]::after {
+  transform: scaleX(1);
 }
 
 .agendar {

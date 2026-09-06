@@ -100,7 +100,7 @@ export function Contacto() {
           </div>
 
           <div data-revelar className={css.derecha}>
-            <p className={ui.rotulo} style={{ flex: "none", marginBottom: 28 }}>
+            <p data-revelar className={ui.rotulo} style={{ flex: "none", marginBottom: 28 }}>
               Agendar una demostración
             </p>
 

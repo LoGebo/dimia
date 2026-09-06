@@ -20,6 +20,7 @@
 }
 
 .rotulo {
+  position: relative;
   flex: 0 0 190px;
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -27,6 +28,28 @@
   text-transform: none;
   color: var(--acero-2);
   margin: 0;
+  padding-bottom: 12px;
+}
+
+/* Filete de acento que se dibuja al llegar a la sección: marca la entrada. */
+.rotulo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--acento);
+  transform-origin: left center;
+}
+
+:global(html[data-revelado="1"]) .rotulo::after {
+  transform: scaleX(0);
+}
+
+:global(html[data-revelado="1"]) .rotulo:global([data-visible="1"])::after {
+  transform: scaleX(1);
+  transition: transform 640ms var(--curva) 140ms;
 }
 
 .titulo {
