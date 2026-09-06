@@ -168,12 +168,14 @@ export type Cliente = { nombre: string; logo: string | null };
 
 export const MOSTRAR_CARRUSEL = true;
 
+// Deja el archivo autorizado en public/marca/clientes/<archivo> y aparece solo;
+// mientras no exista, el carrusel muestra el nombre en texto (sin imagen rota).
 export const CLIENTES: Cliente[] = [
-  { nombre: "Atos", logo: null },
-  { nombre: "Heineken", logo: null },
-  { nombre: "Arca Continental", logo: null },
-  { nombre: "Tec de Monterrey", logo: null },
-  { nombre: "UR", logo: null },
+  { nombre: "Atos", logo: "/marca/clientes/atos.svg" },
+  { nombre: "Heineken", logo: "/marca/clientes/heineken.svg" },
+  { nombre: "Arca Continental", logo: "/marca/clientes/arca-continental.svg" },
+  { nombre: "Tec de Monterrey", logo: "/marca/clientes/tec-de-monterrey.svg" },
+  { nombre: "UR", logo: "/marca/clientes/ur.svg" },
 ];
 
 export const NOTA_CLIENTES =

@@ -1,0 +1,13 @@
+Logos de organizaciones del carrusel "Confían en Dimia".
+
+Deja aquí el archivo oficial autorizado con estos nombres exactos y aparecen solos
+en el sitio (mientras no existan, el carrusel muestra el nombre en texto):
+
+  atos.svg
+  heineken.svg
+  arca-continental.svg
+  tec-de-monterrey.svg
+  ur.svg
+
+- Preferir SVG (o PNG transparente) monocromo/blanco, para que combine con el fondo oscuro.
+- Usar solo logotipos con autorización por escrito de cada organización.

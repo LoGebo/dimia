@@ -10,6 +10,7 @@ const POR_PAGINA = 5;
 
 export function Carrusel() {
   const [pagina, setPagina] = useState(0);
+  const [fallidos, setFallidos] = useState<Record<string, true>>({});
   const paginas: (typeof CLIENTES)[] = [];
   for (let i = 0; i < CLIENTES.length; i += POR_PAGINA) {
     paginas.push(CLIENTES.slice(i, i + POR_PAGINA));
@@ -45,16 +46,26 @@ export function Carrusel() {
           <div className={css.pista} style={{ transform: `translateX(-${pagina * 100}%)` }}>
             {paginas.map((grupo, i) => (
               <div key={i} className={css.pagina} aria-hidden={i !== pagina}>
-                {grupo.map((cliente, j) => (
-                  <div key={j} className={css.celda}>
-                    {cliente.logo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={cliente.logo} alt={cliente.nombre} className={css.logo} />
-                    ) : (
-                      <span className={css.marcador}>{cliente.nombre}</span>
-                    )}
-                  </div>
-                ))}
+                {grupo.map((cliente, j) => {
+                  const usarLogo = cliente.logo && !fallidos[cliente.logo];
+                  return (
+                    <div key={j} className={css.celda}>
+                      {usarLogo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={cliente.logo!}
+                          alt={cliente.nombre}
+                          className={css.logo}
+                          onError={() =>
+                            setFallidos((prev) => ({ ...prev, [cliente.logo!]: true }))
+                          }
+                        />
+                      ) : (
+                        <span className={css.marcador}>{cliente.nombre}</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
