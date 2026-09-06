@@ -175,7 +175,7 @@ export const CLIENTES: Cliente[] = [
   { nombre: "Heineken", logo: "/marca/clientes/heineken.svg" },
   { nombre: "Arca Continental", logo: "/marca/clientes/arca-continental.svg" },
   { nombre: "Tec de Monterrey", logo: "/marca/clientes/tec-de-monterrey.svg" },
-  { nombre: "UR", logo: "/marca/clientes/ur.svg" },
+  { nombre: "UERRE", logo: "/marca/clientes/uerre.svg" },
 ];
 
 export const NOTA_CLIENTES =

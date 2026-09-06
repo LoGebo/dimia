@@ -7,7 +7,6 @@ import { Carrusel } from "@/componentes/Carrusel";
 import { Productos } from "@/componentes/Productos";
 import { Planes } from "@/componentes/Planes";
 import { Garantia } from "@/componentes/Garantia";
-import { Casos } from "@/componentes/Casos";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
 import { Revelar } from "@/componentes/Revelar";
@@ -27,7 +26,6 @@ export default function Inicio() {
         <Productos />
         <Planes />
         <Garantia />
-        <Casos />
         <Contacto />
       </main>
       <Pie />

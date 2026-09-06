@@ -159,10 +159,22 @@
 
 .bloqueConfirmado {
   background: var(--acento-hondo);
+  border-left: 3px solid var(--acento-hondo);
 }
 
+/* El rechazado se lee como "hueco bloqueado": trama diagonal tenue en vez de
+   un simple recuadro rojo, con filete de acento crítico a la izquierda. */
 .bloqueRechazado {
-  border: 1px solid var(--papel-critico);
+  border: 1px solid var(--papel-linea);
+  border-left: 3px solid var(--papel-critico);
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--papel-critico) 9%, transparent) 0,
+    color-mix(in srgb, var(--papel-critico) 9%, transparent) 1px,
+    transparent 1px,
+    transparent 9px
+  );
 }
 
 .horario,

@@ -133,8 +133,9 @@
   outline: none;
 }
 
-.entrada:invalid:not(:placeholder-shown),
-.entradaMono:invalid:not(:placeholder-shown) {
+/* El rojo solo tras interactuar y dejarlo mal, no en un campo vacío en reposo. */
+.entrada:user-invalid,
+.entradaMono:user-invalid {
   border-color: var(--critico);
 }
 

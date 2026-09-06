@@ -15,11 +15,10 @@ export function Metodo() {
         </div>
 
         <ol className={css.etapas}>
-          {METODO.map((etapa, i) => (
-            <li key={etapa.indice} data-revelar className={css.etapa} data-primera={i === 0 ? "1" : "0"}>
-              <p className={css.indice} data-primera={i === 0 ? "1" : "0"}>
-                {etapa.indice}
-              </p>
+          {METODO.map((etapa) => (
+            <li key={etapa.indice} data-revelar className={css.etapa}>
+              <i className={css.nodo} aria-hidden="true" />
+              <p className={css.indice}>{etapa.indice}</p>
               <p className={css.duracion}>{etapa.duracion}</p>
               <p className={css.texto}>{etapa.texto}</p>
             </li>

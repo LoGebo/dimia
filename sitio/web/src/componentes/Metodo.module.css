@@ -4,38 +4,82 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: clamp(28px, 3vw, 48px);
+  gap: clamp(24px, 2.4vw, 40px);
 }
 
+/* Cada etapa es un tramo de una línea que se dibuja al entrar en pantalla,
+   con un nodo cuadrado al inicio. Da sensación de secuencia, no de tarjetas. */
 .etapa {
-  border-top: 1px solid var(--linea);
-  padding-top: 26px;
+  position: relative;
+  padding-top: 30px;
 }
 
-.etapa[data-primera="1"] {
-  border-top-color: var(--acento);
+/* Riel base (tenue) */
+.etapa::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--linea);
+}
+
+/* Riel que se rellena de azul al revelarse */
+.etapa::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--acento);
+  transition: width 720ms var(--curva);
+}
+
+.etapa[data-visible="1"]::after {
+  width: 100%;
+}
+
+/* Nodo cuadrado sobre el riel */
+.nodo {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  background: var(--acero-2);
+  transition: background 720ms var(--curva);
+}
+
+.etapa[data-visible="1"] .nodo {
+  background: var(--acento);
 }
 
 .indice {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: 13px;
+  letter-spacing: 0.04em;
   color: var(--hueso);
-  margin: 0 0 24px;
+  margin: 0 0 20px;
 }
 
-.indice[data-primera="1"] {
+.numero {
   color: var(--acento);
+  margin-right: 8px;
 }
 
 .duracion {
+  display: inline-block;
   font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--acero-2);
-  margin: 0 0 16px;
+  border: 1px solid var(--linea-2);
+  padding: 4px 9px;
+  margin: 0 0 18px;
 }
 
 .texto {
@@ -44,4 +88,14 @@
   color: var(--acero);
   margin: 0;
   max-width: 34ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .etapa::after {
+    width: 100%;
+    transition: none;
+  }
+  .nodo {
+    background: var(--acento);
+  }
 }
