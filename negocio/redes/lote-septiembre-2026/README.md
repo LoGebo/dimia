@@ -27,29 +27,54 @@ ninguna línea.
 Medidas: feed y carrusel a **1080 × 1350** (4:5); storyboard del reel a
 **1080 × 1920**.
 
-## La retícula de la serie
+## El sistema
 
-La misma en las 61 láminas, para que el lote se lea como una sola voz:
+Dos reglas gobiernan las 61 láminas. Todo lo demás se deduce de ellas.
 
-- Margen de 84 px en los cuatro lados.
-- Ícono oficial de Dimia arriba a la izquierda, 46 px, geometría del maestro sin
-  redibujar.
-- Rótulo de sección en latón, IBM Plex Mono con tracking `0.24em`, arriba a la
-  derecha. Lleva el nombre de la publicación; en la 06 y la 10 lleva la etiqueta
-  que el propio guion da a la lámina (Antes, Después, Clínica, Restaurante…).
-- Filete de 1 px y pie: avance del carrusel en cuadrados a la izquierda, conteo
-  en mono con `tabular-nums` a la derecha.
-- Newsreader 300 para titulares y frases; Archivo para viñetas y cuerpo; IBM Plex
-  Mono para rótulos, cifras y conteos.
-- El cuadrado es la única forma: viñetas, remates, nodos del diagrama, barra de
-  avance. Sin esquinas redondeadas, sin sombras, sin íconos de librería, sin
-  emoji, sin fotografía.
-- Un solo acento azul `#6e9bf5`; el latón solo en rótulos. En la 06 y la 11 lo
-  que estaba **antes** o **sin Dimia** va en gris línea, y lo que ocurre **con
-  Dimia** en azul: el contraste se construye con estados, no con adjetivos.
+**La escala tipográfica es fija.** Seis roles, seis cuerpos, y ninguna lámina
+elige el suyo por lo que le quepa. `72` para el titular de portada, `56` para
+la tesis, `38` para el cuerpo, `30` para el apoyo, `21` para el dato en mono y
+`16` para el rótulo. Cuando un titular no entra en la medida, se corta la línea
+—nunca se encoge la letra—; el render avisa en consola si alguna lámina tuvo
+que forzarse, y hoy no lo hace ninguna. Esto es lo que hace que 61 piezas se
+lean como una sola.
 
-Recursos oficiales tomados de [`marca/`](../../../marca/). El logotipo se compone
-en lettering con el reparto «Paréntesis», no se teclea.
+**El texto se apoya en el margen inferior.** La lámina se construye desde
+abajo, como un cartel, y el vacío queda arriba a propósito. Nada se centra
+verticalmente. En las estáticas densas el bloque crece hasta el margen
+superior por sí solo.
+
+Sobre esas dos reglas:
+
+- Retícula de 92 px a los lados, 78 arriba, 104 abajo. El reel abre a 96 / 150.
+- Arriba solo dos cosas: el ícono oficial a 38 px y el folio en mono
+  (`03/07`) con `tabular-nums`. Un indicador de avance, no dos: Instagram ya
+  pone sus propios puntos.
+- Newsreader 400 en versales para los titulares —a 300 las mayúsculas pierden
+  el trazo y el bloque se lee gris— y Newsreader 300 no se usa en esta serie.
+  Archivo para viñetas y cuerpo. IBM Plex Mono para folios, rótulos y datos.
+- Un solo acento azul `#6e9bf5`; el latón queda para los rótulos de sector.
+- El llamado a la acción es tipográfico: un cuadrado azul y la línea en Archivo
+  600. Sin caja ni borde: en una imagen no hay nada que clicar.
+
+### Cuatro composiciones, no una plantilla
+
+| Composición | Dónde | Qué hace |
+|---|---|---|
+| Portada | apertura de cada publicación | el titular ocupa la medida completa y se apoya en el margen inferior |
+| Tesis | 01, 06, 09, 10 | una frase sola, siempre al mismo cuerpo |
+| Acumulada | 03, 05, 07 | el argumento se va escribiendo: lo dicho antes queda en la lámina, atenuado, y lo nuevo entra en hueso |
+| Comparada | 11 | dos columnas; gris lo que se pierde, azul lo que Dimia resuelve |
+
+La acumulada sustituye a la barra de avance dibujada de la versión anterior: el
+progreso se lee porque el texto anterior sigue ahí, no porque un cuadrado
+cambie de color. En la 06 el contraste entre antes y después lo hace el color
+—viñeta gris contra viñeta azul—, sin rotular ninguna lámina. En la 07, los
+datos que quedan tras colgar se componen como un registro numerado en mono,
+que es lo que son.
+
+Recursos oficiales tomados de [`marca/`](../../../marca/). El logotipo se
+compone en lettering con el reparto «Paréntesis», no se teclea.
 
 ## Cómo se regeneran
 
@@ -73,6 +98,10 @@ dependa de la red: ese archivo se genera, no se versiona.
 
 ## Pendientes
 
+- **Newsreader 400 en los titulares.** `marca/BRANDING.md` fija Newsreader 300
+  para titulares. En versales a 72 px el peso 300 se adelgaza y el bloque se lee
+  gris, así que en esta serie los titulares van en 400. Si se aprueba, conviene
+  recogerlo en el manual como excepción para versales grandes.
 - La publicación 08 se entregó como pieza tipográfica. El guion admite retrato
   real del fundador: si se decide esa vía, hace falta la fotografía —
   `[ retrato del fundador por confirmar ]`.

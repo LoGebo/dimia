@@ -56,6 +56,15 @@ for (const f of archivos) {
     if (r && r.result && r.result.value === '1') { listo = true; break; }
   }
   if (!listo) console.error('sin ajustar: ' + n);
+
+  // La escala es fija: si una lamina tuvo que encoger, hay que recomponerla.
+  const forz = await S('Runtime.evaluate', {
+    expression: "document.documentElement.dataset.forzado || ''",
+    returnByValue: true,
+  }).catch(() => null);
+  if (forz && forz.result && forz.result.value) {
+    console.error(`cuerpo forzado en ${n}: ${forz.result.value}`);
+  }
   await espera(80);
 
   const { data } = await S('Page.captureScreenshot', {
