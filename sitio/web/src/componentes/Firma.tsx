@@ -19,8 +19,12 @@ export function Firma() {
         </div>
 
         <div className={css.pilares}>
-          {LA_FIRMA.pilares.map((p) => (
+          {LA_FIRMA.pilares.map((p, i) => (
             <div key={p.rotulo} data-revelar className={css.pilar}>
+              <div className={css.pilarCabeza}>
+                <span className={css.pilarIndice}>{String(i + 1).padStart(2, "0")}</span>
+                <i className={css.pilarNodo} aria-hidden="true" />
+              </div>
               <p className={css.pilarRotulo}>{p.rotulo}</p>
               <p className={css.pilarTexto}>{p.texto}</p>
             </div>

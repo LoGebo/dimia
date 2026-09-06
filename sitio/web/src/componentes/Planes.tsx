@@ -6,9 +6,12 @@ import ui from "./ui.module.css";
 import css from "./Planes.module.css";
 
 const pesos = (n: number) => "$" + n.toLocaleString("es-MX");
+const POSITIVOS = new Set(["Gratis", "Sí", "Incluida", "Todos"]);
 
 export function Planes() {
   const [premium, setPremium] = useState(false);
+  const inicial = PLANES.columnas.findIndex((c) => c.elegido);
+  const [seleccion, setSeleccion] = useState(inicial < 0 ? 0 : inicial);
 
   return (
     <section id="planes" className={ui.seccion}>
@@ -53,8 +56,22 @@ export function Planes() {
         </div>
 
         <div data-revelar className={css.grid}>
-          {PLANES.columnas.map((c) => (
-            <div key={c.nombre} className={css.col} data-elegido={c.elegido ? "1" : "0"}>
+          {PLANES.columnas.map((c, i) => (
+            <div
+              key={c.nombre}
+              className={css.col}
+              data-sel={seleccion === i ? "1" : "0"}
+              role="button"
+              tabIndex={0}
+              aria-pressed={seleccion === i}
+              onClick={() => setSeleccion(i)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSeleccion(i);
+                }
+              }}
+            >
               <p className={css.elegido}>{c.elegido ? "Más elegido" : ""}</p>
               <p className={css.nombre}>{c.nombre}</p>
 
@@ -114,8 +131,8 @@ export function Planes() {
             <thead>
               <tr>
                 <th scope="col">Comparación</th>
-                {PLANES.columnas.map((c) => (
-                  <th key={c.nombre} scope="col" data-elegido={c.elegido ? "1" : "0"}>
+                {PLANES.columnas.map((c, i) => (
+                  <th key={c.nombre} scope="col" data-elegido={seleccion === i ? "1" : "0"}>
                     {c.nombre}
                   </th>
                 ))}
@@ -126,7 +143,11 @@ export function Planes() {
                 <tr key={f.fila}>
                   <th scope="row">{f.fila}</th>
                   {f.valores.map((v, i) => (
-                    <td key={i} data-elegido={PLANES.columnas[i].elegido ? "1" : "0"}>
+                    <td
+                      key={i}
+                      data-elegido={seleccion === i ? "1" : "0"}
+                      data-pos={POSITIVOS.has(v) ? "1" : "0"}
+                    >
                       {v}
                     </td>
                   ))}

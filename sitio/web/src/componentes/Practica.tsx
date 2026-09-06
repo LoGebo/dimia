@@ -24,7 +24,7 @@ export function Practica() {
           {PRACTICA.map((frente, i) => {
             const activo = i === abierto;
             return (
-              <div key={frente.indice} data-revelar className={css.fila}>
+              <div key={frente.indice} data-revelar className={css.fila} data-activo={activo ? "1" : "0"}>
                 <button
                   type="button"
                   onClick={() => setAbierto(activo ? -1 : i)}

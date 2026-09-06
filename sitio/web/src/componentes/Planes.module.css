@@ -83,13 +83,21 @@
   flex-direction: column;
   gap: 0;
   position: relative;
+  cursor: pointer;
+  transition: background 180ms var(--curva);
 }
 
-.col[data-elegido="1"] {
+.col:hover {
   background: var(--panel-2);
 }
 
-.col[data-elegido="1"]::before {
+.col:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* Filete superior: aparece al pasar el cursor, se fija al seleccionar */
+.col::before {
   content: "";
   position: absolute;
   top: 0;
@@ -97,6 +105,21 @@
   right: 0;
   height: 2px;
   background: var(--acento);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 220ms var(--curva);
+}
+
+.col:hover::before {
+  transform: scaleX(1);
+}
+
+.col[data-sel="1"] {
+  background: var(--panel-2);
+}
+
+.col[data-sel="1"]::before {
+  transform: scaleX(1);
 }
 
 .elegido {
@@ -212,13 +235,13 @@
   color: var(--acento);
 }
 
-.col[data-elegido="1"] .cta {
+.col[data-sel="1"] .cta {
   background: var(--acento);
   border-color: var(--acento);
   color: #0b0f17;
 }
 
-.col[data-elegido="1"] .cta:hover {
+.col[data-sel="1"] .cta:hover {
   background: var(--hueso);
   border-color: var(--hueso);
   color: #0b0f17;
@@ -312,4 +335,21 @@
 
 .tabla td[data-elegido="1"] {
   background: var(--panel-2);
+}
+
+.tabla td[data-pos="1"] {
+  color: var(--acento);
+}
+
+.tabla thead th {
+  transition: color 180ms var(--curva);
+}
+
+.tabla thead th[data-elegido="1"] {
+  color: var(--acento);
+}
+
+.tabla td[data-elegido="1"],
+.tabla th[data-elegido="1"] {
+  transition: background 180ms var(--curva), color 180ms var(--curva);
 }

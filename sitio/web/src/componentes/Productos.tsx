@@ -22,7 +22,7 @@ export function Productos() {
         <div className={ui.encabezado}>
           <p data-revelar className={ui.rotulo}>Productos</p>
           <h2 data-revelar className={ui.titulo}>
-            Lo que ya opera con clientes, empaquetado
+            Lo que ya opera con clientes
             <i className={ui.cuadrado} />
           </h2>
         </div>

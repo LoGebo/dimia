@@ -1,11 +1,12 @@
 .pie {
-  background: var(--tinta);
+  background: var(--panel);
+  border-top: 1px solid var(--linea-2);
 }
 
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(52px, 6vw, 88px) var(--margen);
+  padding: clamp(40px, 4.5vw, 64px) var(--margen) clamp(28px, 3vw, 40px);
 }
 
 .columnas {

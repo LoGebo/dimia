@@ -4,6 +4,42 @@
 
 .fila {
   border-bottom: 1px solid var(--linea);
+  position: relative;
+  transition: background 220ms var(--curva);
+}
+
+/* Rail de acento a la izquierda de la fila abierta */
+.fila::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--acento);
+  transform: scaleY(0);
+  transform-origin: top center;
+  transition: transform 300ms var(--curva);
+}
+
+.fila[data-activo="1"]::before {
+  transform: scaleY(1);
+}
+
+.fila[data-activo="1"] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--acento) 7%, transparent), transparent 60%);
+}
+
+.fila[data-activo="1"] .tituloFila {
+  color: var(--hueso);
+}
+
+.fila[data-activo="1"] .encabezadoFila {
+  padding-left: 18px;
+}
+
+.encabezadoFila {
+  transition: background 150ms ease-out, padding-left 300ms var(--curva);
 }
 
 .encabezadoFila {

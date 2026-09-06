@@ -53,13 +53,59 @@
   padding-right: 0;
 }
 
+/* Filete de acento que se dibuja al revelar cada pilar */
+.pilar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--acento);
+  transition: width 620ms var(--curva);
+}
+
+.pilar[data-visible="1"]::before {
+  width: 44px;
+}
+
+.pilar:first-child::before {
+  left: 0;
+}
+
+.pilarCabeza {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.pilarIndice {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--acero-2);
+}
+
+.pilarNodo {
+  width: 7px;
+  height: 7px;
+  background: var(--acero-2);
+  transition: background 420ms var(--curva);
+}
+
+.pilar[data-visible="1"] .pilarNodo {
+  background: var(--acento);
+}
+
 .pilarRotulo {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--acero-2);
-  margin: 0 0 20px;
+  color: var(--hueso);
+  margin: 0 0 14px;
 }
 
 .pilarTexto {

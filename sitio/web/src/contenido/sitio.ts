@@ -33,10 +33,10 @@ export const NAVEGACION = [
 
 export const HERO = {
   titular: "El punto donde el dato deja de informar y empieza a decidir.",
-  bajadaAntes: "Diseñamos, construimos y ",
-  bajadaFuerte: "operamos",
-  bajadaDespues:
-    " los sistemas con los que una empresa decide: datos confiables, inteligencia artificial aplicada, automatización y medición contra ingreso real.",
+  bajadaAntes:
+    "Dimia es la plataforma de operación inteligente que convierte cada conversación con sus clientes en ",
+  bajadaFuerte: "acciones, oportunidades y datos",
+  bajadaDespues: " para hacer crecer su negocio.",
   ctaPrimario: "Agendar una demostración",
   ctaSecundario: "Ver cómo funciona",
   pie: "Datos · Inteligencia artificial · Automatización · Operación",
@@ -45,9 +45,9 @@ export const HERO = {
 export const LA_FIRMA = {
   rotulo: "La firma",
   entrada:
-    "Contestamos lo que su negocio no alcanza a contestar: la pregunta operativa, la del tablero y la de la llamada de las nueve de la noche.",
+    "Contestamos lo que su negocio no alcanza a contestar: la pregunta operativa, la de los números del día y la de la llamada de las nueve de la noche.",
   cuerpo:
-    "Somos una consultora boutique. Trabajamos con dueños y directores de empresas mexicanas que ya tienen operación y datos, pero no un sistema que los use. Entramos por el problema, no por la herramienta, y nos quedamos operando lo que instalamos.",
+    "Somos una consultora. Trabajamos con dueños y directores de empresas mexicanas que ya tienen operación y datos, pero no un sistema que los use. Entramos por el problema, no por la herramienta, y nos quedamos operando lo que instalamos.",
   pilares: [
     {
       rotulo: "Diseñamos",
@@ -285,7 +285,8 @@ export const PLANES = {
     { fila: "Panel", valores: ["Esencial", "Completo", "Completo"] },
     { fila: "Soporte", valores: ["WhatsApp", "WhatsApp", "Prioritario"] },
     { fila: "Personalización", valores: ["Incluida", "Incluida", "Incluida"] },
-    { fila: "Datos incluidos", valores: ["Sí", "Sí", "Sí"] },
+    { fila: "Plataforma", valores: ["Gratis", "Gratis", "Gratis"] },
+    { fila: "Datos", valores: ["Gratis", "Gratis", "Gratis"] },
     { fila: "Bloque adicional (100 min)", valores: ["$590", "$590", "$590"] },
     { fila: "Premium (adicional)", valores: ["+$499", "+$1,249", "+$2,499"] },
   ],
