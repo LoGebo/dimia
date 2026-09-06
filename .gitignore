@@ -28,3 +28,6 @@ node_modules/
 # Capturas de Playwright en la raíz
 /.playwright-mcp/
 /*.png
+
+# Respaldos temporales de draw.io
+.$*.drawio.bkp
