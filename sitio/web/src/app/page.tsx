@@ -10,12 +10,14 @@ import { Garantia } from "@/componentes/Garantia";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
 import { Revelar } from "@/componentes/Revelar";
+import { ProgresoScroll } from "@/componentes/ProgresoScroll";
 import { MOSTRAR_CARRUSEL } from "@/contenido/sitio";
 
 export default function Inicio() {
   return (
     <>
       <Revelar />
+      <ProgresoScroll />
       <Navegacion />
       <main>
         <Hero />
