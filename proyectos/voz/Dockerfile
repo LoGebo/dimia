@@ -33,6 +33,7 @@ COPY --from=builder /opt/venv /opt/venv
 WORKDIR /srv
 COPY --chown=agente:agente app ./app
 COPY --chown=agente:agente agent ./agent
+COPY --chown=agente:agente channels ./channels
 
 USER agente
 
