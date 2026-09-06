@@ -43,14 +43,9 @@
   max-width: 28ch;
 }
 
-/* El cuadrado que remata cada titular */
+/* El cuadrado que remataba cada titular se retiró: leía como adorno redundante. */
 .cuadrado {
-  display: inline-block;
-  width: 0.17em;
-  height: 0.17em;
-  background: var(--acento);
-  margin-left: 0.2em;
-  vertical-align: baseline;
+  display: none;
 }
 
 /* La animación de marca: el titular entra y 200 ms después aterriza su
