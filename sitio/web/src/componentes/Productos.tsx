@@ -1,6 +1,6 @@
 "use client";
 
-import { PRODUCTO, PROXIMOS } from "@/contenido/sitio";
+import { PRODUCTO } from "@/contenido/sitio";
 import { usePanelLlamada } from "@/hooks/usePanelLlamada";
 import { Flecha } from "./Iconos";
 import ui from "./ui.module.css";
@@ -29,10 +29,6 @@ export function Productos() {
 
         <div className={css.columnas}>
           <div className={css.ficha}>
-            <div className={ui.estado} style={{ color: "var(--bueno)", marginBottom: 22 }}>
-              <i className={ui.punto} style={{ background: "var(--bueno)" }} />
-              {PRODUCTO.estado}
-            </div>
             <h3 className={css.nombre}>{PRODUCTO.nombre}</h3>
             <p className={css.resumen}>{PRODUCTO.resumen}</p>
 
@@ -91,18 +87,6 @@ export function Productos() {
 
             <p className={css.panelPie}>Secuencia de demostración</p>
           </div>
-        </div>
-
-        <div className={css.proximos}>
-          {PROXIMOS.map((p, i) => (
-            <div key={i} className={css.proximo}>
-              <span className={css.proximoNombre}>{p.nombre}</span>
-              <span className={ui.estado} style={{ color: "var(--alerta)" }}>
-                <i className={ui.punto} style={{ background: "var(--alerta)" }} />
-                {p.estado}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
     </section>
