@@ -5,6 +5,7 @@ import { Practica } from "@/componentes/Practica";
 import { Metodo } from "@/componentes/Metodo";
 import { Carrusel } from "@/componentes/Carrusel";
 import { Productos } from "@/componentes/Productos";
+import { Planes } from "@/componentes/Planes";
 import { Garantia } from "@/componentes/Garantia";
 import { Casos } from "@/componentes/Casos";
 import { Socios } from "@/componentes/Socios";
@@ -25,6 +26,7 @@ export default function Inicio() {
         <Metodo />
         {MOSTRAR_CARRUSEL && <Carrusel />}
         <Productos />
+        <Planes />
         <Garantia />
         <Casos />
         <Socios />

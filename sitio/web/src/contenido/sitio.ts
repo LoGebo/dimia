@@ -26,6 +26,7 @@ export const NAVEGACION = [
   { href: "#practica", texto: "Práctica" },
   { href: "#metodo", texto: "Método" },
   { href: "#productos", texto: "Productos" },
+  { href: "#planes", texto: "Planes" },
   { href: "#casos", texto: "Casos" },
   { href: "#firma", texto: "Firma" },
 ] as const;
@@ -226,6 +227,71 @@ export const GARANTIA = {
     nota: "Se ofrece 17:45 en la misma llamada.",
   },
   cita: "«Automatización con garantía, no con buenas intenciones.»",
+} as const;
+
+export const PLANES = {
+  rotulo: "Planes iniciales",
+  titular: "Precios claros, comparación directa",
+  razones: [
+    "Configuración adaptada a tu negocio",
+    "Datos organizados en tu panel",
+    "Sin costo de activación",
+  ],
+  columnas: [
+    {
+      nombre: "Básico",
+      precio: 2990,
+      minutos: 200,
+      canales: "Llamadas, WhatsApp, Instagram y Messenger",
+      panel: "Panel esencial",
+      soporte: "WhatsApp",
+      paraQuien: "Empresas que quieren empezar a capturar oportunidades",
+      premium: 499,
+      elegido: false,
+    },
+    {
+      nombre: "Negocio",
+      precio: 3690,
+      minutos: 500,
+      canales: "Todos los canales disponibles",
+      panel: "Panel completo",
+      soporte: "WhatsApp",
+      paraQuien: "Equipos que reciben clientes por varios canales",
+      premium: 1249,
+      elegido: true,
+    },
+    {
+      nombre: "Empresa",
+      precio: 4790,
+      minutos: 1000,
+      canales: "Todos los canales disponibles",
+      panel: "Panel completo",
+      soporte: "Prioritario",
+      paraQuien: "Operaciones con mayor volumen, áreas o puntos de atención",
+      premium: 2499,
+      elegido: false,
+    },
+  ],
+  premium: {
+    texto:
+      "Agrega una voz más natural y un modelo con mayor capacidad para conversaciones complejas.",
+  },
+  condiciones: [
+    "Sin costo de activación.",
+    "Bloque adicional de 100 minutos: $590 MXN.",
+    "Precios mensuales y antes de impuestos.",
+  ],
+  comparacion: [
+    { fila: "Precio mensual", valores: ["$2,990", "$3,690", "$4,790"] },
+    { fila: "Minutos incluidos", valores: ["200", "500", "1,000"] },
+    { fila: "Canales", valores: ["4 canales", "Todos", "Todos"] },
+    { fila: "Panel", valores: ["Esencial", "Completo", "Completo"] },
+    { fila: "Soporte", valores: ["WhatsApp", "WhatsApp", "Prioritario"] },
+    { fila: "Personalización", valores: ["Incluida", "Incluida", "Incluida"] },
+    { fila: "Datos incluidos", valores: ["Sí", "Sí", "Sí"] },
+    { fila: "Bloque adicional (100 min)", valores: ["$590", "$590", "$590"] },
+    { fila: "Premium (adicional)", valores: ["+$499", "+$1,249", "+$2,499"] },
+  ],
 } as const;
 
 export type Caso = {
