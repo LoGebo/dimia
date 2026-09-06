@@ -1,0 +1,16 @@
+# Copia a terraform.tfvars y ajusta. terraform.tfvars está ignorado por git.
+proyecto = "dimia"
+entorno  = "prod"
+region   = "centralus"
+
+# Suscripción (opcional; por defecto la de `az login`)
+# subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Postgres
+pg_admin = "dimia_admin"
+pg_sku   = "B_Standard_B1ms" # burstable, free tier 12 meses
+
+# Kubernetes
+aks_node_sku = "Standard_B2s"
+aks_node_min = 1
+aks_node_max = 4
