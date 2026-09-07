@@ -2,29 +2,26 @@ import React from "react";
 import { AbsoluteFill, Easing, OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { ALTO, ANCHO } from "./marca";
 
-const FUENTE_ANCHO = 1920;
-const FUENTE_ALTO = 1080;
-/** Escala mínima para que la grabación apaisada llene un cuadro vertical. */
-const LLENAR = ALTO / FUENTE_ALTO;
+const FUENTE_ANCHO = 1080;
+const FUENTE_ALTO = 1800;
 
 type Props = {
   /** Segundo de la grabación donde arranca el plano. */
   desde: number;
-  /** Punto focal dentro de la grabación, normalizado. */
-  foco: [number, number];
-  focoFin?: [number, number];
+  /** Acercamiento al principio y al final del plano. 1 = la grabación llena el cuadro. */
   zoom?: number;
   zoomFin?: number;
-  /** Fotogramas que dura el recorrido interno. */
+  /** Hacia dónde mira el encuadre cuando hay acercamiento, normalizado. */
+  foco?: [number, number];
   recorrido: number;
 };
 
 /**
- * Un trozo de la grabación, encuadrado en vertical.
- * De 16:9 a 9:16 se pierde el 70 % del ancho: el encuadre elige qué columna
- * se ve, y se mueve despacio para que el plano respire.
+ * Un trozo de la grabación vertical del panel.
+ * La grabación ya viene en 1080 × 1800: sólo hay que llenar los 1920 de alto,
+ * así que se recorta un 3 % arriba y abajo y se acerca despacio.
  */
-export const Recorte: React.FC<Props> = ({ desde, foco, focoFin, zoom = 1, zoomFin, recorrido }) => {
+export const Recorte: React.FC<Props> = ({ desde, zoom = 1, zoomFin, foco = [0.5, 0.5], recorrido }) => {
   const f = useCurrentFrame();
   const t = interpolate(f, [0, recorrido], [0, 1], {
     extrapolateLeft: "clamp",
@@ -32,20 +29,17 @@ export const Recorte: React.FC<Props> = ({ desde, foco, focoFin, zoom = 1, zoomF
     easing: Easing.inOut(Easing.quad),
   });
 
-  const z = LLENAR * interpolate(t, [0, 1], [zoom, zoomFin ?? zoom]);
-  const fx = interpolate(t, [0, 1], [foco[0], (focoFin ?? foco)[0]]);
-  const fy = interpolate(t, [0, 1], [foco[1], (focoFin ?? foco)[1]]);
-
+  const llenar = Math.max(ANCHO / FUENTE_ANCHO, ALTO / FUENTE_ALTO);
+  const z = llenar * interpolate(t, [0, 1], [zoom, zoomFin ?? zoom]);
   const w = FUENTE_ANCHO * z;
   const h = FUENTE_ALTO * z;
-  // El punto focal queda al centro del cuadro, sin dejar que se asome el borde.
-  const izq = Math.min(0, Math.max(ANCHO - w, ANCHO / 2 - fx * w));
-  const arr = Math.min(0, Math.max(ALTO - h, ALTO / 2 - fy * h));
+  const izq = Math.min(0, Math.max(ANCHO - w, ANCHO / 2 - foco[0] * w));
+  const arr = Math.min(0, Math.max(ALTO - h, ALTO / 2 - foco[1] * h));
 
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
       <OffthreadVideo
-        src={staticFile("grabacion.mp4")}
+        src={staticFile("vertical.mp4")}
         startFrom={Math.round(desde * 30)}
         muted
         style={{ position: "absolute", left: izq, top: arr, width: w, height: h }}
