@@ -8,13 +8,16 @@ agente de voz. Todo lo que aparece existe hoy; no hay pantalla de relleno ni maq
 | Superficie | URL | Acceso |
 |---|---|---|
 | Sitio público | `https://dimia.mx` | abierto |
-| Panel del agente | `http://localhost:3111` | `dueno@demo.mx` / `demo1234` |
+| Panel del agente | `https://panel.dimia.mx` | **falta la cuenta de producción** |
 
-El panel corre en local contra Postgres `dimia_local`, con los datos de demostración que
-siembra `proyectos/voz/web/dev/seed_panel.sql`. El negocio activo es la Clínica Dental
-Sonrisa —cookie `agenda_negocio` = `bca5d234-9549-4700-8590-1dbe02af4053`—, la única que
-tiene agenda con citas. No hay staging público del panel; si lo hubiera, se cambia una
-variable y se vuelve a grabar.
+El panel de producción responde en `panel.dimia.mx` y pide sesión. La cuenta local
+`dueno@demo.mx` no entra ahí —la probé—, así que hace falta una cuenta de producción con
+datos presentables. Va por variable de entorno (`PANEL_USUARIO`, `PANEL_CLAVE`); ninguna
+credencial entra al repo.
+
+El negocio que se graba debe tener agenda con citas: la cookie `agenda_negocio` fija cuál
+es. Si en producción el identificador del negocio es otro, se cambia la constante `TENANT`
+de `recorrido.mjs`.
 
 ## Shot list
 
@@ -24,11 +27,11 @@ variable y se vuelve a grabar.
 | 02 | 5.5 – 11.5 | `dimia.mx` `#productos` | Baja a Productos. Zoom a «Agente de voz Dimia» y a la ficha: qué resuelve, para quién, integra con. | «Empieza con el agente de voz: un número que contesta las veinticuatro horas.» |
 | 03 | 11.5 – 18.5 | `dimia.mx` widget «Línea principal» | Corre la secuencia de demostración del sitio: el contador arranca y avanzan los pasos de la llamada. | «Entiende lo que le piden, consulta la agenda y aparta el lugar antes de colgar.» |
 | 04 | 18.5 – 26.0 | `dimia.mx` `#garantia` | La animación de la colisión: 17:00–17:30 confirmada, 17:15–17:45 rechazada por la base, se ofrece 17:45. Pausa de 0.5 s en el rechazo. | «La disponibilidad la decide la base, no la conversación. Dos citas encimadas son imposibles.» |
-| 05 | 26.0 – 32.0 | Panel `/hoy` | Corte al panel ya con sesión. Zoom-out del tablero completo, luego acercamiento a la gráfica de la quincena. | «Todo lo que atendió llega al panel.» |
-| 06 | 32.0 – 40.0 | Panel `/bandeja` | Clic en la conversación de Jorge Estrada. Zoom al hilo: «quiero agendar una limpieza» → «queda apartada, su código es B68E». Pausa de 0.4 s en la insignia «agendó». | «Cada conversación queda escrita: qué le preguntaron, qué respondió y en qué terminó.» |
-| 07 | 40.0 – 47.0 | Panel `/agenda` | El día hábil con cuatro citas. Zoom a la columna «Por llegar» y a la primera ficha con hora y responsable. | «La cita ya está en la agenda, con su hora y su responsable.» |
-| 08 | 47.0 – 54.0 | Panel `/resumen` | Zoom a la tira de cifras: llamadas, resueltas sin humano, escalamiento, duración. Baja a la gráfica por día. | «El informe dice cuántas llamadas entraron y cuántas se resolvieron solas.» |
-| 09 | 54.0 – 59.5 | Panel `/agente` | «Listo para contestar 5/5» y el cuadro «Cómo contesta» con el saludo editable. | «Horarios, servicios y saludo los define usted, desde el mismo panel.» |
+| 05 | 26.0 – 32.0 | `panel.dimia.mx/hoy` | Corte al panel ya con sesión. Zoom-out del tablero completo, luego acercamiento a la gráfica de la quincena. | «Todo lo que atendió llega al panel.» |
+| 06 | 32.0 – 40.0 | `panel.dimia.mx/bandeja` | Clic en la conversación de Jorge Estrada. Zoom al hilo: «quiero agendar una limpieza» → «queda apartada, su código es B68E». Pausa de 0.4 s en la insignia «agendó». | «Cada conversación queda escrita: qué le preguntaron, qué respondió y en qué terminó.» |
+| 07 | 40.0 – 47.0 | `panel.dimia.mx/agenda` | El día hábil con cuatro citas. Zoom a la columna «Por llegar» y a la primera ficha con hora y responsable. | «La cita ya está en la agenda, con su hora y su responsable.» |
+| 08 | 47.0 – 54.0 | `panel.dimia.mx/resumen` | Zoom a la tira de cifras: llamadas, resueltas sin humano, escalamiento, duración. Baja a la gráfica por día. | «El informe dice cuántas llamadas entraron y cuántas se resolvieron solas.» |
+| 09 | 54.0 – 59.5 | `panel.dimia.mx/agente` | «Listo para contestar 5/5» y el cuadro «Cómo contesta» con el saludo editable. | «Horarios, servicios y saludo los define usted, desde el mismo panel.» |
 | 10 | 59.5 – 65.0 | `dimia.mx` `#contacto` | Vuelve al sitio. Zoom al teléfono +52 81 1518 8129 y al botón «Agendar una demostración». Cierra en el lockup. | «Marque el número y escúchelo contestar. Dimia. Donde el dato decide.» |
 
 ## Rótulos en pantalla
@@ -63,8 +66,9 @@ Entran a los 0.4 s del corte y salen 1.2 s después.
 - **Planes y precios.** Ocupan 1900 px de sitio y meterlos obliga a leer una tabla; en un
   video de un minuto no se alcanzan a leer y ensucian el ritmo. El CTA del shot 10 lleva
   ahí.
-- **Pedidos, recados, cobros y campañas.** Existen en el panel, pero con los datos de
-  demostración actuales salen en cero y se ven vacíos. Se pueden sembrar y agregar.
+- **Pedidos, recados, cobros y campañas.** Existen en el panel. Si en producción la cuenta
+  que me pase los trae con movimiento, se agregan; si salen en cero, se ven vacíos y es
+  mejor dejarlos fuera.
 
 ## Un desacuerdo de nombre que hay que resolver
 
