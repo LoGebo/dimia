@@ -32,7 +32,7 @@ export const NAVEGACION = [
 
 export const HERO = {
   titular:
-    "Dimia es la plataforma de operación inteligente que convierte cada conversación con sus clientes en acciones, oportunidades y datos para hacer crecer su negocio.",
+    "Dimia es la plataforma de operación inteligente que convierte cada conversación con tus clientes en acciones, oportunidades y datos para hacer crecer tu negocio.",
   bajadaAntes: "El punto donde el dato deja de informar y empieza a ",
   bajadaFuerte: "decidir",
   bajadaDespues: ".",
