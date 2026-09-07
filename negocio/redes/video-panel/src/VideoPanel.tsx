@@ -19,16 +19,16 @@ import { color } from "./marca";
  * se vuelve a correr `audio.sh`.
  */
 export const GUION = [
-  { desde: 0, duracion: 207, Escena: EscenaLlamadas },
-  { desde: 201, duracion: 201, Escena: EscenaPanel },
-  { desde: 396, duracion: 201, Escena: EscenaContesta },
-  { desde: 591, duracion: 165, Escena: EscenaAgenda },
-  { desde: 750, duracion: 228, Escena: EscenaMide },
-  { desde: 972, duracion: 228, Escena: EscenaOpera },
-  { desde: 1194, duracion: 132, Escena: EscenaCierre },
+  { desde: 0, duracion: 213, Escena: EscenaLlamadas },
+  { desde: 207, duracion: 207, Escena: EscenaPanel },
+  { desde: 408, duracion: 159, Escena: EscenaContesta },
+  { desde: 561, duracion: 237, Escena: EscenaAgenda },
+  { desde: 792, duracion: 228, Escena: EscenaMide },
+  { desde: 1014, duracion: 267, Escena: EscenaOpera },
+  { desde: 1275, duracion: 150, Escena: EscenaCierre },
 ] as const;
 
-export const DURACION_TOTAL = 1326; // 44.2 s a 30 fps
+export const DURACION_TOTAL = 1425; // 47.5 s a 30 fps
 
 export const VideoPanel: React.FC = () => (
   <AbsoluteFill style={{ backgroundColor: color.tinta }}>
