@@ -1,0 +1,32 @@
+{
+  "name": "video-panel",
+  "version": "1.0.0",
+  "description": "Video vertical del Panel Dimia, hecho con Remotion.",
+  "scripts": {
+    "estudio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts PanelDimia salida/panel-dimia.mp4",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.521",
+    "@remotion/cli": "^4.0.521",
+    "@remotion/google-fonts": "^4.0.521",
+    "@remotion/renderer": "^4.0.521",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "^4.0.521"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "puppeteer-core": "^25.10.0",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
+}
