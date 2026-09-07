@@ -16,7 +16,7 @@ from array import array
 from pathlib import Path
 
 SR = 22050  # ffmpeg lo sube a 44.1 kHz; el pad no tiene nada arriba de 8 kHz
-DURACION = 42.0
+DURACION = 44.5
 COMPAS = DURACION / 8
 
 # Am9 · Fmaj7 · Cmaj7 · G6, dos vueltas. Todo diatónico a do mayor.

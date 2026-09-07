@@ -18,13 +18,13 @@ mkdir -p "$(dirname "$DESTINO")"
 # Corte de cada párrafo en la locución original (a la mitad de su pausa) y
 # segundo en que debe entrar en el video.
 CORTES=(
-  "0.000 5.490 0.90"
-  "5.490 10.400 7.30"
-  "10.400 16.390 12.60"
-  "16.390 21.020 19.10"
-  "21.020 27.140 24.30"
-  "27.140 32.300 31.00"
-  "32.300 36.210 36.80"
+  "0.000  5.294  0.90"
+  "5.294 10.882  7.20"
+  "10.882 16.472 13.70"
+  "16.472 20.870 20.20"
+  "20.870 27.379 25.50"
+  "27.379 33.897 32.90"
+  "33.897 36.258 40.30"
 )
 
 ENTRADAS=(); FILTROS=(); MEZCLA=""; i=0
@@ -45,12 +45,12 @@ ffmpeg -v error -y -i "$CAMA" "${ENTRADAS[@]}" -filter_complex "
   [vozmono]aformat=channel_layouts=stereo,volume=1.9,
     highpass=f=90,acompressor=threshold=0.12:ratio=3:attack=8:release=180[voz];
   [voz]asplit=2[vozsal][llavecruda];
-  [llavecruda]apad=whole_dur=42[llave];
+  [llavecruda]apad=whole_dur=44.5[llave];
   [0:a]volume=0.26,aecho=0.8:0.85:340|560:0.26|0.18[camacruda];
   [camacruda][llave]sidechaincompress=threshold=0.035:ratio=8:attack=25:release=420[camaduck];
   [camaduck][vozsal]amix=inputs=2:normalize=0,
     loudnorm=I=-14:TP=-1.5:LRA=11,
-    alimiter=limit=0.95,atrim=0:41.8,asetpts=N/SR/TB[fin]
+    alimiter=limit=0.95,atrim=0:44.2,asetpts=N/SR/TB[fin]
 " -map "[fin]" -c:a libmp3lame -b:a 192k -ar 44100 "$DESTINO"
 
 echo "$DESTINO"

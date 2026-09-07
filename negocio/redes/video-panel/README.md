@@ -1,6 +1,6 @@
 # Video del Panel Dimia
 
-Video vertical de 41.8 segundos para redes, hecho con [Remotion](https://remotion.dev).
+Video vertical de 44.2 segundos para redes, hecho con [Remotion](https://remotion.dev).
 1080 × 1920, 30 fps, con locución y cama musical.
 
 Mezcla dos cosas. Los rótulos, los titulares y la retícula de cuadrados se dibujan en
@@ -17,13 +17,13 @@ fotograma en que la locución lo dice.
 
 | Escena | Imagen | Voz | Texto de la locución |
 |---|---|---|---|
-| El problema | 0.0 – 7.0 | 0.90 – 6.39 | Su negocio recibe llamadas a toda hora. Las que no alcanza a contestar, se pierden. |
-| Panel Dimia | 6.8 – 12.3 | 7.71 – 11.95 | Este es el Panel Dimia. Todo lo que el agente atendió, en un solo lugar. |
-| Contesta | 12.1 – 18.8 | 12.86 – 18.34 | Contesta al primer timbre. Cada conversación queda escrita: qué preguntaron y en qué terminó. |
-| Agenda | 18.6 – 24.0 | 19.35 – 23.56 | Y cuelga con la cita ya escrita. Dos citas encimadas son imposibles. |
-| Mide | 23.8 – 30.7 | 24.47 – 30.15 | Usted ve qué pasó. Noventa y tres llamadas. Ochenta y siete por ciento resueltas sin una persona. |
-| Se opera | 30.5 – 36.5 | 31.28 – 35.92 | Y usted decide cómo contesta. Horarios, servicios y saludo. Sin escribir código. |
-| Cierre | 36.3 – 41.8 | 37.04 – 40.14 | Dimia. Donde el dato decide. |
+| El problema | 0.0 – 6.9 | 0.90 – 6.00 | Su negocio recibe llamadas a toda hora. Las que no alcanza a contestar son ventas perdidas. |
+| Panel Dimia | 6.7 – 13.4 | 7.39 – 12.43 | Este es el Panel Dimia. Todo lo que la inteligencia artificial atendió, en un solo lugar. |
+| Contesta | 13.2 – 19.9 | 14.05 – 19.04 | Contesta al segundo. Cada conversación queda escrita: qué preguntaron y en qué terminó. |
+| Agenda | 19.7 – 25.2 | 20.45 – 24.39 | Y cuelga con la cita ya escrita. Dos citas encimadas son imposibles. |
+| Mide | 25.0 – 32.6 | 25.71 – 31.74 | Usted ve qué pasó. Noventa y tres llamadas. Ochenta y siete por ciento resueltas sin una persona. |
+| Se opera | 32.4 – 40.0 | 33.17 – 39.21 | Y usted decide cómo contesta. Horarios, servicios y saludo. Contesta también cuando usted cierra. |
+| Cierre | 39.8 – 44.2 | 40.51 – 42.22 | Dimia. Donde el dato decide. |
 
 El guion vive en [`src/VideoPanel.tsx`](src/VideoPanel.tsx); mover una escena es mover un
 renglón de ese arreglo. Los tiempos internos de cada escena están comentados en

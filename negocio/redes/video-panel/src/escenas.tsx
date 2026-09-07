@@ -46,8 +46,8 @@ const marco: React.CSSProperties = {
 };
 
 // ---------------------------------------------------------------- 1. llamadas
-// Voz 0.90 – 6.39 s · «Su negocio recibe llamadas a toda hora.» (0.90–3.24)
-//                     «Las que no alcanza a contestar son ventas perdidas.» (3.76–5.97)
+// Voz 0.90 – 6.00 s · «Su negocio recibe llamadas a toda hora.» (0.90–3.15)
+//                     «Las que no alcanza a contestar son ventas perdidas.» (3.56–6.00)
 
 const HORAS = [
   "07:12", "08:41", "09:03", "10:26", "11:58", "12:04",
@@ -60,7 +60,7 @@ const HORAS = [
 export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => {
   const f = useCurrentFrame();
   const columnas = 6;
-  const cambio = 110; // 3.67 s: entra la segunda frase de la voz
+  const cambio = 106; // 3.53 s: entra la segunda frase de la voz
 
   return (
     <Escena duracion={duracion}>
@@ -74,7 +74,7 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
             style={{
               position: "absolute",
               inset: 0,
-              opacity: interpolate(f, [100, 114], [1, 0], {
+              opacity: interpolate(f, [96, 110], [1, 0], {
                 extrapolateLeft: "clamp",
                 extrapolateRight: "clamp",
               }),
@@ -111,7 +111,7 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
             // Las de la segunda mitad del día se apagan mientras la voz lo dice.
             const sePierde = i % 3 === 1 || i > 17;
             const apagado = sePierde
-              ? interpolate(f, [124 + (i % 6) * 4, 142 + (i % 6) * 4], [0, 1], {
+              ? interpolate(f, [120 + (i % 6) * 4, 138 + (i % 6) * 4], [0, 1], {
                   extrapolateLeft: "clamp",
                   extrapolateRight: "clamp",
                   easing: suave,
@@ -152,8 +152,8 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
 };
 
 // ------------------------------------------------------------ 2. entra el panel
-// Voz 7.71 – 11.95 s · «Este es el Panel Dimia.» (7.71–9.08)
-//                       «Todo lo que la inteligencia artificial atendió, en un solo lugar.» (9.53–11.95)
+// Voz 7.39 – 12.43 s · «Este es el Panel Dimia.» (7.39–8.65)
+//                       «Todo lo que la inteligencia artificial atendió…» (9.12–12.43)
 
 export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={40}>
@@ -174,7 +174,7 @@ export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
         zoomFin={1.28}
         alto={588}
         entrada={22}
-        recorrido={140}
+        recorrido={175}
       />
     </AbsoluteFill>
     <AvisoDemo />
@@ -182,9 +182,9 @@ export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
 );
 
 // ----------------------------------------------------------------- 3. contesta
-// Voz 12.86 – 18.34 s · «Contesta al segundo.» (12.86–14.01)
-//                        «Cada conversación queda escrita:» (14.48–15.98)
-//                        «qué preguntaron y en qué terminó.» (16.50–18.34)
+// Voz 14.05 – 19.04 s · «Contesta al segundo.» (14.05–15.05)
+//                        «Cada conversación queda escrita:» (15.47–16.92)
+//                        «qué preguntaron y en qué terminó.» (17.33–19.04)
 
 export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={90}>
@@ -197,7 +197,7 @@ export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => 
         al segundo
       </Titular>
       <div style={{ height: 30 }} />
-      <Cuerpo entrada={26}>
+      <Cuerpo entrada={40}>
         Cada conversación queda escrita: qué preguntaron, qué respondió y en qué terminó.
       </Cuerpo>
       <div style={{ height: 54 }} />
@@ -208,8 +208,8 @@ export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => 
         focoFin={[0.86, 0.68]}
         zoomFin={2.25}
         alto={900}
-        entrada={34}
-        recorrido={160}
+        entrada={50}
+        recorrido={145}
       />
     </AbsoluteFill>
     <AvisoDemo />
@@ -217,21 +217,21 @@ export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => 
 );
 
 // ------------------------------------------------------------------- 4. agenda
-// Voz 19.35 – 23.56 s · «Y cuelga con la cita ya escrita.» (19.35–21.01)
-//                        «Dos citas encimadas son imposibles.» (21.44–23.56)
+// Voz 20.45 – 24.39 s · «Y cuelga con la cita ya escrita.» (20.45–22.00)
+//                        «Dos citas encimadas son imposibles.» (22.38–24.39)
 
 export const EscenaAgenda: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={140}>
     <AbsoluteFill style={{ ...marco, justifyContent: "flex-start", paddingTop: 180 }}>
       <Rotulo texto="Agenda" entrada={4} />
       <div style={{ height: 36 }} />
-      <Titular entrada={10} tamano={70} remate>
+      <Titular entrada={8} tamano={70} remate>
         Y cuelga con la
         <br />
         cita ya escrita
       </Titular>
       <div style={{ height: 30 }} />
-      <Cuerpo entrada={24}>
+      <Cuerpo entrada={26}>
         El motor de reservas vive en la base de datos: dos citas encimadas son imposibles.
       </Cuerpo>
       <div style={{ height: 54 }} />
@@ -251,9 +251,9 @@ export const EscenaAgenda: React.FC<{ duracion: number }> = ({ duracion }) => (
 );
 
 // --------------------------------------------------------------------- 5. mide
-// Voz 24.47 – 30.15 s · «Usted ve qué pasó.» (24.47–25.39)
-//                        «Noventa y tres llamadas.» (25.87–27.12)
-//                        «Ochenta y siete por ciento resueltas…» (27.52–30.15)
+// Voz 25.71 – 31.74 s · «Usted ve qué pasó.» (25.71–26.56)
+//                        «Noventa y tres llamadas.» (27.01–28.40)
+//                        «Ochenta y siete por ciento resueltas…» (28.90–31.74)
 // Cada cifra termina de entrar en el fotograma en que la voz la nombra.
 
 export const EscenaMide: React.FC<{ duracion: number }> = ({ duracion }) => (
@@ -261,16 +261,16 @@ export const EscenaMide: React.FC<{ duracion: number }> = ({ duracion }) => (
     <AbsoluteFill style={{ ...marco, justifyContent: "flex-start", paddingTop: 180 }}>
       <Rotulo texto="Mide" entrada={4} />
       <div style={{ height: 36 }} />
-      <Titular entrada={10} tamano={70} remate>
+      <Titular entrada={8} tamano={70} remate>
         Y usted ve
         <br />
         qué pasó
       </Titular>
       <div style={{ height: 46 }} />
       <div style={{ display: "flex", gap: 44 }}>
-        <Cifra valor="93" pie="llamadas en 14 días" entrada={46} />
-        <Cifra valor="87%" pie="resueltas sin humano" entrada={96} />
-        <Cifra valor="2:27" pie="duración promedio" entrada={130} />
+        <Cifra valor="93" pie="llamadas en 14 días" entrada={44} />
+        <Cifra valor="87%" pie="resueltas sin humano" entrada={101} />
+        <Cifra valor="2:27" pie="duración promedio" entrada={140} />
       </div>
       <div style={{ height: 52 }} />
       <VentanaPanel
@@ -281,7 +281,7 @@ export const EscenaMide: React.FC<{ duracion: number }> = ({ duracion }) => (
         zoomFin={1.9}
         alto={820}
         entrada={40}
-        recorrido={160}
+        recorrido={180}
       />
     </AbsoluteFill>
     <AvisoDemo />
@@ -289,21 +289,21 @@ export const EscenaMide: React.FC<{ duracion: number }> = ({ duracion }) => (
 );
 
 // ----------------------------------------------------------------- 6. se opera
-// Voz 31.28 – 35.92 s · «Y usted decide cómo contesta.» (31.28–32.91)
-//                        «Horarios, servicios y saludo. Contesta también cuando usted cierra.» (33.48–35.92)
+// Voz 33.17 – 39.21 s · «Y usted decide cómo contesta.» (33.17–34.74)
+//                        «Horarios, servicios y saludo. Contesta también…» (35.30–39.21)
 
 export const EscenaOpera: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={240}>
     <AbsoluteFill style={{ ...marco, justifyContent: "flex-start", paddingTop: 190 }}>
       <Rotulo texto="Se opera" entrada={4} />
       <div style={{ height: 36 }} />
-      <Titular entrada={10} tamano={70} remate>
+      <Titular entrada={8} tamano={70} remate>
         Usted decide
         <br />
         cómo contesta
       </Titular>
       <div style={{ height: 30 }} />
-      <Cuerpo entrada={40}>
+      <Cuerpo entrada={63}>
         Horarios, servicios y saludo. Contesta también cuando usted cierra.
       </Cuerpo>
       <div style={{ height: 54 }} />
@@ -314,8 +314,8 @@ export const EscenaOpera: React.FC<{ duracion: number }> = ({ duracion }) => (
         focoFin={[0.36, 0.50]}
         zoomFin={1.98}
         alto={860}
-        entrada={48}
-        recorrido={120}
+        entrada={70}
+        recorrido={150}
       />
     </AbsoluteFill>
     <AvisoDemo />
@@ -323,12 +323,12 @@ export const EscenaOpera: React.FC<{ duracion: number }> = ({ duracion }) => (
 );
 
 // -------------------------------------------------------------------- 7. cierre
-// Voz 37.04 – 40.14 s · «Dimia.» (37.04–38.16) · «Donde el dato decide.» (38.50–40.14)
+// Voz 40.51 – 42.22 s · «Dimia. Donde el dato decide.» — la voz junta las dos frases
 
 export const EscenaCierre: React.FC<{ duracion: number }> = ({ duracion }) => {
   const f = useCurrentFrame();
-  const logo = aparecer(f, 2, 24); // cierra de entrar sobre la palabra «Dimia»
-  const linea = interpolate(f, [40, 70], [0, 1], {
+  const logo = aparecer(f, 2, 22); // cierra de entrar sobre la palabra «Dimia»
+  const linea = interpolate(f, [34, 62], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: suave,
@@ -352,7 +352,7 @@ export const EscenaCierre: React.FC<{ duracion: number }> = ({ duracion }) => {
             margin: "56px 0",
           }}
         />
-        <div style={{ opacity: aparecer(f, 44, 24), textAlign: "center" }}>
+        <div style={{ opacity: aparecer(f, 34, 22), textAlign: "center" }}>
           <div
             style={{
               fontFamily: interfaz,
