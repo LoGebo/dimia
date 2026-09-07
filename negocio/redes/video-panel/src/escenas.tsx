@@ -47,7 +47,7 @@ const marco: React.CSSProperties = {
 
 // ---------------------------------------------------------------- 1. llamadas
 // Voz 0.90 – 6.39 s · «Su negocio recibe llamadas a toda hora.» (0.90–3.24)
-//                     «Las que no alcanza a contestar, se pierden.» (3.76–5.97)
+//                     «Las que no alcanza a contestar son ventas perdidas.» (3.76–5.97)
 
 const HORAS = [
   "07:12", "08:41", "09:03", "10:26", "11:58", "12:04",
@@ -69,7 +69,7 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
           <Rotulo texto="El problema" entrada={4} />
         </div>
 
-        <div style={{ position: "relative", height: 210, marginBottom: 16 }}>
+        <div style={{ position: "relative", height: 258, marginBottom: 16 }}>
           <div
             style={{
               position: "absolute",
@@ -80,17 +80,19 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
               }),
             }}
           >
-            <Titular entrada={6} remate>
+            <Titular entrada={6} tamano={70} remate>
               Su negocio recibe
               <br />
               llamadas a toda hora
             </Titular>
           </div>
           <div style={{ position: "absolute", inset: 0, opacity: aparecer(f, cambio, 18) }}>
-            <Titular entrada={cambio} remate>
+            <Titular entrada={cambio} tamano={70} remate>
               Las que no alcanza
               <br />
-              a contestar, se pierden
+              a contestar son
+              <br />
+              ventas perdidas
             </Titular>
           </div>
         </div>
@@ -100,7 +102,7 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
             display: "grid",
             gridTemplateColumns: `repeat(${columnas}, 1fr)`,
             gap: 22,
-            marginTop: 70,
+            marginTop: 44,
           }}
         >
           {HORAS.map((hora, i) => {
@@ -151,7 +153,7 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
 
 // ------------------------------------------------------------ 2. entra el panel
 // Voz 7.71 – 11.95 s · «Este es el Panel Dimia.» (7.71–9.08)
-//                       «Todo lo que el agente atendió, en un solo lugar.» (9.53–11.95)
+//                       «Todo lo que la inteligencia artificial atendió, en un solo lugar.» (9.53–11.95)
 
 export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={40}>
@@ -159,9 +161,9 @@ export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
       <Rotulo texto="Panel Dimia" entrada={2} />
       <div style={{ height: 40 }} />
       <Titular entrada={10} tamano={72}>
-        Todo lo que el agente
+        Todo lo que la inteligencia
         <br />
-        atendió, en un lugar
+        artificial atendió
       </Titular>
       <div style={{ height: 62 }} />
       <VentanaPanel
@@ -180,7 +182,7 @@ export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
 );
 
 // ----------------------------------------------------------------- 3. contesta
-// Voz 12.86 – 18.34 s · «Contesta al primer timbre.» (12.86–14.01)
+// Voz 12.86 – 18.34 s · «Contesta al segundo.» (12.86–14.01)
 //                        «Cada conversación queda escrita:» (14.48–15.98)
 //                        «qué preguntaron y en qué terminó.» (16.50–18.34)
 
@@ -190,9 +192,9 @@ export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => 
       <Rotulo texto="Contesta" entrada={4} />
       <div style={{ height: 36 }} />
       <Titular entrada={10} tamano={70} remate>
-        Contesta al
+        Contesta
         <br />
-        primer timbre
+        al segundo
       </Titular>
       <div style={{ height: 30 }} />
       <Cuerpo entrada={26}>
@@ -288,7 +290,7 @@ export const EscenaMide: React.FC<{ duracion: number }> = ({ duracion }) => (
 
 // ----------------------------------------------------------------- 6. se opera
 // Voz 31.28 – 35.92 s · «Y usted decide cómo contesta.» (31.28–32.91)
-//                        «Horarios, servicios y saludo. Sin escribir código.» (33.48–35.92)
+//                        «Horarios, servicios y saludo. Contesta también cuando usted cierra.» (33.48–35.92)
 
 export const EscenaOpera: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={240}>
@@ -302,7 +304,7 @@ export const EscenaOpera: React.FC<{ duracion: number }> = ({ duracion }) => (
       </Titular>
       <div style={{ height: 30 }} />
       <Cuerpo entrada={40}>
-        Horarios, servicios, saludo y a dónde pasa lo que no resuelve. Sin escribir código.
+        Horarios, servicios y saludo. Contesta también cuando usted cierra.
       </Cuerpo>
       <div style={{ height: 54 }} />
       <VentanaPanel
