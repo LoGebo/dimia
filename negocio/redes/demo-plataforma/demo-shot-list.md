@@ -1,84 +1,73 @@
-# Demo de la plataforma · shot list
+# Demo de la app · shot list
 
-Recorrido de **65 segundos** por lo que Dimia ya tiene en línea: el sitio y el panel del
-agente de voz. Todo lo que aparece existe hoy; no hay pantalla de relleno ni maqueta.
+Recorrido de **60 segundos** dentro de `panel.dimia.mx`. Es un demo del producto, no del
+sitio: no aparece la página de venta en ningún plano. Todo lo que se ve existe hoy en la
+app; no hay maqueta ni pantalla de relleno.
 
-## Lo que se grabó y de dónde sale
+## De dónde sale
 
 | Superficie | URL | Acceso |
 |---|---|---|
-| Sitio público | `https://dimia.mx` | abierto |
-| Panel del agente | `https://panel.dimia.mx` | **falta la cuenta de producción** |
+| App | `https://panel.dimia.mx` | **pendiente: cuenta de producción** |
 
-El panel de producción responde en `panel.dimia.mx` y pide sesión. La cuenta local
-`dueno@demo.mx` no entra ahí —la probé—, así que hace falta una cuenta de producción con
-datos presentables. Va por variable de entorno (`PANEL_USUARIO`, `PANEL_CLAVE`); ninguna
-credencial entra al repo.
+`dueno@demo.mx / demo1234` es la cuenta del panel local; en producción no entra —la probé y
+se queda en `/entrar`—. Las credenciales van por variable de entorno (`PANEL_USUARIO`,
+`PANEL_CLAVE`) y no se escriben en ningún archivo del repo.
 
-El negocio que se graba debe tener agenda con citas: la cookie `agenda_negocio` fija cuál
-es. Si en producción el identificador del negocio es otro, se cambia la constante `TENANT`
+El negocio que salga en cámara debe tener movimiento real: conversaciones en la bandeja,
+citas en la agenda y llamadas en el informe. Un negocio en ceros se ve vacío y hunde la
+demo. La cookie `agenda_negocio` fija cuál es; su identificador va en la constante `TENANT`
 de `recorrido.mjs`.
 
 ## Shot list
 
 | # | Segundos | Pantalla | Acción | Voz en ese beat |
 |---|---|---|---|---|
-| 01 | 0.0 – 5.5 | `dimia.mx` `#inicio` | Entra el hero. Acercamiento lento al lettering. | «Dimia es la plataforma que convierte cada conversación con sus clientes en una acción.» |
-| 02 | 5.5 – 11.5 | `dimia.mx` `#productos` | Baja a Productos. Zoom a «Agente de voz Dimia» y a la ficha: qué resuelve, para quién, integra con. | «Empieza con el agente de voz: un número que contesta las veinticuatro horas.» |
-| 03 | 11.5 – 18.5 | `dimia.mx` widget «Línea principal» | Corre la secuencia de demostración del sitio: el contador arranca y avanzan los pasos de la llamada. | «Entiende lo que le piden, consulta la agenda y aparta el lugar antes de colgar.» |
-| 04 | 18.5 – 26.0 | `dimia.mx` `#garantia` | La animación de la colisión: 17:00–17:30 confirmada, 17:15–17:45 rechazada por la base, se ofrece 17:45. Pausa de 0.5 s en el rechazo. | «La disponibilidad la decide la base, no la conversación. Dos citas encimadas son imposibles.» |
-| 05 | 26.0 – 32.0 | `panel.dimia.mx/hoy` | Corte al panel ya con sesión. Zoom-out del tablero completo, luego acercamiento a la gráfica de la quincena. | «Todo lo que atendió llega al panel.» |
-| 06 | 32.0 – 40.0 | `panel.dimia.mx/bandeja` | Clic en la conversación de Jorge Estrada. Zoom al hilo: «quiero agendar una limpieza» → «queda apartada, su código es B68E». Pausa de 0.4 s en la insignia «agendó». | «Cada conversación queda escrita: qué le preguntaron, qué respondió y en qué terminó.» |
-| 07 | 40.0 – 47.0 | `panel.dimia.mx/agenda` | El día hábil con cuatro citas. Zoom a la columna «Por llegar» y a la primera ficha con hora y responsable. | «La cita ya está en la agenda, con su hora y su responsable.» |
-| 08 | 47.0 – 54.0 | `panel.dimia.mx/resumen` | Zoom a la tira de cifras: llamadas, resueltas sin humano, escalamiento, duración. Baja a la gráfica por día. | «El informe dice cuántas llamadas entraron y cuántas se resolvieron solas.» |
-| 09 | 54.0 – 59.5 | `panel.dimia.mx/agente` | «Listo para contestar 5/5» y el cuadro «Cómo contesta» con el saludo editable. | «Horarios, servicios y saludo los define usted, desde el mismo panel.» |
-| 10 | 59.5 – 65.0 | `dimia.mx` `#contacto` | Vuelve al sitio. Zoom al teléfono +52 81 1518 8129 y al botón «Agendar una demostración». Cierra en el lockup. | «Marque el número y escúchelo contestar. Dimia. Donde el dato decide.» |
+| 01 | 0.0 – 6.5 | `/hoy` | Abre el tablero. Acercamiento a la gráfica de la quincena y a la tira de avisos. | «Este es el panel de Dimia. Aquí llega todo lo que el agente contestó por usted.» |
+| 02 | 6.5 – 13.0 | `/bandeja` | La lista de conversaciones, con sus etiquetas: agendó, solo preguntó, pidió una persona. | «En Mensajes está cada conversación que entró, por teléfono y por WhatsApp.» |
+| 03 | 13.0 – 20.5 | `/bandeja/…` | Clic en la conversación que agendó. Zoom al hilo y pausa de 0.4 s en la insignia «agendó». | «Ábrala y lea qué le preguntaron, qué respondió el agente y en qué terminó.» |
+| 04 | 20.5 – 27.5 | `/agenda` | El día con sus citas. Zoom a la columna «Por llegar» y a la primera ficha, con hora y responsable. | «Lo que agendó ya está en la agenda, con su hora y su responsable.» |
+| 05 | 27.5 – 34.0 | `/agenda` | Clic en «Llegó» de una cita: pasa de «Por llegar» a «En atención». Pausa de 0.5 s en el cambio. | «Marque quién llegó y quién fue atendida. El día se ordena solo.» |
+| 06 | 34.0 – 41.0 | `/resumen` | Zoom a la tira de cifras. Baja a la gráfica de llamadas por día. | «El informe dice cuántas llamadas entraron, cuántas se resolvieron solas y cuánto duraron.» |
+| 07 | 41.0 – 47.5 | `/clientes/…` | Ficha de una persona: qué ha pasado, sus citas, notas del equipo. | «Cada persona tiene su ficha: sus citas, sus recados y lo que el equipo debe saber.» |
+| 08 | 47.5 – 55.0 | `/agente` | «Listo para contestar 5/5», el saludo editable y el número al que transfiere. | «Y usted decide cómo contesta: horarios, servicios, saludo y a dónde pasa lo que no resuelve.» |
+| 09 | 55.0 – 60.0 | `/hoy` | Vuelve al tablero, zoom-out. Rótulo final sobre la vista. | «Dimia. Donde el dato decide.» |
 
 ## Rótulos en pantalla
 
-Cuatro, máximo cuatro palabras, Archivo 600 sobre tinta, con el cuadrado azul de remate.
-Entran a los 0.4 s del corte y salen 1.2 s después.
+Cuatro, máximo tres palabras, Archivo 600, con el cuadrado azul de remate. Entran 0.4 s
+después del corte y salen 1.2 s más tarde.
 
 | Shot | Rótulo |
 |---|---|
-| 02 | Agente de voz |
-| 05 | El panel |
-| 07 | Agenda en firme |
-| 10 | dimia.mx |
+| 02 | Mensajes |
+| 04 | Agenda en firme |
+| 06 | El informe |
+| 09 | panel.dimia.mx |
 
 ## Reglas de movimiento
 
-- Acercamientos deliberados: uno por shot, nunca dos. Entre 1.0 y 1.25 de escala.
-- Pausa de 0.3 a 0.5 s antes de cada corte y en el momento clave del shot (el rechazo de
-  la colisión, la insignia «agendó», la cifra de resueltas sin humano).
-- Cero scroll libre. Cada desplazamiento va a un ancla concreta y se detiene.
-- Cortes limpios entre secciones. Sin disolvencias, sin barridos.
-- El cursor se mueve en línea recta y se detiene antes de cada clic.
+- Un acercamiento por plano, nunca dos. Entre 1.0 y 1.25 de escala.
+- Pausa de 0.3 a 0.5 s antes de cada corte y en el momento clave: la insignia «agendó», el
+  cambio de estado de la cita, la cifra de resueltas sin humano.
+- Cero scroll libre. Cada desplazamiento va a un ancla y se detiene.
+- Cortes limpios entre secciones. Sin disolvencias.
+- El cursor va en línea recta y se detiene antes de cada clic.
 
-## Lo que se dejó fuera, y por qué
+## Lo que se deja fuera
 
-- **«Confían en Dimia» (Atos, Heineken, Arca Continental, Tec de Monterrey, UERRE).**
-  Está en el sitio, pero un video se reenvía por WhatsApp y se sube a redes: es una
-  distribución distinta a la de una página. `README.md` de la firma tiene pendiente
-  «definir qué clientes tienen autorización escrita para aparecer con nombre». Si esa
-  autorización ya existe, se agrega un shot de 3 s entre el 04 y el 05 y el video sube a
-  68 s. Dígamelo y lo meto.
-- **Planes y precios.** Ocupan 1900 px de sitio y meterlos obliga a leer una tabla; en un
-  video de un minuto no se alcanzan a leer y ensucian el ritmo. El CTA del shot 10 lleva
-  ahí.
-- **Pedidos, recados, cobros y campañas.** Existen en el panel. Si en producción la cuenta
-  que me pase los trae con movimiento, se agregan; si salen en cero, se ven vacíos y es
-  mejor dejarlos fuera.
+- **El sitio `dimia.mx`.** Este video es de la app.
+- **Pedidos, cobros, campañas y recados.** Existen, pero sólo entran si la cuenta que me
+  pase los trae con movimiento. Vacíos, restan.
+- **Nombres y teléfonos de clientes reales.** Si la cuenta de producción trae personas de
+  verdad, hay que decidir antes de grabar: o se usa un negocio de demostración, o tapo los
+  datos en el editor. Un video se reenvía por WhatsApp; no es lo mismo que una pantalla
+  que sólo ve el dueño.
 
-## Un desacuerdo de nombre que hay que resolver
+## El nombre del producto
 
-Su instrucción dice que el producto insignia se llama **Línea**. El repo lo respalda:
-`negocio/contexto-planes.md` dice «Dimia Línea». Pero **el sitio en producción no usa ese
-nombre**: la sección Productos dice «Agente de voz Dimia», y «Línea principal» aparece
-solo como el rótulo del widget de demostración.
-
-El guion narra lo que se ve —«el agente de voz»— porque narrar «Línea» sobre una pantalla
-que dice otra cosa se nota. Si Línea es el nombre bueno, hay que cambiarlo primero en el
-sitio y volver a grabar; si el nombre bueno es «Agente de voz Dimia», hay que corregir
-`contexto-planes.md`. Es decisión suya; el guion se ajusta en un minuto en cualquiera de
-los dos sentidos.
+Su instrucción dice que el insignia se llama **Línea**, y `negocio/contexto-planes.md` lo
+respalda. El sitio en producción dice «Agente de voz Dimia» y la app se presenta como
+«Dimia Panel». El guion no usa ninguno de los tres como nombre propio: dice «el agente» y
+«el panel», que es lo que se lee en pantalla. Cuando cierre el nombre, se ajusta en un
+minuto.

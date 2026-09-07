@@ -1,5 +1,6 @@
 /**
- * Maneja la ventana de la demo por los diez planos del shot list.
+ * Maneja la ventana de la demo por los nueve planos del shot list.
+ * Es un demo de la app: el sitio no aparece en ningún plano.
  * Recordly graba esa ventana; este script sólo mueve lo que se ve dentro.
  *
  *   node tour.mjs &                       # ventana limpia en dimia.mx (CDP 9555)
@@ -12,8 +13,9 @@
 import puppeteer from 'puppeteer-core';
 
 const CDP = 'http://127.0.0.1:9555';
+const PAUSA_CORTE = 400; // el aire antes de cada corte
 const PANEL = 'https://panel.dimia.mx';
-const TENANT = 'bca5d234-9549-4700-8590-1dbe02af4053';
+const TENANT = process.env.PANEL_NEGOCIO ?? 'bca5d234-9549-4700-8590-1dbe02af4053';
 
 const pausa = (ms) => new Promise((s) => setTimeout(s, ms));
 
@@ -48,7 +50,7 @@ async function cursorA(p, x, y, pasos = 22) {
 const marca = (n, texto) => console.log(`${String(n).padStart(2, '0')} · ${new Date().toISOString().slice(14, 22)} · ${texto}`);
 
 const navegador = await puppeteer.connect({ browserURL: CDP, defaultViewport: null });
-const p = (await navegador.pages()).find((x) => x.url().includes('dimia.mx')) ?? (await navegador.pages())[0];
+const p = (await navegador.pages()).find((x) => x.url().includes('panel.dimia.mx')) ?? (await navegador.pages())[0];
 await p.bringToFront();
 
 // El sitio y el panel comparten la misma ventana: el corte entre ambos es una navegación.
@@ -62,36 +64,8 @@ const anclas = await p.evaluate(() =>
 );
 console.log('anclas del sitio:', anclas);
 
-// ---------------------------------------------------------------- 01 · hero
-marca(1, 'hero');
-await irA(p, 0, 200);
-await pausa(5300);
-
-// ------------------------------------------------------------ 02 · productos
-marca(2, 'agente de voz');
-await irA(p, anclas.productos + 120, 1500);
-await pausa(1200);
-await cursorA(p, 390, 540); // ficha: qué resuelve / para quién / integra con
-await pausa(3000);
-
-// -------------------------------------------------- 03 · secuencia en vivo
-marca(3, 'secuencia de demostración');
-await cursorA(p, 1080, 450); // el widget «Línea principal»
-await p.evaluate(() => {
-  const b = [...document.querySelectorAll('button')].find((e) => /demostraci[oó]n|reproducir|iniciar/i.test(e.textContent || ''));
-  b?.click();
-});
-await pausa(6700);
-
-// ------------------------------------------------------------- 04 · garantía
-marca(4, 'colisión de horarios');
-await irA(p, anclas.garantia + 380, 1500);
-await pausa(1000);
-await cursorA(p, 740, 620); // la reserva rechazada por la base
-await pausa(4800);
-
-// ---------------------------------------------------------------- 05 · panel
-marca(5, 'panel · hoy');
+// ------------------------------------------------------------ sesión
+marca(0, 'entrando');
 await p.goto(`${PANEL}/entrar`, { waitUntil: 'networkidle2' });
 await p.type('input[name=email]', process.env.PANEL_USUARIO, { delay: 55 });
 await p.type('input[name=password]', process.env.PANEL_CLAVE, { delay: 55 });
@@ -99,29 +73,38 @@ await Promise.all([
   p.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
   p.evaluate(() => document.querySelector('form').requestSubmit()),
 ]);
-await p.setCookie({ name: 'agenda_negocio', value: TENANT, domain: 'panel.dimia.mx', path: '/' });
-await p.goto(`${PANEL}/hoy`, { waitUntil: 'networkidle2' });
-await pausa(1600);
-await cursorA(p, 700, 430); // la gráfica de la quincena
-await pausa(3500);
+if (TENANT) await p.setCookie({ name: 'agenda_negocio', value: TENANT, domain: 'panel.dimia.mx', path: '/' });
+if (p.url().includes('/entrar')) throw new Error('no entró: revise PANEL_USUARIO y PANEL_CLAVE');
 
-// -------------------------------------------------------------- 06 · bandeja
-marca(6, 'la conversación');
+// ----------------------------------------------------------------- 01 · hoy
+marca(1, 'el tablero del día');
+await p.goto(`${PANEL}/hoy`, { waitUntil: 'networkidle2' });
+await pausa(1800);
+await cursorA(p, 700, 430);   // la gráfica de la quincena
+await pausa(4000);
+
+// -------------------------------------------------------------- 02 · bandeja
+marca(2, 'la lista de conversaciones');
 await p.goto(`${PANEL}/bandeja`, { waitUntil: 'networkidle2' });
-await pausa(1300);
+await pausa(1600);
+await cursorA(p, 300, 330);   // las etiquetas: agendó, solo preguntó
+await pausa(3900);
+
+// --------------------------------------------------------- 03 · conversación
+marca(3, 'la conversación que agendó');
 const hilos = await p.evaluate(() =>
   [...document.querySelectorAll('a')].map((a) => a.getAttribute('href')).filter((h) => h?.startsWith('/bandeja/')),
 );
-await cursorA(p, 300, 380);
+await cursorA(p, 300, 470);
 await p.goto(PANEL + (hilos[2] ?? hilos[0]), { waitUntil: 'networkidle2' });
-await pausa(1400);
-await cursorA(p, 800, 420); // la insignia «agendó»
-await pausa(4600);
+await pausa(1500);
+await cursorA(p, 820, 300);   // la insignia «agendó»
+await pausa(5000);
 
-// --------------------------------------------------------------- 07 · agenda
-marca(7, 'agenda del día');
+// --------------------------------------------------------------- 04 · agenda
+marca(4, 'la agenda del día');
 await p.goto(`${PANEL}/agenda`, { waitUntil: 'networkidle2' });
-await pausa(1400);
+await pausa(1500);
 for (let i = 0; i < 6; i++) {
   if (!(await p.evaluate(() => document.body.innerText.includes('Día libre')))) break;
   const avanzo = await p.evaluate(() => {
@@ -133,33 +116,66 @@ for (let i = 0; i < 6; i++) {
   if (!avanzo) break;
   await pausa(1500);
 }
-await cursorA(p, 330, 470); // la columna «Por llegar»
-await pausa(4300);
+await cursorA(p, 330, 470);   // la columna «Por llegar»
+await pausa(4400);
 
-// -------------------------------------------------------------- 08 · informe
-marca(8, 'informe');
-await p.goto(`${PANEL}/resumen`, { waitUntil: 'networkidle2' });
-await pausa(1600);
-await cursorA(p, 620, 350); // la tira de cifras
-await pausa(1600);
-await irA(p, 320, 1100);
+// ------------------------------------------------------- 05 · cambio de estado
+marca(5, 'marcar que llegó');
+const caja = await p.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((e) => e.textContent.trim() === 'Llegó');
+  if (!b) return null;
+  const r = b.getBoundingClientRect();
+  return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+});
+if (caja) {
+  await cursorA(p, caja.x, caja.y);
+  await p.mouse.click(caja.x, caja.y);
+  await pausa(2400);         // la cita cruza a «En atención»
+  await cursorA(p, 900, 470);
+} else {
+  console.log('   (sin botón «Llegó» a la vista; se queda en la agenda)');
+}
 await pausa(3200);
 
-// --------------------------------------------------------------- 09 · agente
-marca(9, 'configuración del agente');
+// -------------------------------------------------------------- 06 · informe
+marca(6, 'el informe');
+await p.goto(`${PANEL}/resumen`, { waitUntil: 'networkidle2' });
+await pausa(1700);
+await cursorA(p, 620, 350);   // la tira de cifras
+await pausa(1800);
+await irA(p, 340, 1200);      // la gráfica por día
+await pausa(2800);
+
+// ---------------------------------------------------------- 07 · ficha de cliente
+marca(7, 'la ficha de una persona');
+await p.goto(`${PANEL}/clientes`, { waitUntil: 'networkidle2' });
+await pausa(1400);
+const fichas = await p.evaluate(() =>
+  [...document.querySelectorAll('a')].map((a) => a.getAttribute('href')).filter((h) => /^\/clientes\/.+/.test(h || '')),
+);
+if (fichas.length) {
+  await cursorA(p, 320, 360);
+  await p.goto(PANEL + fichas[0], { waitUntil: 'networkidle2' });
+  await pausa(1500);
+  await cursorA(p, 640, 450); // «Qué ha pasado»
+}
+await pausa(3800);
+
+// --------------------------------------------------------------- 08 · agente
+marca(8, 'cómo contesta');
 await p.goto(`${PANEL}/agente`, { waitUntil: 'networkidle2' });
-await pausa(1500);
-await cursorA(p, 420, 330); // «Listo para contestar 5/5»
-await pausa(3600);
+await pausa(1600);
+await cursorA(p, 420, 330);   // «Listo para contestar 5/5»
+await pausa(2000);
+await cursorA(p, 1080, 400);  // el saludo editable
+await pausa(3400);
 
-// --------------------------------------------------------------- 10 · cierre
-marca(10, 'contacto');
-await p.goto('https://dimia.mx', { waitUntil: 'networkidle2' });
-await pausa(600);
-await irA(p, anclas.contacto + 60, 1500);
-await pausa(1200);
-await cursorA(p, 300, 500); // el teléfono
-await pausa(3000);
+// --------------------------------------------------------------- 09 · cierre
+marca(9, 'cierre');
+await p.goto(`${PANEL}/hoy`, { waitUntil: 'networkidle2' });
+await pausa(1400);
+await cursorA(p, 720, 400);
+await pausa(3400);
 
-marca(11, 'fin del recorrido');
+marca(10, 'fin del recorrido');
 navegador.disconnect();
