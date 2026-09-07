@@ -2,6 +2,16 @@
 
 .seccion {
   border-bottom: 1px solid var(--linea);
+  position: relative;
+}
+
+/* Tonos alternos para dar ritmo al bajar, dentro de la familia de tinta. */
+.tonoPanel {
+  background: var(--panel);
+}
+
+.tonoPanel2 {
+  background: var(--panel-2);
 }
 
 .contenedor {

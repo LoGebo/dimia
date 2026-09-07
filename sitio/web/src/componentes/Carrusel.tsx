@@ -18,7 +18,7 @@ export function Carrusel() {
   const total = Math.max(paginas.length, 1);
 
   return (
-    <section aria-label="Confían en Dimia" className={ui.seccion}>
+    <section aria-label="Confían en Dimia" className={`${ui.seccion} ${ui.tonoPanel2}`}>
       <div className={css.contenedor}>
         <div className={css.barra}>
           <p data-revelar className={ui.rotulo}>Confían en Dimia</p>

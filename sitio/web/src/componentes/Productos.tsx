@@ -2,6 +2,7 @@
 
 import { PRODUCTO } from "@/contenido/sitio";
 import { usePanelLlamada } from "@/hooks/usePanelLlamada";
+import { Palabras } from "./Palabras";
 import { Flecha } from "./Iconos";
 import ui from "./ui.module.css";
 import css from "./Productos.module.css";
@@ -17,13 +18,12 @@ export function Productos() {
   const estado = ESTADOS[fase];
 
   return (
-    <section id="productos" className={ui.seccion}>
+    <section id="productos" className={`${ui.seccion} ${ui.tonoPanel}`}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
           <p data-revelar className={ui.rotulo}>Productos</p>
-          <h2 data-revelar className={ui.titulo}>
-            Lo que ya opera con clientes
-            <i className={ui.cuadrado} />
+          <h2 className={ui.titulo}>
+            <Palabras texto="Lo que ya opera con clientes" />
           </h2>
         </div>
 

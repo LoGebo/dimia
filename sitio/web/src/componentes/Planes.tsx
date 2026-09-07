@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PLANES } from "@/contenido/sitio";
+import { Palabras } from "./Palabras";
 import ui from "./ui.module.css";
 import css from "./Planes.module.css";
 
@@ -20,9 +21,8 @@ export function Planes() {
           <p data-revelar className={ui.rotulo}>
             {PLANES.rotulo}
           </p>
-          <h2 data-revelar className={ui.titulo}>
-            {PLANES.titular}
-            <i className={ui.cuadrado} />
+          <h2 className={ui.titulo}>
+            <Palabras texto={PLANES.titular} />
           </h2>
         </div>
 

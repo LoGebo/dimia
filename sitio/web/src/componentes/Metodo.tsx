@@ -1,4 +1,5 @@
 import { METODO } from "@/contenido/sitio";
+import { Palabras } from "./Palabras";
 import ui from "./ui.module.css";
 import css from "./Metodo.module.css";
 
@@ -8,9 +9,8 @@ export function Metodo() {
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
           <p data-revelar className={ui.rotulo}>Método</p>
-          <h2 data-revelar className={ui.titulo}>
-            Cuatro etapas, en este orden
-            <i className={ui.cuadrado} />
+          <h2 className={ui.titulo}>
+            <Palabras texto="Cuatro etapas, en este orden" />
           </h2>
         </div>
 

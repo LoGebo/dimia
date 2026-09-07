@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PRACTICA } from "@/contenido/sitio";
+import { Palabras } from "./Palabras";
 import { Flecha } from "./Iconos";
 import ui from "./ui.module.css";
 import css from "./Practica.module.css";
@@ -10,13 +11,12 @@ export function Practica() {
   const [abierto, setAbierto] = useState(0);
 
   return (
-    <section id="practica" className={ui.seccion}>
+    <section id="practica" className={`${ui.seccion} ${ui.tonoPanel}`}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
           <p data-revelar className={ui.rotulo}>Práctica</p>
-          <h2 data-revelar className={ui.titulo}>
-            Cinco frentes, un solo sistema
-            <i className={ui.cuadrado} />
+          <h2 className={ui.titulo}>
+            <Palabras texto="Cinco frentes, un solo sistema" />
           </h2>
         </div>
 

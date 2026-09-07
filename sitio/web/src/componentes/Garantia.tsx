@@ -1,4 +1,5 @@
 import { GARANTIA } from "@/contenido/sitio";
+import { Palabras } from "./Palabras";
 import css from "./Garantia.module.css";
 
 export function Garantia() {
@@ -10,9 +11,8 @@ export function Garantia() {
         <div className={css.entrada}>
           <p className={css.rotulo}>{GARANTIA.rotulo}</p>
           <div className={css.texto}>
-            <h2 data-revelar className={css.titular}>
-              {GARANTIA.titular}
-              <i className={css.cuadrado} />
+            <h2 className={css.titular}>
+              <Palabras texto={GARANTIA.titular} />
             </h2>
             <p data-revelar className={css.cuerpo}>{GARANTIA.cuerpo}</p>
           </div>

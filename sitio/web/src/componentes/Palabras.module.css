@@ -1,0 +1,26 @@
+.palabra {
+  display: inline-block;
+}
+
+/* Solo se esconde cuando el sistema confirmó que puede animar. Sin JS, con
+   error o con movimiento reducido, la palabra ya está en su sitio. */
+:global(html[data-revelado="1"]) .palabra {
+  opacity: 0;
+  transform: translateY(0.55em);
+  transition:
+    opacity 640ms var(--curva),
+    transform 640ms var(--curva);
+}
+
+:global(html[data-revelado="1"]) [data-vis="1"] .palabra {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palabra {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

@@ -11,6 +11,7 @@ import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
 import { Revelar } from "@/componentes/Revelar";
 import { ProgresoScroll } from "@/componentes/ProgresoScroll";
+import { FondoRejilla } from "@/componentes/FondoRejilla";
 import { MOSTRAR_CARRUSEL } from "@/contenido/sitio";
 
 export default function Inicio() {
@@ -18,6 +19,7 @@ export default function Inicio() {
     <>
       <Revelar />
       <ProgresoScroll />
+      <FondoRejilla />
       <Navegacion />
       <main>
         <Hero />
