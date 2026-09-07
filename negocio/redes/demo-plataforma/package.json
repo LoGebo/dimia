@@ -1,0 +1,13 @@
+{
+  "name": "demo-plataforma",
+  "private": true,
+  "type": "module",
+  "description": "Recorrido guionado por la app de Dimia, para grabarlo con Recordly.",
+  "scripts": {
+    "ventana": "node tour.mjs",
+    "recorrido": "node recorrido.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}

@@ -1,181 +1,196 @@
 /**
- * Maneja la ventana de la demo por los nueve planos del shot list.
- * Es un demo de la app: el sitio no aparece en ningún plano.
- * Recordly graba esa ventana; este script sólo mueve lo que se ve dentro.
+ * Maneja la app por los nueve planos del shot list, con el cursor REAL del
+ * sistema. Es lo único que graba Recordly: el puntero que dibuja Chrome por
+ * dentro no existe para la pantalla, así que aquí se mueve el del sistema con
+ * `cliclick` y los clics son clics de verdad.
  *
- *   node tour.mjs &                       # ventana limpia en dimia.mx (CDP 9555)
- *   PANEL_USUARIO=… PANEL_CLAVE=… node recorrido.mjs
+ *   node tour.mjs &        # ventana limpia a pantalla completa (CDP 9555)
+ *   node recorrido.mjs     # el recorrido
  *
+ * Para grabar producción: PANEL_URL=https://panel.dimia.mx PANEL_USUARIO=… PANEL_CLAVE=…
  * Las credenciales van por variable de entorno: nada de cuentas en el repo.
- *
- * Nada de scroll libre: cada desplazamiento va a un ancla y se detiene.
  */
 import puppeteer from 'puppeteer-core';
+import { execSync } from 'node:child_process';
 
-const CDP = 'http://127.0.0.1:9555';
-const PAUSA_CORTE = 400; // el aire antes de cada corte
-const PANEL = 'https://panel.dimia.mx';
-const TENANT = process.env.PANEL_NEGOCIO ?? 'bca5d234-9549-4700-8590-1dbe02af4053';
-
+const PANEL = process.env.PANEL_URL ?? 'http://localhost:3111';
+const TENANT = process.env.PANEL_NEGOCIO ?? 'bca5d234-9549-4700-8590-1dbe02af4053'; // clínica con agenda
 const pausa = (ms) => new Promise((s) => setTimeout(s, ms));
 
-/** Desplaza suave hasta una posición, con la misma inercia en todos los planos. */
-async function irA(p, y, ms = 1400) {
-  await p.evaluate(
-    (destino, dur) =>
-      new Promise((listo) => {
-        const inicio = window.scrollY;
-        const delta = destino - inicio;
-        const t0 = performance.now();
-        const suave = (x) => 1 - Math.pow(1 - x, 3);
-        const paso = (t) => {
-          const x = Math.min(1, (t - t0) / dur);
-          window.scrollTo(0, inicio + delta * suave(x));
-          if (x < 1) requestAnimationFrame(paso);
-          else listo();
-        };
-        requestAnimationFrame(paso);
-      }),
-    y,
-    ms,
-  );
+const navegador = await puppeteer.connect({ browserURL: 'http://127.0.0.1:9555', defaultViewport: null });
+const p = (await navegador.pages()).find((x) => x.url().startsWith('http'));
+
+/** Dónde cae, en la pantalla, el punto (0,0) de la página. */
+const g = await p.evaluate(() => ({ sx: screenX, sy: screenY, oh: outerHeight, ih: innerHeight }));
+const OX = g.sx, OY = g.sy + (g.oh - g.ih);
+console.log('desplazamiento pantalla:', OX, OY);
+
+/** Mueve el cursor del sistema, con inercia: Recordly lo ve y lo sigue. */
+const cursor = (x, y, ms = 700) => { execSync(`cliclick -e ${ms} m:${Math.round(OX + x)},${Math.round(OY + y)}`); };
+const clic = (x, y) => { execSync(`cliclick -e 1 c:${Math.round(OX + x)},${Math.round(OY + y)}`); };
+
+/**
+ * Lleva el cursor al centro de un elemento y, si se pide, lo pulsa.
+ * Si el elemento está fuera de cuadro lo trae con un desplazamiento suave:
+ * un elemento invisible no sirve ni para señalarlo ni para pulsarlo.
+ */
+async function señalar(selectorOTexto, { pulsar = false, espera = 700 } = {}) {
+  const encontrar = (s) => {
+    const util = (e) => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4; };
+    let e = null;
+    try { e = [...document.querySelectorAll(s)].find(util); } catch { /* no era selector */ }
+    if (!e) e = [...document.querySelectorAll('a,button,h1,h2,h3,div,span,td,p')].filter(util)
+      .find((x) => (x.textContent || '').trim().startsWith(s));
+    return e;
+  };
+
+  const hayQueBajar = await p.evaluate((s, fn) => {
+    const e = eval(`(${fn})`)(s);
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    const dentro = r.top >= 40 && r.bottom <= innerHeight - 40;
+    if (!dentro) { e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return true; }
+    return false;
+  }, selectorOTexto, encontrar.toString());
+
+  if (hayQueBajar === null) { console.log('   (no encontré:', selectorOTexto, ')'); return false; }
+  if (hayQueBajar) await pausa(1100);
+
+  const caja = await p.evaluate((s, fn) => {
+    const e = eval(`(${fn})`)(s);
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+  }, selectorOTexto, encontrar.toString());
+
+  if (!caja || caja.y < 0 || caja.y > 900) { console.log('   (fuera de cuadro:', selectorOTexto, ')'); return false; }
+  cursor(caja.x, caja.y, espera);
+  await pausa(400);
+  if (pulsar) { clic(caja.x, caja.y); await pausa(1400); }
+  return true;
 }
 
-/** Lleva el cursor en línea recta y lo detiene antes de tocar nada. */
-async function cursorA(p, x, y, pasos = 22) {
-  await p.mouse.move(x, y, { steps: pasos });
-  await pausa(320);
-}
+const marca = (n, t) => console.log(`${String(n).padStart(2, '0')} · ${new Date().toISOString().slice(14, 22)} · ${t}`);
 
-const marca = (n, texto) => console.log(`${String(n).padStart(2, '0')} · ${new Date().toISOString().slice(14, 22)} · ${texto}`);
-
-const navegador = await puppeteer.connect({ browserURL: CDP, defaultViewport: null });
-const p = (await navegador.pages()).find((x) => x.url().includes('panel.dimia.mx')) ?? (await navegador.pages())[0];
-await p.bringToFront();
-
-// El sitio y el panel comparten la misma ventana: el corte entre ambos es una navegación.
-const anclas = await p.evaluate(() =>
-  Object.fromEntries(
-    ['inicio', 'productos', 'garantia', 'contacto'].map((id) => [
-      id,
-      Math.round((document.getElementById(id)?.getBoundingClientRect().top ?? 0) + window.scrollY),
-    ]),
-  ),
-);
-console.log('anclas del sitio:', anclas);
-
-// ------------------------------------------------------------ sesión
+// --------------------------------------------------------------- sesión
 marca(0, 'entrando');
 await p.goto(`${PANEL}/entrar`, { waitUntil: 'networkidle2' });
-await p.type('input[name=email]', process.env.PANEL_USUARIO, { delay: 55 });
-await p.type('input[name=password]', process.env.PANEL_CLAVE, { delay: 55 });
-await Promise.all([
-  p.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
-  p.evaluate(() => document.querySelector('form').requestSubmit()),
-]);
-if (TENANT) await p.setCookie({ name: 'agenda_negocio', value: TENANT, domain: 'panel.dimia.mx', path: '/' });
+// Si la sesión sigue viva, `/entrar` redirige y no hay formulario que llenar.
+if (await p.$('input[name=email]')) {
+  await p.type('input[name=email]', process.env.PANEL_USUARIO ?? 'dueno@demo.mx', { delay: 40 });
+  await p.type('input[name=password]', process.env.PANEL_CLAVE ?? 'demo1234', { delay: 40 });
+  await Promise.all([
+    p.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
+    p.evaluate(() => document.querySelector('form').requestSubmit()),
+  ]);
+} else {
+  console.log('   (sesión ya abierta)');
+}
+// El negocio que sale en cámara: el que tiene agenda con citas.
+await p.setCookie({ name: 'agenda_negocio', value: TENANT, domain: new URL(PANEL).hostname, path: '/' });
 if (p.url().includes('/entrar')) throw new Error('no entró: revise PANEL_USUARIO y PANEL_CLAVE');
+cursor(735, 460, 300);
 
-// ----------------------------------------------------------------- 01 · hoy
+// ------------------------------------------------------------- 01 · hoy
 marca(1, 'el tablero del día');
 await p.goto(`${PANEL}/hoy`, { waitUntil: 'networkidle2' });
-await pausa(1800);
-await cursorA(p, 700, 430);   // la gráfica de la quincena
-await pausa(4000);
-
-// -------------------------------------------------------------- 02 · bandeja
-marca(2, 'la lista de conversaciones');
-await p.goto(`${PANEL}/bandeja`, { waitUntil: 'networkidle2' });
 await pausa(1600);
-await cursorA(p, 300, 330);   // las etiquetas: agendó, solo preguntó
-await pausa(3900);
+await señalar('Llamadas de la quincena', { espera: 900 });
+await pausa(3200);
 
-// --------------------------------------------------------- 03 · conversación
-marca(3, 'la conversación que agendó');
-const hilos = await p.evaluate(() =>
-  [...document.querySelectorAll('a')].map((a) => a.getAttribute('href')).filter((h) => h?.startsWith('/bandeja/')),
-);
-await cursorA(p, 300, 470);
-await p.goto(PANEL + (hilos[2] ?? hilos[0]), { waitUntil: 'networkidle2' });
+// --------------------------------------------------------- 02 · bandeja
+marca(2, 'la lista de conversaciones');
+await señalar('Mensajes', { pulsar: true, espera: 800 });
+await p.goto(`${PANEL}/bandeja`, { waitUntil: 'networkidle2' });
 await pausa(1500);
-await cursorA(p, 820, 300);   // la insignia «agendó»
-await pausa(5000);
+await señalar('a[href^="/bandeja/"]', { espera: 800 });
+await pausa(3400);
 
-// --------------------------------------------------------------- 04 · agenda
+// ---------------------------------------------------- 03 · conversación
+marca(3, 'la conversación que agendó');
+const hilos = await p.evaluate(() => [...document.querySelectorAll('a[href^="/bandeja/"]')].map((a) => a.getAttribute('href')));
+const objetivo = hilos[2] ?? hilos[0];
+const caja = await p.evaluate((h) => {
+  const e = document.querySelector(`a[href="${h}"]`); if (!e) return null;
+  const r = e.getBoundingClientRect(); return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+}, objetivo);
+if (caja) { cursor(caja.x, caja.y, 800); await pausa(350); clic(caja.x, caja.y); await pausa(2200); }
+await señalar('agendó', { espera: 700 });
+await pausa(3800);
+
+// ---------------------------------------------------------- 04 · agenda
 marca(4, 'la agenda del día');
 await p.goto(`${PANEL}/agenda`, { waitUntil: 'networkidle2' });
 await pausa(1500);
 for (let i = 0; i < 6; i++) {
   if (!(await p.evaluate(() => document.body.innerText.includes('Día libre')))) break;
-  const avanzo = await p.evaluate(() => {
+  const av = await p.evaluate(() => {
     const b = [...document.querySelectorAll('a,button')].find((e) => e.textContent.trim() === '›');
-    if (!b) return false;
-    b.click();
-    return true;
+    if (!b) return false; b.click(); return true;
   });
-  if (!avanzo) break;
+  if (!av) break;
   await pausa(1500);
 }
-await cursorA(p, 330, 470);   // la columna «Por llegar»
-await pausa(4400);
+await señalar('Por llegar', { espera: 900 });
+await pausa(3600);
 
-// ------------------------------------------------------- 05 · cambio de estado
+// --------------------------------------------- 05 · la cita cambia de estado
 marca(5, 'marcar que llegó');
-const caja = await p.evaluate(() => {
+const llego = await p.evaluate(() => {
   const b = [...document.querySelectorAll('button')].find((e) => e.textContent.trim() === 'Llegó');
   if (!b) return null;
-  const r = b.getBoundingClientRect();
-  return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+  const r = b.getBoundingClientRect(); return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
 });
-if (caja) {
-  await cursorA(p, caja.x, caja.y);
-  await p.mouse.click(caja.x, caja.y);
-  await pausa(2400);         // la cita cruza a «En atención»
-  await cursorA(p, 900, 470);
+if (llego) {
+  cursor(llego.x, llego.y, 900);
+  await pausa(450);
+  clic(llego.x, llego.y);
+  await pausa(2400);          // la cita cruza a «En atención»
+  await señalar('En atención', { espera: 700 });
 } else {
-  console.log('   (sin botón «Llegó» a la vista; se queda en la agenda)');
+  console.log('   (sin botón «Llegó» a la vista)');
 }
-await pausa(3200);
+await pausa(3000);
 
-// -------------------------------------------------------------- 06 · informe
+// --------------------------------------------------------- 06 · informe
 marca(6, 'el informe');
 await p.goto(`${PANEL}/resumen`, { waitUntil: 'networkidle2' });
 await pausa(1700);
-await cursorA(p, 620, 350);   // la tira de cifras
-await pausa(1800);
-await irA(p, 340, 1200);      // la gráfica por día
-await pausa(2800);
+await señalar('Resueltas sin humano', { espera: 900 });
+await pausa(2200);
+await señalar('Llamadas por día', { espera: 800 });
+await pausa(2600);
 
-// ---------------------------------------------------------- 07 · ficha de cliente
+// -------------------------------------------------- 07 · ficha de cliente
 marca(7, 'la ficha de una persona');
 await p.goto(`${PANEL}/clientes`, { waitUntil: 'networkidle2' });
 await pausa(1400);
-const fichas = await p.evaluate(() =>
-  [...document.querySelectorAll('a')].map((a) => a.getAttribute('href')).filter((h) => /^\/clientes\/.+/.test(h || '')),
-);
+const fichas = await p.evaluate(() => [...document.querySelectorAll('a')].map((a) => a.getAttribute('href')).filter((h) => /^\/clientes\/.+/.test(h || '')));
 if (fichas.length) {
-  await cursorA(p, 320, 360);
-  await p.goto(PANEL + fichas[0], { waitUntil: 'networkidle2' });
-  await pausa(1500);
-  await cursorA(p, 640, 450); // «Qué ha pasado»
+  const c = await p.evaluate((h) => {
+    const e = document.querySelector(`a[href="${h}"]`); if (!e) return null;
+    const r = e.getBoundingClientRect(); return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) };
+  }, fichas[0]);
+  if (c) { cursor(c.x, c.y, 800); await pausa(350); clic(c.x, c.y); await pausa(2200); }
+  await señalar('Qué ha pasado', { espera: 700 });
 }
-await pausa(3800);
+await pausa(3200);
 
-// --------------------------------------------------------------- 08 · agente
+// ---------------------------------------------------------- 08 · agente
 marca(8, 'cómo contesta');
 await p.goto(`${PANEL}/agente`, { waitUntil: 'networkidle2' });
 await pausa(1600);
-await cursorA(p, 420, 330);   // «Listo para contestar 5/5»
-await pausa(2000);
-await cursorA(p, 1080, 400);  // el saludo editable
-await pausa(3400);
+await señalar('Listo para contestar', { espera: 900 });
+await pausa(2200);
+await señalar('Cómo contesta', { espera: 800 });
+await pausa(2800);
 
-// --------------------------------------------------------------- 09 · cierre
+// ---------------------------------------------------------- 09 · cierre
 marca(9, 'cierre');
 await p.goto(`${PANEL}/hoy`, { waitUntil: 'networkidle2' });
-await pausa(1400);
-await cursorA(p, 720, 400);
-await pausa(3400);
+await pausa(1500);
+cursor(735, 430, 900);
+await pausa(3000);
 
 marca(10, 'fin del recorrido');
 navegador.disconnect();
