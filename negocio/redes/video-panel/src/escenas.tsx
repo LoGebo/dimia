@@ -153,19 +153,24 @@ export const EscenaLlamadas: React.FC<{ duracion: number }> = ({ duracion }) => 
 
 // ------------------------------------------------------------ 2. entra el panel
 // Voz 7.39 – 12.43 s · «Este es el Panel Dimia.» (7.39–8.65)
-//                       «Todo lo que la inteligencia artificial atendió…» (9.12–12.43)
+//                       «Todo lo que la inteligencia artificial puede gestionar…» (9.12–12.43)
 
 export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={40}>
     <AbsoluteFill style={{ ...marco, justifyContent: "center" }}>
       <Rotulo texto="Panel Dimia" entrada={2} />
       <div style={{ height: 40 }} />
-      <Titular entrada={10} tamano={72}>
+      <Titular entrada={10} tamano={64}>
         Todo lo que la inteligencia
         <br />
-        artificial atendió
+        artificial puede gestionar
       </Titular>
-      <div style={{ height: 62 }} />
+      <div style={{ height: 26 }} />
+      <Cuerpo entrada={26}>
+        En un solo lugar, las{" "}
+        <span style={{ fontFamily: cifras, fontVariantNumeric: "tabular-nums" }}>24</span> horas del día.
+      </Cuerpo>
+      <div style={{ height: 44 }} />
       <VentanaPanel
         fuente="panel/hoy.png"
         foco={[0.5, 0.5]}
@@ -183,7 +188,7 @@ export const EscenaPanel: React.FC<{ duracion: number }> = ({ duracion }) => (
 
 // ----------------------------------------------------------------- 3. contesta
 // Voz 14.05 – 19.04 s · «Contesta al segundo.» (14.05–15.05)
-//                        «Cada conversación queda escrita:» (15.47–16.92)
+//                        «Cada conversación queda registrada.» (15.47–16.92)
 //                        «qué preguntaron y en qué terminó.» (17.33–19.04)
 
 export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => (
@@ -198,7 +203,7 @@ export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => 
       </Titular>
       <div style={{ height: 30 }} />
       <Cuerpo entrada={40}>
-        Cada conversación queda escrita: qué preguntaron, qué respondió y en qué terminó.
+        Cada conversación queda registrada.
       </Cuerpo>
       <div style={{ height: 54 }} />
       <VentanaPanel
@@ -217,8 +222,8 @@ export const EscenaContesta: React.FC<{ duracion: number }> = ({ duracion }) => 
 );
 
 // ------------------------------------------------------------------- 4. agenda
-// Voz 20.45 – 24.39 s · «Y cuelga con la cita ya escrita.» (20.45–22.00)
-//                        «Dos citas encimadas son imposibles.» (22.38–24.39)
+// Voz 20.45 – 24.39 s · «Y cuelga con la cita ya agendada.» (20.45–22.00)
+//                        «Si un cliente necesita agendar, Dimia lo hace por usted.» (22.38–24.39)
 
 export const EscenaAgenda: React.FC<{ duracion: number }> = ({ duracion }) => (
   <Escena duracion={duracion} deriva={140}>
@@ -228,11 +233,11 @@ export const EscenaAgenda: React.FC<{ duracion: number }> = ({ duracion }) => (
       <Titular entrada={8} tamano={70} remate>
         Y cuelga con la
         <br />
-        cita ya escrita
+        cita ya agendada
       </Titular>
       <div style={{ height: 30 }} />
       <Cuerpo entrada={26}>
-        El motor de reservas vive en la base de datos: dos citas encimadas son imposibles.
+        Si un cliente necesita agendar, Dimia lo hace por usted.
       </Cuerpo>
       <div style={{ height: 54 }} />
       <VentanaPanel
