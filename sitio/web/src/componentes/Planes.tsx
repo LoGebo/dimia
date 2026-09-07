@@ -86,6 +86,13 @@ export function Planes() {
               <div className={css.linea} />
 
               <ul className={css.rasgos}>
+                {c.incluye ? (
+                  <li className={css.rasgo}>
+                    <span>
+                      <b>{c.incluye}</b>
+                    </span>
+                  </li>
+                ) : null}
                 <li className={css.rasgo}>
                   <span>
                     <b className={css.mono}>{c.minutos.toLocaleString("es-MX")}</b> minutos incluidos

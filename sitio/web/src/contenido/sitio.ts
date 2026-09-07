@@ -27,7 +27,6 @@ export const NAVEGACION = [
   { href: "#metodo", texto: "Método" },
   { href: "#productos", texto: "Productos" },
   { href: "#planes", texto: "Planes" },
-  { href: "#casos", texto: "Casos" },
   { href: "#firma", texto: "Firma" },
 ] as const;
 
@@ -239,6 +238,7 @@ export const PLANES = {
       nombre: "Básico",
       precio: 2990,
       minutos: 200,
+      incluye: "",
       canales: "Llamadas, WhatsApp, Instagram y Messenger",
       panel: "Panel esencial",
       soporte: "WhatsApp",
@@ -250,6 +250,7 @@ export const PLANES = {
       nombre: "Negocio",
       precio: 3690,
       minutos: 500,
+      incluye: "",
       canales: "Todos los canales disponibles",
       panel: "Panel completo",
       soporte: "WhatsApp",
@@ -261,6 +262,7 @@ export const PLANES = {
       nombre: "Empresa",
       precio: 4790,
       minutos: 1000,
+      incluye: "Panel y analítica incluidos",
       canales: "Todos los canales disponibles",
       panel: "Panel completo",
       soporte: "Prioritario",

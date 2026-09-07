@@ -79,18 +79,18 @@
 .columnas {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(32px, 5vw, 88px);
-  align-items: flex-end;
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
 }
 
 .titular {
-  flex: 1 1 560px;
+  flex: 1 1 540px;
   min-width: 0;
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
-  font-size: clamp(32px, 4.6vw, 68px);
-  line-height: 1.04;
-  letter-spacing: -0.014em;
+  font-size: clamp(24px, 2.7vw, 40px);
+  line-height: 1.14;
+  letter-spacing: -0.012em;
   text-wrap: balance;
   margin: 0;
   color: var(--hueso);
@@ -109,17 +109,17 @@
 }
 
 .derecha {
-  flex: 1 1 340px;
+  flex: 1 1 360px;
   min-width: 0;
   animation: sube 800ms var(--curva) 900ms both;
 }
 
 .bajada {
-  font-size: 17px;
-  line-height: 1.62;
+  font-size: clamp(18px, 1.5vw, 21px);
+  line-height: 1.5;
   color: var(--acero);
-  margin: 0 0 28px;
-  max-width: 44ch;
+  margin: 0 0 32px;
+  max-width: 34ch;
 }
 
 .fuerte {
@@ -194,6 +194,18 @@
   text-transform: uppercase;
   color: var(--acero-2);
   margin: 0;
+}
+
+/* En teléfono el titular largo se achica para no comerse la pantalla. */
+@media (max-width: 640px) {
+  .titular {
+    font-size: 21px;
+    line-height: 1.24;
+  }
+
+  .bajada {
+    font-size: 16px;
+  }
 }
 
 .filete {

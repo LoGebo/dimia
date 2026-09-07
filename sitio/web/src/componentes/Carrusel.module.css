@@ -1,61 +1,42 @@
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(56px, 7vw, 104px) var(--margen);
-}
-
-.barra {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 44px;
-}
-
-.controles {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.control {
-  width: 44px;
-  height: 44px;
-  background: transparent;
-  border: 1px solid var(--linea);
-  color: var(--acero);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 150ms ease-out, color 150ms ease-out;
-}
-
-.control:hover {
-  border-color: var(--acento);
-  color: var(--acento);
+  padding: clamp(48px, 6vw, 88px) var(--margen);
 }
 
 .ventana {
   overflow: hidden;
   border-top: 1px solid var(--linea);
   border-bottom: 1px solid var(--linea);
+  margin-top: 36px;
+  /* Desvanece los bordes para que la cinta entre y salga sin corte duro. */
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 
 .pista {
   display: flex;
-  transition: transform 560ms var(--curva);
+  width: max-content;
+  animation: desliza 34s linear infinite;
 }
 
-.pagina {
-  flex: 0 0 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(50%, 150px), 1fr));
+.ventana:hover .pista {
+  animation-play-state: paused;
+}
+
+@keyframes desliza {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .celda {
-  height: 132px;
+  flex: 0 0 auto;
+  width: clamp(180px, 20vw, 260px);
+  height: 128px;
   border-right: 1px solid var(--linea);
   padding: 26px;
   display: flex;
@@ -63,13 +44,9 @@
   justify-content: center;
 }
 
-.celda:last-child {
-  border-right: 0;
-}
-
 .logo {
   max-width: 100%;
-  max-height: 28px;
+  max-height: 30px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -78,18 +55,19 @@
   transition: opacity 150ms ease-out;
 }
 
-.logo:hover {
+.celda:hover .logo {
   opacity: 1;
 }
 
 .marcador {
   font-family: var(--fuente-sans), system-ui, sans-serif;
   font-weight: 600;
-  font-size: clamp(15px, 1.5vw, 18px);
+  font-size: clamp(16px, 1.5vw, 19px);
   letter-spacing: -0.01em;
   color: var(--acero);
   text-align: center;
   line-height: 1.3;
+  white-space: nowrap;
   transition: color 150ms var(--curva);
 }
 
@@ -97,48 +75,19 @@
   color: var(--hueso);
 }
 
-.pie {
-  margin-top: 26px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .nota {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-size: 11.5px;
   line-height: 1.6;
   color: var(--acero-2);
-  margin: 0;
+  margin: 26px 0 0;
   max-width: 64ch;
 }
 
-.puntos {
-  display: flex;
-  gap: 6px;
-}
-
-.botonPunto {
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.punto {
-  width: 7px;
-  height: 7px;
-  background: var(--linea-2);
-  display: block;
-  transition: background 200ms ease-out;
-}
-
-.punto[data-activo="1"] {
-  background: var(--acento);
+@media (prefers-reduced-motion: reduce) {
+  .pista {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+  }
 }
