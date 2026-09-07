@@ -196,15 +196,45 @@
   margin: 0;
 }
 
-/* En teléfono el titular largo se achica para no comerse la pantalla. */
+/* En teléfono todo respira más: titular más chico, columnas separadas y
+   botones a lo ancho para que no se sientan apretados. */
 @media (max-width: 640px) {
+  .cuerpo {
+    padding-top: clamp(104px, 14vh, 140px);
+    padding-bottom: 40px;
+  }
+
+  .columnas {
+    gap: 34px;
+    align-items: stretch;
+  }
+
   .titular {
-    font-size: 21px;
-    line-height: 1.24;
+    font-size: 22px;
+    line-height: 1.26;
   }
 
   .bajada {
-    font-size: 16px;
+    font-size: 16.5px;
+    margin-bottom: 24px;
+    max-width: none;
+  }
+
+  .acciones {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .primario,
+  .secundario {
+    width: 100%;
+    min-height: 52px;
+    justify-content: center;
+  }
+
+  .secundario {
+    padding: 0 18px;
   }
 }
 

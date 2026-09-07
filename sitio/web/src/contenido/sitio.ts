@@ -44,7 +44,7 @@ export const HERO = {
 export const LA_FIRMA = {
   rotulo: "La firma",
   entrada:
-    "Contestamos lo que su negocio no alcanza a contestar: la pregunta operativa, la de los números del día y la de la llamada de las nueve de la noche.",
+    "Contestamos lo que su negocio no alcanza a atender: la llamada que entra en plena operación, la cita que alguien pide a las nueve de la noche y los números del día que nadie revisó.",
   cuerpo:
     "Somos una consultora. Trabajamos con dueños y directores de empresas mexicanas que ya tienen operación y datos, pero no un sistema que los use. Entramos por el problema, no por la herramienta, y nos quedamos operando lo que instalamos.",
   pilares: [
