@@ -1,0 +1,26 @@
+{
+  "name": "reel-demo",
+  "private": true,
+  "type": "module",
+  "description": "Reel vertical del panel, recortado de la grabación de pantalla.",
+  "scripts": {
+    "estudio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ReelDimia salida/reel-dimia.mp4",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.521",
+    "@remotion/google-fonts": "^4.0.521",
+    "remotion": "^4.0.521",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
+}
