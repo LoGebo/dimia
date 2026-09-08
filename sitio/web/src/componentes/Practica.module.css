@@ -8,15 +8,15 @@
   transition: background 220ms var(--curva);
 }
 
-/* Rail de acento a la izquierda de la fila abierta */
+/* Rail sobrio a la izquierda de la fila abierta */
 .fila::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
-  width: 2px;
-  background: var(--acento);
+  width: 1px;
+  background: color-mix(in srgb, var(--acento) 46%, var(--linea-2));
   transform: scaleY(0);
   transform-origin: top center;
   transition: transform 300ms var(--curva);
@@ -27,7 +27,7 @@
 }
 
 .fila[data-activo="1"] {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--acento) 7%, transparent), transparent 60%);
+  background: color-mix(in srgb, var(--acento) 3%, transparent);
 }
 
 .fila[data-activo="1"] .tituloFila {
@@ -151,6 +151,7 @@
   flex-wrap: wrap;
   gap: clamp(24px, 4vw, 72px);
   padding: 0 0 clamp(32px, 3.4vw, 48px) 60px;
+  padding-top: 4px;
 }
 
 .detalleTexto {
@@ -162,7 +163,7 @@
   font-size: 16.5px;
   line-height: 1.62;
   color: var(--hueso);
-  margin: 0 0 22px;
+  margin: 0 0 10px;
   max-width: 52ch;
 }
 
@@ -195,7 +196,49 @@
 }
 
 @media (max-width: 640px) {
+  .fila[data-activo="1"] .encabezadoFila {
+    padding-left: 16px;
+  }
+
+  /* El signo se ancla junto al índice, no flota entre los textos */
+  .encabezadoFila {
+    position: relative;
+    padding-right: 36px;
+    gap: 14px;
+  }
+
+  .cruz {
+    position: absolute;
+    top: clamp(24px, 2.6vw, 38px);
+    right: 0;
+    width: 16px;
+    height: 16px;
+  }
+
   .detalle {
+    padding-left: 16px;
+    padding-right: 4px;
+    padding-top: 20px;
+    gap: 22px;
+    border-top: 1px solid var(--linea);
+    margin-left: 16px;
+    margin-right: 0;
     padding-left: 0;
+  }
+
+  .parrafo {
+    font-size: 16px;
+    line-height: 1.62;
+    color: color-mix(in srgb, var(--hueso) 76%, var(--acero));
+    margin-bottom: 4px;
+  }
+
+  .resumen {
+    font-size: 15px;
+    color: var(--acero-2);
+  }
+
+  .punto {
+    font-size: 15px;
   }
 }
