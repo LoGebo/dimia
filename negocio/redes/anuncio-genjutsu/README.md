@@ -13,6 +13,7 @@ formato que se llena antes de tocar la herramienta.
 | **Licencia** | Pexels. Uso comercial libre, sin atribución, se permite modificar. |
 | **Medida** | Vertical 1440 × 2732 |
 | **Qué tiene** | Cara iluminada por la pantalla del teléfono, fondo oscuro, teléfono en mano |
+| **Enlace directo** | `https://videos.pexels.com/video-files/7942761/7942761-hd_1080_2048_25fps.mp4` |
 | **Archivo local** | `fuente/referencia.mp4` |
 
 Genjutsu acepta de 4 a 30 segundos. Se recorta a 10:
@@ -39,9 +40,19 @@ De 15 a 20 renders del panel real sobre un teléfono negro, en varios ángulos e
 inclinaciones. Salen de capturas verdaderas de `panel.dimia.mx`. Sin maquetas:
 la regla ya está fijada en `../demo-plataforma/demo-shot-list.md`.
 
-- [ ] Capturas del panel exportadas
-- [ ] Compuestas sobre teléfono, 6 ángulos mínimo
-- [ ] Sin esquinas redondeadas ni sombras en la interfaz
+Se generan corriendo el panel en local y capturando a 390 × 844 @3x:
+
+```sh
+cd proyectos/voz/web && npx next dev -p 3111
+```
+
+Login `dueno@demo.mx` / `demo1234`, cookie `agenda_negocio` con el
+identificador de la clínica que sí tiene agenda. Se ocultan los adornos de
+desarrollo con `nextjs-portal { display: none }` antes de capturar.
+
+- [x] Seis pantallas: agenda, agente, bandeja, clientes, hoy, resumen
+- [x] Cinco ángulos cada una: izq26, izq14, frente, der14, der26
+- [x] Sin indicador de desarrollo en cuadro
 
 ### Pasada B · Motion transfer — la persona
 
@@ -59,21 +70,23 @@ justo lo que el manual prohíbe: brillo azul, partículas, aire de «IA» genér
 ### Objects swap
 
 ```
-The phone in the shot is a black smartphone displaying a dark interface:
-near-black background, one blue accent, sharp square corners, no rounded
-cards, no shadows. The screen stays flat and legible. No glare, no
-reflections, no blue glow spilling onto the face or hands. Everything else
-in the shot is unchanged.
+The phone in his hand is a black smartphone displaying a dark scheduling
+interface: near-black background, one blue accent, square corners, no
+rounded cards, no shadows. The screen content stays flat, sharp and
+legible. The screen light on his face and hands is the natural light of a
+phone at night, not a decorative glow. Everything else in the shot is
+unchanged.
 ```
 
 ### Motion transfer
 
 ```
 A Mexican man in his forties, short dark hair, trimmed beard, plain charcoal
-shirt with no logo. Small restaurant at night, wooden host stand. Calm neutral
-expression, focused on the phone in his hand. Never looks at camera, never
-smiles at camera. Cold desaturated grade, near-black shadows, practical warm
-lighting only, 35mm shallow depth of field, natural film grain.
+button-down shirt with no logo. He stands in the doorway of a small restaurant
+at night, holding a phone and looking down at it. Calm neutral expression. He
+never looks at the camera and never smiles at the camera. Practical light
+only: the phone screen on his face, warm street light behind him. Desaturated
+grade, deep shadows, 35mm shallow depth of field, natural film grain.
 No text, no logos, no interface overlays.
 ```
 
