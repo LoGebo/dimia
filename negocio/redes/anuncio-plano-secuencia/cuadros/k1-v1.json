@@ -1,0 +1,34 @@
+[
+  {
+    "created_at": "2026-09-13T18:59:32.115774Z",
+    "display_name": "Nano Banana Pro",
+    "id": "698f855a-2065-40ab-b7c9-07bfaa0d9834",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_185932_698f855a-2065-40ab-b7c9-07bfaa0d9834_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [
+        {
+          "id": "594c3157-f53e-4fb0-a703-4ed4600caad6",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/594c3157-f53e-4fb0-a703-4ed4600caad6_resize.jpg"
+        },
+        {
+          "id": "3b56d159-dffa-4c62-868a-1f030a055d2b",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/3b56d159-dffa-4c62-868a-1f030a055d2b_resize.jpg"
+        }
+      ],
+      "prompt": "The next morning, 9:58 am, the same lobby and sales gallery as the second reference image, now filled with soft daylight from the floor-to-ceiling windows, the city towers in clear morning light. The woman from the first reference image, same navy suit, stands at the same illuminated architectural scale model greeting a well-dressed Mexican couple in their forties, showing them a tablet whose screen faces away from the camera. Natural professional expressions, nobody looks at the camera. The camera is higher and closer to the scale model than in the second reference, as if it had risen and glided forward. Photorealistic still from a premium real estate TV commercial, shot on an ARRI Alexa 35 with an anamorphic 40mm lens, shallow depth of field, subtle film grain. Restrained and elegant but real: natural skin texture, real materials, an immaculate corporate space that people actually use. Color: deep blue-black ink shadows, cool city light, dim warm brass practical accents, desaturated. Vertical 9:16. Key subjects between 15% and 60% of the frame height; the bottom third of the frame is calm. No text, no logos, no readable screens, no glow, no lens flare.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_185932_698f855a-2065-40ab-b7c9-07bfaa0d9834.png",
+    "status": "completed"
+  }
+]

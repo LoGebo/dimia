@@ -1,0 +1,29 @@
+[
+  {
+    "created_at": "2026-09-13T18:58:42.81116Z",
+    "display_name": "Nano Banana Pro",
+    "id": "567cda80-1037-4940-8ddc-64df84a9dc52",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_185842_567cda80-1037-4940-8ddc-64df84a9dc52_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [
+        {
+          "id": "f235ebdd-59d3-4504-9cbb-6704321f0ad7",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/f235ebdd-59d3-4504-9cbb-6704321f0ad7_resize.jpg"
+        }
+      ],
+      "prompt": "Night, 8:14 pm, the double-height lobby and sales gallery of a luxury residential tower developer in Santa Fe, Mexico City. Travertine floors and walls, floor-to-ceiling windows with the city towers at night. In the sharp foreground, on a travertine reception desk, a black office desk phone with its small display lit, ringing. In the middle ground, an illuminated architectural scale model of a glass residential tower on a pedestal. In the background, the woman from the reference image, in her navy suit with a laptop bag on her shoulder, walking away toward the elevators, seen from behind at a three-quarter angle. Most lights are already off. Photorealistic still from a premium real estate TV commercial, shot on an ARRI Alexa 35 with an anamorphic 40mm lens, shallow depth of field, subtle film grain. Restrained and elegant but real: natural skin texture, real materials, an immaculate corporate space that people actually use. Color: deep blue-black ink shadows, cool city light, dim warm brass practical accents, desaturated. Vertical 9:16. Key subjects between 15% and 60% of the frame height; the bottom third of the frame is calm. No text, no logos, no readable screens, no glow, no lens flare.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_185842_567cda80-1037-4940-8ddc-64df84a9dc52.png",
+    "status": "completed"
+  }
+]

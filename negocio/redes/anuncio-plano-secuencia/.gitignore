@@ -1,0 +1,4 @@
+# Los binarios se descargan de nuevo con la result_url de cada .json
+cuadros/*.png
+tomas/*.mp4
+revision/

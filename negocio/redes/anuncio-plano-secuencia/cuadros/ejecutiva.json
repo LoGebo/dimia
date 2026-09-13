@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-13T18:58:05.294752Z",
+    "display_name": "Nano Banana Pro",
+    "id": "609a46ba-3f7f-43e3-8abf-c276946b3a89",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_185805_609a46ba-3f7f-43e3-8abf-c276946b3a89_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "3:2",
+      "batch_size": 1,
+      "height": 1696,
+      "input_image": null,
+      "input_images": [],
+      "prompt": "Character reference sheet in documentary photo realism: a Mexican woman in her mid-thirties, a real estate sales executive. Shoulder-length dark brown hair tied low, light olive skin, minimal makeup, small gold earrings, tailored navy blue suit over a white shirt, no logo. Three views side by side on a plain warm gray studio background: front, three-quarter and profile. Soft natural light, 50mm, real skin texture, calm confident expression. No text, no labels.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 2528
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_185805_609a46ba-3f7f-43e3-8abf-c276946b3a89.png",
+    "status": "completed"
+  }
+]
