@@ -9,6 +9,7 @@ import { Anuncio as AnuncioPauta } from "./anuncios/Anuncio";
 import { Ganador } from "./anuncios/Ganadores";
 import { Carrusel } from "./anuncios/Carrusel";
 import { Buzon } from "./anuncios/Buzon";
+import { Vocera, duracionVocera, type VoceraProps } from "./anuncios/Vocera";
 import { AntesDespues, DURACION_ANTES_DESPUES } from "./anuncios/AntesDespues";
 import "./tipografia";
 
@@ -31,6 +32,16 @@ export const RemotionRoot: React.FC = () => (
       height={ALTO}
     />
     <Composition id="AntesDespues" component={AntesDespues} durationInFrames={DURACION_ANTES_DESPUES} fps={FPS} width={ANCHO} height={ALTO} />
+    <Composition
+      id="VoceraValentina"
+      component={Vocera}
+      fps={FPS}
+      width={ANCHO}
+      height={ALTO}
+      durationInFrames={duracionVocera(30, FPS)}
+      defaultProps={{ duracion: 30, palabras: [] } as VoceraProps}
+      calculateMetadata={({ props }) => ({ durationInFrames: duracionVocera(props.duracion, FPS) })}
+    />
     <Still id="BuzonMurio" component={Buzon} width={1080} height={1350} />
     <Still id="CarruselLlamadas" component={Carrusel} width={1080} height={1080} defaultProps={{ tarjeta: 1 as const }} />
     <Still id="GanadorFeed" component={Ganador} width={1080} height={1350} defaultProps={{ id: "excusa-clinica", formato: "feed" as const }} />
