@@ -7,6 +7,7 @@ import { DURACION_SPOT, Spot } from "./torre/Spot";
 import { Post } from "./posts/Post";
 import { Anuncio as AnuncioPauta } from "./anuncios/Anuncio";
 import { Ganador } from "./anuncios/Ganadores";
+import { AntesDespues, DURACION_ANTES_DESPUES } from "./anuncios/AntesDespues";
 import "./tipografia";
 
 export const RemotionRoot: React.FC = () => (
@@ -27,6 +28,7 @@ export const RemotionRoot: React.FC = () => (
       width={ANCHO}
       height={ALTO}
     />
+    <Composition id="AntesDespues" component={AntesDespues} durationInFrames={DURACION_ANTES_DESPUES} fps={FPS} width={ANCHO} height={ALTO} />
     <Still id="GanadorFeed" component={Ganador} width={1080} height={1350} defaultProps={{ id: "excusa-clinica", formato: "feed" as const }} />
     <Still id="GanadorStory" component={Ganador} width={1080} height={1920} defaultProps={{ id: "excusa-clinica", formato: "story" as const }} />
     <Still id="AnuncioFeed" component={AnuncioPauta} width={1080} height={1350} defaultProps={{ id: "llame-a", formato: "feed" as const }} />
