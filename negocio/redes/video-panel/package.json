@@ -5,7 +5,9 @@
   "scripts": {
     "estudio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts PanelDimia salida/panel-dimia.mp4",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "render:anuncio": "remotion render src/index.ts AnuncioLanzamiento salida/anuncio-lanzamiento.mp4 --crf 16",
+    "logotipo": "python3 generar-logotipo.py"
   },
   "keywords": [],
   "author": "",

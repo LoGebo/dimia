@@ -1,0 +1,39 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:00.843311Z",
+    "display_name": "Kling v3.0",
+    "id": "382d93fb-6dfe-4bd0-9271-eb9ddd825859",
+    "job_type": "kling3_0",
+    "min_result_url": null,
+    "params": {
+      "aspect_ratio": "9:16",
+      "cfg_scale": 0.5,
+      "duration": 5,
+      "enhance_prompt": false,
+      "height": 1920,
+      "kling_element_ids": [],
+      "kling_elements": [],
+      "medias": [
+        {
+          "data": {
+            "id": "aec63b43-7dd6-4e22-ba54-6fd7fb42cb6f",
+            "type": "media_input",
+            "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/aec63b43-7dd6-4e22-ba54-6fd7fb42cb6f_resize.jpg"
+          },
+          "role": "start_image"
+        }
+      ],
+      "mode": "pro",
+      "multi_prompt": [],
+      "multi_shot_mode": "custom",
+      "multi_shots": false,
+      "prompt": "Locked top-down overhead camera with a very slow push-in. The hand lifts the clay cup of coffee off the counter and out of frame. The smartphone stays perfectly still and flat and its screen stays black. Sound: quiet morning room tone, a ceramic cup lifted from steel. Real-time speed, no slow motion. Photorealistic documentary footage, natural film grain. No text, no graphics, no glow, no faces.",
+      "reference_elements": [],
+      "sound": "on",
+      "width": 1080
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182600_382d93fb-6dfe-4bd0-9271-eb9ddd825859.mp4",
+    "status": "completed",
+    "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182600_382d93fb-6dfe-4bd0-9271-eb9ddd825859_thumbnail.webp"
+  }
+]

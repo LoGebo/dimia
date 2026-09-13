@@ -74,6 +74,23 @@ corre continuo por encima de los cortes y amarra los giros en un solo problema.
 **Botón de Meta:** «Reservar» apuntando a `dimia.mx`.
 **Copia del anuncio:** `[ copia por confirmar ]`.
 
+## Estado
+
+| Pieza | Dónde | Cómo se rehace |
+|---|---|---|
+| Cuadros | `cuadros/NN-1.json` | `./cuadros.sh` |
+| Tomas | `tomas/NN.json` | `./tomas.sh` |
+| Efectos y cama | `sonido/*.json` | Seed Audio y Sonilo; `sonido/norm/` los normaliza |
+| Locución | `sonido/voz-0N.mp3` | ElevenLabs, voz Hope, Multilingual v2, una frase por archivo |
+| Montaje | `../video-panel/src/anuncio/` | `npm run render:anuncio` en `../video-panel` |
+| Logotipo animado | `../video-panel/src/anuncio/Logotipo.tsx` | `npm run logotipo`, generado del SVG oficial |
+
+`video-panel/public/anuncio` es un enlace a esta carpeta. La salida se masteriza a
+−16 LUFS integrados con pico de −1 dB; Instagram y Facebook normalizan desde ahí.
+
+Las seis tomas de Kling salieron utilizables, sin rescate en Seedance. El plano 06 solo se
+usa hasta los 2.8 s: después Kling dibuja aros fantasma sobre la mesa.
+
 ## Movimiento de cada plano
 
 | Plano | Indicación para Kling |

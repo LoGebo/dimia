@@ -1,0 +1,22 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:48.821499Z",
+    "display_name": "Seed Audio 1.0",
+    "id": "dce521cd-c78f-426c-b44a-81593e1497e3",
+    "job_type": "seed_audio",
+    "min_result_url": null,
+    "params": {
+      "batch_size": 1,
+      "expression_intensity": 5,
+      "format": "mp3",
+      "loudness_rate": 0,
+      "mood": 0,
+      "pitch_rate": 0,
+      "prompt": "Sound effect only: a tense cinematic riser, filtered noise and low synth swelling for four seconds, then a hard stop into silence. No voice.",
+      "sample_rate": 48000,
+      "speech_rate": 0
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182648_dce521cd-c78f-426c-b44a-81593e1497e3.mp3",
+    "status": "completed"
+  }
+]

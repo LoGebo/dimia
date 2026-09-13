@@ -1,0 +1,22 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:48.827052Z",
+    "display_name": "Seed Audio 1.0",
+    "id": "568ef470-9c28-4524-ad58-3b2d6e8d43af",
+    "job_type": "seed_audio",
+    "min_result_url": null,
+    "params": {
+      "batch_size": 1,
+      "expression_intensity": 5,
+      "format": "mp3",
+      "loudness_rate": 0,
+      "mood": 0,
+      "pitch_rate": 0,
+      "prompt": "Sound effect only: a smartphone vibrating hard on a stainless steel counter, four short buzzing pulses, close microphone, quiet empty room. No music, no voice.",
+      "sample_rate": 48000,
+      "speech_rate": 0
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182648_568ef470-9c28-4524-ad58-3b2d6e8d43af.mp3",
+    "status": "completed"
+  }
+]

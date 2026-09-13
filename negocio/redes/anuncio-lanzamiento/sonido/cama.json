@@ -1,0 +1,15 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:48.739852Z",
+    "display_name": "Sonilo Music",
+    "id": "e04eaff0-d478-4f9d-ba60-b583be361960",
+    "job_type": "sonilo_music",
+    "min_result_url": null,
+    "params": {
+      "duration": 30,
+      "prompt": "Minimal dark electronic score for a 30 second commercial, no vocals. 0 to 6 seconds: quiet tense ticking hi-hat and a deep sub pulse, building. At 6 seconds: sudden silence for half a second. 6.5 to 29 seconds: a confident driving beat at 100 bpm with warm bass and restrained synth chords, building steadily. A clean final hit at 29 seconds."
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182648_e04eaff0-d478-4f9d-ba60-b583be361960.m4a",
+    "status": "completed"
+  }
+]

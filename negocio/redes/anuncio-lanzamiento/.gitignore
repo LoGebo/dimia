@@ -4,3 +4,11 @@ cuadros/*.jpg
 tomas/*.mp4
 revision/
 prueba-modelos/*.img
+sonido/norm/
+sonido/*.m4a
+sonido/golpe.mp3
+sonido/vibracion.mp3
+sonido/subida.mp3
+sonido/clic.mp3
+sonido/conecta.mp3
+sonido/confirmada.mp3

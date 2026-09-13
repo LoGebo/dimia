@@ -1,0 +1,22 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:48.747345Z",
+    "display_name": "Seed Audio 1.0",
+    "id": "f2f8e807-b893-4304-99cf-41cda961da52",
+    "job_type": "seed_audio",
+    "min_result_url": null,
+    "params": {
+      "batch_size": 1,
+      "expression_intensity": 5,
+      "format": "mp3",
+      "loudness_rate": 0,
+      "mood": 0,
+      "pitch_rate": 0,
+      "prompt": "A single deep cinematic impact hit with a short sub-bass boom. Dry, punchy, about one second long, no music.",
+      "sample_rate": 48000,
+      "speech_rate": 0
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182648_f2f8e807-b893-4304-99cf-41cda961da52.mp3",
+    "status": "completed"
+  }
+]

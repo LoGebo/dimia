@@ -1,0 +1,39 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:01.409084Z",
+    "display_name": "Kling v3.0",
+    "id": "a9098ae1-2c00-4f0e-9b0f-721a9404ec22",
+    "job_type": "kling3_0",
+    "min_result_url": null,
+    "params": {
+      "aspect_ratio": "9:16",
+      "cfg_scale": 0.5,
+      "duration": 5,
+      "enhance_prompt": false,
+      "height": 1920,
+      "kling_element_ids": [],
+      "kling_elements": [],
+      "medias": [
+        {
+          "data": {
+            "id": "839f061d-08e0-4618-94dc-5999f845afd0",
+            "type": "media_input",
+            "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/839f061d-08e0-4618-94dc-5999f845afd0_resize.jpg"
+          },
+          "role": "start_image"
+        }
+      ],
+      "mode": "pro",
+      "multi_prompt": [],
+      "multi_shot_mode": "custom",
+      "multi_shots": false,
+      "prompt": "Fast handheld push-in toward the black smartphone lying face down on the steel counter while focus pulls from the metal shutter in the background to the phone. The phone vibrates in short buzzing pulses, rattling slightly against the steel. Everything else in the fonda stays still. Sound: a phone buzzing hard on stainless steel, fluorescent tube hum. Real-time speed, no slow motion. Photorealistic documentary footage, natural film grain. No text, no graphics, no glow, no faces.",
+      "reference_elements": [],
+      "sound": "on",
+      "width": 1080
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182601_a9098ae1-2c00-4f0e-9b0f-721a9404ec22.mp4",
+    "status": "completed",
+    "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182601_a9098ae1-2c00-4f0e-9b0f-721a9404ec22_thumbnail.webp"
+  }
+]

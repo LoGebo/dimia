@@ -1,0 +1,39 @@
+[
+  {
+    "created_at": "2026-09-13T18:26:04.141943Z",
+    "display_name": "Kling v3.0",
+    "id": "ae8f5b70-6eb1-4636-80e3-5694975695a0",
+    "job_type": "kling3_0",
+    "min_result_url": null,
+    "params": {
+      "aspect_ratio": "9:16",
+      "cfg_scale": 0.5,
+      "duration": 5,
+      "enhance_prompt": false,
+      "height": 1920,
+      "kling_element_ids": [],
+      "kling_elements": [],
+      "medias": [
+        {
+          "data": {
+            "id": "79d7d96f-995b-49f1-b0fd-e6d2c317ece4",
+            "type": "media_input",
+            "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/79d7d96f-995b-49f1-b0fd-e6d2c317ece4_resize.jpg"
+          },
+          "role": "start_image"
+        }
+      ],
+      "mode": "pro",
+      "multi_prompt": [],
+      "multi_shot_mode": "custom",
+      "multi_shots": false,
+      "prompt": "The hand drops the steel scissors onto the wooden station and withdraws out of frame. The black smartphone next to them vibrates in short buzzing pulses. Slight handheld drift toward the phone. Sound: scissors clattering on wood, a phone buzzing on wood. Real-time speed, no slow motion. Photorealistic documentary footage, natural film grain. No text, no graphics, no glow, no faces.",
+      "reference_elements": [],
+      "sound": "on",
+      "width": 1080
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182604_ae8f5b70-6eb1-4636-80e3-5694975695a0.mp4",
+    "status": "completed",
+    "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182604_ae8f5b70-6eb1-4636-80e3-5694975695a0_thumbnail.webp"
+  }
+]
