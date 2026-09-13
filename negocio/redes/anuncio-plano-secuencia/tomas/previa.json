@@ -1,59 +1,57 @@
-[
-  {
-    "created_at": "2026-09-13T19:01:42.283034Z",
-    "display_name": "Cinema Studio 4.0",
-    "id": "87fcd8c4-6875-4c64-8c97-dec1906d1119",
-    "job_type": "cinematic_studio_video_4_0",
-    "min_result_url": null,
-    "params": {
-      "aspect_ratio": "9:16",
-      "bitrate_mode": "standard",
-      "camera_aperture": null,
-      "camera_lens": null,
-      "camera_model": null,
-      "color_palette": null,
-      "duration": 15,
-      "era_control": null,
-      "extension_mode": null,
-      "generate_audio": true,
-      "genre": null,
-      "genre_control": null,
-      "height": 854,
-      "light": null,
-      "light_custom": null,
-      "light_preset": null,
-      "medias": [
-        {
-          "data": {
-            "id": "cd449e7a-9a2a-485a-a15b-66b2e9c628d1",
-            "type": "media_input",
-            "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/cd449e7a-9a2a-485a-a15b-66b2e9c628d1_resize.jpg"
-          },
-          "role": "start_image"
+{
+  "created_at": "2026-09-13T19:11:24.677646Z",
+  "display_name": "Cinema Studio 4.0",
+  "id": "90c7131d-181d-4847-9f93-0070ae042428",
+  "job_type": "cinematic_studio_video_4_0",
+  "min_result_url": null,
+  "params": {
+    "aspect_ratio": "9:16",
+    "bitrate_mode": "standard",
+    "camera_aperture": null,
+    "camera_lens": null,
+    "camera_model": null,
+    "color_palette": null,
+    "duration": 15,
+    "era_control": null,
+    "extension_mode": null,
+    "generate_audio": true,
+    "genre": null,
+    "genre_control": null,
+    "height": 854,
+    "light": null,
+    "light_custom": null,
+    "light_preset": null,
+    "medias": [
+      {
+        "data": {
+          "id": "81bf9e89-4c21-4b8f-8111-a9536c184c11",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/81bf9e89-4c21-4b8f-8111-a9536c184c11_resize.jpg"
         },
-        {
-          "data": {
-            "id": "d37b0bcb-30b2-4e8b-a7df-bbea80d5ec48",
-            "type": "media_input",
-            "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/d37b0bcb-30b2-4e8b-a7df-bbea80d5ec48_resize.jpg"
-          },
-          "role": "end_image"
-        }
-      ],
-      "model": "default",
-      "multi_prompt": [],
-      "multi_shot_mode": "custom",
-      "multi_shots": false,
-      "pacing": null,
-      "prompt": "One continuous uninterrupted crane shot with no cuts. It begins close on the ringing desk phone in the foreground of the dark lobby at night while the woman in the navy suit walks away toward the elevators. The camera slowly lifts off the phone and glides forward past the illuminated architectural scale model of the tower, rising gently. Through the floor-to-ceiling windows the night city turns smoothly into sunrise while the camera keeps moving, and daylight fills the lobby. The camera settles on the same woman the next morning greeting a couple at the scale model, showing them a tablet, and they shake hands. Photorealistic premium commercial, ARRI Alexa 35, anamorphic lens, elegant slow camera, natural performances, nobody looks at the camera. Sound: a desk phone ringing in an empty lobby that fades away, soft city ambience, then warm morning lobby ambience with quiet footsteps. No music, no voice, no text.",
-      "prompt_language": "en",
-      "reference_elements": [],
-      "resolution": "480p",
-      "speedramp": "auto",
-      "width": 480
-    },
-    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_190142_87fcd8c4-6875-4c64-8c97-dec1906d1119.mp4",
-    "status": "completed",
-    "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_190142_87fcd8c4-6875-4c64-8c97-dec1906d1119_thumbnail.webp"
-  }
-]
+        "role": "start_image"
+      },
+      {
+        "data": {
+          "id": "03e19e6c-b26d-464b-90e8-d400a56e1279",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/03e19e6c-b26d-464b-90e8-d400a56e1279_resize.jpg"
+        },
+        "role": "end_image"
+      }
+    ],
+    "model": "default",
+    "multi_prompt": [],
+    "multi_shot_mode": "custom",
+    "multi_shots": false,
+    "pacing": null,
+    "prompt": "Locked-off static camera on a tripod: one continuous time-lapse shot with no camera movement and no cuts. In the foreground the black desk phone rings at night in the dark lobby while the woman in the navy suit walks away toward the elevators. Then time passes quickly: the city lights outside fade, the night sky turns to dawn and then to bright morning, and warm sunlight sweeps across the travertine floor, with only brief time-lapse traces of people passing. In the final seconds time slows back to real time: the same woman greets a couple at the illuminated scale model, shows them a tablet, and they shake hands. Photorealistic premium commercial, ARRI Alexa 35, anamorphic lens, natural performances, nobody looks at the camera. Sound: a desk phone ringing in an empty lobby that fades away, a soft time-lapse city hum, then warm morning lobby ambience with quiet footsteps. No music, no voice, no text.",
+    "prompt_language": "en",
+    "reference_elements": [],
+    "resolution": "480p",
+    "speedramp": "auto",
+    "width": 480
+  },
+  "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_191124_90c7131d-181d-4847-9f93-0070ae042428.mp4",
+  "status": "completed",
+  "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_191124_90c7131d-181d-4847-9f93-0070ae042428_thumbnail.webp"
+}

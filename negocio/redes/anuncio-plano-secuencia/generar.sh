@@ -36,11 +36,19 @@ case "${1:-}" in
     bajar cuadros/k1.json cuadros/k1.png ;;
   previa|final)
     res=$([ "$1" = final ] && echo 1080p || echo 480p)
-    higgsfield generate create cinematic_studio_video_4_0 --mode omni_reference \
+    # Se crea sin esperar y se guarda el ID: si la API responde 503 durante la espera,
+    # el trabajo sigue vivo y se retoma con `generate wait` sin volver a cobrar.
+    id=$(higgsfield generate create cinematic_studio_video_4_0 --mode omni_reference \
       --start-image cuadros/k0.png --end-image cuadros/k1.png \
       --duration 15 --resolution "$res" --aspect_ratio 9:16 --generate_audio true \
-      --prompt "$PLANO" --wait --wait-timeout 30m --json > "tomas/$1.json"
-    bajar "tomas/$1.json" "tomas/$1.mp4" ;;
+      --prompt "$PLANO" --json | jq -r '(if type=="array" then .[0] else . end) | .id')
+    echo "$id" > "tomas/$1.id"
+    for intento in 1 2 3 4 5; do
+      higgsfield generate wait "$id" --timeout 30m --interval 10s --quiet --json > "tomas/$1.json" && break
+      echo "espera interrumpida (intento $intento), reintento en 30 s" >&2; sleep 30
+    done
+    curl -sL "$(jq -r '(if type=="array" then .[0] else . end) | .result_url' "tomas/$1.json")" -o "tomas/$1.mp4"
+    echo "tomas/$1.mp4" ;;
   *)
     echo "Uso: $0 personaje | k0 | k1 | previa | final" >&2; exit 1 ;;
 esac
