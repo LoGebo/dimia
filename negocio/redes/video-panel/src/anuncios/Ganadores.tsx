@@ -111,9 +111,9 @@ export const GANADORES: Record<string, Pieza> = {
   "entrante-inmobiliaria": {
     tipo: "entrante",
     foto: "mano-telefono-a.png",
-    titular: "Mientras usted enseña un departamento,",
+    titular: "Mientras usted enseña,",
     estado: "Visita agendada · sáb 10:00",
-    resaltado: "alguien más agenda la siguiente visita.",
+    resaltado: "alguien más agenda.",
     dialogo: [
       { quien: "cliente", texto: "¿Puedo ver el departamento de dos recámaras?" },
       { quien: "dimia", texto: "Claro. ¿El sábado a las 10:00?" },
