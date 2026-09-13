@@ -81,13 +81,13 @@ export const Spot: React.FC = () => (
     </Sequence>
 
     <Sequence from={12} durationInFrames={108}>
-      <SelloHora de={20 * 60 + 14} a={20 * 60 + 14.9} dur={108} texto="Llamada entrante" tono={estado.enLlamada} />
+      <SelloHora de={20 * 60 + 14} a={20 * 60 + 14.9} dur={108} texto="Llamada entrante" tono={estado.enLlamada} caja />
     </Sequence>
     <Sequence from={140} durationInFrames={120}>
       <EstadoLlamada agenda={70} />
     </Sequence>
     <Sequence from={300} durationInFrames={140}>
-      <SelloHora de={9 * 60 + 58} a={9 * 60 + 58.9} dur={140} texto="Visita confirmada" tono={estado.confirmada} />
+      <SelloHora de={9 * 60 + 58} a={9 * 60 + 58.9} dur={140} texto="Visita confirmada" tono={estado.confirmada} caja />
     </Sequence>
 
     <Sequence from={450} durationInFrames={90}>

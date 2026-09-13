@@ -1,10 +1,10 @@
 [
   {
-    "created_at": "2026-09-13T19:00:49.538959Z",
+    "created_at": "2026-09-13T19:10:06.325764Z",
     "display_name": "Nano Banana Pro",
-    "id": "794bb3fe-5915-4a05-8850-7e8c0bc08103",
+    "id": "de790ed5-a585-44df-adfe-4f459554e1ae",
     "job_type": "nano_banana_pro",
-    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_190049_794bb3fe-5915-4a05-8850-7e8c0bc08103_min.webp",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_191006_de790ed5-a585-44df-adfe-4f459554e1ae_min.webp",
     "params": {
       "application": null,
       "aspect_ratio": "9:16",
@@ -13,17 +13,27 @@
       "input_image": null,
       "input_images": [
         {
-          "id": "b31e2893-08ee-4974-9842-e86f68105065",
+          "id": "c5622a01-7c3f-4dfb-901c-4b32fedadcf3",
           "type": "media_input",
-          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/b31e2893-08ee-4974-9842-e86f68105065_resize.jpg"
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/c5622a01-7c3f-4dfb-901c-4b32fedadcf3_resize.jpg"
+        },
+        {
+          "id": "edf3510b-eb95-494a-be77-ae7920751ae3",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/edf3510b-eb95-494a-be77-ae7920751ae3_resize.jpg"
+        },
+        {
+          "id": "2e1ac931-9891-4eee-b149-b5c988098446",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/2e1ac931-9891-4eee-b149-b5c988098446_resize.jpg"
         }
       ],
-      "prompt": "Relight this exact image as a clear bright morning: low warm golden sunlight pours through the floor-to-ceiling windows, long soft sun shafts across the travertine floor, pale clear blue sky and sunlit towers outside, the interior brighter and warmer. Keep everything else identical: composition, camera position, people, faces, clothes, poses, the scale model and architecture.",
+      "prompt": "Use the first reference image as the exact frame: keep the identical camera position, lens, framing, architecture, travertine reception desk and the black desk phone in the foreground, its display now off. Change the time to the next morning, 9:58 am: warm golden sunlight pours through the floor-to-ceiling windows, clear sky and sunlit towers outside, soft sun shafts across the floor. At the illuminated scale model in the middle ground, the woman from the second reference image, same navy suit and no bag, greets the couple from the third reference image, showing them a tablet whose screen faces away; they are about to shake hands. Natural expressions, nobody looks at the camera. Photorealistic still from a premium real estate TV commercial, shot on an ARRI Alexa 35 with an anamorphic 40mm lens, shallow depth of field, subtle film grain. Restrained and elegant but real: natural skin texture, real materials, an immaculate corporate space that people actually use. Color: deep blue-black ink shadows, cool city light, dim warm brass practical accents, desaturated. Vertical 9:16. Key subjects between 15% and 60% of the frame height; the bottom third of the frame is calm. No text, no logos, no readable screens, no glow, no lens flare.",
       "resolution": "2k",
       "surface": null,
       "width": 1536
     },
-    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_190049_794bb3fe-5915-4a05-8850-7e8c0bc08103.png",
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_191006_de790ed5-a585-44df-adfe-4f459554e1ae.png",
     "status": "completed"
   }
 ]

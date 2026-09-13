@@ -128,7 +128,9 @@ export const SelloHora: React.FC<{
   texto: string;
   tono?: string;
   lugar?: string;
-}> = ({ de, a, dur, texto, tono = estado.conflicto, lugar }) => {
+  /** Caja tinta detrás del sello, para fondos claros. */
+  caja?: boolean;
+}> = ({ de, a, dur, texto, tono = estado.conflicto, lugar, caja = false }) => {
   const f = useCurrentFrame();
   const entra = interpolate(f, [0, 5], [0, 1], { ...clamp, easing: seca });
   const min = interpolate(f, [0, dur], [de, a], clamp);
@@ -139,6 +141,9 @@ export const SelloHora: React.FC<{
         position: "absolute",
         top: 300,
         left: 70,
+        padding: caja ? "22px 28px 24px" : 0,
+        backgroundColor: caja ? `${color.tinta}d9` : "transparent",
+        border: caja ? `1px solid ${color.hueso}24` : "none",
         opacity: entra,
         transform: `translateY(${(1 - entra) * -14}px)`,
       }}

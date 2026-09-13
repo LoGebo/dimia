@@ -36,14 +36,19 @@ a 135.
 
 ## Plano
 
+**Versión 2 · cámara fija en time-lapse.** La primera previa pedía una grúa entre dos
+cuadros con encuadres distintos y el modelo resolvió con una disolvencia a los 7.5 s:
+personas transparentes encimadas. Ahora K0 y K1 comparten encuadre exacto y el paso del
+tiempo es el plano. El teléfono que sonó de noche se queda en primer plano toda la toma.
+
 | Tiempo | Qué pasa |
 |---|---|
-| 0 – 4 | **K0 · Lobby, noche.** Travertino, doble altura. En primer plano el teléfono de recepción se enciende y suena. Al fondo la ejecutiva, traje azul marino, apaga la luz de la maqueta y camina al elevador. |
-| 4 – 9 | La cámara se despega del teléfono y sube despacio junto a la maqueta iluminada. Detrás del ventanal la noche de Santa Fe se vuelve amanecer sin corte. |
-| 9 – 15 | **K1 · Lobby, mañana.** Luz de día. La misma ejecutiva recibe a una pareja junto a la maqueta, les muestra la visita en la tableta, se dan la mano. La cámara se asienta. |
+| 0 – 4 | **K0 · Lobby, noche.** Travertino, doble altura. En primer plano el teléfono de recepción se enciende y suena. Al fondo la ejecutiva, traje azul marino, camina al elevador. |
+| 4 – 10 | Time-lapse con la cámara quieta: se apagan las luces de la ciudad, amanece, el sol barre el piso. |
+| 10 – 15 | **K1 · Lobby, 09:58.** Vuelve el tiempo real. La misma ejecutiva recibe a una pareja junto a la maqueta, les muestra la visita en la tableta, se dan la mano. |
 | 15 – 18 | Cierre en Remotion: logotipo animado, «Donde el dato decide», `dimia.mx`. |
 
-**Cámara:** cuerpo de cine digital, anamórfico 40 mm, grúa lenta y continua, sin cortes.
+**Cámara:** cuerpo de cine digital, anamórfico 40 mm, en tripié, sin cortes.
 **Luz:** noche con prácticos cálidos tenues y ciudad fría; mañana suave de ventanal.
 **Color:** sombras azul tinta, un solo acento cálido latón, desaturado.
 
