@@ -1,0 +1,15 @@
+[
+  {
+    "created_at": "2026-09-13T19:02:14.551291Z",
+    "display_name": "Sonilo Music",
+    "id": "f48cc41c-d612-4670-8aba-472754434d97",
+    "job_type": "sonilo_music",
+    "min_result_url": null,
+    "params": {
+      "duration": 18,
+      "prompt": "Premium cinematic score for an 18 second luxury real estate commercial, no vocals. 0 to 5 seconds: sparse felt piano notes over a low warm drone at night. 5 to 10 seconds: slow rising strings and a soft pulse as dawn arrives. 10 to 15 seconds: warm, confident full chord swell with gentle percussion. 15 to 18 seconds: resolves into one clean sustained final chord. Elegant, restrained, emotional."
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_190214_f48cc41c-d612-4670-8aba-472754434d97.m4a",
+    "status": "completed"
+  }
+]

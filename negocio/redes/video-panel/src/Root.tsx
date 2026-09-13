@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { ALTO, ANCHO, FPS } from "./marca";
 import { DURACION_TOTAL, VideoPanel } from "./VideoPanel";
 import { Anuncio, DURACION_ANUNCIO } from "./anuncio/Anuncio";
+import { DURACION_SPOT, Spot } from "./torre/Spot";
 import "./tipografia";
 
 export const RemotionRoot: React.FC = () => (
@@ -19,6 +20,14 @@ export const RemotionRoot: React.FC = () => (
       id="AnuncioLanzamiento"
       component={Anuncio}
       durationInFrames={DURACION_ANUNCIO}
+      fps={FPS}
+      width={ANCHO}
+      height={ALTO}
+    />
+    <Composition
+      id="SpotTorre"
+      component={Spot}
+      durationInFrames={DURACION_SPOT}
       fps={FPS}
       width={ANCHO}
       height={ALTO}

@@ -160,7 +160,7 @@ const EscenaFrase: React.FC = () => (
   </AbsoluteFill>
 );
 
-const EscenaCierre: React.FC = () => {
+export const EscenaCierre: React.FC = () => {
   const f = useCurrentFrame();
   const linea = interpolate(f, [30, 50], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: seca });
   return (
