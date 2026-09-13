@@ -122,14 +122,11 @@ export const GANADORES: Record<string, Pieza> = {
     boton: "Agendar demostración",
   },
   "escena-manana": {
-    tipo: "escena",
+    tipo: "nicho",
     foto: "manana-sonrisa-a.png",
-    foco: "55% 40%",
-    hora: "08:05",
-    escena: "Llega a la oficina con su café.",
-    aviso: "Dimia · 3 citas agendadas anoche",
-    tono: "verde",
-    remate: "Su agenda trabajó mientras usted dormía.",
+    foco: "55% 38%",
+    llamado: "Su agenda trabajó mientras usted dormía.",
+    bajada: "08:05. Llega a la oficina y Dimia ya dejó tres citas agendadas.",
     boton: "Agendar demostración",
   },
   "entrante-restaurante": {
