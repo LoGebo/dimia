@@ -101,9 +101,16 @@ export const Post: React.FC<PostProps> = ({ n, formato }) => {
   const p = POSTS[n];
   const t = TEMA[p.plantilla];
   const story = formato === "story";
-  // En story el bloque de texto queda entre el 61 % y el 80 %: fuera del 20 % inferior.
-  const altoFoto = story ? 1170 : 800;
+  // En story el bloque de texto arranca al 57 % y termina antes del 20 % inferior.
+  const altoFoto = story ? 1090 : 800;
   const padX = 72;
+
+  const pie = (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <Img src={staticFile(t.logo)} style={{ width: 190 }} />
+      <span style={{ fontFamily: cifras, fontSize: 22, letterSpacing: "0.24em", color: t.texto2 }}>dimia.mx</span>
+    </div>
+  );
 
   return (
     <AbsoluteFill style={{ backgroundColor: t.fondo }}>
@@ -144,7 +151,7 @@ export const Post: React.FC<PostProps> = ({ n, formato }) => {
             style={{
               fontFamily: cifras,
               fontVariantNumeric: "tabular-nums",
-              fontSize: story ? 150 : 120,
+              fontSize: story ? 134 : 120,
               lineHeight: 1,
               color: t.texto,
               marginTop: 26,
@@ -179,22 +186,13 @@ export const Post: React.FC<PostProps> = ({ n, formato }) => {
             }}
           />
         </h1>
+        {/* En story el pie sigue al titular: nunca se encima, sea cual sea el largo de la copia. */}
+        {story ? <div style={{ marginTop: 44 }}>{pie}</div> : null}
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          left: padX,
-          right: padX,
-          bottom: story ? 400 : 56,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Img src={staticFile(t.logo)} style={{ width: 190 }} />
-        <span style={{ fontFamily: cifras, fontSize: 22, letterSpacing: "0.24em", color: t.texto2 }}>dimia.mx</span>
-      </div>
+      {story ? null : (
+        <div style={{ position: "absolute", left: padX, right: padX, bottom: 56 }}>{pie}</div>
+      )}
     </AbsoluteFill>
   );
 };
