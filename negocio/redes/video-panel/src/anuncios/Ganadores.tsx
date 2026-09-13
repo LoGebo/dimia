@@ -27,7 +27,7 @@ type Base = { foto?: string; foco?: string; boton: string };
 type Pieza =
   | (Base & { tipo: "excusa"; excusa: string; golpe: string; bajada: string })
   | (Base & { tipo: "carta"; saludo: string; parrafos: string[] })
-  | (Base & { tipo: "escena"; hora: string; escena: string; aviso: string; remate: string })
+  | (Base & { tipo: "escena"; hora: string; escena: string; aviso: string; remate: string; tono?: "rojo" | "verde" })
   | (Base & { tipo: "nicho"; llamado: string; bajada: string })
   | (Base & { tipo: "ecuacion"; izquierda: string; derecha: string; objecion: string; resaltado: string })
   | (Base & { tipo: "entrante"; titular: string; resaltado: string; estado?: string; dialogo: { quien: "cliente" | "dimia"; texto: string }[] });
@@ -112,6 +112,25 @@ export const GANADORES: Record<string, Pieza> = {
     golpe: "Nadie lo sabe.",
     bajada: "Con Dimia cada llamada queda contestada y registrada.",
     boton: "Ver cómo funciona",
+  },
+  "nicho-medico": {
+    tipo: "nicho",
+    foto: "consulta-a.png",
+    foco: "40% 55%",
+    llamado: "Doctor, mientras usted consulta, su teléfono sigue sonando.",
+    bajada: "Dimia contesta, agenda y confirma por WhatsApp sin interrumpir la consulta.",
+    boton: "Agendar demostración",
+  },
+  "escena-manana": {
+    tipo: "escena",
+    foto: "manana-sonrisa-a.png",
+    foco: "55% 40%",
+    hora: "08:05",
+    escena: "Llega a la oficina con su café.",
+    aviso: "Dimia · 3 citas agendadas anoche",
+    tono: "verde",
+    remate: "Su agenda trabajó mientras usted dormía.",
+    boton: "Agendar demostración",
   },
   "entrante-restaurante": {
     tipo: "entrante",
@@ -266,7 +285,7 @@ const Escena: React.FC<{ p: Extract<Pieza, { tipo: "escena" }>; story: boolean }
     </div>
     <div style={{ position: "absolute", left: 64, right: 64, bottom: pie(story) }}>
       <div style={{ display: "flex", alignItems: "center", gap: 22, backgroundColor: C.panel, border: `1px solid ${C.linea}`, padding: "26px 30px", marginBottom: 30 }}>
-        <div style={{ width: 22, height: 22, backgroundColor: C.rojo }} />
+        <div style={{ width: 22, height: 22, backgroundColor: p.tono === "verde" ? "#3fb68b" : C.rojo }} />
         <span style={{ fontFamily: interfaz, fontWeight: 600, fontSize: 38, color: C.hueso }}>{p.aviso}</span>
       </div>
       <h1 style={pesado(story ? 96 : 84)}>
