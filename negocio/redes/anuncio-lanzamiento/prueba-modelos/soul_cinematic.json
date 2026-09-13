@@ -1,0 +1,28 @@
+[
+  {
+    "created_at": "2026-09-13T18:17:14.869076Z",
+    "display_name": "Soul Cinematic",
+    "id": "e3ef8677-f7e4-4576-81ae-30d89b1d914d",
+    "job_type": "soul_cinematic",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181714_e3ef8677-f7e4-4576-81ae-30d89b1d914d_min.webp",
+    "params": {
+      "batch_size": 1,
+      "enhance_prompt": false,
+      "height": 2048,
+      "prompt": "Documentary photograph, available light only, unstaged and lived-in. A small family-run fonda in Mexico City right after closing, around nine at night. On a worn, scratched stainless steel counter: a damp rag, a plastic napkin holder, a squeeze bottle of salsa, a paper order pad with a ballpoint pen. A cheap black smartphone in a scuffed case lies face down among these things, buzzing. Behind, out of focus, chairs stacked on tables, a mop in a bucket, one fluorescent tube still on in the kitchen, and a half-lowered metal roll-up shutter with cold white street light coming through. No people. Shot on 35mm film, handheld, slightly imperfect framing, real film grain, muted desaturated colors, deep blue-black shadows, cool night tones. The phone sits in the middle of the frame; the bottom third is dark counter.",
+      "quality": "1080p",
+      "seed": 397131,
+      "style": {
+        "id": "5fbabfac-d27b-4751-b550-fea356ed55ac",
+        "name": "General",
+        "strength": 1,
+        "url": "https://cdn.higgsfield.ai/soul-cinematic-style/5f42a585-8ddb-4a06-96c6-682afce0afa1.webp"
+      },
+      "style_id": "5fbabfac-d27b-4751-b550-fea356ed55ac",
+      "style_strength": null,
+      "width": 1152
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181714_e3ef8677-f7e4-4576-81ae-30d89b1d914d.png",
+    "status": "completed"
+  }
+]

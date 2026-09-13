@@ -1,5 +1,6 @@
 # Los binarios se descargan de nuevo con la result_url de cada .json
-cuadros/*.png
+cuadros/**/*.png
 cuadros/*.jpg
 tomas/*.mp4
 revision/
+prueba-modelos/*.img

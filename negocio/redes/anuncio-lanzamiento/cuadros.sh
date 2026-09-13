@@ -1,35 +1,41 @@
 #!/usr/bin/env bash
-# Genera los cuadros fijos del anuncio con GPT Image 2.5.
-# Uso: ./cuadros.sh            todos
-#      ./cuadros.sh 01 05      solo esos
+# Genera los cuadros fijos del anuncio con Nano Banana Pro, en registro documental.
+# Uso: ./cuadros.sh               todos, una variante
+#      VARIANTES=3 ./cuadros.sh 02  tres variantes del 02
+# La primera versión (GPT Image 2.5, look pulido) quedó en cuadros/v1-pulido/.
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p cuadros
 
-ESTILO="Vertical 9:16 still frame from a premium cinematic TV commercial. 35mm lens, shallow depth of field, natural film grain, low-key practical lighting. Color grade: shadows crushed to a deep blue-black ink (#0b0f17), cool steel-blue ambient light, exactly one small warm brass-colored (#c8a45c) practical lamp. Desaturated and restrained. Key subject placed between 15% and 55% of the frame height; the bottom third of the frame is calm dark negative space. No human faces, only hands when people appear. No readable text, no logos, no screen content, no glow, no particles, no lens flare, no hologram, no teal-and-orange grade."
+ESTILO="Documentary photograph, available light only, unstaged and lived-in, like a still from a Mexican independent film. Shot on 35mm film, slightly imperfect handheld framing, real film grain, muted desaturated colors, deep blue-black shadows and cool night tones; any warm light is dim tungsten, never decorative. Real wear, dust, scratches and fingerprints. Hands, when present, look like real working hands and no face is ever visible. Key subject in the middle of the frame; the bottom third of the frame is dark and quiet. No motion lines, no graphic symbols, no readable text, no logos, no screen content, no glow, no lens flare."
 
 prompt() {
   case "$1" in
-    01) echo "A small closed Mexican restaurant at night. Close-up looking along the counter: a black smartphone lies face down on a brushed zinc bar counter, placed in the middle of the frame, vibrating, a thin line of cold light leaking from under its edges onto the metal. Behind it, out of focus, wooden chairs stacked upside down on tables, a half-lowered corrugated metal roll-up shutter at the entrance with blue street light coming through." ;;
-    02) echo "A small dental clinic after hours, lights off. Close-up of a pair of hands peeling off white nitrile gloves over a stainless steel tray. In the background, softly out of focus on the reception desk, a black desk telephone with one small light blinking. Silhouette of a dental chair, cool light through a frosted window." ;;
-    03) echo "A neighborhood hair salon closed at night. Close-up of a hand setting down a pair of steel scissors on a black stone station counter in front of a large mirror. Next to the scissors a black smartphone lies face down, vibrating, cold light leaking from its edges. The mirror reflects empty salon chairs in darkness." ;;
-    04) echo "A small law office at night. Close-up of a hand reaching to switch off a brass desk lamp. On the wooden desk, beside stacked paper folders, a black smartphone lies face down, vibrating, cold light leaking from its edges. Venetian blinds cast stripes of blue street light across the desk." ;;
-    05) echo "Early morning, pale blue dawn, the same small Mexican restaurant. Low angle from inside: two hands lifting a corrugated metal roll-up shutter halfway, soft daylight spilling across a tiled floor and the legs of stacked chairs." ;;
-    06) echo "Early morning inside the restaurant. Locked-off overhead top-down shot of a dark wooden table: a black smartphone lying face up, perfectly flat and centered, its screen completely flat matte black with no reflection and no content. Beside it a clay cup of café de olla with steam and a hand resting near the cup. Soft window daylight." ;;
+    01) echo "A small family-run fonda in Mexico City right after closing, around nine at night. On a worn, scratched stainless steel counter: a damp rag, a plastic napkin holder, a squeeze bottle of salsa, a paper order pad with a ballpoint pen. A cheap black smartphone in a scuffed case lies face down among these things, buzzing. Behind, out of focus, chairs stacked on tables, a mop in a bucket, one fluorescent tube still on in the kitchen, and a half-lowered metal roll-up shutter with cold white street light coming through. No people." ;;
+    02) echo "A small dental office in a Mexican neighborhood after the last patient, lights mostly off. Close-up of a dentist's tired hands, with a wedding ring and a wristwatch, peeling off a white nitrile glove over a stainless steel tray with used instruments and cotton rolls. Behind, out of focus, the reception desk with a beige office desk telephone whose small red line light is lit, a paper appointment book, a pharmacy wall calendar, and a dental chair covered in plastic film." ;;
+    03) echo "A neighborhood beauty salon in Mexico after closing. Close-up of a stylist's hand with chipped nail polish setting down steel scissors on a cluttered station: a comb in a jar of disinfectant, hair clips, a spray bottle, a hair dryer with its tangled cable, loose cut hair on the counter. A black smartphone in a worn clear case lies face down beside the scissors, buzzing. The mirror behind reflects the dim empty salon and a broom leaning on a chair." ;;
+    04) echo "A small, cramped accounting office in Mexico at night. Close-up of a man's hand, shirt sleeve rolled up, reaching to switch off an old desk lamp. On the desk: stacked folders with sticky notes, a printing calculator with its paper roll, a mug of cold coffee, reading glasses. A black smartphone lies face down among the papers, buzzing. Cheap vertical blinds with cold street light behind." ;;
+    05) echo "Early morning, pale blue dawn on a Mexico City street. From inside the same small fonda, low angle: two real hands in a worn sweater lifting a dented corrugated metal roll-up shutter halfway, cold daylight spilling across a scuffed tiled floor, chairs still stacked on tables, a gray street and a parked car outside. No face visible." ;;
+    06) echo "Early morning in the small fonda. Straight top-down overhead shot of a scratched stainless steel counter: a black smartphone lying face up, flat and centered, its screen switched off and completely black. Next to it a clay cup of café de olla, a plastic bag of bolillos, a ring of keys, and a hand reaching for the cup. Soft cold window daylight." ;;
   esac
 }
 
 IDS="${*:-01 02 03 04 05 06}"
+VARIANTES="${VARIANTES:-1}"
 for id in $IDS; do
-  higgsfield generate create gpt_image_2_5 \
-    --prompt "$(prompt "$id") ${ESTILO}" \
-    --aspect_ratio 9:16 --resolution 2k --quality high \
-    --wait --json > "cuadros/$id.json" &
+  for v in $(seq 1 "$VARIANTES"); do
+    higgsfield generate create nano_banana_pro \
+      --prompt "$(prompt "$id") ${ESTILO}" \
+      --aspect_ratio 9:16 --resolution 2k \
+      --wait --json > "cuadros/$id-$v.json" &
+  done
 done
 wait
 
 for id in $IDS; do
-  url=$(jq -r '.[0].result_url' "cuadros/$id.json")
-  curl -sL "$url" -o "cuadros/$id.png"
-  echo "$id $url"
+  for v in $(seq 1 "$VARIANTES"); do
+    url=$(jq -r '.[0].result_url' "cuadros/$id-$v.json")
+    curl -sL "$url" -o "cuadros/$id-$v.png"
+    echo "$id-$v $url"
+  done
 done

@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-13T18:17:15.216377Z",
+    "display_name": "Nano Banana Pro",
+    "id": "f1712a2e-010d-4e8a-8214-d85dbf3e5487",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181715_f1712a2e-010d-4e8a-8214-d85dbf3e5487_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [],
+      "prompt": "Documentary photograph, available light only, unstaged and lived-in. A small family-run fonda in Mexico City right after closing, around nine at night. On a worn, scratched stainless steel counter: a damp rag, a plastic napkin holder, a squeeze bottle of salsa, a paper order pad with a ballpoint pen. A cheap black smartphone in a scuffed case lies face down among these things, buzzing. Behind, out of focus, chairs stacked on tables, a mop in a bucket, one fluorescent tube still on in the kitchen, and a half-lowered metal roll-up shutter with cold white street light coming through. No people. Shot on 35mm film, handheld, slightly imperfect framing, real film grain, muted desaturated colors, deep blue-black shadows, cool night tones. The phone sits in the middle of the frame; the bottom third is dark counter.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181715_f1712a2e-010d-4e8a-8214-d85dbf3e5487.png",
+    "status": "completed"
+  }
+]

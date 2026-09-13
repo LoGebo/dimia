@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-13T18:22:25.042595Z",
+    "display_name": "Nano Banana Pro",
+    "id": "0c6b0975-7f69-41b8-bf25-d89876afb4b4",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182225_0c6b0975-7f69-41b8-bf25-d89876afb4b4_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [],
+      "prompt": "A small family-run fonda in Mexico City right after closing, around nine at night. On a worn, scratched stainless steel counter: a damp rag, a plastic napkin holder, a squeeze bottle of salsa, a paper order pad with a ballpoint pen. A cheap black smartphone in a scuffed case lies face down among these things, buzzing. Behind, out of focus, chairs stacked on tables, a mop in a bucket, one fluorescent tube still on in the kitchen, and a half-lowered metal roll-up shutter with cold white street light coming through. No people. Documentary photograph, available light only, unstaged and lived-in, like a still from a Mexican independent film. Shot on 35mm film, slightly imperfect handheld framing, real film grain, muted desaturated colors, deep blue-black shadows and cool night tones; any warm light is dim tungsten, never decorative. Real wear, dust, scratches and fingerprints. Hands, when present, look like real working hands and no face is ever visible. Key subject in the middle of the frame; the bottom third of the frame is dark and quiet. No motion lines, no graphic symbols, no readable text, no logos, no screen content, no glow, no lens flare.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182225_0c6b0975-7f69-41b8-bf25-d89876afb4b4.png",
+    "status": "completed"
+  }
+]

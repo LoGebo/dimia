@@ -1,0 +1,29 @@
+[
+  {
+    "created_at": "2026-09-13T18:24:15.573418Z",
+    "display_name": "Nano Banana Pro",
+    "id": "619c4d21-7e51-46b3-9493-b88c9e6eb7f7",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182415_619c4d21-7e51-46b3-9493-b88c9e6eb7f7_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [
+        {
+          "id": "d7823a68-8057-44e7-b8ee-7f8aca039943",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/d7823a68-8057-44e7-b8ee-7f8aca039943_resize.jpg"
+        }
+      ],
+      "prompt": "Replace the bloody cotton rolls on the stainless steel tray with clean white cotton rolls and clean instruments. No blood anywhere. Keep everything else exactly identical: composition, hands, gloves, lighting, colors, background.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_182415_619c4d21-7e51-46b3-9493-b88c9e6eb7f7.png",
+    "status": "completed"
+  }
+]
