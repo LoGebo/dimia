@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-13T18:09:07.426716Z",
+    "display_name": "GPT Image 2.5",
+    "id": "c6b05592-7d57-4bb2-8463-e3e32fa15cf5",
+    "job_type": "gpt_image_2_5",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_180907_c6b05592-7d57-4bb2-8463-e3e32fa15cf5_min.webp",
+    "params": {
+      "aspect_ratio": "9:16",
+      "height": 2688,
+      "medias": [],
+      "model": "flare",
+      "prompt": "A neighborhood hair salon closed at night. Close-up of a hand setting down a pair of steel scissors on a black stone station counter in front of a large mirror. Next to the scissors a black smartphone lies face down, vibrating, cold light leaking from its edges. The mirror reflects empty salon chairs in darkness. Vertical 9:16 still frame from a premium cinematic TV commercial. 35mm lens, shallow depth of field, natural film grain, low-key practical lighting. Color grade: shadows crushed to a deep blue-black ink (#0b0f17), cool steel-blue ambient light, exactly one small warm brass-colored (#c8a45c) practical lamp. Desaturated and restrained. Key subject centered between 20% and 60% of the frame height. No human faces, only hands when people appear. No readable text, no logos, no screen content, no glow, no particles, no lens flare, no hologram, no teal-and-orange grade.",
+      "quality": "high",
+      "reference_elements": [],
+      "remove_bg": false,
+      "resolution": "2k",
+      "width": 1520
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_180907_c6b05592-7d57-4bb2-8463-e3e32fa15cf5.png",
+    "status": "completed"
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-13T18:09:07.369163Z",
+    "display_name": "GPT Image 2.5",
+    "id": "f0cf150c-e023-4b80-83c2-dde7fbc4aa09",
+    "job_type": "gpt_image_2_5",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_180907_f0cf150c-e023-4b80-83c2-dde7fbc4aa09_min.webp",
+    "params": {
+      "aspect_ratio": "9:16",
+      "height": 2688,
+      "medias": [],
+      "model": "flare",
+      "prompt": "Early morning inside the restaurant. Locked-off overhead top-down shot of a dark wooden table: a black smartphone lying face up, perfectly flat and centered, its screen completely flat matte black with no reflection and no content. Beside it a clay cup of café de olla with steam and a hand resting near the cup. Soft window daylight. Vertical 9:16 still frame from a premium cinematic TV commercial. 35mm lens, shallow depth of field, natural film grain, low-key practical lighting. Color grade: shadows crushed to a deep blue-black ink (#0b0f17), cool steel-blue ambient light, exactly one small warm brass-colored (#c8a45c) practical lamp. Desaturated and restrained. Key subject centered between 20% and 60% of the frame height. No human faces, only hands when people appear. No readable text, no logos, no screen content, no glow, no particles, no lens flare, no hologram, no teal-and-orange grade.",
+      "quality": "high",
+      "reference_elements": [],
+      "remove_bg": false,
+      "resolution": "2k",
+      "width": 1520
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_180907_f0cf150c-e023-4b80-83c2-dde7fbc4aa09.png",
+    "status": "completed"
+  }
+]

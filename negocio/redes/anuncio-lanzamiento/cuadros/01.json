@@ -1,0 +1,29 @@
+[
+  {
+    "created_at": "2026-09-13T18:12:07.89777Z",
+    "display_name": "Nano Banana Pro",
+    "id": "23ea2177-3a3a-43bf-a468-1bc0e3ffac08",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181207_23ea2177-3a3a-43bf-a468-1bc0e3ffac08_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [
+        {
+          "id": "9b8494aa-d227-4270-a755-c5694f30305b",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/9b8494aa-d227-4270-a755-c5694f30305b_resize.jpg"
+        }
+      ],
+      "prompt": "Remove the small curved vibration motion lines drawn on both sides of the smartphone. Keep everything else exactly identical: composition, framing, lighting, colors, reflections, phone position and the thin cold light under the phone edges.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181207_23ea2177-3a3a-43bf-a468-1bc0e3ffac08.png",
+    "status": "completed"
+  }
+]

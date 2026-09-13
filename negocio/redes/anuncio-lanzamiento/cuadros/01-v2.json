@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-13T18:10:44.275438Z",
+    "display_name": "GPT Image 2.5",
+    "id": "8ecee608-b8fd-4e50-af97-f9ffee6da2df",
+    "job_type": "gpt_image_2_5",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181044_8ecee608-b8fd-4e50-af97-f9ffee6da2df_min.webp",
+    "params": {
+      "aspect_ratio": "9:16",
+      "height": 2688,
+      "medias": [],
+      "model": "flare",
+      "prompt": "A small closed Mexican restaurant at night. Close-up looking along the counter: a black smartphone lies face down on a brushed zinc bar counter, placed in the middle of the frame, vibrating, a thin line of cold light leaking from under its edges onto the metal. Behind it, out of focus, wooden chairs stacked upside down on tables, a half-lowered corrugated metal roll-up shutter at the entrance with blue street light coming through. Vertical 9:16 still frame from a premium cinematic TV commercial. 35mm lens, shallow depth of field, natural film grain, low-key practical lighting. Color grade: shadows crushed to a deep blue-black ink (#0b0f17), cool steel-blue ambient light, exactly one small warm brass-colored (#c8a45c) practical lamp. Desaturated and restrained. Key subject placed between 15% and 55% of the frame height; the bottom third of the frame is calm dark negative space. No human faces, only hands when people appear. No readable text, no logos, no screen content, no glow, no particles, no lens flare, no hologram, no teal-and-orange grade.",
+      "quality": "high",
+      "reference_elements": [],
+      "remove_bg": false,
+      "resolution": "2k",
+      "width": 1520
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260913_181044_8ecee608-b8fd-4e50-af97-f9ffee6da2df.png",
+    "status": "completed"
+  }
+]
