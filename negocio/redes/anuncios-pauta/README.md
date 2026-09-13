@@ -79,7 +79,39 @@ Solo se producen los que se basen en anuncios verificados como ganadores (ver ab
 ## Ganadores
 
 Criterio, porque Meta no publica gasto: activo 60 días o más, o 30 días con 3 duplicados o
-versiones, o alcance alto en la transparencia de la UE. Verificación en curso.
+versiones, o alcance alto en la transparencia de la UE. Verificado el 13 sep 2026 en la
+Biblioteca de Anuncios (capturas en `/.playwright-mcp/ganador-*`, carpeta ignorada).
+
+### Respaldo de cada anuncio nuestro
+
+| Nuestro anuncio | Ganador que lo respalda | Días activo · señal | Veredicto |
+|---|---|---|---|
+| `entrante-*` · «Mientras usted atiende…» | Rosie 1950466152497056 «You shouldn't have to drop what you're doing…» | 153 días | Respaldado |
+| `nicho-medico` | Rosie 1950466152497056 (misma idea) | 153 días | Respaldado |
+| `escena-cena` · `escena-auto` | Podium 1587163450081966 «It's 9pm…» | 202 días | Respaldado |
+| `llame-a` | Fonio.ai 1546632970453248 «Llame usted mismo» (video) | 61 días · 13 duplicados · 368 mil de alcance UE | Respaldado; mejor en video |
+| `horas-a` | Podium 1553392595762084, la cuenta de la llamada perdida | 61 días · 3 versiones | Respaldado |
+| `ecuacion-a` | Rosie 1694173505155265 «Hiring help is expensive. Missing calls is worse.» + carrusel 1328177095451777 | 87 y 82 días | Respaldado |
+| `lista-a` | Smith.ai 1535533717913506, tres beneficios | 135 días | Respaldado |
+| `bloqueo-*` | Rosie 1188675050066194 «Every missed call…» | 81 días · 2 duplicados | Respaldado |
+| `excusa-clinica` · `pregunta-auto` | Familia de frases provocadoras: Smith.ai 985255070683937 «If your calls go to voicemail, you're not running a business» (135 d), Rosie 1633978877685938 «Your voicemail isn't a safety net» (82 d). La frase exacta de Rosie «They'll call back» solo lleva 27 días | — | Respaldado por la familia, la frase exacta en prueba |
+| `escena-manana` | Rosie 1020644364042937 «Set it up once. Rosie answers forever.» | 89 días · 3 duplicados | Respaldado por la idea |
+| `nicho-clinica` | Podium «If you run…, read this» | 38 días, sin duplicados | En prueba |
+| `carta-clinicas` | No se confirmó la carta de Podium en esta revisión | — | En prueba |
+| `pregunta-a` | Sin equivalente directo | — | En prueba |
+
+### Videos ganadores y cómo los adaptamos
+
+| Ganador | Estructura | Adaptación Dimia | Costo |
+|---|---|---|---|
+| Fonio.ai 1546632970453248 · 0:33 · 13 duplicados | Persona en sofá, llamada en altavoz, la IA agenda, «pruébelo usted mismo» | Socio llama al número en altavoz y el agente agenda. **Solo llamada real** | 0 |
+| Podium 2773360503038903 · 0:12 · 163 días | Pantalla dividida Antes / Después, dolor contra beneficio, botón fijo | Izquierda: el teléfono suena y nadie contesta. Derecha: Dimia contesta y agenda. Tomas de Kling ya pagadas | 0 |
+| Podium 960890193308638 · 0:34 · 131 días | Vocera en la clínica, tomas de estrés, agenda llenándose, placa final | Socio en oficina + recepción saturada + panel real | 0 a 12.5 |
+| Rosie 1942794963041305 · 0:37 · 89 días | Creador con micrófono, «If you don't… keep scrolling», capturas del sitio | Socio con micrófono, capturas de dimia.mx y del panel | 0 |
+| Weave 2098746197662559 · 0:22 · 31 días, 6 versiones (límite) | Cuenta regresiva 10 → 01 sobre teléfono sonando | «Están por llamarle a otro» · 10 → 01 · «A menos que Dimia conteste» | 0 |
+
+Descartados como modelo por falta de antigüedad: Rosie «They'll call back» (27 d), TrackStat,
+AgenticLine, Dominio System, Sara AI, Doctoralia, el video de Moneypenny (25 d) y Cyberstaff.
 
 ## Reglas que se mantienen
 
