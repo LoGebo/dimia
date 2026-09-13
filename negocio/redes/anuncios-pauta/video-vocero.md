@@ -9,10 +9,20 @@ por palabra y capturas del sitio intercaladas en tamaño de teléfono.
 - **Presentador generado con IA**, a petición de Gabriel. Lleva el aviso en pantalla todo el
   video: «Presentador generado con IA». Nunca se presenta como socio ni como cliente.
 - Marketing Studio (`marketing_studio_video`, modo `ugc`), 9:16, 720p. 5 créditos por segundo.
-- Presentadora: **Valentina**, avatar prediseñado de Marketing Studio
-  (`cd6fb78c-e1a2-42f1-8b1e-902c15511877`), elegida por Gabriel. Estilo UGC presentando la app.
-- 30 s, 150 créditos, aprobado. El sitio `dimia.mx` entra como producto web para que el video
-  muestre la aplicación real.
+- Presentador: **Marco**, avatar prediseñado de Marketing Studio
+  (`e36b7786-b50d-4e51-991e-ae25f023814c`), elegido por Gabriel tras dos fallas con Valentina.
+- 30 s, 150 créditos, aprobado. Capturas del sitio en celular y del panel como referencia.
+
+## Intentos
+
+| Intento | Presentador | Configuración | Resultado |
+|---|---|---|---|
+| 1 | Valentina | UGC · 30 s · producto web `dimia.mx` en modo `web_product` móvil | Falló sin motivo · 156 créditos reembolsados |
+| 2 | Valentina | UGC · 30 s · capturas como `image_references` | Falló sin motivo · 150 créditos reembolsados |
+| 3 | Marco | Igual que el 2, dirección dicha como «dimia punto mx» | En curso |
+
+La guía de Higgsfield atribuye los «failed» sin motivo al contenido del prompt; si el 3 falla,
+el siguiente paso es 15 s con guion parafraseado.
 - Subtítulos, capturas de `dimia.mx` y del panel, y cierre de marca: Remotion.
 
 ## Guion · 30 s · ~75 palabras
