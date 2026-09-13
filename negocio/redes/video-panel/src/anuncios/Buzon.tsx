@@ -58,8 +58,9 @@ export const Buzon: React.FC = () => (
         textAlign: "center",
         fontFamily: titular,
         fontWeight: 300,
-        fontSize: 104,
+        fontSize: 82,
         letterSpacing: "-0.02em",
+        whiteSpace: "nowrap",
         color: C.tinta,
       }}
     >
@@ -70,11 +71,11 @@ export const Buzon: React.FC = () => (
         position: "absolute",
         left: 110,
         right: 110,
-        top: 320,
+        top: 300,
         margin: 0,
         textAlign: "center",
         fontFamily: interfaz,
-        fontSize: 38,
+        fontSize: 36,
         lineHeight: 1.35,
         color: C.tinta2,
       }}
@@ -82,19 +83,19 @@ export const Buzon: React.FC = () => (
       Conteste cada llamada 24/7, agende y reagende citas y resuelva preguntas frecuentes con Dimia.
     </p>
 
-    <Telefono x={110} y={560} giro={-6} oscuro>
+    <Telefono x={110} y={540} giro={-6} oscuro>
       <div style={{ position: "absolute", left: 34, right: 30, top: 150, fontFamily: interfaz }}>
         <div style={{ width: 22, height: 22, backgroundColor: C.azul }} />
-        <p style={{ fontFamily: titular, fontWeight: 300, fontSize: 40, lineHeight: 1.2, color: "#eef1f7", margin: "26px 0 0" }}>
+        <p style={{ fontFamily: titular, fontWeight: 300, fontSize: 32, lineHeight: 1.22, color: "#eef1f7", margin: "22px 0 0" }}>
           Buenas tardes, le atiende el asistente de Clínica Roma. ¿En qué le ayudo?
         </p>
       </div>
-      <div style={{ position: "absolute", left: 34, right: 34, top: 520, display: "flex", alignItems: "flex-end", gap: 8, height: 90 }}>
+      <div style={{ position: "absolute", left: 34, right: 34, top: 440, display: "flex", alignItems: "flex-end", gap: 8, height: 90 }}>
         {[34, 62, 44, 80, 52, 90, 40, 70, 30, 58, 46, 76].map((h, i) => (
           <div key={i} style={{ flex: 1, height: h, backgroundColor: i % 3 === 0 ? C.azul : "#2f3a4d" }} />
         ))}
       </div>
-      <div style={{ position: "absolute", left: 34, bottom: 60, fontFamily: cifras, fontSize: 22, color: "#97a2b5", letterSpacing: "0.1em" }}>EN LLAMADA · 00:18</div>
+      <div style={{ position: "absolute", left: 34, top: 560, fontFamily: cifras, fontSize: 18, color: "#97a2b5", letterSpacing: "0.1em" }}>EN LLAMADA · 00:18</div>
     </Telefono>
 
     <Telefono x={570} y={620} giro={4}>
@@ -104,7 +105,6 @@ export const Buzon: React.FC = () => (
           { yo: false, t: "¿Tienen espacio mañana?" },
           { yo: true, t: "Sí, a las 15:30. ¿Le funciona?" },
           { yo: false, t: "Perfecto, gracias." },
-          { yo: true, t: "Agendado. Le confirmo por WhatsApp." },
         ].map((m, i) => (
           <div
             key={i}
@@ -114,9 +114,9 @@ export const Buzon: React.FC = () => (
               backgroundColor: m.yo ? C.hondo : C.papel,
               color: m.yo ? C.blanco : C.tinta,
               border: m.yo ? "none" : `1px solid ${C.linea}`,
-              fontSize: 26,
+              fontSize: 24,
               lineHeight: 1.3,
-              padding: "14px 16px",
+              padding: "12px 14px",
             }}
           >
             {m.t}
@@ -129,7 +129,7 @@ export const Buzon: React.FC = () => (
       style={{
         position: "absolute",
         right: 70,
-        bottom: 90,
+        bottom: 60,
         backgroundColor: C.hondo,
         color: C.blanco,
         fontFamily: interfaz,
