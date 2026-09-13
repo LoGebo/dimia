@@ -52,6 +52,35 @@ Componente: `../video-panel/src/anuncios/Anuncio.tsx`. Feed 1080 × 1350 y story
 
 Pendiente: el número de demostración real para `llame` (`[ número por confirmar ]`).
 
+### Segunda tanda · `Ganadores.tsx`
+
+| Formato | Clona a | Idea |
+|---|---|---|
+| `excusa` | Rosie «'THEY'LL CALL BACK.' THEY DON'T.» | «Ya volverán a llamar.» · **No vuelven.** |
+| `carta` | Podium, carta a dueños | Carta en Newsreader a directores de clínicas |
+| `escena` | Podium 9 pm, Sara AI 23:03 | 21:47 durante la cena · «Esa llamada ya agendó con otro.» |
+| `nicho` | Podium «If you run…, read this» | «Si usted dirige una clínica, lea esto.» |
+| `ecuacion` | Rosie «Missed Calls = Missed Customers» | Llamadas perdidas = clientes perdidos |
+
+Las stories montan el diseño del feed entre los 180 y los 1530 px del lienzo vertical:
+fuera del 14 % superior y del 20 % inferior.
+
+## Videos a probar
+
+Solo se producen los que se basen en anuncios verificados como ganadores (ver abajo).
+
+| Id | Estructura | Material | Costo |
+|---|---|---|---|
+| `v-escena` | 0–3 s «21:40. Su recepción cerró a las 7.» sobre el teléfono sonando · 3–9 s el panel contesta y agenda · 9–13 s confirmación por WhatsApp · CTA | Tomas de Kling ya pagadas en `../anuncio-lanzamiento/tomas` + Remotion | 0 créditos |
+| `v-excusa` | Texto cinético: «Ya volverán a llamar.» · silencio · «No vuelven.» sobre la recepción saturada animada | 1 toma Kling de 5 s | 12.5 |
+| `v-llame` | Pantalla con el número y la **grabación real** de una llamada del agente | Grabación real del motor de voz; nunca simulada | 0 |
+| `v-socio` | Socio a cámara con el teléfono en la mano, subtítulos quemados, gancho en los primeros 3 s | Grabación con celular de Rogelio o Daniel | 0 |
+
+## Ganadores
+
+Criterio, porque Meta no publica gasto: activo 60 días o más, o 30 días con 3 duplicados o
+versiones, o alcance alto en la transparencia de la UE. Verificación en curso.
+
 ## Reglas que se mantienen
 
 - Nada de cifras, clientes ni testimonios inventados. La cuenta 45 / 168 es aritmética:
