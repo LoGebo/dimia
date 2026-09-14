@@ -81,6 +81,36 @@ export function Planes() {
           </table>
         </div>
 
+        {/* Móvil: un bloque por plan, con el detalle en renglones. */}
+        <p className={css.premiumMovil}>{PLANES.premium.texto}</p>
+        <ol className={css.movil}>
+          {PLANES.columnas.map((c, i) => (
+            <li key={c.nombre} className={css.planMovil}>
+              <span className={css.nombre}>{c.nombre}</span>
+              <span className={css.precio}>
+                <Cifra texto={pesos(premium ? c.precio + c.premium : c.precio)} />
+              </span>
+              <span className={css.periodo}>
+                {premium ? `${pesos(c.precio)} + ${pesos(c.premium)} Premium` : "MXN al mes"}
+              </span>
+              <span className={css.paraQuien}>{c.paraQuien}</span>
+              <dl className={css.detalleMovil}>
+                {PLANES.comparacion
+                  .filter((f) => f.fila !== "Precio mensual")
+                  .map((f) => (
+                    <div key={f.fila} className={css.renglonMovil}>
+                      <dt>{f.fila}</dt>
+                      <dd>{f.valores[i]}</dd>
+                    </div>
+                  ))}
+              </dl>
+              <a href="#contacto" className={css.cta}>
+                Solicitar demostración
+              </a>
+            </li>
+          ))}
+        </ol>
+
         <ul className={css.condiciones}>
           {PLANES.condiciones.map((cond) => (
             <li key={cond}>{cond}</li>

@@ -136,6 +136,7 @@
 }
 
 .renglonHorario {
+  white-space: nowrap;
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: clamp(17px, 1.6vw, 22px);
@@ -247,6 +248,25 @@
   .pieDemo {
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .codigo {
+    font-size: 12px;
+  }
+
+  .numeroLinea {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .renglon {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .renglonEstado {
+    justify-self: start;
   }
 }
 

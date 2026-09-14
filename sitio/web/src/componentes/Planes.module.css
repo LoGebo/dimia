@@ -196,16 +196,98 @@
   }
 }
 
+/* ── móvil: bloques por plan ── */
+
+.movil,
+.premiumMovil {
+  display: none;
+}
+
 @media (max-width: 760px) {
-  .tabla {
-    min-width: 640px;
-  }
-
-  .esquina {
-    width: 120px;
-  }
-
-  .premiumNota {
+  .tablaEnvoltura {
     display: none;
+  }
+
+  .cabeza {
+    margin-bottom: 28px;
+  }
+
+  .toggle {
+    width: 100%;
+  }
+
+  .opcion {
+    flex: 1 1 50%;
+    min-width: 0;
+  }
+
+  .premiumMovil {
+    display: block;
+    margin: 0 0 28px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--acero-2);
+  }
+
+  .movil {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .planMovil {
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    background: var(--panel);
+    border: 1px solid var(--linea);
+  }
+
+  .planMovil .nombre {
+    margin-bottom: 14px;
+  }
+
+  .planMovil .paraQuien {
+    min-height: 0;
+    margin: 14px 0 18px;
+  }
+
+  .detalleMovil {
+    margin: 0 0 22px;
+    border-top: 1px solid var(--linea);
+  }
+
+  .renglonMovil {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--linea);
+  }
+
+  .renglonMovil dt {
+    font-size: 14.5px;
+    color: var(--acero);
+  }
+
+  .renglonMovil dd {
+    margin: 0;
+    font-family: var(--fuente-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--hueso);
+    text-align: right;
+  }
+
+  .planMovil .cta {
+    justify-content: center;
+    min-height: 48px;
+  }
+
+  .condiciones {
+    flex-direction: column;
   }
 }
