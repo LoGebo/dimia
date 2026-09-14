@@ -164,7 +164,10 @@ const Tarjeta2: React.FC = () => (
       </h1>
     </div>
     <div style={{ position: "absolute", left: 60, right: 60, top: 350, bottom: 60, overflow: "hidden" }}>
-      <Img src={staticFile("pauta/fotos/figuras.png")} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 55%" }} />
+      <Img
+        src={staticFile("pauta/fotos/figuras.png")}
+        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 90%", transform: "scale(1.75)", transformOrigin: "50% 86%" }}
+      />
     </div>
   </Fondo>
 );
