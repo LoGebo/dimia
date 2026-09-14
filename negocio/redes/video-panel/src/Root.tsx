@@ -39,7 +39,7 @@ export const RemotionRoot: React.FC = () => (
       width={ANCHO}
       height={ALTO}
       durationInFrames={duracionVocera(30, FPS)}
-      defaultProps={{ duracion: 30, palabras: [] } as VoceraProps}
+      defaultProps={{ video: "pauta/videos/marco15.mp4", duracion: 15, palabras: [] } as VoceraProps}
       calculateMetadata={({ props }) => ({ durationInFrames: duracionVocera(props.duracion, FPS) })}
     />
     <Still id="BuzonMurio" component={Buzon} width={1080} height={1350} />

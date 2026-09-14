@@ -20,7 +20,16 @@ por palabra y capturas del sitio intercaladas en tamaño de teléfono.
 | 1 | Valentina | UGC · 30 s · producto web `dimia.mx` en modo `web_product` móvil | Falló sin motivo · 156 créditos reembolsados |
 | 2 | Valentina | UGC · 30 s · capturas como `image_references` | Falló sin motivo · 150 créditos reembolsados |
 | 3 | Marco | Igual que el 2, dirección dicha como «dimia punto mx» | Falló sin motivo · 150 créditos reembolsados |
-| 4 | Marco | Diagnóstico: UGC · 5 s · una frase · sin referencias | En curso |
+| 4 | Marco | Diagnóstico: UGC · 5 s · una frase · sin referencias | **Salió** · 25 créditos · `videos/prueba5.mp4` |
+
+Hallazgos del intento 4:
+
+- Marketing Studio sí genera con esta cuenta y con Marco: UGC creíble, español de México.
+- **Improvisa.** Después de la frase pedida agregó «Yo uso ColdShield», una marca inventada, y
+  Marco sostiene un objeto negro que no es un teléfono. Sin producto ligado, el modelo rellena
+  con uno ficticio. Nada de eso puede publicarse: se recorta en post o se liga el producto.
+- Lo que tumbaba los intentos 1 a 3 no es el presentador; queda la duración de 30 s, el guion
+  largo o las referencias.
 
 El presentador no es la causa: fallaron Valentina y Marco. Lo común a los tres es 30 s, audio
 generado y guion largo en español. El intento 4 separa si Marketing Studio falla siempre en esta
