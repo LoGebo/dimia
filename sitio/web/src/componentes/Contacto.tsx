@@ -21,7 +21,8 @@ export function Contacto() {
     e.preventDefault();
     if (estado === "enviando") return;
 
-    const datos = new FormData(e.currentTarget);
+    const formulario = e.currentTarget;
+    const datos = new FormData(formulario);
     setEstado("enviando");
 
     try {
@@ -44,7 +45,7 @@ export function Contacto() {
       if (respuesta.ok && cuerpo.ok) {
         setEstado("enviado");
         setMensaje(cuerpo.mensaje ?? "Recibimos su solicitud. Le contestamos el mismo día hábil.");
-        e.currentTarget.reset();
+        formulario.reset();
         return;
       }
 
@@ -70,41 +71,32 @@ export function Contacto() {
   return (
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
-        <div className={css.columnas}>
-          <div data-revelar className={css.izquierda}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/marca/logotipo-tinta.svg"
-              alt="Dimia"
-              width={3017}
-              height={771}
-              className={css.logotipo}
-            />
-            <h2 className={css.titular}>{CIERRE.titular}</h2>
+        <h2 className={css.titular}>
+          {CIERRE.titular}
+        </h2>
 
-            <div className={css.datos}>
-              <div>
-                <p className={css.rotuloDato}>Teléfono</p>
-                <a href={FIRMA.telefonoHref} className={css.telefono}>
-                  {FIRMA.telefono}
-                </a>
-                <p className={css.notaTelefono}>{CIERRE.notaTelefono}</p>
-              </div>
-              <div>
-                <p className={css.rotuloDato}>Correo</p>
-                <a href={`mailto:${FIRMA.correo}`} className={css.correo}>
-                  {FIRMA.correo}
-                </a>
-              </div>
+        <div className={css.columnas}>
+          <div className={css.izquierda}>
+            {/* El teléfono es la demostración: contesta el propio agente. */}
+            <a href={FIRMA.telefonoHref} className={css.llamada}>
+              <span className={css.llamadaEstado}>
+                {CIERRE.notaTelefono}
+              </span>
+              <span className={css.telefono}>{FIRMA.telefono}</span>
+            </a>
+
+            <div className={css.correoFila}>
+              <span className={css.rotuloDato}>Correo</span>
+              <a href={`mailto:${FIRMA.correo}`} className={css.correo}>
+                {FIRMA.correo}
+              </a>
             </div>
           </div>
 
-          <div data-revelar className={css.derecha}>
-            <p data-revelar className={ui.rotulo} style={{ flex: "none", marginBottom: 28 }}>
-              Agendar una demostración
-            </p>
+          <div className={css.derecha}>
+            <p className={css.formularioTitulo}>Agendar una demostración</p>
 
-            <form onSubmit={enviar} className={css.formulario} noValidate={false}>
+            <form onSubmit={enviar} className={css.formulario}>
               <label className={css.campo}>
                 <span className={css.etiqueta}>Nombre</span>
                 <input name="nombre" type="text" required autoComplete="name" className={css.entrada} />
@@ -113,7 +105,7 @@ export function Contacto() {
                 <span className={css.etiqueta}>Empresa</span>
                 <input name="empresa" type="text" required autoComplete="organization" className={css.entrada} />
               </label>
-              <label className={css.campo}>
+              <label className={`${css.campo} ${css.campoAncho}`}>
                 <span className={css.etiqueta}>Teléfono o correo</span>
                 <input name="contacto" type="text" required className={css.entradaMono} />
               </label>

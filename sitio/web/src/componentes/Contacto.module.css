@@ -1,70 +1,75 @@
-.columnas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(40px, 6vw, 96px);
-}
-
-.izquierda {
-  flex: 1 1 440px;
-  min-width: 0;
-}
-
-.logotipo {
-  display: block;
-  width: min(360px, 58vw);
-  height: auto;
-  margin: 0 0 34px;
-}
-
 .titular {
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
-  font-size: clamp(30px, 4vw, 56px);
-  line-height: 1.04;
-  letter-spacing: -0.014em;
-  margin: 0 0 40px;
+  font-size: clamp(48px, 9vw, 148px);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  margin: 0 0 clamp(48px, 6vw, 96px);
   color: var(--hueso);
-  max-width: 20ch;
+  text-wrap: balance;
 }
 
-.datos {
+.columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(40px, 6vw, 112px);
+  border-top: 1px solid var(--linea-2);
+  padding-top: clamp(32px, 3.4vw, 48px);
+}
+
+.izquierda {
+  min-width: 0;
+}
+
+/* El número es la acción principal: toda la pieza es el enlace. */
+.llamada {
+  display: block;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--linea);
+  color: var(--hueso);
+}
+
+.llamadaEstado {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  border-top: 1px solid var(--linea);
-  padding-top: 32px;
-  max-width: 46ch;
-}
-
-.rotuloDato {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-  margin: 0 0 10px;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--acero);
+  margin-bottom: 18px;
 }
 
 .telefono {
+  display: block;
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 19px;
+  font-size: clamp(30px, 3.6vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   color: var(--hueso);
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+  transition: color 150ms ease-out;
 }
 
-.notaTelefono {
-  font-size: 14.5px;
-  line-height: 1.6;
-  color: var(--acero);
-  margin: 4px 0 0;
+.llamada:hover .telefono {
+  color: var(--acento);
+}
+
+.correoFila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 20px;
+  padding-top: 20px;
+}
+
+.rotuloDato {
+  font-size: 13.5px;
+  color: var(--acero-2);
 }
 
 .correo {
   font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 16px;
+  font-size: 17px;
   color: var(--acento);
   display: inline-flex;
   align-items: center;
@@ -78,28 +83,38 @@
 /* ── formulario ── */
 
 .derecha {
-  flex: 1 1 380px;
   min-width: 0;
 }
 
+.formularioTitulo {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--hueso);
+  margin: 0 0 24px;
+}
+
 .formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 16px;
 }
 
 .campo {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  min-width: 0;
+}
+
+.campoAncho,
+.boton {
+  grid-column: 1 / -1;
 }
 
 .etiqueta {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--acero-2);
+  font-size: 13.5px;
+  color: var(--acero);
 }
 
 .entrada,
@@ -109,7 +124,7 @@
   color: var(--hueso);
   font-size: 16px;
   padding: 14px 16px;
-  min-height: 48px;
+  min-height: 52px;
   width: 100%;
   transition: border-color 150ms ease-out;
 }
@@ -131,6 +146,12 @@
 .entradaMono:focus {
   border-color: var(--acento);
   outline: none;
+}
+
+.entrada:focus-visible,
+.entradaMono:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 3px;
 }
 
 /* El rojo solo tras interactuar y dejarlo mal, no en un campo vacío en reposo. */
@@ -159,8 +180,9 @@
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  min-height: 48px;
+  min-height: 54px;
   padding: 0 24px;
+  margin-top: 4px;
   cursor: pointer;
   transition: background 150ms ease-out;
 }
@@ -191,3 +213,16 @@
 .avisoTexto a {
   color: var(--acento);
 }
+
+@media (max-width: 900px) {
+  .columnas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .formulario {
+    grid-template-columns: 1fr;
+  }
+}
+

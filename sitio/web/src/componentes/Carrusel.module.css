@@ -1,57 +1,68 @@
+.seccion {
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--linea);
+}
+
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(48px, 6vw, 88px) var(--margen);
+  padding: clamp(48px, 6vw, 88px) var(--margen) 0;
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  color: var(--acero);
 }
 
 .ventana {
   overflow: hidden;
-  border-top: 1px solid var(--linea);
-  border-bottom: 1px solid var(--linea);
-  margin-top: 36px;
-  /* Desvanece los bordes para que la cinta entre y salga sin corte duro. */
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  padding: clamp(36px, 4vw, 56px) 0 clamp(52px, 6vw, 88px);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+@keyframes desliza {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 .pista {
   display: flex;
   width: max-content;
-  animation: desliza 34s linear infinite;
+  animation: desliza 40s linear infinite;
 }
 
 .ventana:hover .pista {
   animation-play-state: paused;
 }
 
-@keyframes desliza {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+.tramo {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .celda {
-  flex: 0 0 auto;
-  width: clamp(180px, 20vw, 260px);
-  height: 128px;
-  border-right: 1px solid var(--linea);
-  padding: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 clamp(40px, 5vw, 88px);
+  min-height: 72px;
 }
 
+/* Logotipos oficiales en una sola tinta clara (ver public/marca/clientes/LEEME.txt). */
 .logo {
-  max-width: 100%;
-  max-height: 30px;
+  display: block;
   width: auto;
-  height: auto;
-  object-fit: contain;
-  opacity: 0.55;
-  filter: grayscale(1) brightness(1.6);
+  max-width: none;
+  opacity: 0.92;
   transition: opacity 150ms ease-out;
 }
 
@@ -59,35 +70,34 @@
   opacity: 1;
 }
 
-.marcador {
+.nombre {
   font-family: var(--fuente-sans), system-ui, sans-serif;
   font-weight: 600;
-  font-size: clamp(16px, 1.5vw, 19px);
-  letter-spacing: -0.01em;
-  color: var(--acero);
-  text-align: center;
-  line-height: 1.3;
-  white-space: nowrap;
-  transition: color 150ms var(--curva);
-}
-
-.celda:hover .marcador {
+  font-size: clamp(24px, 2.6vw, 36px);
+  letter-spacing: -0.02em;
   color: var(--hueso);
-}
-
-.nota {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11.5px;
-  line-height: 1.6;
-  color: var(--acero-2);
-  margin: 26px 0 0;
-  max-width: 64ch;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ventana {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
   .pista {
     animation: none;
+    width: auto;
+    justify-content: center;
+  }
+
+  .tramo {
     flex-wrap: wrap;
-    width: 100%;
+    justify-content: center;
+    row-gap: 24px;
+  }
+
+  .tramo[aria-hidden="true"] {
+    display: none;
   }
 }

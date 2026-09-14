@@ -1,13 +1,13 @@
-Logos de organizaciones del carrusel "Confían en Dimia".
+Logotipos de las organizaciones del carrusel "Confían en Dimia".
 
-Deja aquí el archivo oficial autorizado con estos nombres exactos y aparecen solos
-en el sitio (mientras no existan, el carrusel muestra el nombre en texto):
+Archivos oficiales descargados de fuentes públicas (sept 2026) y convertidos a una sola
+tinta en hueso #eef1f7 sobre transparente, 160 px de alto:
 
-  atos.svg
-  heineken.svg
-  arca-continental.svg
-  tec-de-monterrey.svg
-  ur.svg
+  atos.png      Wikimedia Commons · File:Atos logo.png
+  heineken.png  Wikimedia Commons · File:Heineken Logo.svg
+  arca.png      Wikimedia Commons · File:Arca Continental logo.svg
+  tec.png       tec.mx · logo-tec-fafafa.svg
+  uerre.png     Wikimedia Commons · File:Universidad Regiomontana.png
 
-- Preferir SVG (o PNG transparente) monocromo/blanco, para que combine con el fondo oscuro.
-- Usar solo logotipos con autorización por escrito de cada organización.
+La ruta y la altura en la cinta (`alto`) se editan en CLIENTES, src/contenido/sitio.ts.
+Si una organización pide retirar su logotipo, se pone `logo: null` y queda el nombre en texto.

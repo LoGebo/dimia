@@ -60,6 +60,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* La página es una hoja sobre el pie: al llegar al final, el pie queda descubierto. */
+main {
+  position: relative;
+  z-index: 1;
+  background: var(--tinta);
+}
+
 a {
   color: var(--hueso);
   text-decoration: none;

@@ -1,0 +1,39 @@
+.cifra {
+  display: inline-flex;
+  font-variant-numeric: tabular-nums;
+}
+
+.ventana {
+  display: inline-block;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  transition: transform 520ms var(--curva);
+}
+
+.digito,
+.signo {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .columna {
+    transition: none;
+  }
+}
+
+.lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

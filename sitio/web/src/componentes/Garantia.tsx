@@ -1,66 +1,131 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 import { GARANTIA } from "@/contenido/sitio";
-import { Palabras } from "./Palabras";
 import css from "./Garantia.module.css";
 
+/* 0 cita existente · 1 entra la solicitud · 2 la base la rechaza · 3 se ofrece el siguiente hueco */
+type Fase = 0 | 1 | 2 | 3;
+const TIEMPOS = [900, 1400, 1500] as const;
+
+const CLAVES = /(\b(?:alter|table|add|constraint|exclude|using|gist|with|where)\b)/g;
+
+/** Resalta palabras clave de SQL sin librería: solo dos tonos. */
+function resaltar(linea: string) {
+  return linea.split(CLAVES).map((trozo, i) =>
+    i % 2 === 1 ? (
+      <span key={i} className={css.clave}>
+        {trozo}
+      </span>
+    ) : (
+      trozo
+    ),
+  );
+}
+
 export function Garantia() {
-  const { colision } = GARANTIA;
+  const { colision, restriccion } = GARANTIA;
+  const [fase, setFase] = useState<Fase>(0);
+  const raiz = useRef<HTMLDivElement>(null);
+  const relojes = useRef<number[]>([]);
+
+  const correr = useCallback(() => {
+    relojes.current.forEach(clearTimeout);
+    setFase(0);
+    let espera = 0;
+    relojes.current = TIEMPOS.map((t, i) => {
+      espera += t;
+      return window.setTimeout(() => setFase((i + 1) as Fase), espera);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setFase(3);
+      return;
+    }
+    const el = raiz.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        correr();
+        io.disconnect();
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(el);
+    const pendientes = relojes.current;
+    return () => {
+      io.disconnect();
+      pendientes.forEach(clearTimeout);
+    };
+  }, [correr]);
+
+  const renglones = [
+    { visible: true, horario: colision.confirmada.horario, estado: colision.confirmada.estado, tono: "bueno" },
+    {
+      visible: fase >= 1,
+      horario: colision.rechazada.horario,
+      estado: fase >= 2 ? colision.rechazada.estado : "…",
+      tono: fase >= 2 ? "critico" : "espera",
+    },
+    { visible: fase >= 3, horario: colision.ofrecida.horario, estado: colision.ofrecida.estado, tono: "acento" },
+  ];
 
   return (
     <section id="garantia" className={css.seccion}>
       <div className={css.contenedor}>
-        <div className={css.entrada}>
-          <p className={css.rotulo}>{GARANTIA.rotulo}</p>
-          <div className={css.texto}>
-            <h2 className={css.titular}>
-              <Palabras texto={GARANTIA.titular} />
-            </h2>
-            <p data-revelar className={css.cuerpo}>{GARANTIA.cuerpo}</p>
-          </div>
-        </div>
+        <h2 className={css.titular}>{GARANTIA.titular}</h2>
 
-        <div className={css.columnas}>
-          <div data-revelar className={css.ruta}>
-            <p className={css.rotuloMenor}>Ruta de una reserva</p>
-            <ol className={css.pasos}>
-              {GARANTIA.ruta.map((paso, i) => {
-                const ultimo = i === GARANTIA.ruta.length - 1;
-                return (
-                  <li key={paso} className={css.paso}>
-                    <span className={css.eje}>
-                      <i
-                        className={css.nodo}
-                        style={{
-                          background: i === 0 ? "var(--acento-hondo)" : ultimo ? "var(--papel-bueno)" : "var(--papel-tinta)",
-                        }}
-                      />
-                      {!ultimo && <i className={css.linea} />}
-                    </span>
-                    <p className={css.pasoTexto}>{paso}</p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
+        <div ref={raiz} className={css.demo}>
+          <p className={css.cuerpo}>{GARANTIA.cuerpo}</p>
 
-          <div data-revelar className={css.colision}>
-            <p className={css.rotuloMenor}>Demostración de la colisión</p>
-            <div className={css.bloques}>
-              <div className={css.bloqueConfirmado}>
-                <span className={css.horario}>{colision.confirmada.horario}</span>
-                <span className={css.etiquetaClara}>{colision.confirmada.estado}</span>
-              </div>
-              <div className={css.bloqueRechazado}>
-                <span className={css.horarioRojo}>{colision.rechazada.horario}</span>
-                <span className={css.etiquetaRoja}>{colision.rechazada.estado}</span>
-              </div>
+          {/* La base en tinta: la restricción real y lo que responde a cada intento. */}
+          <div className={css.consola}>
+            <div className={css.consolaBarra}>
+              <span className={css.consolaNombre}>{restriccion.nombre}</span>
+              <span className={css.consolaPie}>{restriccion.pie}</span>
             </div>
-            <p className={css.nota}>{colision.nota}</p>
-          </div>
 
-          <div data-revelar className={css.cita}>
-            <p className={css.citaTexto}>{GARANTIA.cita}</p>
+            <pre className={css.codigo}>
+              <code>
+                {restriccion.codigo.split("\n").map((linea, i) => (
+                  <span key={i} className={css.lineaCodigo}>
+                    <span className={css.numeroLinea} aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    {resaltar(linea)}
+                  </span>
+                ))}
+              </code>
+            </pre>
+
+            <ol className={css.registro} aria-live="polite">
+              {renglones.map((r, i) => (
+                <li key={colision.registro[i]} className={css.renglon} data-visible={r.visible ? "1" : "0"}>
+                  <span className={css.renglonRotulo}>{colision.registro[i]}</span>
+                  <span className={css.renglonHorario}>{r.horario}</span>
+                  <span className={css.renglonEstado} data-tono={r.tono}>
+                    <i aria-hidden="true" />
+                    {r.estado}
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <div className={css.pieDemo}>
+              <p className={css.nota} data-visible={fase >= 3 ? "1" : "0"}>
+                {colision.nota}
+              </p>
+              <button type="button" className={css.repetir} onClick={correr} disabled={fase > 0 && fase < 3}>
+                {colision.repetir}
+              </button>
+            </div>
           </div>
         </div>
+
+        <p className={css.cita}>{GARANTIA.cita}</p>
       </div>
     </section>
   );

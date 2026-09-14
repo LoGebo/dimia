@@ -1,21 +1,20 @@
 .columnas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(32px, 4vw, 72px);
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(40px, 5vw, 96px);
+  align-items: start;
 }
 
 .ficha {
-  flex: 1 1 420px;
   min-width: 0;
 }
 
 .nombre {
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
-  font-size: clamp(26px, 2.8vw, 40px);
-  line-height: 1.1;
-  letter-spacing: -0.012em;
+  font-size: clamp(30px, 3.2vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.016em;
   margin: 0 0 22px;
   color: var(--hueso);
 }
@@ -24,51 +23,52 @@
   font-size: 17.5px;
   line-height: 1.62;
   color: var(--acero);
-  margin: 0 0 34px;
-  max-width: 50ch;
+  margin: 0 0 36px;
+  max-width: 46ch;
+}
+
+.fichas {
+  margin: 0 0 36px;
+  border-top: 1px solid var(--linea);
+}
+
+.fichaFila {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 8px 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.fichaRotulo {
+  font-size: 13.5px;
+  color: var(--acero-2);
+  padding-top: 2px;
+}
+
+.valor,
+.valorMono {
+  margin: 0;
+  line-height: 1.55;
 }
 
 .valor {
-  flex: 1 1 240px;
   font-size: 16px;
   color: var(--hueso);
-  line-height: 1.6;
 }
 
 .valorMono {
-  flex: 1 1 240px;
   font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--acero);
-  line-height: 1.6;
-}
-
-.cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  margin-top: 30px;
-  padding: 0 24px;
-  background: var(--acento);
-  color: #0b0f17;
-  font-size: 15px;
-  font-weight: 600;
-  transition: background 150ms ease-out;
-}
-
-.cta:hover {
-  background: var(--hueso);
-  color: #0b0f17;
 }
 
 /* ── panel ── */
 
 .panel {
-  flex: 1 1 360px;
   min-width: 0;
-  border: 1px solid var(--linea);
-  background: var(--panel);
+  border: 1px solid var(--linea-2);
+  background: var(--tinta);
 }
 
 .panelBarra {
@@ -76,32 +76,32 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 16px 22px;
   border-bottom: 1px solid var(--linea);
 }
 
 .panelRotulo {
   font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
   color: var(--acero-2);
 }
 
 .panelReloj {
-  padding: 26px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(18px, 2.4vw, 36px);
+  padding: clamp(24px, 2.6vw, 36px) 22px;
   border-bottom: 1px solid var(--linea);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
 }
 
 .reloj {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: clamp(30px, 4vw, 40px);
+  font-size: clamp(38px, 5vw, 68px);
   line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--hueso);
 }
 
@@ -112,12 +112,53 @@
   color: var(--acero-2);
 }
 
-.bitacora {
-  padding: 6px 0;
-  min-height: 216px;
+.panel[data-fase="confirmada"] .folio {
+  color: var(--hueso);
 }
 
-/* Cada renglón de la bitácora entra cuando el agente lo escribe. */
+/* Medidor: una fila de cuadrados que late con la voz. */
+@keyframes nivel {
+  from { opacity: 0.12; }
+  to   { opacity: 1; }
+}
+
+.medidor {
+  display: flex;
+  justify-content: space-between;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.medidor i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  background: var(--acento);
+  opacity: 0.12;
+  transition: opacity 400ms ease-out;
+}
+
+.panel[data-fase="llamada"] .medidor i {
+  animation: nivel var(--t) ease-in-out var(--d) infinite alternate;
+}
+
+.panel[data-fase="confirmada"] .medidor i {
+  background: var(--linea-2);
+  opacity: 1;
+}
+
+.panelCuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 176px;
+}
+
+.bitacora {
+  padding: 6px 0;
+  min-height: 262px;
+  min-width: 0;
+}
+
 @keyframes entraEvento {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: none; }
@@ -128,7 +169,7 @@
   display: flex;
   gap: 14px;
   align-items: baseline;
-  padding: 10px 20px;
+  padding: 10px 22px;
   border-bottom: 1px solid var(--panel-2);
 }
 
@@ -146,6 +187,15 @@
   background: var(--linea-2);
   flex: 0 0 auto;
   display: block;
+  transform: translateY(-1px);
+}
+
+.evento:last-child .eventoPunto {
+  background: var(--acento);
+}
+
+.panel[data-fase="confirmada"] .evento:last-child .eventoPunto {
+  background: var(--bueno);
 }
 
 .eventoTexto {
@@ -154,40 +204,123 @@
   color: var(--hueso);
 }
 
+/* ── agenda del día ── */
+
+.agenda {
+  border-left: 1px solid var(--linea);
+  padding: 18px 18px 18px;
+}
+
+.agendaDia {
+  font-size: 13.5px;
+  color: var(--acero);
+  margin: 0 0 14px;
+}
+
+.horarios {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.horario {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.horarioHora {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--acero-2);
+}
+
+.horarioCelda {
+  position: relative;
+  font-style: normal;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 10px;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+}
+
+/* El horario reservado se llena al confirmar. */
+.horarioCelda::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: var(--acento);
+  opacity: 0;
+  transition: opacity 260ms var(--curva);
+}
+
+.horario[data-tomado="1"] .horarioCelda::before {
+  opacity: 1;
+}
+
+.horario[data-tomado="1"] .horarioHora {
+  color: var(--hueso);
+}
+
+.horarioFolio {
+  position: relative;
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: #0b0f17;
+}
+
 .panelPie {
   margin: 0;
-  padding: 14px 20px;
-  background: var(--panel-2);
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-}
-
-/* ── próximos productos ── */
-
-.proximos {
-  margin-top: clamp(40px, 4vw, 64px);
-}
-
-.proximo {
+  padding: 12px 22px;
   border-top: 1px solid var(--linea);
-  padding: 22px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.proximo:last-child {
-  border-bottom: 1px solid var(--linea);
-}
-
-.proximoNombre {
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: 22px;
+  font-size: 12.5px;
   color: var(--acero-2);
+}
+
+@media (max-width: 1023px) {
+  .columnas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .folio {
+    justify-self: end;
+  }
+
+  .panelCuerpo {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda {
+    border-left: 0;
+    border-top: 1px solid var(--linea);
+  }
+
+  .horarios {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .horario {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .horarioFolio {
+    font-size: 10.5px;
+  }
+
+  .fichaFila {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }

@@ -4,31 +4,21 @@ import css from "./Firma.module.css";
 
 export function Firma() {
   return (
-    <section id="firma" className={ui.seccion}>
+    <section id="firma" aria-label={LA_FIRMA.rotulo} className={ui.seccion}>
       <div className={ui.contenedor}>
-        <div className={css.entrada}>
-          <p data-revelar className={ui.rotulo}>{LA_FIRMA.rotulo}</p>
-          <div className={css.texto}>
-            <p data-revelar className={css.declaracion}>
-              {LA_FIRMA.entrada}
-            </p>
-            <p data-revelar className={css.cuerpo}>
-              {LA_FIRMA.cuerpo}
-            </p>
-          </div>
-        </div>
+        <p className={css.declaracion}>{LA_FIRMA.entrada}</p>
 
-        <div className={css.pilares}>
-          {LA_FIRMA.pilares.map((p, i) => (
-            <div key={p.rotulo} data-revelar className={css.pilar}>
-              <div className={css.pilarCabeza}>
-                <span className={css.pilarIndice}>{String(i + 1).padStart(2, "0")}</span>
-                <i className={css.pilarNodo} aria-hidden="true" />
+        <div className={css.columnas}>
+          <p className={css.cuerpo}>{LA_FIRMA.cuerpo}</p>
+
+          <dl className={css.pilares}>
+            {LA_FIRMA.pilares.map((p) => (
+              <div key={p.rotulo} className={css.pilar}>
+                <dt className={css.verbo}>{p.rotulo}</dt>
+                <dd className={css.pilarTexto}>{p.texto}</dd>
               </div>
-              <p className={css.pilarRotulo}>{p.rotulo}</p>
-              <p className={css.pilarTexto}>{p.texto}</p>
-            </div>
-          ))}
+            ))}
+          </dl>
         </div>
       </div>
     </section>

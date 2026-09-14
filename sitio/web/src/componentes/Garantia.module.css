@@ -10,226 +10,249 @@
   padding: var(--seccion) var(--margen);
 }
 
-.entrada {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(28px, 4vw, 72px);
-}
-
-.rotulo {
-  flex: 0 0 190px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--laton-papel);
-  margin: 12px 0 0;
-}
-
-.rotuloMenor {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-  margin: 0 0 30px;
-}
-
-.texto {
-  flex: 1 1 520px;
-  min-width: 0;
-}
-
 .titular {
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
-  font-size: clamp(28px, 3.4vw, 52px);
-  line-height: 1.06;
-  letter-spacing: -0.014em;
+  font-size: clamp(34px, 4.6vw, 72px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
   text-wrap: balance;
-  margin: 0 0 24px;
+  margin: 0;
   color: var(--papel-tinta);
-  max-width: 26ch;
-}
-
-@keyframes aterriza {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: none; }
-}
-
-.cuadrado {
-  display: inline-block;
-  width: 0.17em;
-  height: 0.17em;
-  background: var(--acento-hondo);
-  margin-left: 0.2em;
-  vertical-align: baseline;
-}
-
-[data-visible="1"] .cuadrado {
-  animation: aterriza 260ms var(--curva) 200ms both;
+  max-width: 18ch;
 }
 
 .cuerpo {
-  font-size: 17.5px;
-  line-height: 1.62;
+  font-size: 19px;
+  line-height: 1.6;
   color: var(--papel-tinta-2);
-  max-width: 58ch;
+  max-width: 34ch;
   margin: 0;
 }
 
-.columnas {
-  margin-top: clamp(52px, 7vw, 104px);
+/* ── demostración ── */
+
+.demo {
+  margin-top: clamp(56px, 7vw, 104px);
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: clamp(32px, 5vw, 88px);
+  align-items: start;
+  border-top: 1px solid var(--papel-linea);
+  padding-top: clamp(32px, 3.4vw, 48px);
+}
+
+/* ── consola: la base, en tinta sobre papel ── */
+
+.consola {
+  min-width: 0;
+  background: var(--tinta);
+  color: var(--hueso);
+  border: 1px solid var(--tinta);
+}
+
+.consolaBarra {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(32px, 5vw, 88px);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 20px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--linea);
 }
 
-/* ruta */
-
-.ruta {
-  flex: 1 1 280px;
-  min-width: 0;
+.consolaNombre {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--hueso);
 }
 
-.pasos {
+.consolaPie {
+  font-size: 13px;
+  color: var(--acero-2);
+}
+
+.codigo {
+  margin: 0;
+  padding: 22px 24px;
+  overflow-x: auto;
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: clamp(13px, 1.1vw, 15px);
+  line-height: 1.75;
+  color: var(--acero);
+  border-bottom: 1px solid var(--linea);
+}
+
+.lineaCodigo {
+  display: block;
+  white-space: pre;
+}
+
+.numeroLinea {
+  display: inline-block;
+  width: 28px;
+  color: var(--linea-2);
+  user-select: none;
+}
+
+.clave {
+  color: var(--acento);
+}
+
+/* registro de lo que responde la base */
+
+.registro {
   list-style: none;
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
+  padding: 8px 0;
 }
 
-.paso {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-}
-
-.eje {
-  display: flex;
-  flex-direction: column;
+.renglon {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(150px, 1fr);
   align-items: center;
-  flex: 0 0 auto;
+  gap: 8px 20px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--panel-2);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 360ms var(--curva),
+    transform 360ms var(--curva);
 }
 
-.nodo {
-  width: 9px;
-  height: 9px;
-  display: block;
-  margin-top: 7px;
+.renglon:last-child {
+  border-bottom: 0;
 }
 
-.linea {
-  width: 1px;
-  height: 42px;
-  background: var(--papel-linea);
-  display: block;
+.renglon[data-visible="1"] {
+  opacity: 1;
+  transform: none;
 }
 
-.pasoTexto {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--papel-tinta);
+.renglonRotulo {
+  font-size: 14px;
+  color: var(--acero);
 }
 
-/* colisión */
-
-.colision {
-  flex: 1 1 360px;
-  min-width: 0;
-}
-
-.bloques {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.bloqueConfirmado,
-.bloqueRechazado {
-  padding: 18px 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bloqueConfirmado {
-  background: var(--acento-hondo);
-  border-left: 3px solid var(--acento-hondo);
-}
-
-/* El rechazado se lee como "hueco bloqueado": trama diagonal tenue en vez de
-   un simple recuadro rojo, con filete de acento crítico a la izquierda. */
-.bloqueRechazado {
-  border: 1px solid var(--papel-linea);
-  border-left: 3px solid var(--papel-critico);
-  background-color: transparent;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color-mix(in srgb, var(--papel-critico) 9%, transparent) 0,
-    color-mix(in srgb, var(--papel-critico) 9%, transparent) 1px,
-    transparent 1px,
-    transparent 9px
-  );
-}
-
-.horario,
-.horarioRojo {
+.renglonHorario {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 17px;
+  font-size: clamp(17px, 1.6vw, 22px);
+  color: var(--hueso);
 }
 
-.horario {
-  color: #ffffff;
+.renglonEstado {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.horarioRojo {
-  color: var(--papel-critico);
+.renglonEstado i {
+  width: 8px;
+  height: 8px;
+  display: block;
+  background: currentColor;
 }
 
-.etiquetaClara,
-.etiquetaRoja {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
+.renglonEstado[data-tono="bueno"] { color: var(--bueno); }
+.renglonEstado[data-tono="critico"] { color: var(--critico); }
+.renglonEstado[data-tono="acento"] { color: var(--acento); }
+.renglonEstado[data-tono="espera"] { color: var(--acero-2); }
 
-.etiquetaClara {
-  color: #c9d6ff;
-}
-
-.etiquetaRoja {
-  color: var(--papel-critico);
+.pieDemo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid var(--linea);
 }
 
 .nota {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 12.5px;
-  color: var(--papel-tinta-2);
-  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--acero);
+  margin: 0;
+  opacity: 0;
+  transition: opacity 360ms var(--curva) 200ms;
+}
+
+.nota[data-visible="1"] {
+  opacity: 1;
+}
+
+.repetir {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--linea-2);
+  color: var(--hueso);
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 18px;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, color 150ms ease-out;
+}
+
+.repetir:hover:not(:disabled) {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+.repetir:disabled {
+  color: var(--acero-2);
+  cursor: default;
 }
 
 /* cita */
 
 .cita {
-  flex: 1 1 240px;
-  min-width: 0;
-  border-left: 1px solid var(--papel-linea);
-  padding-left: clamp(24px, 3vw, 40px);
-}
-
-.citaTexto {
+  margin: clamp(56px, 7vw, 104px) 0 0;
+  padding-top: clamp(28px, 3vw, 40px);
+  border-top: 1px solid var(--papel-linea);
   font-family: var(--fuente-display), Georgia, serif;
   font-style: italic;
   font-weight: 300;
-  font-size: clamp(22px, 2.2vw, 30px);
-  line-height: 1.24;
+  font-size: clamp(26px, 3.2vw, 46px);
+  line-height: 1.14;
+  letter-spacing: -0.012em;
   color: var(--laton-papel);
-  margin: 0;
+  max-width: 34ch;
+}
+
+@media (max-width: 900px) {
+  .demo {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 560px) {
+  .renglon {
+    grid-template-columns: 1fr auto;
+    padding: 14px 18px;
+  }
+
+  .renglonRotulo {
+    grid-column: 1 / -1;
+  }
+
+  .codigo,
+  .consolaBarra,
+  .pieDemo {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .renglon,
+  .nota {
+    transition: none;
+  }
 }
