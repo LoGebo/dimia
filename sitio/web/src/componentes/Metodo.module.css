@@ -1,101 +1,163 @@
+/* Método como escala de semanas: cada celda es una semana. Diagnóstico ocupa dos,
+   Piloto cuatro; lo continuo sigue hasta salir del encuadre. El avance --p recorre
+   las semanas medidas: detrás queda hueso y la semana en curso va en azul. */
+
 .etapas {
   list-style: none;
   margin: 0;
   padding: 0;
+  border-top: 1px solid var(--linea);
+  --pos: calc(var(--p, 1) * var(--medidas));
+}
+
+.etapa,
+.regla {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: clamp(24px, 2.4vw, 40px);
+  grid-template-columns: minmax(250px, 3fr) 9fr;
+  gap: clamp(24px, 3vw, 56px);
+  align-items: start;
 }
 
-/* Cada etapa es un tramo de una línea que se dibuja al entrar en pantalla,
-   con un nodo cuadrado al inicio. Da sensación de secuencia, no de tarjetas. */
 .etapa {
-  position: relative;
-  padding-top: 30px;
+  padding: clamp(24px, 2.6vw, 36px) 0;
+  border-bottom: 1px solid var(--linea);
 }
 
-/* Riel base (tenue) */
-.etapa::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--linea);
+.ficha {
+  min-width: 0;
 }
 
-/* Riel que se rellena de azul al revelarse */
-.etapa::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background: var(--acento);
-  transition: width 720ms var(--curva);
-}
-
-.etapa[data-visible="1"]::after {
-  width: 100%;
-}
-
-/* Nodo cuadrado sobre el riel */
-.nodo {
-  position: absolute;
-  top: -4px;
-  left: 0;
-  width: 9px;
-  height: 9px;
-  background: var(--acero-2);
-  transition: background 720ms var(--curva);
-}
-
-.etapa[data-visible="1"] .nodo {
-  background: var(--acento);
-}
-
-.indice {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  letter-spacing: 0.04em;
+.nombre {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(24px, 2.2vw, 32px);
+  line-height: 1.1;
+  letter-spacing: -0.012em;
   color: var(--hueso);
-  margin: 0 0 20px;
+  margin: 0 0 10px;
 }
 
 .numero {
-  color: var(--acento);
-  margin-right: 8px;
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--acero-2);
+  vertical-align: 0.5em;
+  margin-right: 12px;
 }
 
 .duracion {
-  display: inline-block;
   font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-  border: 1px solid var(--linea-2);
-  padding: 4px 9px;
-  margin: 0 0 18px;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--hueso);
+  margin: 0 0 12px;
+}
+
+.etapa[data-continuo="1"] .duracion {
+  color: var(--acero);
 }
 
 .texto {
-  font-size: 16px;
-  line-height: 1.62;
+  font-size: 15.5px;
+  line-height: 1.6;
   color: var(--acero);
   margin: 0;
-  max-width: 34ch;
+  max-width: 36ch;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .etapa::after {
-    width: 100%;
-    transition: none;
+/* ── pista de semanas ── */
+
+.pista {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+  padding-top: 6px;
+}
+
+.etapa[data-continuo="1"] .pista {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 55%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 55%, transparent 100%);
+}
+
+.celda {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--panel);
+  display: block;
+}
+
+.celda::before,
+.celda::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+/* Semana recorrida: hueso. */
+.etapa[data-continuo="0"] .celda[data-dentro="1"]::after {
+  background: var(--hueso);
+  opacity: clamp(0, calc((var(--pos) - var(--k)) * 3), 1);
+}
+
+/* Semana en curso: azul, solo mientras el avance está sobre ella; la última se queda. */
+.etapa[data-continuo="0"] .celda[data-dentro="1"]::before {
+  z-index: 1;
+  background: var(--acento);
+  opacity: clamp(0, min(calc((var(--pos) - var(--k)) * 3), calc((var(--k) + 1.34 - var(--pos)) * 3)), 1);
+}
+
+/* Lo continuo se enciende parejo cuando terminan las semanas medidas. */
+.etapa[data-continuo="1"] .celda[data-dentro="1"]::after {
+  background: var(--linea-2);
+  opacity: clamp(0, calc((var(--pos) - var(--medidas) + 0.6 - var(--j) * 0.05) * 4), 1);
+}
+
+/* ── regla ── */
+
+.regla {
+  padding: 14px 0 0;
+}
+
+.regla .pista {
+  padding-top: 0;
+}
+
+.marca {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--acero-2);
+  transform: translateX(-2px);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .etapa,
+  .regla {
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
-  .nodo {
-    background: var(--acento);
+
+  .regla > span:first-child {
+    display: none;
+  }
+
+  .etapas {
+    --cols: 12 !important;
+  }
+
+  .celda:nth-child(n + 13),
+  .marca:nth-child(n + 13) {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pista {
+    gap: 3px;
   }
 }

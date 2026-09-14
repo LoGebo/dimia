@@ -353,3 +353,65 @@
 .tabla th[data-elegido="1"] {
   transition: background 180ms var(--curva), color 180ms var(--curva);
 }
+
+/* ── rediseño: control con cuadro que se desliza ── */
+.toggle {
+  position: relative;
+}
+
+.opcion {
+  position: relative;
+  z-index: 1;
+  min-width: 132px;
+  min-height: 44px;
+}
+
+.opcion[data-activo="1"] {
+  background: transparent;
+}
+
+.indicador {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  background: var(--acento);
+  transition: transform 320ms var(--curva);
+}
+
+.toggle[data-premium="1"] .indicador {
+  transform: translateX(100%);
+}
+
+.precio {
+  font-size: clamp(34px, 3.4vw, 48px);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+
+.periodo {
+  letter-spacing: 0;
+}
+
+.nombre {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(26px, 2.4vw, 34px);
+  letter-spacing: -0.012em;
+}
+
+.razones {
+  border-top: 1px solid var(--linea);
+  border-bottom: 1px solid var(--linea);
+  padding: 18px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicador {
+    transition: none;
+  }
+}

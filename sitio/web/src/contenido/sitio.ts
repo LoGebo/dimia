@@ -198,6 +198,13 @@ export const PROXIMOS = [
   { nombre: "[ Nombre del producto ]", estado: "Próximamente" },
 ] as const;
 
+/** Agenda que acompaña al panel de demostración: el horario reservado se llena al confirmar. */
+export const AGENDA_DEMO = {
+  dia: "Jueves 4",
+  horarios: ["18:00", "18:30", "19:00", "19:30"],
+  reservado: "18:30",
+} as const;
+
 /** Secuencia del panel de llamada. `d` son milisegundos de espera antes del paso. */
 export const PASOS_LLAMADA = [
   { d: 900, fase: "espera", texto: "Llamada entrante · número no registrado" },
@@ -220,9 +227,17 @@ export const GARANTIA = {
   colision: {
     confirmada: { horario: "17:00–17:30", estado: "Confirmada" },
     rechazada: { horario: "17:15–17:45", estado: "Rechazada por la base" },
+    ofrecida: { horario: "17:45–18:15", estado: "Se ofrece" },
     nota: "Se ofrece 17:45 en la misma llamada.",
+    repetir: "Repetir la demostración",
   },
   cita: "«Automatización con garantía, no con buenas intenciones.»",
+  /** Imagen generada, ilustrativa; no es de un cliente. Ver docs/generated-assets.md */
+  libreta: {
+    imagen: "/imagenes/libreta-agenda",
+    alt: "Agenda de papel abierta con dos citas escritas a la misma hora y tachadas.",
+    pie: "Una libreta acepta dos citas a la misma hora. La base no.",
+  },
 } as const;
 
 export const PLANES = {
@@ -368,4 +383,9 @@ export const CIERRE = {
   titular: "Donde el dato decide.",
   notaTelefono: "Este número contesta con el agente de voz de Dimia.",
   declaracion: "Sistemas de decisión para empresas que ya no alcanzan a contestar.",
+  /** Imagen generada, ilustrativa. Ver docs/generated-assets.md */
+  foto: {
+    imagen: "/imagenes/telefono-noche",
+    alt: "Teléfono de recepción sobre un mostrador, de noche, con la luz de línea encendida.",
+  },
 } as const;

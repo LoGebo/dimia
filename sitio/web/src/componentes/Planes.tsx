@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PLANES } from "@/contenido/sitio";
 import { Palabras } from "./Palabras";
+import { Cifra } from "./Cifra";
 import ui from "./ui.module.css";
 import css from "./Planes.module.css";
 
@@ -34,7 +35,8 @@ export function Planes() {
           ))}
         </ul>
 
-        <div data-revelar className={css.toggle} role="group" aria-label="Estándar o con Premium">
+        <div data-revelar className={css.toggle} data-premium={premium ? "1" : "0"} role="group" aria-label="Estándar o con Premium">
+          <i className={css.indicador} aria-hidden="true" />
           <button
             type="button"
             className={css.opcion}
@@ -76,7 +78,7 @@ export function Planes() {
               <p className={css.nombre}>{c.nombre}</p>
 
               <p className={css.precio}>
-                {pesos(premium ? c.precio + c.premium : c.precio)}
+                <Cifra texto={pesos(premium ? c.precio + c.premium : c.precio)} />
                 <span className={css.periodo}> MXN / mes</span>
               </p>
               <p className={css.sumaPremium}>

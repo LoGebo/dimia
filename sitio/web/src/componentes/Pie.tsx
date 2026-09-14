@@ -1,51 +1,55 @@
 import { CIERRE, FIRMA, NAVEGACION } from "@/contenido/sitio";
-import { IconoDimia } from "./Iconos";
 import css from "./Pie.module.css";
 
+/**
+ * Pie fijo debajo de la página: el contenido sube como una hoja y lo descubre.
+ * El logotipo va a todo lo ancho, como archivo vectorial oficial.
+ */
 export function Pie() {
   return (
     <footer className={css.pie}>
       <div className={css.contenedor}>
         <div className={css.columnas}>
-          <div data-revelar className={css.declaracion}>
-            <IconoDimia tamano={34} />
-            <p className={css.frase}>{CIERRE.declaracion}</p>
-          </div>
+          <p className={css.frase}>{CIERRE.declaracion}</p>
 
-          <div className={css.enlaces}>
-            <div className={css.grupo}>
-              <p className={css.rotulo}>Firma</p>
-              {NAVEGACION.filter((e) => e.href !== "#firma").map((e) => (
-                <a key={e.href} href={e.href} className={css.enlace}>
-                  {e.texto}
-                </a>
-              ))}
-            </div>
+          <nav className={css.grupo} aria-label="Secciones">
+            {NAVEGACION.filter((e) => e.href !== "#firma").map((e) => (
+              <a key={e.href} href={e.href} className={css.enlace}>
+                {e.texto}
+              </a>
+            ))}
+          </nav>
 
-            <div className={css.grupo}>
-              <p className={css.rotulo}>Contacto</p>
-              <a href={`mailto:${FIRMA.correo}`} className={css.enlaceMono}>
-                {FIRMA.correo}
-              </a>
-              <span className={css.enlaceMono}>{FIRMA.telefono}</span>
-              <a href={FIRMA.linkedin} rel="noopener noreferrer" target="_blank" className={css.enlace}>
-                LinkedIn
-              </a>
-              <a href={`https://${FIRMA.dominio}`} className={css.enlace}>
-                {FIRMA.dominio}
-              </a>
-            </div>
+          <div className={css.grupo}>
+            <a href={`mailto:${FIRMA.correo}`} className={css.enlaceMono}>
+              {FIRMA.correo}
+            </a>
+            <a href={FIRMA.telefonoHref} className={css.enlaceMono}>
+              {FIRMA.telefono}
+            </a>
+            <a href={FIRMA.linkedin} rel="noopener noreferrer" target="_blank" className={css.enlace}>
+              LinkedIn
+            </a>
           </div>
         </div>
 
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/marca/logotipo-tinta.svg"
+          alt="Dimia"
+          width={3017}
+          height={771}
+          loading="lazy"
+          className={css.logotipo}
+        />
+
         <div className={css.cierre}>
           <p className={css.legal}>
-            © {FIRMA.anio} {FIRMA.nombre} · {FIRMA.ciudad} ·{" "}
-            <a href="/aviso-de-privacidad" className={css.legalEnlace}>
-              Aviso de privacidad
-            </a>
+            © {FIRMA.anio} {FIRMA.nombre} · {FIRMA.ciudad}
           </p>
-          <i className={css.remate} />
+          <a href="/aviso-de-privacidad" className={css.legalEnlace}>
+            Aviso de privacidad
+          </a>
         </div>
       </div>
     </footer>

@@ -1,55 +1,39 @@
+/* El pie queda fijo al fondo, detrás de <main> (ver globals.css): al terminar la
+   página, el contenido sube y lo descubre. */
 .pie {
+  position: sticky;
+  bottom: 0;
+  z-index: 0;
   background: var(--panel);
-  border-top: 1px solid var(--linea-2);
 }
 
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(40px, 4.5vw, 64px) var(--margen) clamp(28px, 3vw, 40px);
+  padding: clamp(48px, 6vw, 88px) var(--margen) clamp(20px, 2.4vw, 32px);
 }
 
 .columnas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(32px, 4vw, 72px);
-}
-
-.declaracion {
-  flex: 1 1 380px;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 2fr) minmax(0, 3fr);
+  gap: 32px clamp(32px, 4vw, 72px);
+  align-items: start;
 }
 
 .frase {
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
-  font-size: clamp(20px, 2.2vw, 28px);
-  line-height: 1.2;
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1.18;
   letter-spacing: -0.012em;
   color: var(--hueso);
-  margin: 28px 0 0;
-  max-width: 32ch;
-}
-
-.enlaces {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 32px 72px;
+  margin: 0;
+  max-width: 28ch;
 }
 
 .grupo {
-  flex: 0 1 200px;
   display: flex;
   flex-direction: column;
-}
-
-.rotulo {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-  margin: 0 0 18px;
 }
 
 .enlace,
@@ -58,7 +42,7 @@
   color: var(--acero);
   display: flex;
   align-items: center;
-  min-height: 38px;
+  min-height: 40px;
   transition: color 150ms ease-out;
 }
 
@@ -73,36 +57,52 @@
   color: var(--hueso);
 }
 
-.cierre {
-  margin-top: clamp(40px, 5vw, 72px);
-  padding-top: 26px;
-  border-top: 1px solid var(--linea);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
-  justify-content: space-between;
+.logotipo {
+  width: 100%;
+  height: auto;
+  margin: clamp(48px, 7vw, 112px) 0 clamp(24px, 3vw, 40px);
 }
 
-.legal {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.06em;
+.cierre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
+  border-top: 1px solid var(--linea);
+}
+
+.legal,
+.legalEnlace {
+  font-size: 13.5px;
   color: var(--acero-2);
   margin: 0;
 }
 
 .legalEnlace {
-  color: var(--acero-2);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .legalEnlace:hover {
   color: var(--hueso);
 }
 
-.remate {
-  width: 12px;
-  height: 12px;
-  background: var(--acento);
-  display: block;
+@media (max-width: 760px) {
+  .columnas {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .frase {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Si la pantalla es más baja que el pie, se queda en su lugar sin taparse. */
+@media (max-height: 640px) {
+  .pie {
+    position: relative;
+  }
 }
