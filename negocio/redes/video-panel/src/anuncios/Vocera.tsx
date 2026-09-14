@@ -83,13 +83,15 @@ const Encuadre: React.FC<{ video: string; cortes: number[] }> = ({ video, cortes
 
 // ------------------------------------------------------------------ subtítulos
 
-const Subtitulo: React.FC<{ palabras: Palabra[] }> = ({ palabras }) => {
+const Subtitulo: React.FC<{ palabras: Palabra[]; cortes: number[] }> = ({ palabras, cortes }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = f / fps;
   const i = palabras.findIndex((p) => t >= p.desde && t < p.hasta + 0.15);
   if (i < 0) return null;
-  const inicio = Math.max(0, i - 2);
+  const frase = cortes.filter((c) => c <= palabras[i].desde + 0.001).pop() ?? 0;
+  const primera = palabras.findIndex((p) => p.desde >= frase - 0.001);
+  const inicio = Math.max(primera, i - 2, 0);
   const grupo = palabras.slice(inicio, i + 1);
   const entra = interpolate(t - palabras[i].desde, [0, 0.08], [0.85, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
@@ -133,11 +135,11 @@ const PanelTelefono: React.FC<{ captura: string; dur: number }> = ({ captura, du
     <div
       style={{
         position: "absolute",
-        right: 70,
-        top: 420,
-        width: 420,
-        height: 760,
-        borderRadius: 60,
+        right: 60,
+        top: 700,
+        width: 300,
+        height: 540,
+        borderRadius: 46,
         border: "12px solid #1b1f27",
         overflow: "hidden",
         backgroundColor: C.tinta,
@@ -252,7 +254,7 @@ export const Vocera: React.FC<VoceraProps> = ({ video, duracion, palabras, corte
             <Audio src={staticFile("anuncio/sonido/norm/golpe.wav")} volume={0.25} />
           </Sequence>
         ))}
-        <Subtitulo palabras={palabras} />
+        <Subtitulo palabras={palabras} cortes={cortes} />
         <Aviso />
       </Sequence>
       <Sequence from={largo} durationInFrames={s(CIERRE)}>
