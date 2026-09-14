@@ -31,6 +31,19 @@ Hallazgos del intento 4:
 - Lo que tumbaba los intentos 1 a 3 no es el presentador; queda la duración de 30 s, el guion
   largo o las referencias.
 
+| 5 | Marco | UGC · 15 s · producto «Dimia» creado con capturas reales (`fc50d111-0ee0-411e-a7ce-62d7bb6083f6`) · guion corto · «dice solo estas palabras» | **Salió** · 75 créditos · `videos/marco15.mp4` |
+
+Hallazgos del intento 5:
+
+- Con el producto ligado ya no inventa marca: sostiene un teléfono con el sitio real de Dimia y
+  lo voltea a la cámara entre los 6 y los 11 s.
+- Dice el guion completo. Whisper oye «contesta» como «compuesta» o «compuede» y «Agende» como
+  «Hagan»; los subtítulos se corrigen al guion conservando los tiempos.
+- Reel final: `videos/marco15-reel.mp4`, 17.8 s con placa. Notificación al decir «contesta»,
+  panel en teléfono a los 11.4 s, cuando Marco ya bajó el suyo.
+- Receta para piezas nuevas: producto ligado, 15 s, guion corto, «dice solo estas palabras»,
+  y `./subtitular.sh <video>` con corrección de palabras antes del render.
+
 El presentador no es la causa: fallaron Valentina y Marco. Lo común a los tres es 30 s, audio
 generado y guion largo en español. El intento 4 separa si Marketing Studio falla siempre en esta
 cuenta o si lo tumba alguna de esas variables; si sale, se agregan una a la vez.
