@@ -1,8 +1,3 @@
-@keyframes latido {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.28; }
-}
-
 .titular {
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
@@ -42,14 +37,6 @@
   line-height: 1.5;
   color: var(--acero);
   margin-bottom: 18px;
-}
-
-.latido {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  background: var(--acento);
-  animation: latido 1.9s ease-in-out infinite;
 }
 
 .telefono {
@@ -239,22 +226,3 @@
   }
 }
 
-.foto {
-  display: block;
-  margin-top: clamp(28px, 3vw, 40px);
-  max-width: 420px;
-  border: 1px solid var(--linea);
-}
-
-.foto img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1;
-  object-fit: cover;
-}
-
-@media (max-width: 900px) {
-  .foto {
-    display: none;
-  }
-}

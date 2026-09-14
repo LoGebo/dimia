@@ -1,31 +1,29 @@
+.seccion {
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--linea);
+}
+
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(56px, 7vw, 104px) var(--margen) 0;
+  padding: clamp(48px, 6vw, 88px) var(--margen) 0;
 }
 
-.cabeza {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px clamp(28px, 4vw, 72px);
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
-.nota {
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--acero-2);
+.titulo {
   margin: 0;
-  max-width: 52ch;
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  color: var(--acero);
 }
 
 .ventana {
   overflow: hidden;
-  margin-top: clamp(36px, 4vw, 56px);
-  padding: clamp(28px, 3vw, 44px) 0 clamp(56px, 7vw, 104px);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  padding: clamp(36px, 4vw, 56px) 0 clamp(52px, 6vw, 88px);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 
 @keyframes desliza {
@@ -36,7 +34,7 @@
 .pista {
   display: flex;
   width: max-content;
-  animation: desliza 46s linear infinite;
+  animation: desliza 40s linear infinite;
 }
 
 .ventana:hover .pista {
@@ -45,6 +43,7 @@
 
 .tramo {
   display: flex;
+  align-items: center;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -53,31 +52,17 @@
 .celda {
   display: flex;
   align-items: center;
-  gap: clamp(36px, 4.4vw, 72px);
-  padding-right: clamp(36px, 4.4vw, 72px);
+  justify-content: center;
+  padding: 0 clamp(40px, 5vw, 88px);
+  min-height: 72px;
 }
 
-.nombre {
-  font-family: var(--fuente-sans), system-ui, sans-serif;
-  font-weight: 600;
-  font-size: clamp(26px, 3.2vw, 46px);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--acero);
-  white-space: nowrap;
-  transition: color 150ms ease-out;
-}
-
-.celda:hover .nombre {
-  color: var(--hueso);
-}
-
-/* Los archivos ya vienen en hueso, una sola tinta (ver LEEME.txt). */
+/* Logotipos oficiales en una sola tinta clara (ver public/marca/clientes/LEEME.txt). */
 .logo {
   display: block;
   width: auto;
   max-width: none;
-  opacity: 0.62;
+  opacity: 0.92;
   transition: opacity 150ms ease-out;
 }
 
@@ -85,30 +70,31 @@
   opacity: 1;
 }
 
-.separador {
-  width: 7px;
-  height: 7px;
-  background: var(--linea-2);
-  display: block;
-  flex: 0 0 auto;
+.nombre {
+  font-family: var(--fuente-sans), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(24px, 2.6vw, 36px);
+  letter-spacing: -0.02em;
+  color: var(--hueso);
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ventana {
     -webkit-mask-image: none;
     mask-image: none;
-    padding-left: var(--margen);
-    padding-right: var(--margen);
   }
 
   .pista {
     animation: none;
     width: auto;
+    justify-content: center;
   }
 
   .tramo {
     flex-wrap: wrap;
-    row-gap: 20px;
+    justify-content: center;
+    row-gap: 24px;
   }
 
   .tramo[aria-hidden="true"] {

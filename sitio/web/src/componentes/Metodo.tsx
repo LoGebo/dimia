@@ -1,5 +1,4 @@
 import { METODO } from "@/contenido/sitio";
-import { Palabras } from "./Palabras";
 import ui from "./ui.module.css";
 import css from "./Metodo.module.css";
 
@@ -12,10 +11,7 @@ export function Metodo() {
     <section id="metodo" className={ui.seccion}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p data-revelar className={ui.rotulo}>Método</p>
-          <h2 className={ui.titulo}>
-            <Palabras texto="Cuatro etapas, en este orden" />
-          </h2>
+          <h2 className={ui.titulo}>Cuatro etapas, en este orden</h2>
         </div>
 
         <ol className={css.pila}>
@@ -34,9 +30,6 @@ export function Metodo() {
                 </div>
                 <div className={css.cuerpo}>
                   <p className={css.texto}>{etapa.texto}</p>
-                  <span className={css.numeroGrande} aria-hidden="true">
-                    {numero}
-                  </span>
                 </div>
               </li>
             );

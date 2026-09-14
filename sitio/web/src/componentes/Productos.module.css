@@ -89,7 +89,7 @@
 
 .panelReloj {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: clamp(18px, 2.4vw, 36px);
   padding: clamp(24px, 2.6vw, 36px) 22px;
@@ -292,15 +292,6 @@
 }
 
 @media (max-width: 620px) {
-  .panelReloj {
-    grid-template-columns: auto 1fr;
-  }
-
-  .medidor {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
   .folio {
     justify-self: end;
   }

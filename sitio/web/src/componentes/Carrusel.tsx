@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CLIENTES, NOTA_CLIENTES } from "@/contenido/sitio";
-import ui from "./ui.module.css";
 import css from "./Carrusel.module.css";
 
 export function Carrusel() {
@@ -36,7 +35,6 @@ export function Carrusel() {
             ) : (
               <span className={css.nombre}>{cliente.nombre}</span>
             )}
-            <i className={css.separador} aria-hidden="true" />
           </li>
         );
       })}
@@ -44,12 +42,9 @@ export function Carrusel() {
   );
 
   return (
-    <section aria-label="Confían en Dimia" className={`${ui.seccion} ${ui.tonoPanel2}`}>
+    <section aria-label="Confían en Dimia" className={css.seccion}>
       <div className={css.contenedor}>
-        <div className={css.cabeza}>
-          <p data-revelar className={ui.rotulo}>Confían en Dimia</p>
-          <p className={css.nota}>{NOTA_CLIENTES}</p>
-        </div>
+        <h2 className={css.titulo}>{NOTA_CLIENTES}</h2>
       </div>
 
       {/* La cinta va de orilla a orilla; se duplica para el bucle sin salto. */}

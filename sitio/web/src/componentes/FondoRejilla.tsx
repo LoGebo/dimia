@@ -37,8 +37,16 @@ export function FondoRejilla() {
       dibujar();
     };
 
+    // Debajo del hero la página va limpia: la retícula es del primer pantallazo.
+    const hero = document.getElementById("inicio");
+    const fueraDelHero = () => !!hero && window.scrollY > hero.offsetHeight - 40;
+
     const dibujar = () => {
       ctx.clearRect(0, 0, w, h);
+      if (fueraDelHero()) {
+        raf = 0;
+        return;
+      }
       for (let x = 0; x <= w; x += PASO) {
         for (let y = 0; y <= h; y += PASO) {
           const d = Math.hypot(x - mx, y - my);
@@ -69,10 +77,16 @@ export function FondoRejilla() {
       }, 160);
     };
 
+    const alScroll = () => {
+      if (!raf) raf = requestAnimationFrame(dibujar);
+    };
+
     redimensionar();
+    window.addEventListener("scroll", alScroll, { passive: true });
     window.addEventListener("resize", redimensionar);
     window.addEventListener("mousemove", alMover, { passive: true });
     return () => {
+      window.removeEventListener("scroll", alScroll);
       window.removeEventListener("resize", redimensionar);
       window.removeEventListener("mousemove", alMover);
       window.clearTimeout(temporizador);

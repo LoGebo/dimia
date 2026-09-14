@@ -2,147 +2,68 @@
 
 import { useState } from "react";
 import { PLANES } from "@/contenido/sitio";
-import { Palabras } from "./Palabras";
 import { Cifra } from "./Cifra";
 import ui from "./ui.module.css";
 import css from "./Planes.module.css";
 
 const pesos = (n: number) => "$" + n.toLocaleString("es-MX");
-const POSITIVOS = new Set(["Gratis", "Sí", "Incluida", "Todos"]);
 
+/**
+ * Tres planes en una sola tabla: precio arriba, detalle debajo, sin tarjetas.
+ * El interruptor Premium suma el adicional y las cifras giran al cambiar.
+ */
 export function Planes() {
   const [premium, setPremium] = useState(false);
-  const inicial = PLANES.columnas.findIndex((c) => c.elegido);
-  const [seleccion, setSeleccion] = useState(inicial < 0 ? 0 : inicial);
 
   return (
     <section id="planes" className={ui.seccion}>
       <div className={ui.contenedor}>
-        <div className={ui.encabezado}>
-          <p data-revelar className={ui.rotulo}>
-            {PLANES.rotulo}
-          </p>
-          <h2 className={ui.titulo}>
-            <Palabras texto={PLANES.titular} />
-          </h2>
-        </div>
+        <div className={css.cabeza}>
+          <h2 className={ui.titulo}>{PLANES.titular}</h2>
 
-        <ul data-revelar className={css.razones}>
-          {PLANES.razones.map((r) => (
-            <li key={r} className={css.razon}>
-              {r}
-            </li>
-          ))}
-        </ul>
-
-        <div data-revelar className={css.toggle} data-premium={premium ? "1" : "0"} role="group" aria-label="Estándar o con Premium">
-          <i className={css.indicador} aria-hidden="true" />
-          <button
-            type="button"
-            className={css.opcion}
-            data-activo={premium ? "0" : "1"}
-            aria-pressed={!premium}
-            onClick={() => setPremium(false)}
-          >
-            Estándar
-          </button>
-          <button
-            type="button"
-            className={css.opcion}
-            data-activo={premium ? "1" : "0"}
-            aria-pressed={premium}
-            onClick={() => setPremium(true)}
-          >
-            Con Premium
-          </button>
-        </div>
-
-        <div data-revelar className={css.grid}>
-          {PLANES.columnas.map((c, i) => (
-            <div
-              key={c.nombre}
-              className={css.col}
-              data-sel={seleccion === i ? "1" : "0"}
-              role="button"
-              tabIndex={0}
-              aria-pressed={seleccion === i}
-              onClick={() => setSeleccion(i)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setSeleccion(i);
-                }
-              }}
+          <div className={css.toggle} data-premium={premium ? "1" : "0"} role="group" aria-label="Estándar o con Premium">
+            <i className={css.indicador} aria-hidden="true" />
+            <button
+              type="button"
+              className={css.opcion}
+              data-activo={premium ? "0" : "1"}
+              aria-pressed={!premium}
+              onClick={() => setPremium(false)}
             >
-              <p className={css.elegido}>{c.elegido ? "Más elegido" : ""}</p>
-              <p className={css.nombre}>{c.nombre}</p>
-
-              <p className={css.precio}>
-                <Cifra texto={pesos(premium ? c.precio + c.premium : c.precio)} />
-                <span className={css.periodo}> MXN / mes</span>
-              </p>
-              <p className={css.sumaPremium}>
-                {premium ? `${pesos(c.precio)} base + ${pesos(c.premium)} Premium` : ""}
-              </p>
-
-              <div className={css.linea} />
-
-              <ul className={css.rasgos}>
-                {c.incluye ? (
-                  <li className={css.rasgo}>
-                    <span>
-                      <b>{c.incluye}</b>
-                    </span>
-                  </li>
-                ) : null}
-                <li className={css.rasgo}>
-                  <span>
-                    <b className={css.mono}>{c.minutos.toLocaleString("es-MX")}</b> minutos incluidos
-                  </span>
-                </li>
-                <li className={css.rasgo}>
-                  <span>{c.canales}</span>
-                </li>
-                <li className={css.rasgo}>
-                  <span>
-                    <b>{c.panel}</b>
-                  </span>
-                </li>
-                <li className={css.rasgo}>
-                  <span>Soporte {c.soporte}</span>
-                </li>
-              </ul>
-
-              <p className={css.paraQuien}>{c.paraQuien}</p>
-
-              <a href="#contacto" className={css.cta}>
-                Solicitar demostración
-              </a>
-            </div>
-          ))}
+              Estándar
+            </button>
+            <button
+              type="button"
+              className={css.opcion}
+              data-activo={premium ? "1" : "0"}
+              aria-pressed={premium}
+              onClick={() => setPremium(true)}
+            >
+              Con Premium
+            </button>
+          </div>
         </div>
 
-        <div data-revelar className={css.notas}>
-          <p className={css.premiumNota}>
-            <strong>Premium.</strong> {PLANES.premium.texto}
-          </p>
-          <ul className={css.condiciones}>
-            {PLANES.condiciones.map((cond) => (
-              <li key={cond} className={css.condicion}>
-                {cond}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div data-revelar className={css.tablaEnvoltura}>
+        <div className={css.tablaEnvoltura}>
           <table className={css.tabla}>
             <thead>
               <tr>
-                <th scope="col">Comparación</th>
-                {PLANES.columnas.map((c, i) => (
-                  <th key={c.nombre} scope="col" data-elegido={seleccion === i ? "1" : "0"}>
-                    {c.nombre}
+                <td className={css.esquina}>
+                  <p className={css.premiumNota}>{PLANES.premium.texto}</p>
+                </td>
+                {PLANES.columnas.map((c) => (
+                  <th key={c.nombre} scope="col" className={css.plan}>
+                    <span className={css.nombre}>{c.nombre}</span>
+                    <span className={css.precio}>
+                      <Cifra texto={pesos(premium ? c.precio + c.premium : c.precio)} />
+                    </span>
+                    <span className={css.periodo}>
+                      {premium ? `${pesos(c.precio)} + ${pesos(c.premium)} Premium` : "MXN al mes"}
+                    </span>
+                    <span className={css.paraQuien}>{c.paraQuien}</span>
+                    <a href="#contacto" className={css.cta}>
+                      Solicitar demostración
+                    </a>
                   </th>
                 ))}
               </tr>
@@ -152,19 +73,19 @@ export function Planes() {
                 <tr key={f.fila}>
                   <th scope="row">{f.fila}</th>
                   {f.valores.map((v, i) => (
-                    <td
-                      key={i}
-                      data-elegido={seleccion === i ? "1" : "0"}
-                      data-pos={POSITIVOS.has(v) ? "1" : "0"}
-                    >
-                      {v}
-                    </td>
+                    <td key={i}>{v}</td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        <ul className={css.condiciones}>
+          {PLANES.condiciones.map((cond) => (
+            <li key={cond}>{cond}</li>
+          ))}
+        </ul>
       </div>
     </section>
   );

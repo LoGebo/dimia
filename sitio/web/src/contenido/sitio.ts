@@ -245,12 +245,6 @@ export const GARANTIA = {
     pie: "La restricción real del motor de reservas, en la base de datos.",
   },
   cita: "«Automatización con garantía, no con buenas intenciones.»",
-  /** Imagen generada, ilustrativa; no es de un cliente. Ver docs/generated-assets.md */
-  libreta: {
-    imagen: "/imagenes/libreta-agenda",
-    alt: "Agenda de papel abierta con dos citas escritas a la misma hora y tachadas.",
-    pie: "Una libreta acepta dos citas a la misma hora. La base no.",
-  },
 } as const;
 
 export const PLANES = {
@@ -396,9 +390,4 @@ export const CIERRE = {
   titular: "Donde el dato decide.",
   notaTelefono: "Este número contesta con el agente de voz de Dimia.",
   declaracion: "Sistemas de decisión para empresas que ya no alcanzan a contestar.",
-  /** Imagen generada, ilustrativa. Ver docs/generated-assets.md */
-  foto: {
-    imagen: "/imagenes/telefono-noche",
-    alt: "Teléfono de recepción sobre un mostrador, de noche, con la luz de línea encendida.",
-  },
 } as const;

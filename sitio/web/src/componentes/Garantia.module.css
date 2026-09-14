@@ -10,26 +10,6 @@
   padding: var(--seccion) var(--margen);
 }
 
-.entrada {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(28px, 4vw, 72px);
-}
-
-.rotulo {
-  flex: 0 0 190px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--laton-papel);
-  margin: 14px 0 0;
-}
-
-.texto {
-  flex: 1 1 520px;
-  min-width: 0;
-}
-
 .titular {
   font-family: var(--fuente-display), Georgia, serif;
   font-weight: 300;
@@ -37,16 +17,16 @@
   line-height: 1.02;
   letter-spacing: -0.02em;
   text-wrap: balance;
-  margin: 0 0 28px;
+  margin: 0;
   color: var(--papel-tinta);
-  max-width: 20ch;
+  max-width: 18ch;
 }
 
 .cuerpo {
-  font-size: 17.5px;
-  line-height: 1.62;
+  font-size: 19px;
+  line-height: 1.6;
   color: var(--papel-tinta-2);
-  max-width: 56ch;
+  max-width: 34ch;
   margin: 0;
 }
 
@@ -60,91 +40,6 @@
   align-items: start;
   border-top: 1px solid var(--papel-linea);
   padding-top: clamp(32px, 3.4vw, 48px);
-}
-
-/* ruta */
-
-.columnaRuta {
-  min-width: 0;
-}
-
-.ruta {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.paso {
-  position: relative;
-  display: flex;
-  gap: 18px;
-  align-items: baseline;
-  padding: 0 0 34px;
-}
-
-.paso:not([data-ultimo="1"])::before {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 16px;
-  bottom: 2px;
-  width: 1px;
-  background: var(--papel-linea);
-}
-
-.nodo {
-  position: relative;
-  width: 9px;
-  height: 9px;
-  flex: 0 0 auto;
-  background: var(--papel-linea);
-  transform: translateY(-1px);
-  transition: background 260ms var(--curva);
-}
-
-.paso[data-encendido="1"] .nodo {
-  background: var(--acento-hondo);
-}
-
-.paso[data-encendido="1"][data-restriccion="1"] .nodo {
-  background: var(--papel-tinta);
-}
-
-.paso[data-encendido="1"][data-ultimo="1"] .nodo {
-  background: var(--papel-bueno);
-}
-
-.pasoTexto {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--papel-tinta-2);
-  transition: color 260ms var(--curva);
-}
-
-.paso[data-encendido="1"] .pasoTexto {
-  color: var(--papel-tinta);
-}
-
-.libreta {
-  margin: 20px 0 0;
-  max-width: 360px;
-}
-
-.libretaFoto {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border: 1px solid var(--papel-linea);
-}
-
-.libretaPie {
-  margin-top: 12px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--papel-tinta-2);
-  max-width: 34ch;
 }
 
 /* ── consola: la base, en tinta sobre papel ── */
@@ -335,23 +230,6 @@
     grid-template-columns: 1fr;
   }
 
-  .ruta {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 20px;
-  }
-
-  .paso {
-    padding-bottom: 18px;
-  }
-
-  .paso::before {
-    display: none;
-  }
-
-  .libreta {
-    display: none;
-  }
 }
 
 @media (max-width: 560px) {

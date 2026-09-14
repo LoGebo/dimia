@@ -101,20 +101,6 @@
   text-wrap: pretty;
 }
 
-/* Número de etapa a gran tamaño, en tono de filete: marca la secuencia sin competir. */
-.numeroGrande {
-  position: absolute;
-  right: clamp(12px, 2vw, 36px);
-  bottom: -0.16em;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(110px, 13vw, 200px);
-  line-height: 1;
-  letter-spacing: -0.06em;
-  color: var(--panel-2);
-  user-select: none;
-}
-
 @media (max-width: 760px) {
   .pila {
     gap: 12px;
@@ -144,7 +130,4 @@
     font-size: 21px;
   }
 
-  .numeroGrande {
-    font-size: 110px;
-  }
 }

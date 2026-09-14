@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GARANTIA } from "@/contenido/sitio";
-import { Palabras } from "./Palabras";
 import css from "./Garantia.module.css";
 
 /* 0 cita existente · 1 entra la solicitud · 2 la base la rechaza · 3 se ofrece el siguiente hueco */
@@ -63,8 +62,6 @@ export function Garantia() {
     };
   }, [correr]);
 
-  const pasoEncendido = (i: number) => (i <= 1 ? fase >= 1 : fase >= i);
-
   const renglones = [
     { visible: true, horario: colision.confirmada.horario, estado: colision.confirmada.estado, tono: "bueno" },
     {
@@ -79,50 +76,10 @@ export function Garantia() {
   return (
     <section id="garantia" className={css.seccion}>
       <div className={css.contenedor}>
-        <div className={css.entrada}>
-          <p className={css.rotulo}>{GARANTIA.rotulo}</p>
-          <div className={css.texto}>
-            <h2 className={css.titular}>
-              <Palabras texto={GARANTIA.titular} />
-            </h2>
-            <p className={css.cuerpo}>{GARANTIA.cuerpo}</p>
-          </div>
-        </div>
+        <h2 className={css.titular}>{GARANTIA.titular}</h2>
 
         <div ref={raiz} className={css.demo}>
-          <div className={css.columnaRuta}>
-            <ol className={css.ruta}>
-              {GARANTIA.ruta.map((paso, i) => (
-                <li
-                  key={paso}
-                  className={css.paso}
-                  data-encendido={pasoEncendido(i) ? "1" : "0"}
-                  data-ultimo={i === GARANTIA.ruta.length - 1 ? "1" : "0"}
-                  data-restriccion={i === 2 ? "1" : "0"}
-                >
-                  <i className={css.nodo} aria-hidden="true" />
-                  <span className={css.pasoTexto}>{paso}</span>
-                </li>
-              ))}
-            </ol>
-
-            <figure className={css.libreta}>
-              <picture>
-                <source srcSet={`${GARANTIA.libreta.imagen}.avif`} type="image/avif" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${GARANTIA.libreta.imagen}.webp`}
-                  alt={GARANTIA.libreta.alt}
-                  width={960}
-                  height={960}
-                  loading="lazy"
-                  decoding="async"
-                  className={css.libretaFoto}
-                />
-              </picture>
-              <figcaption className={css.libretaPie}>{GARANTIA.libreta.pie}</figcaption>
-            </figure>
-          </div>
+          <p className={css.cuerpo}>{GARANTIA.cuerpo}</p>
 
           {/* La base en tinta: la restricción real y lo que responde a cada intento. */}
           <div className={css.consola}>

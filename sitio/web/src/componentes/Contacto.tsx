@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { CIERRE, FIRMA } from "@/contenido/sitio";
-import { Palabras } from "./Palabras";
 import ui from "./ui.module.css";
 import css from "./Contacto.module.css";
 
@@ -73,7 +72,7 @@ export function Contacto() {
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
         <h2 className={css.titular}>
-          <Palabras texto={CIERRE.titular} />
+          {CIERRE.titular}
         </h2>
 
         <div className={css.columnas}>
@@ -81,7 +80,6 @@ export function Contacto() {
             {/* El teléfono es la demostración: contesta el propio agente. */}
             <a href={FIRMA.telefonoHref} className={css.llamada}>
               <span className={css.llamadaEstado}>
-                <i className={css.latido} data-anima="1" aria-hidden="true" />
                 {CIERRE.notaTelefono}
               </span>
               <span className={css.telefono}>{FIRMA.telefono}</span>
@@ -93,19 +91,6 @@ export function Contacto() {
                 {FIRMA.correo}
               </a>
             </div>
-
-            <picture className={css.foto}>
-              <source srcSet={`${CIERRE.foto.imagen}.avif`} type="image/avif" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`${CIERRE.foto.imagen}.webp`}
-                alt={CIERRE.foto.alt}
-                width={960}
-                height={960}
-                loading="lazy"
-                decoding="async"
-              />
-            </picture>
           </div>
 
           <div className={css.derecha}>

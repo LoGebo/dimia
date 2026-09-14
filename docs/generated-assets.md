@@ -16,7 +16,13 @@ duotono de marca, dentro de caja de bordes rectos y cargada en diferido.
 3. 960 × 960, exportado a AVIF (`avifenc -q 60`) y WebP (`cwebp -q 78`), servido con `<picture>`
    y `loading="lazy"`. Ninguna de las dos se muestra en móvil.
 
-## Archivos en uso
+## Estado
+
+**Retiradas del sitio el 13 sep 2026** en la pasada anti-slop: las fotos generadas en duotono
+se leían como arte de IA. Los archivos se borraron de `public/imagenes/`; los prompts y jobs
+quedan abajo por si se regeneran con otro tratamiento.
+
+## Archivos (retirados)
 
 | Archivo | Dónde | Job de Higgsfield |
 |---|---|---|

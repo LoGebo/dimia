@@ -2,8 +2,6 @@
 
 import { AGENDA_DEMO, PRODUCTO } from "@/contenido/sitio";
 import { usePanelLlamada } from "@/hooks/usePanelLlamada";
-import { Palabras } from "./Palabras";
-import { Flecha } from "./Iconos";
 import ui from "./ui.module.css";
 import css from "./Productos.module.css";
 
@@ -13,12 +11,6 @@ const ESTADOS = {
   confirmada: { texto: "Confirmada", color: "var(--bueno)", tinta: "var(--bueno)", late: false },
 } as const;
 
-/* Medidor de voz: celdas cuadradas con ritmo fijo (sin azar, para que el servidor y el
-   cliente pinten lo mismo). Solo se mueve mientras hay llamada. */
-const MEDIDOR = Array.from({ length: 28 }, (_, i) => ({
-  d: `${((i * 137) % 97) / 100}s`,
-  t: `${0.42 + ((i * 53) % 37) / 100}s`,
-}));
 
 export function Productos() {
   const { fase, reloj, folio, bitacora } = usePanelLlamada();
@@ -28,10 +20,7 @@ export function Productos() {
     <section id="productos" className={`${ui.seccion} ${ui.tonoPanel}`}>
       <div className={ui.contenedor}>
         <div className={ui.encabezado}>
-          <p data-revelar className={ui.rotulo}>Productos</p>
-          <h2 className={ui.titulo}>
-            <Palabras texto="Lo que ya opera con clientes" />
-          </h2>
+          <h2 className={ui.titulo}>Lo que ya opera con clientes</h2>
         </div>
 
         <div className={css.columnas}>
@@ -50,12 +39,11 @@ export function Productos() {
 
             <a href="#contacto" className={ui.botonPrimario}>
               {PRODUCTO.cta}
-              <Flecha />
             </a>
           </div>
 
           {/* Panel de la línea principal: la secuencia de una llamada, de principio a reserva */}
-          <div data-revelar className={css.panel} data-fase={fase}>
+          <div className={css.panel} data-fase={fase}>
             <div className={css.panelBarra}>
               <span className={css.panelRotulo}>Línea principal</span>
               <span className={ui.estado} style={{ color: estado.tinta }}>
@@ -73,11 +61,6 @@ export function Productos() {
 
             <div className={css.panelReloj}>
               <span className={css.reloj}>{reloj}</span>
-              <span className={css.medidor} aria-hidden="true">
-                {MEDIDOR.map((m, i) => (
-                  <i key={i} data-anima="1" style={{ "--d": m.d, "--t": m.t } as React.CSSProperties} />
-                ))}
-              </span>
               <span className={css.folio}>{folio}</span>
             </div>
 
@@ -86,7 +69,6 @@ export function Productos() {
                 {bitacora.map((evento, i) => (
                   <div key={`${evento.t}-${i}`} className={css.evento}>
                     <span className={css.eventoHora}>{evento.t}</span>
-                    <i className={css.eventoPunto} />
                     <span className={css.eventoTexto}>{evento.texto}</span>
                   </div>
                 ))}
