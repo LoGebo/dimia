@@ -37,10 +37,6 @@
   animation: desliza 40s linear infinite;
 }
 
-.ventana:hover .pista {
-  animation-play-state: paused;
-}
-
 .tramo {
   display: flex;
   align-items: center;
