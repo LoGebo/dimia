@@ -19,10 +19,12 @@ por palabra y capturas del sitio intercaladas en tamaño de teléfono.
 |---|---|---|---|
 | 1 | Valentina | UGC · 30 s · producto web `dimia.mx` en modo `web_product` móvil | Falló sin motivo · 156 créditos reembolsados |
 | 2 | Valentina | UGC · 30 s · capturas como `image_references` | Falló sin motivo · 150 créditos reembolsados |
-| 3 | Marco | Igual que el 2, dirección dicha como «dimia punto mx» | En curso |
+| 3 | Marco | Igual que el 2, dirección dicha como «dimia punto mx» | Falló sin motivo · 150 créditos reembolsados |
+| 4 | Marco | Diagnóstico: UGC · 5 s · una frase · sin referencias | En curso |
 
-La guía de Higgsfield atribuye los «failed» sin motivo al contenido del prompt; si el 3 falla,
-el siguiente paso es 15 s con guion parafraseado.
+El presentador no es la causa: fallaron Valentina y Marco. Lo común a los tres es 30 s, audio
+generado y guion largo en español. El intento 4 separa si Marketing Studio falla siempre en esta
+cuenta o si lo tumba alguna de esas variables; si sale, se agregan una a la vez.
 - Subtítulos, capturas de `dimia.mx` y del panel, y cierre de marca: Remotion.
 
 ## Guion · 30 s · ~75 palabras
