@@ -72,11 +72,12 @@
   color: var(--hueso);
 }
 
+/* Los archivos ya vienen en hueso, una sola tinta (ver LEEME.txt). */
 .logo {
-  height: 30px;
+  display: block;
   width: auto;
-  opacity: 0.55;
-  filter: grayscale(1) brightness(1.6);
+  max-width: none;
+  opacity: 0.62;
   transition: opacity 150ms ease-out;
 }
 

@@ -64,11 +64,14 @@
 
 /* ruta */
 
+.columnaRuta {
+  min-width: 0;
+}
+
 .ruta {
   list-style: none;
   margin: 0;
   padding: 0;
-  position: relative;
 }
 
 .paso {
@@ -79,7 +82,6 @@
   padding: 0 0 34px;
 }
 
-/* Tramo de línea hacia el siguiente paso */
 .paso:not([data-ultimo="1"])::before {
   content: "";
   position: absolute;
@@ -124,137 +126,148 @@
   color: var(--papel-tinta);
 }
 
-/* agenda */
-
-.agendaMarco {
-  min-width: 0;
+.libreta {
+  margin: 20px 0 0;
+  max-width: 360px;
 }
 
-.agenda {
-  --renglon: clamp(44px, 4.4vw, 56px);
-  position: relative;
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  background:
-    repeating-linear-gradient(
-      180deg,
-      var(--papel-linea) 0,
-      var(--papel-linea) 1px,
-      transparent 1px,
-      transparent var(--renglon)
-    );
-  border-bottom: 1px solid var(--papel-linea);
+.libretaFoto {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--papel-linea);
 }
 
-.hora {
-  grid-column: 1;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
+.libretaPie {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--papel-tinta-2);
-  padding-top: 6px;
+  max-width: 34ch;
 }
 
-.bloqueCita,
-.bloqueSolicitud,
-.bloqueOfrecida {
-  grid-column: 2;
-  position: relative;
-  margin: 3px 0 2px;
-  padding: 10px 16px;
+/* ── consola: la base, en tinta sobre papel ── */
+
+.consola {
+  min-width: 0;
+  background: var(--tinta);
+  color: var(--hueso);
+  border: 1px solid var(--tinta);
+}
+
+.consolaBarra {
   display: flex;
   flex-wrap: wrap;
-  align-content: space-between;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 4px 16px;
-  min-width: 0;
+  gap: 6px 20px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.consolaNombre {
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--hueso);
+}
+
+.consolaPie {
+  font-size: 13px;
+  color: var(--acero-2);
+}
+
+.codigo {
+  margin: 0;
+  padding: 22px 24px;
+  overflow-x: auto;
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-size: clamp(13px, 1.1vw, 15px);
+  line-height: 1.75;
+  color: var(--acero);
+  border-bottom: 1px solid var(--linea);
+}
+
+.lineaCodigo {
+  display: block;
+  white-space: pre;
+}
+
+.numeroLinea {
+  display: inline-block;
+  width: 28px;
+  color: var(--linea-2);
+  user-select: none;
+}
+
+.clave {
+  color: var(--acento);
+}
+
+/* registro de lo que responde la base */
+
+.registro {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.renglon {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(150px, 1fr);
+  align-items: center;
+  gap: 8px 20px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--panel-2);
+  opacity: 0;
+  transform: translateY(8px);
   transition:
     opacity 360ms var(--curva),
-    transform 420ms var(--curva);
+    transform 360ms var(--curva);
 }
 
-.bloqueHora {
+.renglon:last-child {
+  border-bottom: 0;
+}
+
+.renglon[data-visible="1"] {
+  opacity: 1;
+  transform: none;
+}
+
+.renglonRotulo {
+  font-size: 14px;
+  color: var(--acero);
+}
+
+.renglonHorario {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: clamp(14px, 1.3vw, 17px);
+  font-size: clamp(17px, 1.6vw, 22px);
+  color: var(--hueso);
 }
 
-.bloqueEstado {
-  font-size: 13px;
+.renglonEstado {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.bloqueCita {
-  background: var(--acento-hondo);
-  color: #ffffff;
-  margin-right: 34%;
+.renglonEstado i {
+  width: 8px;
+  height: 8px;
+  display: block;
+  background: currentColor;
 }
 
-.bloqueCita .bloqueEstado {
-  color: #c9d6ff;
-}
-
-/* La solicitud cae encima de la cita: el traslape se ve antes de que la base lo rechace.
-   Su texto va a la derecha para seguir legible cuando la cita vuelve a quedar arriba. */
-.bloqueSolicitud {
-  z-index: 2;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  text-align: right;
-  margin-left: 30%;
-  background: #ffffff;
-  border: 1px solid var(--papel-tinta);
-  color: var(--papel-tinta);
-  opacity: 0;
-  transform: translateX(28px);
-}
-
-.demo[data-fase="1"] .bloqueSolicitud,
-.demo[data-fase="2"] .bloqueSolicitud {
-  opacity: 1;
-  transform: none;
-}
-
-.demo[data-fase="2"] .bloqueSolicitud,
-.demo[data-fase="3"] .bloqueSolicitud {
-  border-color: var(--papel-critico);
-  border-left-width: 3px;
-  color: var(--papel-critico);
-  background-color: var(--papel);
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color-mix(in srgb, var(--papel-critico) 12%, transparent) 0,
-    color-mix(in srgb, var(--papel-critico) 12%, transparent) 1px,
-    transparent 1px,
-    transparent 8px
-  );
-}
-
-.demo[data-fase="3"] .bloqueSolicitud {
-  opacity: 0.6;
-  transform: none;
-}
-
-/* Al final la cita queda arriba: la solicitud rechazada se lee debajo de ella. */
-.demo[data-fase="3"] .bloqueCita {
-  z-index: 3;
-}
-
-.bloqueOfrecida {
-  margin-left: 30%;
-  border: 1px solid var(--acento-hondo);
-  color: var(--acento-hondo);
-  background: #ffffff;
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.demo[data-fase="3"] .bloqueOfrecida {
-  opacity: 1;
-  transform: none;
-}
+.renglonEstado[data-tono="bueno"] { color: var(--bueno); }
+.renglonEstado[data-tono="critico"] { color: var(--critico); }
+.renglonEstado[data-tono="acento"] { color: var(--acento); }
+.renglonEstado[data-tono="espera"] { color: var(--acero-2); }
 
 .pieDemo {
   display: flex;
@@ -262,13 +275,13 @@
   gap: 12px 24px;
   align-items: center;
   justify-content: space-between;
-  margin-top: 18px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--linea);
 }
 
 .nota {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 12.5px;
-  color: var(--papel-tinta);
+  font-size: 14px;
+  color: var(--acero);
   margin: 0;
   opacity: 0;
   transition: opacity 360ms var(--curva) 200ms;
@@ -281,8 +294,8 @@
 .repetir {
   appearance: none;
   background: transparent;
-  border: 1px solid var(--papel-linea);
-  color: var(--papel-tinta);
+  border: 1px solid var(--linea-2);
+  color: var(--hueso);
   font-size: 14px;
   font-weight: 600;
   min-height: 44px;
@@ -292,18 +305,13 @@
 }
 
 .repetir:hover:not(:disabled) {
-  border-color: var(--acento-hondo);
-  color: var(--acento-hondo);
+  border-color: var(--acento);
+  color: var(--acento);
 }
 
 .repetir:disabled {
-  color: var(--papel-tinta-2);
+  color: var(--acero-2);
   cursor: default;
-}
-
-.repetir:focus-visible {
-  outline: 2px solid var(--acento-hondo);
-  outline-offset: 3px;
 }
 
 /* cita */
@@ -340,64 +348,33 @@
   .paso::before {
     display: none;
   }
+
+  .libreta {
+    display: none;
+  }
 }
 
-@media (max-width: 520px) {
-  .agenda {
-    grid-template-columns: 48px minmax(0, 1fr);
+@media (max-width: 560px) {
+  .renglon {
+    grid-template-columns: 1fr auto;
+    padding: 14px 18px;
   }
 
-  .bloqueCita {
-    margin-right: 22%;
+  .renglonRotulo {
+    grid-column: 1 / -1;
   }
 
-  .bloqueSolicitud,
-  .bloqueOfrecida {
-    margin-left: 18%;
-  }
-
-  .bloqueEstado {
-    font-size: 12px;
+  .codigo,
+  .consolaBarra,
+  .pieDemo {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bloqueSolicitud,
-  .bloqueOfrecida,
+  .renglon,
   .nota {
     transition: none;
-  }
-}
-
-/* libreta: el antes, en papel */
-
-.columnaRuta {
-  min-width: 0;
-}
-
-.libreta {
-  margin: 20px 0 0;
-  max-width: 360px;
-}
-
-.libretaFoto {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border: 1px solid var(--papel-linea);
-}
-
-.libretaPie {
-  margin-top: 12px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--papel-tinta-2);
-  max-width: 34ch;
-}
-
-@media (max-width: 900px) {
-  .libreta {
-    display: none;
   }
 }

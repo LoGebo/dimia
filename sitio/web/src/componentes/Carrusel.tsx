@@ -27,7 +27,12 @@ export function Carrusel() {
           <li key={cliente.nombre} className={css.celda}>
             {usarLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={cliente.logo!} alt={copia > 0 ? "" : cliente.nombre} className={css.logo} />
+              <img
+                src={cliente.logo!}
+                alt={copia > 0 ? "" : cliente.nombre}
+                className={css.logo}
+                style={{ height: cliente.alto ?? 36 }}
+              />
             ) : (
               <span className={css.nombre}>{cliente.nombre}</span>
             )}

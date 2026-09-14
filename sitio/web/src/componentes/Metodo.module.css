@@ -1,163 +1,150 @@
-/* Método como escala de semanas: cada celda es una semana. Diagnóstico ocupa dos,
-   Piloto cuatro; lo continuo sigue hasta salir del encuadre. El avance --p recorre
-   las semanas medidas: detrás queda hueso y la semana en curso va en azul. */
+/* Pila de expedientes: cada carta es sticky con un tope escalonado, así la siguiente
+   se desliza encima y deja a la vista el renglón de título de las anteriores. */
 
-.etapas {
+.pila {
+  --cabeza: 76px;
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--linea);
-  --pos: calc(var(--p, 1) * var(--medidas));
-}
-
-.etapa,
-.regla {
   display: grid;
-  grid-template-columns: minmax(250px, 3fr) 9fr;
-  gap: clamp(24px, 3vw, 56px);
-  align-items: start;
+  gap: clamp(32px, 14vh, 160px);
 }
 
-.etapa {
-  padding: clamp(24px, 2.6vw, 36px) 0;
+.carta {
+  position: sticky;
+  top: calc(96px + var(--i) * var(--cabeza));
+  min-height: clamp(240px, 34vh, 340px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-top-color: var(--linea-2);
+}
+
+.cabeza {
+  display: grid;
+  grid-template-columns: clamp(64px, 8vw, 112px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  height: var(--cabeza);
+  padding: 0 clamp(20px, 3vw, 44px);
   border-bottom: 1px solid var(--linea);
-}
-
-.ficha {
-  min-width: 0;
-}
-
-.nombre {
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(24px, 2.2vw, 32px);
-  line-height: 1.1;
-  letter-spacing: -0.012em;
-  color: var(--hueso);
-  margin: 0 0 10px;
 }
 
 .numero {
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  font-size: 13px;
   color: var(--acero-2);
-  vertical-align: 0.5em;
-  margin-right: 12px;
+}
+
+.nombre {
+  margin: 0;
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(26px, 2.8vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.016em;
+  color: var(--hueso);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .duracion {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--fuente-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--hueso);
-  margin: 0 0 12px;
-}
-
-.etapa[data-continuo="1"] .duracion {
-  color: var(--acero);
-}
-
-.texto {
-  font-size: 15.5px;
-  line-height: 1.6;
-  color: var(--acero);
-  margin: 0;
-  max-width: 36ch;
-}
-
-/* ── pista de semanas ── */
-
-.pista {
-  display: grid;
-  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-  gap: 3px;
-  min-width: 0;
-  padding-top: 6px;
-}
-
-.etapa[data-continuo="1"] .pista {
-  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 55%, transparent 100%);
-  mask-image: linear-gradient(90deg, #000 0, #000 55%, transparent 100%);
-}
-
-.celda {
-  position: relative;
-  aspect-ratio: 1;
-  background: var(--panel);
-  display: block;
-}
-
-.celda::before,
-.celda::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-}
-
-/* Semana recorrida: hueso. */
-.etapa[data-continuo="0"] .celda[data-dentro="1"]::after {
-  background: var(--hueso);
-  opacity: clamp(0, calc((var(--pos) - var(--k)) * 3), 1);
-}
-
-/* Semana en curso: azul, solo mientras el avance está sobre ella; la última se queda. */
-.etapa[data-continuo="0"] .celda[data-dentro="1"]::before {
-  z-index: 1;
-  background: var(--acento);
-  opacity: clamp(0, min(calc((var(--pos) - var(--k)) * 3), calc((var(--k) + 1.34 - var(--pos)) * 3)), 1);
-}
-
-/* Lo continuo se enciende parejo cuando terminan las semanas medidas. */
-.etapa[data-continuo="1"] .celda[data-dentro="1"]::after {
-  background: var(--linea-2);
-  opacity: clamp(0, calc((var(--pos) - var(--medidas) + 0.6 - var(--j) * 0.05) * 4), 1);
-}
-
-/* ── regla ── */
-
-.regla {
-  padding: 14px 0 0;
-}
-
-.regla .pista {
-  padding-top: 0;
-}
-
-.marca {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  color: var(--acero-2);
-  transform: translateX(-2px);
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .etapa,
-  .regla {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
-  .regla > span:first-child {
-    display: none;
-  }
-
-  .etapas {
-    --cols: 12 !important;
-  }
-
-  .celda:nth-child(n + 13),
-  .marca:nth-child(n + 13) {
-    display: none;
-  }
+.cuadro {
+  width: 7px;
+  height: 7px;
+  display: block;
+  background: var(--acento);
 }
 
-@media (max-width: 480px) {
-  .pista {
-    gap: 3px;
+.duracion[data-continuo="1"] {
+  color: var(--acero);
+}
+
+.duracion[data-continuo="1"] .cuadro {
+  background: var(--linea-2);
+}
+
+.cuerpo {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding: clamp(24px, 2.6vw, 36px) clamp(20px, 3vw, 44px) clamp(28px, 3vw, 44px)
+    calc(clamp(20px, 3vw, 44px) + clamp(64px, 8vw, 112px) + 16px);
+  overflow: hidden;
+}
+
+.texto {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: 34ch;
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(22px, 2.2vw, 32px);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--acero);
+  text-wrap: pretty;
+}
+
+/* Número de etapa a gran tamaño, en tono de filete: marca la secuencia sin competir. */
+.numeroGrande {
+  position: absolute;
+  right: clamp(12px, 2vw, 36px);
+  bottom: -0.16em;
+  font-family: var(--fuente-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(110px, 13vw, 200px);
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: var(--panel-2);
+  user-select: none;
+}
+
+@media (max-width: 760px) {
+  .pila {
+    gap: 12px;
+  }
+
+  .carta {
+    position: static;
+    min-height: 0;
+  }
+
+  .cabeza {
+    grid-template-columns: 36px minmax(0, 1fr);
+    height: auto;
+    padding: 20px;
+    row-gap: 8px;
+  }
+
+  .duracion {
+    grid-column: 2;
+  }
+
+  .cuerpo {
+    padding: 24px 20px 28px;
+  }
+
+  .texto {
+    font-size: 21px;
+  }
+
+  .numeroGrande {
+    font-size: 110px;
   }
 }

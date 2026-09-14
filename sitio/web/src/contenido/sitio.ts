@@ -163,22 +163,22 @@ export const METODO = [
  * `logo` se llena con la ruta del archivo en /public/clientes/ cuando exista
  * autorización por escrito. Mientras sea null, la celda muestra el placeholder.
  */
-export type Cliente = { nombre: string; logo: string | null };
+/** `alto` es la altura en px del logotipo en la cinta: se ajusta a ojo por mancha óptica. */
+export type Cliente = { nombre: string; logo: string | null; alto?: number };
 
 export const MOSTRAR_CARRUSEL = true;
 
 // Deja el archivo autorizado en public/marca/clientes/<archivo> y aparece solo;
 // mientras no exista, el carrusel muestra el nombre en texto (sin imagen rota).
 export const CLIENTES: Cliente[] = [
-  { nombre: "Atos", logo: "/marca/clientes/atos.svg" },
-  { nombre: "Heineken", logo: "/marca/clientes/heineken.svg" },
-  { nombre: "Arca Continental", logo: "/marca/clientes/arca-continental.svg" },
-  { nombre: "Tec de Monterrey", logo: "/marca/clientes/tec-de-monterrey.svg" },
-  { nombre: "UERRE", logo: "/marca/clientes/uerre.svg" },
+  { nombre: "Atos", logo: "/marca/clientes/atos.png", alto: 38 },
+  { nombre: "Heineken", logo: "/marca/clientes/heineken.png", alto: 40 },
+  { nombre: "Arca Continental", logo: "/marca/clientes/arca.png", alto: 62 },
+  { nombre: "Tec de Monterrey", logo: "/marca/clientes/tec.png", alto: 54 },
+  { nombre: "UERRE", logo: "/marca/clientes/uerre.png", alto: 30 },
 ];
 
-export const NOTA_CLIENTES =
-  "Organizaciones con las que hemos trabajado. Para el logotipo oficial de cada una, se sustituye este texto por el archivo autorizado.";
+export const NOTA_CLIENTES = "Organizaciones con las que hemos trabajado.";
 
 export const PRODUCTO = {
   estado: "En operación",
@@ -230,6 +230,19 @@ export const GARANTIA = {
     ofrecida: { horario: "17:45–18:15", estado: "Se ofrece" },
     nota: "Se ofrece 17:45 en la misma llamada.",
     repetir: "Repetir la demostración",
+    registro: ["Cita existente", "Nueva solicitud", "Siguiente hueco"],
+  },
+  /** La restricción tal cual vive en proyectos/voz/supabase/migrations/20260822000001_esquema_inicial.sql */
+  restriccion: {
+    nombre: "booking_sin_traslape",
+    codigo: `alter table booking
+  add constraint booking_sin_traslape
+  exclude using gist (
+    resource_id with =,
+    tstzrange(inicio, fin, '[)') with &&
+  )
+  where (estado = 'confirmada');`,
+    pie: "La restricción real del motor de reservas, en la base de datos.",
   },
   cita: "«Automatización con garantía, no con buenas intenciones.»",
   /** Imagen generada, ilustrativa; no es de un cliente. Ver docs/generated-assets.md */
