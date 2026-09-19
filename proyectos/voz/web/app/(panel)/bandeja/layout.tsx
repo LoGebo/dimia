@@ -1,5 +1,5 @@
 import { Encabezado } from "@/components/encabezado";
-import { RenglonConversacion } from "@/components/renglon-conversacion";
+import { ListaConversaciones } from "@/components/lista-conversaciones";
 import { Vacio } from "@/components/ui/primitivos";
 import { conversaciones, negocio } from "@/lib/consultas";
 import { exigirSeccion } from "@/lib/sesion";
@@ -16,7 +16,7 @@ export default async function BandejaLayout({ children }: { children: React.Reac
     <>
       <Encabezado
         titulo="Mensajes"
-        descripcion="Cada conversación que atendió el agente. Ábrela para leerla; si pidió una persona, te toca a ti."
+        descripcion="Todo lo que entró por WhatsApp, Instagram y teléfono. Si alguien pidió una persona, está marcado."
         giro={giro.nombre}
       />
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr]">
@@ -24,12 +24,10 @@ export default async function BandejaLayout({ children }: { children: React.Reac
           {hilos.length === 0 ? (
             <Vacio
               titulo="Todavía no hay conversaciones"
-              detalle="En cuanto alguien llame o escriba por WhatsApp, aparece aquí."
+              detalle="En cuanto alguien llame o escriba, aparece aquí."
             />
           ) : (
-            hilos.map((c) => (
-              <RenglonConversacion key={c.id} conversacion={c} zona={config.zona_horaria} />
-            ))
+            <ListaConversaciones hilos={hilos} zona={config.zona_horaria} />
           )}
         </aside>
         <section className="min-w-0">{children}</section>
