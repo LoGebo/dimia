@@ -23,6 +23,10 @@ def parsear(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="evals", description="evaluacion del agente de voz")
     parser.add_argument("--escenarios", default=str(RUTA_ESCENARIOS))
     parser.add_argument("--filtro", nargs="*", default=[])
+    parser.add_argument(
+        "--canales", nargs="*", default=[],
+        help="corre cada escenario tambien por estos canales: whatsapp instagram llamada",
+    )
     parser.add_argument("--modelo-agente", default=settings().llm_model)
     parser.add_argument("--modelo-cliente", default="claude-opus-5")
     parser.add_argument("--cliente-guion", action="store_true")
@@ -41,6 +45,8 @@ def parsear(argv: list[str] | None = None) -> argparse.Namespace:
 
 async def ejecutar(args: argparse.Namespace) -> int:
     escenarios = cargar(args.escenarios, args.filtro)
+    if args.canales:
+        escenarios = [e.por_canal(c) for e in escenarios for c in args.canales]
     if not escenarios:
         print("no hay escenarios que correr", file=sys.stderr)
         return CODIGO_CONFIGURACION

@@ -112,3 +112,67 @@ async def test_bloqueo_de_comida_recorta_disponibilidad(pool, negocio):
     horas = {f["inicio"].astimezone(TZ).hour for f in filas}
     assert 14 not in horas
     assert 10 in horas and 15 in horas
+
+
+@pytest.mark.asyncio
+async def test_whatsapp_instagram_y_llamada_pelean_el_mismo_horario(pool, negocio):
+    """Tres canales, misma hora, al mismo tiempo: una reserva y dos "se acaba de apartar".
+
+    La garantia vive en Postgres; esto comprueba que las herramientas de texto
+    la traducen bien (mensaje al modelo, opciones limpias) y que la llamada,
+    que entra por la misma funcion, tampoco se cuela.
+    """
+    from app.supabase_client import Agenda, Tenant
+    from channels.whatsapp.herramientas import Herramientas
+    from channels.whatsapp.sesion import SesionWhatsApp
+
+    agenda = Agenda()
+    agenda.adoptar_pool(pool)
+    tenant = Tenant(
+        id=negocio["tenant"], nombre="Prueba", vertical="clinica",
+        zona_horaria="America/Mexico_City", telefono_escalamiento=None, voz_id=None,
+    )
+    servicios = [{"id": negocio["servicio"], "nombre": "Consulta", "duracion_min": 30}]
+    dia = _proximo_lunes_10am().date()
+
+    async def herramienta_lista(contacto: str) -> tuple[Herramientas, str]:
+        sesion = SesionWhatsApp(tenant.id, contacto)
+        h = Herramientas(agenda, tenant, servicios, sesion)
+        await h.ejecutar(
+            "consultar_disponibilidad",
+            {"servicio_id": str(negocio["servicio"]), "fecha": dia.isoformat()},
+        )
+        # Todos eligen la primera opcion ofrecida (la misma para todos).
+        clave = next(iter(sesion.opciones))
+        return h, clave
+
+    (wa, k1), (ig, k2) = await asyncio.gather(
+        herramienta_lista("+5215511111111"), herramienta_lista("ig-usuario-9")
+    )
+    assert wa.sesion.opciones[k1].inicio_iso == ig.sesion.opciones[k2].inicio_iso
+    hora = datetime.fromisoformat(wa.sesion.opciones[k1].inicio_iso)
+    llamada = _reservar(pool, negocio, hora, "Voz")
+
+    r_wa, r_ig, r_voz = await asyncio.gather(
+        wa.ejecutar("reservar", {"opcion_id": k1, "nombre_cliente": "Ana"}),
+        ig.ejecutar("reservar", {"opcion_id": k2, "nombre_cliente": "Beto"}),
+        llamada,
+    )
+
+    textos = [r_wa, r_ig]
+    ganadas_texto = [t for t in textos if t.startswith("Reservado.")]
+    perdidas_texto = [t for t in textos if "se acaba de apartar" in t]
+    ganadas = len(ganadas_texto) + (1 if r_voz["ok"] else 0)
+    assert ganadas == 1, (r_wa, r_ig, r_voz)
+    assert len(perdidas_texto) + (0 if r_voz["ok"] else 1) == 2
+
+    n = await pool.fetchval(
+        "select count(*) from booking where tenant_id=$1 and estado='confirmada'", tenant.id
+    )
+    assert n == 1
+    # Quien gano ya no tiene opciones colgando; quien perdio las conserva para reintentar.
+    for h, texto in ((wa, r_wa), (ig, r_ig)):
+        if texto.startswith("Reservado."):
+            assert h.sesion.opciones == {}
+        else:
+            assert h.sesion.opciones

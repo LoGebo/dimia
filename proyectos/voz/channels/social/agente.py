@@ -26,7 +26,7 @@ from channels.whatsapp import deterministas, plantilla
 from channels.whatsapp.agente import opcion_escrita
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
-from channels.whatsapp.sesion import RegistroSesiones
+from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
 
 log = logging.getLogger("social.agente")
 
@@ -137,6 +137,7 @@ class AgenteSocial:
             system = plantilla.bloques_system(
                 contexto.tenant, contexto.servicios, contexto.faq,
                 catalogo=contexto.catalogo, plantilla=contexto.plantilla,
+                nombre_cliente=nombre_plausible(sesion.nombre_perfil),
             )
             system.append({"type": "text", "text": SE_CONTESTA_CORTO})
 

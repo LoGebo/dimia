@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import asyncpg
 
+from evals.canales import simular_texto
 from evals.entorno import Contexto, borrar_tenant, preparar
 from evals.escenarios import Escenario
 from evals.jueces import juzgar
@@ -28,12 +29,19 @@ class Arnes:
     async def correr_uno(self, escenario: Escenario) -> Caso:
         contexto = await preparar(escenario, self.pool)
         try:
-            resultado = await simular(
-                escenario,
-                contexto,
-                self.fabrica_agente(escenario, contexto),
-                self.fabrica_cliente(escenario, contexto),
-            )
+            if escenario.canal == "llamada":
+                resultado = await simular(
+                    escenario,
+                    contexto,
+                    self.fabrica_agente(escenario, contexto),
+                    self.fabrica_cliente(escenario, contexto),
+                )
+            else:
+                # El agente de texto trae su propio modelo (el de produccion).
+                resultado = await simular_texto(
+                    escenario, contexto, self.fabrica_cliente(escenario, contexto),
+                    escenario.canal,
+                )
             veredictos = await juzgar(escenario, resultado, contexto)
         finally:
             if not self.conservar_datos:

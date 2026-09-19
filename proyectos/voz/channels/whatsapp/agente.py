@@ -16,7 +16,7 @@ from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
 from channels.whatsapp.parser import MensajeEntrante
-from channels.whatsapp.sesion import RegistroSesiones
+from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
 
 log = logging.getLogger("whatsapp")
 
@@ -309,7 +309,7 @@ class AgenteWhatsApp:
             system=plantilla.bloques_system(
                 contexto.tenant, contexto.servicios, contexto.faq,
                 catalogo=contexto.catalogo, plantilla=contexto.plantilla,
-                nombre_cliente=sesion.nombre_perfil,
+                nombre_cliente=nombre_plausible(sesion.nombre_perfil),
             ),
             sesion=sesion,
             herramientas=herramientas,

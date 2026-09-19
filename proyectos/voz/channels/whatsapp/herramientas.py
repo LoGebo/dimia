@@ -5,9 +5,10 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from app.franjas import franja_a_horas
 from app.supabase_client import Agenda, Slot, Tenant
 from channels.whatsapp.cliente import OpcionLista
-from channels.whatsapp.sesion import OpcionHorario, SesionWhatsApp
+from channels.whatsapp.sesion import OpcionHorario, SesionWhatsApp, nombre_plausible
 
 DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
 MESES = (
@@ -34,6 +35,13 @@ AGENDA: list[dict[str, Any]] = [
                 },
                 "fecha": {"type": "string", "description": "fecha en formato AAAA-MM-DD"},
                 "personas": {"type": "integer", "description": "cuantas personas"},
+                "franja": {
+                    "type": "string",
+                    "description": (
+                        "si dijo a que hora la quiere: 'manana', 'mediodia', 'tarde', "
+                        "'noche', o una hora como '16:30' o 'despues de las 4' -> '16:00'"
+                    ),
+                },
             },
             "required": ["servicio_id", "fecha"],
         },
@@ -60,11 +68,15 @@ AGENDA: list[dict[str, Any]] = [
     },
     {
         "name": "buscar_reserva",
-        "description": "Busca la reserva del cliente por su numero o por codigo.",
+        "description": (
+            "Busca la reserva del cliente por su numero, por codigo o por nombre. "
+            "Si te dijo su nombre, pasalo SIEMPRE: en Instagram no hay numero."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "codigo": {"type": "string", "description": "codigo de 4 caracteres"}
+                "codigo": {"type": "string", "description": "codigo de 4 caracteres"},
+                "nombre": {"type": "string", "description": "nombre con el que agendo"},
             },
             "required": [],
         },
@@ -264,8 +276,12 @@ class Herramientas:
             return "Fecha invalida. Preguntale de nuevo que dia quiere."
 
         personas = int(argumentos.get("personas") or 1)
+        desde, hasta = franja_a_horas(str(argumentos.get("franja") or ""))
+        # Se trae el dia completo y luego se espacia: con 12 y espaciar, a quien
+        # pedia "en la noche" se le ofrecian las 1 de la tarde.
         slots = await self.agenda.slots_libres(
-            self.tenant.id, uuid.UUID(servicio_id), dia, personas, limite=12
+            self.tenant.id, uuid.UUID(servicio_id), dia, personas, limite=200,
+            desde_hora=desde, hasta_hora=hasta,
         )
         if not slots:
             return await self._sin_lugar(dia, uuid.UUID(servicio_id), personas)
@@ -327,7 +343,7 @@ class Herramientas:
             )
         nombre = (
             str(argumentos.get("nombre_cliente", "")).strip()
-            or (self.sesion.nombre_perfil or "").strip()
+            or (nombre_plausible(self.sesion.nombre_perfil) or "")
         )
         if not nombre:
             return "Falta el nombre. Pideselo antes de reservar."
@@ -360,8 +376,9 @@ class Herramientas:
 
     async def _buscar_reserva(self, argumentos: dict[str, Any]) -> str:
         codigo = str(argumentos.get("codigo") or "").strip() or None
+        nombre = str(argumentos.get("nombre") or "").strip() or None
         filas = await self.agenda.buscar_reserva(
-            self.tenant.id, telefono=self.sesion.telefono, codigo=codigo
+            self.tenant.id, telefono=self.sesion.telefono, codigo=codigo, nombre=nombre
         )
         if not filas:
             return "No encontre ninguna reserva. Pidele el codigo o el nombre."

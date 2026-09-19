@@ -24,9 +24,15 @@ def dsn() -> str:
 
 
 class AgendaEval(Agenda):
+    """La Agenda de produccion sobre el pool de la prueba.
+
+    Agenda guarda un pool por loop; se adopta el de la prueba en vez de abrir
+    otro. Se construye dentro del loop, que es donde `adoptar_pool` lo pide.
+    """
+
     def __init__(self, pool: asyncpg.Pool) -> None:
         super().__init__()
-        self._pool = pool
+        self.adoptar_pool(pool)
 
 
 async def crear_pool(maximo: int = 6) -> asyncpg.Pool:

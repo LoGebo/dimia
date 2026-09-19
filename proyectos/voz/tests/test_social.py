@@ -321,7 +321,7 @@ class AgendaConHorarios(AgendaFalsa):
     async def servicios(self, tenant_id) -> list[dict]:
         return [{"id": self.servicio_id, "nombre": "Corte", "duracion_min": 30, "alias": []}]
 
-    async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12):
+    async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12, desde_hora=None, hasta_hora=None):
         from datetime import datetime, timedelta
         from zoneinfo import ZoneInfo
 

@@ -4,7 +4,7 @@ import random
 import re
 import unicodedata
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -99,6 +99,14 @@ class Escenario:
     semilla: int = 7
     etiquetas: tuple[str, ...] = ()
     rubrica: tuple[Mapping[str, Any], ...] = ()
+    # llamada | whatsapp | instagram. Un escenario corre por un canal; la CLI
+    # lo clona para los demas con `--canales`.
+    canal: str = "llamada"
+
+    def por_canal(self, canal: str) -> Escenario:
+        if canal == self.canal:
+            return self
+        return replace(self, id=f"{self.id}@{canal}", canal=canal, ruido=Ruido())
 
     @property
     def contencion_esperada(self) -> bool:
@@ -150,6 +158,7 @@ def desde_dict(crudo: Mapping[str, Any]) -> Escenario:
         semilla=int(crudo.get("semilla", 7)),
         etiquetas=tuple(crudo.get("etiquetas", ())),
         rubrica=tuple(crudo.get("rubrica", ())),
+        canal=str(crudo.get("canal", "llamada")),
     )
 
 

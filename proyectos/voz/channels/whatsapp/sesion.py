@@ -21,6 +21,25 @@ class OpcionHorario:
     etiqueta: str
 
 
+_NO_ES_NOMBRE = {"cliente", "prueba", "test", "user", "usuario", "whatsapp", "iphone", "android"}
+
+
+def nombre_plausible(perfil: str | None) -> str | None:
+    """El nombre del perfil solo sirve si parece nombre de persona.
+
+    "Mari 🔥", "gebo_mx" o "Cliente de prueba" no van a una cita en una
+    clinica; con esos, el agente pregunta. "Ana Ruiz" si se usa sin preguntar.
+    """
+    partes = (perfil or "").strip().split()
+    if not 2 <= len(partes) <= 4:
+        return None
+    for parte in partes:
+        limpia = parte.replace("-", "")
+        if len(limpia) < 2 or not limpia.isalpha() or limpia.lower() in _NO_ES_NOMBRE:
+            return None
+    return " ".join(partes)
+
+
 @dataclass(slots=True)
 class SesionWhatsApp:
     tenant_id: uuid.UUID

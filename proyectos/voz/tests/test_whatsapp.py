@@ -219,6 +219,8 @@ class AgendaFalsa:
         dia: Any,
         personas: int = 1,
         limite: int = 12,
+        desde_hora=None,
+        hasta_hora=None,
     ) -> list[Slot]:
         base = datetime(2026, 9, 7, 10, 0, tzinfo=TZ)
         return [
@@ -1048,7 +1050,7 @@ async def test_sin_lugar_ese_dia_la_herramienta_dice_que_dias_cercanos_si_tienen
     from channels.whatsapp.sesion import SesionWhatsApp
 
     class SinSabado(AgendaFalsa):
-        async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12):
+        async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12, desde_hora=None, hasta_hora=None):
             if dia.weekday() >= 5:  # sabado y domingo cerrado
                 return []
             return await super().slots_libres(tenant_id, servicio_id, dia, personas, limite)
@@ -1061,3 +1063,54 @@ async def test_sin_lugar_ese_dia_la_herramienta_dice_que_dias_cercanos_si_tienen
     assert "No hay nada libre el 2026-09-19" in salida
     assert "lunes 21 de septiembre, martes 22 de septiembre, miercoles 23 de septiembre" in salida
     assert date(2026, 9, 19).weekday() == 5
+
+
+def test_el_nombre_del_perfil_solo_vale_si_parece_nombre():
+    from channels.whatsapp.sesion import nombre_plausible
+
+    assert nombre_plausible("Ana Ruiz") == "Ana Ruiz"
+    assert nombre_plausible("Jesús Daniel Martínez García") == "Jesús Daniel Martínez García"
+    assert nombre_plausible("Mari 🌸") is None
+    assert nombre_plausible("gebo_mx") is None
+    assert nombre_plausible("Cliente de prueba") is None
+    assert nombre_plausible("Ana") is None  # un solo nombre: mejor preguntar
+    assert nombre_plausible(None) is None
+
+
+async def test_la_franja_filtra_los_horarios_ofrecidos(tenant, cfg):
+    """A quien pide 'en la noche' no se le ofrece la 1 de la tarde."""
+    from channels.whatsapp.herramientas import Herramientas
+    from channels.whatsapp.sesion import SesionWhatsApp
+
+    class DiaCompleto(AgendaFalsa):
+        pedido: dict = {}
+
+        async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12, desde_hora=None, hasta_hora=None):
+            self.pedido = {"limite": limite, "desde": desde_hora, "hasta": hasta_hora}
+            return await super().slots_libres(tenant_id, servicio_id, dia, personas, limite)
+
+    agenda = DiaCompleto(tenant)
+    h = Herramientas(agenda, tenant, await agenda.servicios(tenant.id), SesionWhatsApp(tenant.id, "+52"))
+    await h.ejecutar("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-07", "franja": "noche"})
+    assert agenda.pedido["desde"].hour == 19 and agenda.pedido["hasta"].hour == 23
+    assert agenda.pedido["limite"] >= 100  # el dia completo, no los primeros 12
+    await h.ejecutar("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-07", "franja": "16:30"})
+    assert (agenda.pedido["desde"].hour, agenda.pedido["desde"].minute, agenda.pedido["hasta"]) == (16, 30, None)
+
+
+async def test_buscar_reserva_pasa_el_nombre(tenant, cfg):
+    """En Instagram no hay telefono: el nombre es la unica llave."""
+    from channels.whatsapp.herramientas import Herramientas
+    from channels.whatsapp.sesion import SesionWhatsApp
+
+    class ConReserva(AgendaFalsa):
+        consulta: dict = {}
+
+        async def buscar_reserva(self, tenant_id, telefono=None, codigo=None, nombre=None):
+            self.consulta = {"telefono": telefono, "codigo": codigo, "nombre": nombre}
+            return []
+
+    agenda = ConReserva(tenant)
+    h = Herramientas(agenda, tenant, [], SesionWhatsApp(tenant.id, "ig-123"))
+    await h.ejecutar("buscar_reserva", {"nombre": "Roberto Salas"})
+    assert agenda.consulta == {"telefono": "ig-123", "codigo": None, "nombre": "Roberto Salas"}

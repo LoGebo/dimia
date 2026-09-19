@@ -11,7 +11,6 @@ import uuid
 from dataclasses import replace
 from typing import Any
 from datetime import date, datetime
-from datetime import time as dtime
 
 from dotenv import load_dotenv
 from livekit import api
@@ -23,6 +22,7 @@ from livekit.plugins import deepgram, elevenlabs, openai, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from app import prompt as prompt_mod
+from app.franjas import franja_a_horas
 from app.cierre import ModeloNoContesto, resumir
 from app.config import settings
 from app.supabase_client import Tenant, agenda
@@ -522,37 +522,6 @@ class Recepcionista(Agent):
         return "Transferido."
 
 
-FRANJAS = {
-    "manana": (dtime(6, 0), dtime(11, 59)),
-    "mañana": (dtime(6, 0), dtime(11, 59)),
-    "mediodia": (dtime(12, 0), dtime(14, 59)),
-    "tarde": (dtime(13, 0), dtime(18, 59)),
-    "noche": (dtime(19, 0), dtime(23, 59)),
-}
-
-
-def franja_a_horas(franja: str) -> tuple[dtime | None, dtime | None]:
-    clave = franja.strip().lower()
-    if not clave:
-        return None, None
-    if clave in FRANJAS:
-        return FRANJAS[clave]
-    for sep in (":", "."):
-        if sep in clave:
-            try:
-                h, m = clave.split(sep)[:2]
-                pedida = dtime(int(h), int(m))
-                return pedida, None
-            except ValueError:
-                break
-    if clave.isdigit():
-        try:
-            return dtime(int(clave), 0), None
-        except ValueError:
-            pass
-    return None, None
-
-
 def _saliente_de_metadatos(metadata: str | None) -> dict | None:
     if not metadata:
         return None
@@ -732,7 +701,7 @@ async def esperar_contestacion(
     room.on("participant_disconnected", al_salir)
     try:
         return await asyncio.wait_for(listo, timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return False
     finally:
         room.off("participant_attributes_changed", al_cambiar)

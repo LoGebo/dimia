@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import random
 import time
 import uuid
@@ -24,6 +25,7 @@ from evals.llm import (
 
 ENTRADA_LLAMADA = "(entra la llamada)"
 SILENCIO = "(el cliente se queda callado varios segundos)"
+CATALOGO_EN_PROMPT = 80
 MAX_RONDAS_HERRAMIENTAS = 6
 
 PERSONA_BASE = """\
@@ -76,6 +78,25 @@ def _truncar(texto: str, palabras: int = 6) -> str:
     return " ".join(partes[:palabras]) + "..."
 
 
+async def prompt_de_produccion(contexto: Contexto) -> str:
+    """El mismo prompt que arma agent.py al contestar: plantilla del giro,
+    horario, catalogo. Con menos contexto el agente decia "no tengo el horario
+    a la mano" y escalaba, y la eval culpaba al modelo por un hueco del arnes."""
+    agenda, tenant = contexto.agenda, contexto.tenant
+    plantilla, tipos, horario, menu, menu_total = await asyncio.gather(
+        agenda.plantilla_vertical(tenant.vertical),
+        agenda.tipos_de_catalogo(tenant.id),
+        agenda.horario_semanal(tenant.id),
+        agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
+        agenda.catalogo_cuantos(tenant.id),
+    )
+    return prompt_mod.construir(
+        tenant, contexto.servicios, contexto.faq, plantilla=plantilla,
+        tipos_catalogo=tipos, horario=horario, catalogo=menu,
+        catalogo_incompleto=menu_total > len(menu),
+    )
+
+
 async def simular(
     escenario: Escenario,
     contexto: Contexto,
@@ -83,7 +104,7 @@ async def simular(
     llm_cliente: ClienteLLM,
 ) -> Resultado:
     tenant = contexto.tenant
-    sistema_agente = prompt_mod.construir(tenant, contexto.servicios, contexto.faq)
+    sistema_agente = await prompt_de_produccion(contexto)
     persona = _persona(escenario, contexto)
     call_id = uuid.uuid4().hex
     ejecutor = EjecutorHerramientas(
