@@ -79,6 +79,17 @@ async def conversar(
     return ultimo_texto
 
 
+def anotar_turno_fijo(sesion: Any, entrante: str, respuesta: str) -> None:
+    """Una respuesta fija (bienvenida, regla por palabra) tambien es historial.
+
+    Si no queda en la sesion, el modelo arranca sin saber que ya se saludo ni
+    que pregunto; en Instagram volvia a preguntar "¿eres cliente o quieres
+    conocer?" justo despues de que la persona lo contesto.
+    """
+    sesion.agregar_usuario(entrante)
+    sesion.agregar_asistente([{"type": "text", "text": respuesta}])
+
+
 async def registrar_turno(
     agenda: Any,
     *,

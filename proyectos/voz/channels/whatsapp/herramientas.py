@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -268,7 +268,7 @@ class Herramientas:
             self.tenant.id, uuid.UUID(servicio_id), dia, personas, limite=12
         )
         if not slots:
-            return f"No hay nada libre el {dia.isoformat()}. Ofrecele otro dia cercano."
+            return await self._sin_lugar(dia, uuid.UUID(servicio_id), personas)
 
         elegidos = espaciar(slots, MAX_OPCIONES_OFRECIDAS)
         horarios = [
@@ -294,6 +294,29 @@ class Herramientas:
             f"Hay {len(horarios)} horarios libres: {resumen}. "
             "Ya se le mandan como lista tocable; solo escribe una linea que los "
             "introduzca, sin repetirlos todos."
+        )
+
+    async def _sin_lugar(self, dia: date, servicio_id: uuid.UUID, personas: int) -> str:
+        """Que el modelo no invente dias: se le dan los cercanos que si tienen lugar.
+
+        Con "ofrecele otro dia" a secas ofrecia "lunes o martes" sin haberlos
+        consultado, y luego el lunes no habia nada.
+        """
+        con_lugar = []
+        for delta in range(1, 8):
+            otro = dia + timedelta(days=delta)
+            if await self.agenda.slots_libres(
+                self.tenant.id, servicio_id, otro, personas, limite=1
+            ):
+                con_lugar.append(f"{DIAS[otro.weekday()]} {otro.day} de {MESES[otro.month - 1]}")
+            if len(con_lugar) == 3:
+                break
+        if not con_lugar:
+            return f"No hay nada libre el {dia.isoformat()} ni en la semana siguiente. Ofrece tomar recado."
+        return (
+            f"No hay nada libre el {dia.isoformat()}. Los dias mas cercanos con lugar son: "
+            + ", ".join(con_lugar)
+            + ". Ofrecele SOLO esos dias; no inventes otros."
         )
 
     async def _reservar(self, argumentos: dict[str, Any]) -> str:

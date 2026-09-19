@@ -1038,3 +1038,26 @@ def test_los_avisos_de_meta_no_son_clientes():
         }}]}]
     }
     assert parse_webhook(cuerpo) == []
+
+
+async def test_sin_lugar_ese_dia_la_herramienta_dice_que_dias_cercanos_si_tienen(tenant, cfg):
+    """Con "ofrecele otro dia" a secas el modelo inventaba lunes o martes sin consultarlos."""
+    from datetime import date
+
+    from channels.whatsapp.herramientas import Herramientas
+    from channels.whatsapp.sesion import SesionWhatsApp
+
+    class SinSabado(AgendaFalsa):
+        async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12):
+            if dia.weekday() >= 5:  # sabado y domingo cerrado
+                return []
+            return await super().slots_libres(tenant_id, servicio_id, dia, personas, limite)
+
+    agenda = SinSabado(tenant)
+    h = Herramientas(agenda, tenant, await agenda.servicios(tenant.id), SesionWhatsApp(tenant.id, "+52"))
+    salida = await h.ejecutar(
+        "consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-19"}
+    )
+    assert "No hay nada libre el 2026-09-19" in salida
+    assert "lunes 21 de septiembre, martes 22 de septiembre, miercoles 23 de septiembre" in salida
+    assert date(2026, 9, 19).weekday() == 5

@@ -306,3 +306,77 @@ async def test_sin_token_el_error_le_dice_al_dueno_que_le_falta():
 
     assert "Instagram no esta conectado" in str(fallo.value)
     assert "token" in str(fallo.value)
+
+
+# --- Lo que Instagram no tiene: lista tocable ---------------------------------
+
+
+class AgendaConHorarios(AgendaFalsa):
+    """Un servicio y horarios fijos, como la AgendaFalsa de WhatsApp."""
+
+    servicio_id = uuid.UUID(int=7)
+    recurso_id = uuid.UUID(int=8)
+
+    async def servicios(self, tenant_id) -> list[dict]:
+        return [{"id": self.servicio_id, "nombre": "Corte", "duracion_min": 30, "alias": []}]
+
+    async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+
+        from app.supabase_client import Slot
+
+        base = datetime(2026, 9, 22, 9, 0, tzinfo=ZoneInfo("America/Mexico_City"))
+        return [
+            Slot(base + timedelta(hours=i), base + timedelta(hours=i, minutes=30), self.recurso_id, "Regia")
+            for i in range(3)
+        ]
+
+    async def reservar(self, **k):
+        self.reserva = k
+        return {"ok": True, "booking_id": str(uuid.UUID(int=9)), "codigo": "RPNF"}
+
+
+def _uso(nombre, entrada):
+    return {"type": "tool_use", "id": "t1", "name": nombre, "input": entrada}
+
+
+@pytest.mark.asyncio
+async def test_los_horarios_van_numerados_en_el_texto_y_el_numero_reserva(tenant, cfg):
+    agenda = AgendaConHorarios(tenant)
+    llm = LLMFalso([
+        RespuestaFalsa([_uso("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-22"})], "tool_use"),
+        RespuestaFalsa([{"type": "text", "text": "Tengo estos horarios el martes 22:"}]),
+        RespuestaFalsa([_uso("reservar", {"opcion_id": "SE_REEMPLAZA", "nombre_cliente": "Ana"})], "tool_use"),
+        RespuestaFalsa([{"type": "text", "text": "Listo, Ana. Código *RPNF*."}]),
+    ])
+    registro = RegistroSesiones(cfg)
+    agente = AgenteSocial(llm=llm, agenda=agenda, cfg=cfg, registro=registro)
+
+    envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "quiero cita el martes"))[0])
+    assert envios == [(CLIENTE, "Tengo estos horarios el martes 22:\n1) 9:00 am\n2) 10:00 am\n3) 11:00 am")]
+
+    sesion = registro.obtener(tenant.id, CLIENTE)
+    segunda = list(sesion.opciones)[1]
+    llm.guion[0].content[0]["input"]["opcion_id"] = segunda
+
+    envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "2", mid="mid.2"))[0])
+    assert envios == [(CLIENTE, "Listo, Ana. Código *RPNF*.")]
+    # El "2" llego al modelo ya traducido a la opcion, y la reserva es la de las 10:00.
+    assert f"[opcion_id={segunda}]" in sesion.mensajes[-4]["content"]
+    assert agenda.reserva["inicio"].hour == 10
+
+
+@pytest.mark.asyncio
+async def test_la_bienvenida_fija_queda_en_el_historial_del_modelo(tenant, cfg):
+    """Si no, el modelo vuelve a preguntar lo que la bienvenida ya pregunto."""
+    reglas = [{"tipo": "bienvenida", "disparador": None, "respuesta": "¿Buscas conocer el servicio o ya eres cliente?"}]
+    agenda = AgendaFalsa(tenant, reglas=reglas, abierta=False)
+    registro = RegistroSesiones(cfg)
+    agente = AgenteSocial(llm=LLMFalso([]), agenda=agenda, cfg=cfg, registro=registro)
+
+    await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "hola"))[0])
+
+    sesion = registro.obtener(tenant.id, CLIENTE)
+    assert [m["role"] for m in sesion.mensajes] == ["user", "assistant"]
+    assert sesion.mensajes[1]["content"][0]["text"].startswith("¿Buscas conocer")

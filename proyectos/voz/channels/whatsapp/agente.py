@@ -62,15 +62,22 @@ def _a_dict(bloque: Any) -> dict[str, Any]:
 _HORA = re.compile(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?", re.I)
 
 
-def opcion_escrita(texto: str, opciones: dict[str, Any], tz: tzinfo) -> str | None:
+def opcion_escrita(
+    texto: str, opciones: dict[str, Any], tz: tzinfo, numerada: bool = False
+) -> str | None:
     """La opcion que corresponde a una hora escrita a mano: "11", "11:00 am", "a las 11".
 
     La lista tocable no obliga a tocar; mucha gente contesta escribiendo la hora.
     Sin esto el modelo se quedaba sin `opcion_id` y se iba por las ramas.
-    Solo casa si hay exactamente una opcion con esa hora.
+    Solo casa si hay exactamente una opcion con esa hora. Con `numerada` (los
+    canales sin lista tocable mandan "1) 9:00 am, 2) ..."), un numero solo es
+    la posicion en la lista.
     """
     if not opciones or not texto:
         return None
+    limpio = texto.strip().rstrip(".)")
+    if numerada and limpio.isdigit() and 1 <= int(limpio) <= len(opciones):
+        return list(opciones)[int(limpio) - 1]
     encontrado = _HORA.search(texto)
     if not encontrado:
         return None
@@ -234,6 +241,10 @@ class AgenteWhatsApp:
         )
         if respuesta is None:
             return None
+        sesion = self.registro.obtener(
+            contexto.tenant.id, entrante.telefono, entrante.nombre_perfil
+        )
+        nucleo.anotar_turno_fijo(sesion, entrante.texto or "", respuesta)
         await nucleo.registrar_turno(
             self.agenda,
             tenant_id=contexto.tenant.id,
