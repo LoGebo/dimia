@@ -18,9 +18,28 @@ from channels.whatsapp.servidor import app as whatsapp
 _pila = AsyncExitStack()
 
 
+# Un webhook de Meta pesa unos KB. Un cuerpo enorme se rechaza antes de leerlo,
+# no despues de gastarle memoria y CPU a la firma.
+MAX_CUERPO = 256 * 1024
+
+
+def _demasiado_grande(scope) -> bool:
+    for nombre, valor in scope.get("headers", []):
+        if nombre == b"content-length":
+            try:
+                return int(valor) > MAX_CUERPO
+            except ValueError:
+                return True
+    return False
+
+
 async def app(scope, receive, send) -> None:
     if scope["type"] == "lifespan":
         await _ciclo_de_vida(receive, send)
+        return
+    if scope["type"] == "http" and _demasiado_grande(scope):
+        await send({"type": "http.response.start", "status": 413, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
         return
     destino = social if scope.get("path", "").startswith("/webhook/social") else whatsapp
     await destino(scope, receive, send)

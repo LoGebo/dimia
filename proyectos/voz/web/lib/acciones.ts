@@ -108,6 +108,7 @@ export async function entrar(_previo: Estado, fd: FormData): Promise<Estado> {
   if (!email || !password) return { error: "Escribe tu correo y contraseña." };
   if (modoSupabase()) return { error: "En modo Supabase el acceso se hace desde el formulario del cliente." };
   const id = await iniciarSesionLocal(email, password);
+  if (id === "bloqueado") return { error: "Demasiados intentos. Espera 15 minutos y vuelve a intentar." };
   if (!id) return { error: "Correo o contraseña incorrectos." };
   redirect("/hoy");
 }

@@ -81,17 +81,24 @@ export const usuarioActual = cache(async (): Promise<{ id: string; email: string
   return fila ? { id, email: fila.email } : null;
 });
 
-export async function iniciarSesionLocal(email: string, password: string): Promise<string | null> {
-  const filas = await elevado((q) =>
-    q<{ id: string }>(
+/** null si no entra; "bloqueado" si ese correo agotó sus intentos en 15 minutos. */
+export async function iniciarSesionLocal(email: string, password: string): Promise<string | null | "bloqueado"> {
+  return elevado(async (q) => {
+    const [freno] = await q<{ bloqueado: boolean }>("select acceso_bloqueado($1) as bloqueado", [email]);
+    if (freno?.bloqueado) return "bloqueado";
+    const filas = await q<{ id: string }>(
       "select id from usuario_panel where email = lower(trim($1)) and password_hash = crypt($2, password_hash)",
       [email, password],
-    ),
-  );
-  const fila = filas[0];
-  if (!fila) return null;
-  await escribirCookie(fila.id);
-  return fila.id;
+    );
+    const fila = filas[0];
+    if (!fila) {
+      await q("select acceso_fallido($1)", [email]);
+      return null;
+    }
+    await q("select acceso_logrado($1)", [email]);
+    await escribirCookie(fila.id);
+    return fila.id;
+  });
 }
 
 export async function registrarLocal(email: string, password: string): Promise<string> {

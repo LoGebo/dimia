@@ -22,3 +22,10 @@ def test_reparte_por_prefijo():
     # Cada canal valida con su propio token: el de WhatsApp no abre Instagram.
     assert reto("/webhook/social", "wa-token", "3").status_code == 403
     assert http.get("/salud").status_code == 200
+
+
+def test_un_cuerpo_gigante_se_rechaza_antes_de_leerlo():
+    servidor.whatsapp.state.cfg = WhatsAppSettings(whatsapp_app_secret="s")
+    http = TestClient(servidor.app)
+    r = http.post("/webhook/whatsapp", content=b"x", headers={"content-length": str(300 * 1024)})
+    assert r.status_code == 413
