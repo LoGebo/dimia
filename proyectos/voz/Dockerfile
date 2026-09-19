@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+COPY requirements.txt requirements.lock /tmp/
+RUN pip install -r /tmp/requirements.txt -c /tmp/requirements.lock
 
 
 FROM python:3.13-slim AS runtime

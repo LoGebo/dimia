@@ -13,8 +13,8 @@ kill_timeout   = "30s"
   PYTHONUNBUFFERED = "1"
 
 [processes]
-  # Webhook público de WhatsApp (Meta le pega aquí).
-  web = "uvicorn channels.whatsapp.servidor:app --host 0.0.0.0 --port 8080"
+  # Webhooks públicos de WhatsApp e Instagram/Messenger (Meta le pega aquí).
+  web = "uvicorn channels.servidor:app --host 0.0.0.0 --port 8080"
   # Vacía la cola de salientes: recordatorios, campañas, reintentos.
   despachador = "python -m app.despachador"
 
