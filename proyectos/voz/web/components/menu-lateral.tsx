@@ -31,12 +31,14 @@ import {
   MessageCircle,
   type LucideIcon,
 } from "lucide-react";
+import { useBarra } from "@/components/barra-lateral";
 import { secciones } from "@/lib/giro";
 import type { Herramienta } from "@/lib/tipos";
 
 const ICONO_SECCION: Record<string, LucideIcon> = {
   Hoy: House,
   Mensajes: MessageSquareText,
+  Agentes: Bot,
   Clientes: Users,
   Dinero: Wallet,
   Ajustes: Settings,
@@ -81,6 +83,7 @@ export function MenuLateral({
   salir: () => Promise<void>;
 }) {
   const ruta = usePathname();
+  const { colapsada } = useBarra();
   const lista = secciones(herramientas);
   const activaDeRuta = lista.find((s) => s.pestanas.some((p) => ruta === p.href || ruta.startsWith(`${p.href}/`)))?.href;
   const [abiertas, setAbiertas] = useState<Set<string>>(() => new Set(activaDeRuta ? [activaDeRuta] : []));
@@ -96,6 +99,36 @@ export function MenuLateral({
       else nx.add(href);
       return nx;
     });
+  }
+
+  if (colapsada) {
+    return (
+      <nav aria-label="Secciones" className="flex flex-1 flex-col items-center gap-1 px-2 py-3">
+        {lista.map((s) => {
+          const activa = s.href === activaDeRuta;
+          const Icono = ICONO_SECCION[s.nombre] ?? House;
+          const n = contadores[s.href] ?? 0;
+          return (
+            <Link
+              key={s.href}
+              href={s.href}
+              title={s.nombre}
+              aria-label={s.nombre}
+              aria-current={activa ? "page" : undefined}
+              className={`relative flex h-[44px] w-[44px] items-center justify-center rounded-lg transition-colors duration-200 hover:bg-linea focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/30 ${activa ? "bg-linea text-acento" : "text-tinta-2 hover:text-tinta"}`}
+            >
+              <Icono size={20} strokeWidth={1.75} aria-hidden="true" />
+              {n > 0 ? <span aria-hidden="true" className="absolute top-2 right-2 h-2 w-2 rounded-full bg-acento" /> : null}
+            </Link>
+          );
+        })}
+        <form action={salir} className="mt-auto pt-2">
+          <button type="submit" title="Cerrar sesión" aria-label="Cerrar sesión" className="flex h-[44px] w-[44px] items-center justify-center rounded-lg text-tinta-2 transition-colors duration-150 hover:bg-linea hover:text-tinta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/30">
+            <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        </form>
+      </nav>
+    );
   }
 
   return (

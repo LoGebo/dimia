@@ -24,7 +24,7 @@ export default async function AgentePage({ params }: { params: Promise<{ id: str
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-5 py-14 text-center">
       <Link href="/agentes" className="self-start text-[13px] text-tinta-3 hover:text-tinta">← Agentes</Link>
-      <IconoAgente nombre={nombre} tamano={72} />
+      <IconoAgente nombre={nombre} trabajo={trabajo} tamano={88} />
       <div>
         <h1 className="text-[24px] font-semibold text-tinta">{nombre}</h1>
         <p className="mt-1.5 text-[14px] leading-relaxed text-tinta-2">{trabajo}</p>

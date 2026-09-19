@@ -17,8 +17,8 @@ export default async function AgentesPage() {
         {lista.map((a) => (
           <TarjetaAgente key={a.id} id={a.id} nombre={a.nombre} tarea={a.trabajo} activo={a.estado === "activo"} />
         ))}
-        <Link href="/agentes/nuevo" className="flex min-h-[168px] flex-col items-center justify-center gap-3 border border-dashed border-linea-fuerte text-tinta-2 transition-colors duration-150 hover:border-acento hover:text-acento">
-          <span aria-hidden="true" className="flex h-12 w-12 items-center justify-center border border-current text-[22px] leading-none">+</span>
+        <Link href="/agentes/nuevo" className="flex min-h-[168px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-linea-fuerte text-tinta-2 transition-colors duration-150 hover:border-acento hover:text-acento">
+          <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-[14px] border border-current text-[24px] leading-none">+</span>
           <span className="text-[13px] font-medium">Nuevo agente</span>
         </Link>
       </div>

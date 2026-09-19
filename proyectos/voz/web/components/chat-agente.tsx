@@ -158,7 +158,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
             aria-expanded={eligiendo}
             className="flex h-8 items-center gap-2 px-2 text-[14px] font-medium tracking-[-0.14px] text-tinta transition-colors duration-150 hover:bg-panel-2"
           >
-            <IconoAgente nombre={agente.nombre} tamano={22} />
+            <IconoAgente nombre={agente.nombre} trabajo={agente.trabajo} tamano={22} />
             {agente.nombre}
             <ChevronDown size={14} className="text-tinta-3" />
           </button>
@@ -178,7 +178,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
                     onClick={() => { setAgenteId(a.id); setEligiendo(false); }}
                     className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150 hover:bg-panel-2 ${a.id === agente.id ? "bg-panel-2" : ""}`}
                   >
-                    <IconoAgente nombre={a.nombre} tamano={24} />
+                    <IconoAgente nombre={a.nombre} trabajo={a.trabajo} tamano={26} />
                     <span className="flex min-w-0 flex-col">
                       <span className="text-[13px] font-medium text-tinta">{a.nombre}</span>
                       <span className="truncate text-[11.5px] text-tinta-3">{a.trabajo}</span>
@@ -279,9 +279,9 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
         aria-label={abierto ? "Cerrar el chat" : "Hablar con un agente"}
-        className={`fixed right-5 bottom-5 z-30 flex h-12 w-12 items-center justify-center bg-tinta text-paper transition-[transform,opacity] duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento ${abierto ? "pointer-events-none opacity-0" : "opacity-100"}`}
+        className={`fixed right-5 bottom-5 z-30 rounded-[16px] transition-[transform,opacity] duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento ${abierto ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
-        <IconoAgente nombre="Recepción" tamano={48} />
+        <IconoAgente nombre={agente.nombre} trabajo={agente.trabajo} tamano={52} />
       </button>
     </>
   );

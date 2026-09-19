@@ -1,3 +1,6 @@
+"use client";
+
+import { BotonPlegar, useBarra } from "@/components/barra-lateral";
 /** El ícono de Dimia: las dos i recortadas del logotipo. */
 export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
   return (
@@ -10,14 +13,16 @@ export function IconoDimia({ tamano = 22 }: { tamano?: number }) {
   );
 }
 
-/** Cabecera del menú: el ícono y el nombre del producto, a la altura de la barra. */
+/** Cabecera del menú: el ícono y el nombre; plegada, solo el ícono y el botón debajo. */
 export function MarcaDimia() {
+  const { colapsada } = useBarra();
   return (
-    <div className="flex h-[70px] items-center gap-3 border-b border-linea px-5 text-tinta">
-      <IconoDimia tamano={32} />
-      <p className="text-[20px] font-extrabold tracking-tight">
+    <div className={`flex flex-col border-b border-linea text-tinta ${colapsada ? "items-center gap-1 px-2 pt-3 pb-2" : "h-[70px] flex-row items-center gap-3 px-4"}`}>
+      <span className="flex h-9 w-9 flex-none items-center justify-center"><IconoDimia tamano={colapsada ? 28 : 32} /></span>
+      <p className={`min-w-0 flex-1 truncate text-[20px] font-extrabold tracking-tight transition-opacity duration-150 ${colapsada ? "hidden" : ""}`}>
         Dimia <span className="font-medium text-tinta-2">Panel</span>
       </p>
+      <BotonPlegar />
     </div>
   );
 }

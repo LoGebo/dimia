@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useTransition } from "react";
+import { useBarra } from "@/components/barra-lateral";
 import { ChevronsUpDown } from "lucide-react";
 import { cambiarNegocio } from "@/lib/acciones";
 import type { Membresia } from "@/lib/tipos";
@@ -22,6 +23,15 @@ export function NombreNegocio({
 }) {
   const [pendiente, empezar] = useTransition();
   const forma = useRef<HTMLFormElement>(null);
+  const { colapsada } = useBarra();
+
+  if (colapsada) {
+    return (
+      <div className="flex justify-center border-b border-linea py-2.5" title={nombre}>
+        <span aria-label={nombre} className="flex h-8 w-8 items-center justify-center rounded-lg bg-linea text-[13px] font-bold text-tinta">{nombre.trim().charAt(0).toUpperCase()}</span>
+      </div>
+    );
+  }
 
   if (membresias.length < 2) {
     return (
