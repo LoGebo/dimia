@@ -30,6 +30,9 @@ from channels.whatsapp.sesion import RegistroSesiones
 
 log = logging.getLogger("social.agente")
 
+# (destino, texto, botones de respuesta rapida)
+Envio = tuple[str, str, tuple[OpcionLista, ...]]
+
 TTL_CONTEXTO_SEG = 300
 
 # Va como bloque aparte del contexto del negocio para no romper el cacheo del
@@ -41,10 +44,9 @@ Estas en Instagram/Messenger, no en una llamada. Se lee en el celular, rapido.
 - Una sola pregunta por turno.
 - Nada de listas largas ni de repetir lo que el cliente acaba de decir.
 - Los precios y el codigo van tal cual, sin adorno.
-- Aqui NO hay lista tocable: cuando consultes disponibilidad, los horarios se
-  agregan solos, numerados, debajo de tu mensaje. Tu solo escribe una linea que
-  los introduzca ("Tengo estos horarios el martes 22:"). La persona contesta con
-  el numero o con la hora.
+- Cuando consultes disponibilidad, los horarios salen como botones debajo de
+  tu mensaje. Tu solo escribe una linea que los introduzca ("Tengo estos
+  horarios el martes 22:"), sin repetirlos. La persona toca uno o escribe la hora.
 Si algo no cabe corto, resuelvelo en el siguiente mensaje, no en este.
 """
 
@@ -104,8 +106,8 @@ class AgenteSocial:
         self._contextos[clave] = contexto
         return contexto
 
-    async def atender(self, entrante: MensajeSocial) -> list[tuple[str, str]]:
-        """Devuelve los envíos a hacer: (destino, texto)."""
+    async def atender(self, entrante: MensajeSocial) -> list[Envio]:
+        """Devuelve los envíos a hacer: (destino, texto, botones)."""
         contexto = await self._contexto(entrante.canal, entrante.cuenta_id)
         if contexto is None:
             log.warning(
@@ -128,7 +130,7 @@ class AgenteSocial:
                 herramientas_giro=contexto.herramientas_giro,
             )
             sesion.agregar_usuario(
-                self._texto_usuario(entrante.texto, sesion.opciones, contexto.tenant.tz)
+                self._texto_usuario(entrante, sesion.opciones, contexto.tenant.tz)
             )
             sesion.recortar(self.cfg.sesion_max_turnos)
 
@@ -164,22 +166,20 @@ class AgenteSocial:
             log=log,
         )
 
-        texto = self._con_opciones(texto, herramientas.lista_pendiente)
-        return [(entrante.remitente_id, texto)] if texto else []
+        botones = tuple(herramientas.lista_pendiente)
+        if botones and not texto:
+            texto = "Tengo estos horarios:"
+        return [(entrante.remitente_id, texto, botones)] if texto else []
 
     @staticmethod
-    def _texto_usuario(texto: str, opciones: dict[str, Any], tz: tzinfo) -> str:
-        elegida = opcion_escrita(texto, opciones, tz, numerada=True)
-        return f"{texto} [opcion_id={elegida}]" if elegida else texto
-
-    @staticmethod
-    def _con_opciones(texto: str, opciones: list[OpcionLista]) -> str:
-        """Instagram y Messenger no tienen lista tocable: van numeradas en el texto."""
-        if not opciones:
-            return texto
-        renglones = [f"{i}) {o.titulo}" for i, o in enumerate(opciones, 1)]
-        intro = texto or "Tengo estos horarios:"
-        return intro + "\n" + "\n".join(renglones)
+    def _texto_usuario(entrante: MensajeSocial, opciones: dict[str, Any], tz: tzinfo) -> str:
+        """Lo que toco (boton) o escribio (hora) se traduce a la opcion, como en WhatsApp."""
+        if entrante.seleccion_id and entrante.seleccion_id in opciones:
+            return f"{entrante.texto} [opcion_id={entrante.seleccion_id}]"
+        if entrante.seleccion_id:
+            return f"{entrante.texto} [la opcion elegida ya expiro]"
+        elegida = opcion_escrita(entrante.texto, opciones, tz)
+        return f"{entrante.texto} [opcion_id={elegida}]" if elegida else entrante.texto
 
     async def _determinista(
         self, contexto: ContextoNegocio, entrante: MensajeSocial
@@ -223,4 +223,4 @@ class AgenteSocial:
             motivo=None,
             log=log,
         )
-        return [(entrante.remitente_id, respuesta)]
+        return [(entrante.remitente_id, respuesta, ())]

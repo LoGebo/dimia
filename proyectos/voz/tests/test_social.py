@@ -8,6 +8,7 @@ import json
 import uuid
 from typing import Any
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -190,7 +191,7 @@ async def test_contesta_por_instagram_y_lo_deja_escrito(tenant, cfg):
 
     envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "cuánto el corte?"))[0])
 
-    assert envios == [(CLIENTE, "Sí, corte a $350.")]
+    assert envios == [(CLIENTE, "Sí, corte a $350.", ())]
     assert [t["autor"] for t in agenda.turnos] == ["cliente", "agente"]
     assert all(t["canal"] == "instagram" for t in agenda.turnos)
     assert agenda.turnos[0]["contacto"] == CLIENTE
@@ -241,7 +242,7 @@ async def test_una_regla_por_palabra_contesta_sin_tocar_el_modelo(tenant, cfg):
 
     envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "¿qué PRECIO tienen?"))[0])
 
-    assert envios == [(CLIENTE, "Cortes desde $350.")]
+    assert envios == [(CLIENTE, "Cortes desde $350.", ())]
     assert llm.llamadas == []
     assert agenda.turnos[-1]["texto"] == "Cortes desde $350."
     assert agenda.turnos[-1]["canal"] == "instagram"
@@ -253,13 +254,13 @@ async def test_la_bienvenida_solo_en_conversacion_nueva(tenant, cfg):
     nueva = AgendaFalsa(tenant, reglas=reglas, abierta=False)
     agente = AgenteSocial(llm=LLMFalso([]), agenda=nueva, cfg=cfg, registro=RegistroSesiones(cfg))
     envios = await agente.atender(parse_webhook(_webhook("page", PAGINA_FB, "hola"))[0])
-    assert envios == [(CLIENTE, "¡Hola! Soy el asistente.")]
+    assert envios == [(CLIENTE, "¡Hola! Soy el asistente.", ())]
 
     abierta = AgendaFalsa(tenant, reglas=reglas, abierta=True)
     llm = LLMFalso([RespuestaFalsa([{"type": "text", "text": "Claro."}])])
     agente2 = AgenteSocial(llm=llm, agenda=abierta, cfg=cfg, registro=RegistroSesiones(cfg))
     envios2 = await agente2.atender(parse_webhook(_webhook("page", PAGINA_FB, "hola"))[0])
-    assert envios2 == [(CLIENTE, "Claro.")]  # ya no manda la bienvenida; contesta el modelo
+    assert envios2 == [(CLIENTE, "Claro.", ())]  # ya no manda la bienvenida; contesta el modelo
 
 
 # --- El webhook -------------------------------------------------------------
@@ -308,7 +309,7 @@ async def test_sin_token_el_error_le_dice_al_dueno_que_le_falta():
     assert "token" in str(fallo.value)
 
 
-# --- Lo que Instagram no tiene: lista tocable ---------------------------------
+# --- Botones de respuesta rapida en vez de la lista tocable -------------------
 
 
 class AgendaConHorarios(AgendaFalsa):
@@ -342,7 +343,7 @@ def _uso(nombre, entrada):
 
 
 @pytest.mark.asyncio
-async def test_los_horarios_van_numerados_en_el_texto_y_el_numero_reserva(tenant, cfg):
+async def test_los_horarios_van_como_botones_y_el_toque_reserva(tenant, cfg):
     agenda = AgendaConHorarios(tenant)
     llm = LLMFalso([
         RespuestaFalsa([_uso("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-22"})], "tool_use"),
@@ -354,15 +355,21 @@ async def test_los_horarios_van_numerados_en_el_texto_y_el_numero_reserva(tenant
     agente = AgenteSocial(llm=llm, agenda=agenda, cfg=cfg, registro=registro)
 
     envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "quiero cita el martes"))[0])
-    assert envios == [(CLIENTE, "Tengo estos horarios el martes 22:\n1) 9:00 am\n2) 10:00 am\n3) 11:00 am")]
+    destino, texto, botones = envios[0]
+    assert (destino, texto) == (CLIENTE, "Tengo estos horarios el martes 22:")
+    assert [b.titulo for b in botones] == ["9:00 am", "10:00 am", "11:00 am"]
 
     sesion = registro.obtener(tenant.id, CLIENTE)
-    segunda = list(sesion.opciones)[1]
+    segunda = botones[1].id
+    assert segunda in sesion.opciones
     llm.guion[0].content[0]["input"]["opcion_id"] = segunda
 
-    envios = await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "2", mid="mid.2"))[0])
-    assert envios == [(CLIENTE, "Listo, Ana. Código *RPNF*.")]
-    # El "2" llego al modelo ya traducido a la opcion, y la reserva es la de las 10:00.
+    # Toca el boton: Meta manda el payload como quick_reply.
+    toque = _webhook("instagram", CUENTA_IG, "10:00 am", mid="mid.2")
+    toque["entry"][0]["messaging"][0]["message"]["quick_reply"] = {"payload": segunda}
+    envios = await agente.atender(parse_webhook(toque)[0])
+    assert envios == [(CLIENTE, "Listo, Ana. Código *RPNF*.", ())]
+    # El toque llego al modelo ya traducido a la opcion, y la reserva es la de las 10:00.
     assert f"[opcion_id={segunda}]" in sesion.mensajes[-4]["content"]
     assert agenda.reserva["inicio"].hour == 10
 
@@ -380,3 +387,28 @@ async def test_la_bienvenida_fija_queda_en_el_historial_del_modelo(tenant, cfg):
     sesion = registro.obtener(tenant.id, CLIENTE)
     assert [m["role"] for m in sesion.mensajes] == ["user", "assistant"]
     assert sesion.mensajes[1]["content"][0]["text"].startswith("¿Buscas conocer")
+
+
+@pytest.mark.asyncio
+async def test_los_botones_van_como_respuestas_rapidas_en_la_send_api():
+    from channels.social.cliente import ClienteSocial
+    from channels.whatsapp.cliente import OpcionLista
+
+    capturado = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        capturado["json"] = json.loads(request.content)
+        return httpx.Response(200, json={"message_id": "m1"})
+
+    cfg = SocialSettings(instagram_access_token="ig", messenger_access_token="fb")
+    cliente = ClienteSocial(cfg, http=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    await cliente.enviar_texto(
+        "123", "Tengo estos horarios:", "instagram",
+        opciones=[OpcionLista("op-1", "9:00 am", "martes"), OpcionLista("op-2", "un titulo demasiado largo para el boton", "")],
+    )
+    mensaje = capturado["json"]["message"]
+    assert mensaje["text"] == "Tengo estos horarios:"
+    assert mensaje["quick_replies"] == [
+        {"content_type": "text", "title": "9:00 am", "payload": "op-1"},
+        {"content_type": "text", "title": "un titulo demasiado ", "payload": "op-2"},
+    ]

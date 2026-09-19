@@ -57,9 +57,11 @@ async def procesar(app: FastAPI, entrante: MensajeSocial) -> None:
         log.exception("fallo atendiendo %s en %s", entrante.remitente_id, entrante.canal)
         return
 
-    for destino, texto in envios:
+    for destino, texto, botones in envios:
         try:
-            await app.state.cliente.enviar_texto(destino, texto, entrante.canal)
+            await app.state.cliente.enviar_texto(
+                destino, texto, entrante.canal, opciones=list(botones)
+            )
         except Exception:
             log.exception("fallo enviando a %s por %s", destino, entrante.canal)
 

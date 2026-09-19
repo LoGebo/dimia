@@ -35,6 +35,8 @@ class MensajeSocial:
     remitente_id: str
     texto: str
     nombre_perfil: str | None = None
+    # La respuesta rapida que toco (su payload es el id de la opcion).
+    seleccion_id: str | None = None
 
     @property
     def soportado(self) -> bool:
@@ -90,6 +92,7 @@ def parse_webhook(cuerpo: dict[str, Any]) -> list[MensajeSocial]:
                     cuenta_id=cuenta_id,
                     remitente_id=remitente,
                     texto=texto,
+                    seleccion_id=(mensaje.get("quick_reply") or {}).get("payload"),
                 )
             )
     return mensajes

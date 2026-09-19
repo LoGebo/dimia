@@ -8,6 +8,7 @@ import httpx
 
 from channels.social.config import social_settings
 from channels.social.parser import CanalSocial
+from channels.whatsapp.cliente import OpcionLista
 
 # Instagram corta en mil; Messenger aguanta el doble. Se usa el menor de los
 # dos: un mensaje que se parte a la mitad se lee peor que uno corto.
@@ -18,6 +19,9 @@ def recortar(texto: str, limite: int = LIMITE_TEXTO) -> str:
     if len(texto) <= limite:
         return texto
     return texto[: limite - 1].rstrip() + "…"
+
+
+MAX_RESPUESTAS_RAPIDAS = 13
 
 
 class ClienteSocial:
@@ -49,7 +53,11 @@ class ClienteSocial:
         )
 
     async def enviar_texto(
-        self, destino: str, texto: str, canal: CanalSocial = "messenger"
+        self,
+        destino: str,
+        texto: str,
+        canal: CanalSocial = "messenger",
+        opciones: list[OpcionLista] | None = None,
     ) -> str:
         # El dueno lee este texto en la pantalla de Mensajes: tiene que decirle
         # que le falta, no un error de la libreria de HTTP.
@@ -63,11 +71,19 @@ class ClienteSocial:
             f"{self.cfg.graph_url}/{self.cfg.api_version}/me/messages"
             f"?access_token={self._token(canal)}"
         )
+        mensaje: dict[str, Any] = {"text": recortar(texto)}
+        if opciones:
+            # Lo mas parecido a la lista tocable de WhatsApp que tienen Instagram
+            # y Messenger: botones bajo el mensaje, hasta 13, titulo de 20 chars.
+            mensaje["quick_replies"] = [
+                {"content_type": "text", "title": o.titulo[:20], "payload": o.id}
+                for o in opciones[:MAX_RESPUESTAS_RAPIDAS]
+            ]
         respuesta = await self.http.post(
             url,
             json={
                 "recipient": {"id": destino},
-                "message": {"text": recortar(texto)},
+                "message": mensaje,
                 "messaging_type": "RESPONSE",
             },
         )
