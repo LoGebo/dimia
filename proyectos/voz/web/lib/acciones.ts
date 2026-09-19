@@ -1541,3 +1541,46 @@ export async function ejecutarPropuesta(p: Propuesta): Promise<Estado> {
       return { error: "No sé ejecutar eso todavía." };
   }
 }
+
+
+const PERMISOS_AGENTE = ["leer", "navegar", "anotar", "escribir", "agendar", "formularios"] as const;
+
+export async function crearAgente(_previo: Estado, fd: FormData): Promise<Estado> {
+  const nombre = texto(fd, "nombre");
+  const trabajo = texto(fd, "trabajo");
+  const reglas = texto(fd, "reglas");
+  if (!nombre) return { error: "Ponle nombre al agente." };
+  if (!trabajo) return { error: "Dile en una frase cuál es su trabajo." };
+  const permisos = PERMISOS_AGENTE.filter((p) => fd.get(`permiso_${p}`) === "on");
+  let creado: { id: string } | undefined;
+  const estado = await intentar(() =>
+    datos(async (q, negocioId) => {
+      const filas = await q<{ id: string }>(
+        "insert into agente (tenant_id, nombre, trabajo, reglas, permisos) values ($1, $2, $3, $4, $5) returning id",
+        [negocioId, nombre, trabajo, reglas || null, permisos],
+      );
+      creado = filas[0];
+    }),
+  );
+  if (estado.error) return estado;
+  redirect(`/agentes/${creado!.id}`);
+}
+
+export async function cambiarEstadoAgente(agenteId: string, estado: "activo" | "en_pausa"): Promise<Estado> {
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      await q("update agente set estado = $3, actualizado = now() where tenant_id = $1 and id = $2", [negocioId, agenteId, estado]);
+      return { ok: estado === "activo" ? "Agente activo." : "Agente en pausa." };
+    }),
+  );
+}
+
+export async function borrarAgente(agenteId: string): Promise<Estado> {
+  const estado = await intentar(() =>
+    datos(async (q, negocioId) => {
+      await q("delete from agente where tenant_id = $1 and id = $2", [negocioId, agenteId]);
+    }),
+  );
+  if (estado.error) return estado;
+  redirect("/agentes");
+}

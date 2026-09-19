@@ -48,6 +48,7 @@ const ICONO_PANTALLA: Record<string, LucideIcon> = {
   "/pedidos": ShoppingBag,
   "/bandeja": MessagesSquare,
   "/recados": Voicemail,
+  "/agentes": Bot,
   "/clientes": Users,
   "/campanas": Megaphone,
   "/cobros": Receipt,

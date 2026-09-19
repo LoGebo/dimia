@@ -1,0 +1,195 @@
+/*
+ * Cajón de chat del agente: CSS copiado del panel de Cloudflare (Ask AI,
+ * dash.cloudflare.com, 19 de septiembre de 2026), medido con getComputedStyle.
+ * Los valores son los de ellos, tal cual; los nombres son nuestros.
+ *
+ * Lo que hace que se vea así, en orden de importancia:
+ *  1. Fondo del cajón casi blanco (98.75 % L) con puntos de 1 px cada 12 px al 10 %.
+ *  2. Una sola línea: oklch(14.5% 0 0 / .1). Va como ring (box-shadow 0 0 0 1px),
+ *     nunca como border, para que no sume al tamaño.
+ *  3. Tarjetas blancas con radio 12 px, ring de 1 px y sombra de 1 px al 5 %.
+ *     La burbuja del dueño es gris (92.2 % L), sin ring, alineada a la derecha.
+ *  4. Texto 14 px / 21 px con letter-spacing -0.16 px; el rótulo del agente en
+ *     naranja de marca (rgb 246 130 31), 500. Ellos usan Inter Variable.
+ *  5. Compositor: radio 16 px, ring de 1 px; al enfocar, ring de 1.5 px en el
+ *     azul de marca al 50 %. Textarea sin borde, padding 16 16 0.
+ *  6. Fichas y botón de enviar redondos: chip blanco 12 px/500 gris; enviar
+ *     azul oklch(70.4% .163 260) con ring un tono más oscuro.
+ *  7. Cabecera de 58 px, padding 0 16, título como botón 14 px/500 radio 8.
+ *  8. Todo entra y sale con transition de 300 ms ease-in-out sobre width/transform.
+ *
+ * Marca Dimia: el manual dice cero esquinas redondeadas y cero sombras. Aquí se
+ * copia fiel; la variante "cuadrada" cambia solo --cajon-radio* y --cajon-sombra.
+ */
+
+:root {
+  /* Cloudflare, medido */
+  --cajon-ancho: 450px;
+  --cajon-fondo: oklch(0.9875 0 0);
+  --cajon-puntos: rgba(125, 125, 125, 0.1);
+  --cajon-puntos-paso: 12px;
+  --cajon-linea: oklch(14.5% 0 0 / 0.1);
+  --cajon-tinta: rgb(49, 49, 49);
+  --cajon-tinta-fuerte: oklch(0.205 0 0);
+  --cajon-tinta-suave: oklch(0.556 0 0);
+  --cajon-burbuja: oklch(0.922 0 0);
+  --cajon-tarjeta: #ffffff;
+  --cajon-marca: rgb(246, 130, 31);          /* rótulo "Agent" */
+  --cajon-enviar: oklch(70.4% 0.163 260);    /* botón de enviar */
+  --cajon-enviar-ring: oklch(51.9% 0.209 260);
+  --cajon-foco: oklch(57.72% 0.2324 260 / 0.5);
+  --cajon-radio-tarjeta: 12px;
+  --cajon-radio-compositor: 16px;
+  --cajon-radio-boton: 8px;
+  --cajon-sombra: rgba(0, 0, 0, 0.05) 0 1px 2px 0;
+  --cajon-fuente: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Variante Dimia: mismas medidas, formas de la marca. */
+.cajon--dimia {
+  --cajon-marca: #1f47c4;
+  --cajon-enviar: #1f47c4;
+  --cajon-enviar-ring: #1f47c4;
+  --cajon-foco: rgba(31, 71, 196, 0.5);
+  --cajon-radio-tarjeta: 0;
+  --cajon-radio-compositor: 0;
+  --cajon-radio-boton: 0;
+  --cajon-sombra: 0 0 0 0 transparent;
+  --cajon-fuente: Archivo, system-ui, sans-serif;
+}
+
+/* 1. El cajón */
+.cajon {
+  position: fixed; right: 0; top: 0; bottom: 0;
+  width: var(--cajon-ancho);
+  display: flex; flex-direction: column;
+  background: var(--cajon-fondo);
+  box-shadow: -1px 0 0 0 var(--cajon-linea);     /* border-l, sin sumar ancho */
+  color: var(--cajon-tinta);
+  font: 400 16px/24px var(--cajon-fuente);
+  letter-spacing: -0.16px;
+  transition: width 300ms ease-in-out, transform 300ms ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) { .cajon { transition: none; } }
+@media (max-width: 767px) { .cajon { width: 100vw; } }
+
+/* 7. Cabecera */
+.cajon__cabecera {
+  height: 58px; padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 1px 0 0 var(--cajon-linea);
+}
+.cajon__titulo {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 1px 12px; height: 32px;
+  border: 0; background: transparent; border-radius: var(--cajon-radio-boton);
+  color: var(--cajon-tinta-fuerte);
+  font: 500 14px/21px inherit; letter-spacing: -0.14px;
+}
+.cajon__icono {
+  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; border-radius: var(--cajon-radio-boton);
+  color: var(--cajon-tinta-suave);
+}
+.cajon__icono:hover, .cajon__titulo:hover { background: var(--cajon-burbuja); }
+
+/* Hilo: fondo de puntos, 16 px de aire, 8 px entre mensajes */
+.cajon__hilo {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  background-image: radial-gradient(circle, var(--cajon-puntos) 1px, transparent 1px);
+  background-size: var(--cajon-puntos-paso) var(--cajon-puntos-paso);
+}
+
+/* 3. Mensajes */
+.mensaje { display: flex; flex-direction: column; gap: 4px; }
+.mensaje--dueno { align-items: flex-end; }
+.mensaje__burbuja {
+  max-width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--cajon-radio-tarjeta);
+  font-size: 14px; line-height: 22.75px; letter-spacing: -0.16px;
+}
+.mensaje--dueno .mensaje__burbuja { background: var(--cajon-burbuja); }
+.mensaje--agente .mensaje__burbuja {
+  background: var(--cajon-tarjeta);
+  box-shadow: 0 0 0 1px var(--cajon-linea), var(--cajon-sombra);
+}
+.mensaje__rotulo {           /* "Agent" */
+  display: block; margin-bottom: 4px;
+  color: var(--cajon-marca);
+  font: 500 14px/21px inherit; letter-spacing: -0.16px;
+}
+.mensaje__acciones { display: flex; gap: 4px; padding-top: 4px; }   /* 👍 👎 copiar · Support */
+.mensaje__accion {
+  height: 26px; padding: 1px 8px; display: inline-flex; align-items: center; gap: 4px;
+  border: 0; background: transparent; border-radius: 6px;
+  color: var(--cajon-tinta-suave); font: 500 12px/18px inherit;
+}
+
+/* Aviso arriba del compositor */
+.cajon__aviso {
+  display: flex; gap: 8px; padding: 12px;
+  border-radius: var(--cajon-radio-tarjeta);
+  background: var(--cajon-fondo);
+  box-shadow: 0 0 0 1px var(--cajon-linea);
+  color: var(--cajon-tinta-suave); font-size: 12px; line-height: 16.5px;
+}
+
+/* 5. Compositor */
+.cajon__pie { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.compositor {
+  position: relative; display: flex; flex-direction: column;
+  background: var(--cajon-tarjeta);
+  border-radius: var(--cajon-radio-compositor);
+  box-shadow: 0 0 0 1px var(--cajon-linea);
+  transition: box-shadow 150ms ease-in-out;
+}
+.compositor:has(textarea:focus) { box-shadow: 0 0 0 1.5px var(--cajon-foco); }
+.compositor__texto {
+  border: 0; outline: 0; resize: none; background: transparent;
+  padding: 16px 16px 0; min-height: 58px;
+  color: var(--cajon-tinta-fuerte);
+  font: 400 14px/21px inherit; letter-spacing: -0.16px;
+}
+.compositor__texto::placeholder { color: var(--cajon-tinta-suave); }
+.compositor__barra { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 12px; }
+
+/* 6. Fichas y enviar */
+.ficha {
+  height: 26px; padding: 1px 8px; display: inline-flex; align-items: center; gap: 4px;
+  border: 0; border-radius: 9999px; background: var(--cajon-tarjeta);
+  box-shadow: 0 0 0 1px var(--cajon-linea), var(--cajon-sombra);
+  color: var(--cajon-tinta-suave); font: 500 12px/18px inherit;
+}
+.cajon--dimia .ficha { border-radius: 0; }
+.enviar {
+  width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 9999px;
+  background: var(--cajon-enviar); color: #ffffff;
+  box-shadow: 0 0 0 1px var(--cajon-enviar-ring), var(--cajon-sombra);
+}
+.cajon--dimia .enviar { border-radius: 0; }
+.enviar:disabled { color: var(--cajon-tinta-suave); cursor: not-allowed; }
+.ficha:focus-visible, .enviar:focus-visible, .cajon__icono:focus-visible, .cajon__titulo:focus-visible { outline: 2px solid var(--cajon-foco); outline-offset: 2px; }
+
+/* Tarjeta de permisos centrada (la de "Enable Agent Lee access") */
+.permiso {
+  width: 383px; margin: auto; padding: 24px;
+  background: var(--cajon-tarjeta); border-radius: var(--cajon-radio-tarjeta);
+  box-shadow: 0 0 0 1px var(--cajon-linea), var(--cajon-sombra);
+  display: flex; flex-direction: column; gap: 12px; text-align: center;
+}
+.permiso h2 { margin: 0; font: 500 18px/26px inherit; letter-spacing: -0.2px; color: var(--cajon-tinta-fuerte); }
+.permiso p { margin: 0; font-size: 14px; line-height: 21px; color: var(--cajon-tinta-suave); }
+.permiso__fila {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; text-align: left;
+  border-radius: var(--cajon-radio-tarjeta); box-shadow: 0 0 0 1px var(--cajon-linea);
+}
+.permiso__fila--elegida { box-shadow: 0 0 0 1.5px var(--cajon-marca); }
+.permiso__boton {
+  height: 40px; border: 0; border-radius: var(--cajon-radio-boton);
+  background: var(--cajon-marca); color: #ffffff; font: 500 14px/21px inherit;
+}

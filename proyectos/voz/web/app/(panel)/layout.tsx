@@ -9,13 +9,14 @@ import { NombreNegocio } from "@/components/selector-negocio";
 import { ProveedorAvisos } from "@/components/kit";
 import { PantallaCarga } from "@/components/pantalla-carga";
 import { ChatAgente } from "@/components/chat-agente";
+import { agentes } from "@/lib/consultas";
 import { CajonMenu } from "@/components/cajon-menu";
 import { avance } from "@/lib/listo";
 import { telefono } from "@/lib/formato";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const { membresias, negocioId, usuario, giro } = await contexto();
-  const [actual, progreso, avisos] = await Promise.all([negocio(), avance(giro.herramientas), contadores()]);
+  const [actual, progreso, avisos, listaAgentes] = await Promise.all([negocio(), avance(giro.herramientas), contadores(), agentes()]);
   const membresia = membresias.find((m) => m.tenant_id === negocioId);
   const estadoLinea = !actual.telefono_entrada ? "sin" : actual.activo ? "activo" : "pausado";
   const principal = giro.herramientas.includes("agendar")
@@ -69,7 +70,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <main className="flex min-w-0 flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">{children}</main>
         </div>
       </div>
-      <ChatAgente negocio={membresia?.nombre ?? actual.nombre} />
+      <ChatAgente
+        negocio={membresia?.nombre ?? actual.nombre}
+        agentes={listaAgentes.map((a) => ({ id: a.id, nombre: a.nombre, trabajo: a.trabajo, activo: a.estado === "activo" }))}
+      />
     </ProveedorAvisos>
   );
 }

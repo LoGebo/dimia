@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Maximize2, MessageCircle, Minimize2, SendHorizontal, X } from "lucide-react";
-import { IconoDimia } from "@/components/marca";
+import { ArrowUp, ChevronDown, Maximize2, Plus, X } from "lucide-react";
+import { IconoAgente } from "@/components/icono-agente";
 import { ejecutarPropuesta, preguntarCopiloto } from "@/lib/acciones";
 import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
 
@@ -17,46 +17,61 @@ type Mensaje = {
   resultado?: string;
 };
 
-const CLAVE_ACUERDO = "chat_agente_acuerdo";
-const CLAVE_HISTORIAL = "chat_agente_historial";
-const claveHistorial = (negocio: string) => `${CLAVE_HISTORIAL}:${negocio}`;
+export type AgenteChat = { id: string; nombre: string; trabajo: string; activo: boolean };
 
+const CLAVE_ACUERDO = "chat_agente_acuerdo";
+const claveHistorial = (negocio: string, agente: string) => `chat_agente_historial:${negocio}:${agente}`;
 const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
 
 /**
- * El copiloto del negocio: contesta con los datos del panel y propone
- * acciones que el dueño aprueba con un botón. Botón redondo abajo a la
- * derecha; el panel crece desde ahí con cabecera azul y burbujas.
+ * El cajón de agentes: un panel a la derecha, como el de Cloudflare, con el
+ * agente elegido arriba y su hilo abajo. Medidas y ritmo copiados de allá
+ * (web/design/cajon-agente.css); formas y colores de Dimia.
+ *
+ * Solo Recepción tiene cerebro conectado hoy (el copiloto del panel); los
+ * agentes creados por el dueño reciben el mensaje y lo dicen claro.
  */
-export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; negocio: string }) {
+export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: AgenteChat[] }) {
   const router = useRouter();
+  const todos: AgenteChat[] = [{ id: "recepcion", nombre: "Recepción", trabajo: "Contesta y agenda", activo: true }, ...agentes];
   const [abierto, setAbierto] = useState(false);
-  const [grande, setGrande] = useState(false);
+  const [agenteId, setAgenteId] = useState("recepcion");
+  const [eligiendo, setEligiendo] = useState(false);
   const [acuerdo, setAcuerdo] = useState(true);
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
-  const campo = useRef<HTMLInputElement>(null);
+  const campo = useRef<HTMLTextAreaElement>(null);
+  const agente = todos.find((a) => a.id === agenteId) ?? todos[0]!;
+  const conectado = agente.id === "recepcion";
 
-  const saludo: Mensaje = { id: 1, de: "agente", texto: `Hola. Soy el copiloto de ${negocio}. Pregúntame por citas, clientes, cobros o llamadas, o pídeme que haga algo y te lo propongo antes de hacerlo.` };
+  const saludo = (a: AgenteChat): Mensaje =>
+    a.id === "recepcion"
+      ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes, cobros o llamadas, o pídame algo y se lo propongo antes de hacerlo.` }
+      : { id: 1, de: "agente", texto: `Soy ${a.nombre}. ${a.trabajo} Todavía no tengo computadora: en cuanto la tenga, aquí me pide la tarea y aquí le aviso.` };
 
   useEffect(() => {
     try {
       setAcuerdo(localStorage.getItem(CLAVE_ACUERDO) === "1");
-      const guardado = sessionStorage.getItem(claveHistorial(negocio));
-      setMensajes(guardado ? (JSON.parse(guardado) as Mensaje[]) : [saludo]);
-    } catch {
-      setMensajes([saludo]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } catch {}
   }, []);
 
   useEffect(() => {
     try {
-      if (mensajes.length) sessionStorage.setItem(claveHistorial(negocio), JSON.stringify(mensajes.slice(-30)));
+      const guardado = sessionStorage.getItem(claveHistorial(negocio, agente.id));
+      setMensajes(guardado ? (JSON.parse(guardado) as Mensaje[]) : [saludo(agente)]);
+    } catch {
+      setMensajes([saludo(agente)]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agente.id, negocio]);
+
+  useEffect(() => {
+    try {
+      if (mensajes.length) sessionStorage.setItem(claveHistorial(negocio, agente.id), JSON.stringify(mensajes.slice(-30)));
     } catch {}
-  }, [mensajes, negocio]);
+  }, [mensajes, negocio, agente.id]);
 
   useEffect(() => {
     if (abierto) {
@@ -66,19 +81,27 @@ export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; neg
   }, [abierto, mensajes, escribiendo, acuerdo]);
 
   useEffect(() => {
-    if (!abierto) return;
     function tecla(e: KeyboardEvent) {
-      if (e.key === "Escape") setAbierto(false);
+      if (e.key === "Escape") { setEligiendo(false); setAbierto(false); }
+    }
+    function abrir(e: Event) {
+      const d = (e as CustomEvent<{ agente: string }>).detail;
+      if (d?.agente) setAgenteId(d.agente);
+      setAbierto(true);
     }
     document.addEventListener("keydown", tecla);
-    return () => document.removeEventListener("keydown", tecla);
-  }, [abierto]);
+    window.addEventListener("abrir-chat", abrir);
+    return () => { document.removeEventListener("keydown", tecla); window.removeEventListener("abrir-chat", abrir); };
+  }, []);
 
   function aceptar() {
-    try {
-      localStorage.setItem(CLAVE_ACUERDO, "1");
-    } catch {}
+    try { localStorage.setItem(CLAVE_ACUERDO, "1"); } catch {}
     setAcuerdo(true);
+  }
+
+  function hiloNuevo() {
+    try { sessionStorage.removeItem(claveHistorial(negocio, agente.id)); } catch {}
+    setMensajes([saludo(agente)]);
   }
 
   async function preguntar(pregunta: string) {
@@ -87,13 +110,17 @@ export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; neg
     setTexto("");
     const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t }];
     setMensajes(propios);
+    if (!conectado) {
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Anotado. Cuando ${agente.nombre} tenga computadora, esta será su primera tarea.` }]);
+      return;
+    }
     setEscribiendo(true);
     const historial: TurnoCopiloto[] = propios.filter((m) => m.id !== 1).map((m) => ({ rol: m.de === "yo" ? "usuario" : "asistente", texto: m.texto }));
     try {
       const r = await preguntarCopiloto(historial);
       setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: r.texto, pasos: r.pasos, propuesta: r.propuesta }]);
     } catch {
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: "No pude consultar el negocio en este momento. Intenta de nuevo." }]);
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: "No pude consultar el negocio en este momento. Intente de nuevo." }]);
     } finally {
       setEscribiendo(false);
     }
@@ -117,140 +144,144 @@ export function ChatAgente({ nombre = "Dimia", negocio }: { nombre?: string; neg
 
   return (
     <>
-      {abierto ? (
-        <section
-          role="dialog"
-          aria-label={`Chat con ${nombre}`}
-          className={`aparece-escala fixed right-3 bottom-24 left-3 z-40 flex flex-col overflow-hidden rounded-2xl border border-linea bg-panel sm:left-auto ${
-            grande ? "h-[min(720px,calc(100vh-8rem))] sm:w-[min(600px,calc(100vw-2.5rem))]" : "h-[min(600px,calc(100vh-8rem))] sm:w-[min(400px,calc(100vw-2.5rem))]"
-          }`}
-          style={{ transformOrigin: "bottom right", transition: "width 220ms cubic-bezier(0.22,1,0.36,1), height 220ms cubic-bezier(0.22,1,0.36,1)" }}
-        >
-          <header className="flex items-center gap-3 bg-acento px-4 py-3 text-acento-tinta">
-            <span className="relative flex h-11 w-11 flex-none items-center justify-center rounded-full bg-panel text-tinta">
-              <IconoDimia tamano={22} />
-              <i aria-hidden="true" className="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-acento bg-bueno" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[17px] leading-tight font-extrabold">{nombre}</p>
-              <p className="truncate text-[12.5px] opacity-90">{escribiendo ? "Consultando el negocio…" : `Copiloto de ${negocio}`}</p>
-            </div>
-            <button type="button" onClick={() => setGrande((v) => !v)} aria-label={grande ? "Hacer más chico" : "Hacer más grande"} className="hidden h-9 w-9 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:flex">
-              {grande ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-            </button>
-            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar el chat" className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
-              <X size={20} />
-            </button>
-          </header>
-
-          <div ref={lista} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-            {mensajes.map((m) => (
-              <div key={m.id} className={`aparece-arriba flex items-end gap-2 ${m.de === "yo" ? "justify-end" : ""}`}>
-                {m.de === "agente" ? (
-                  <span className="mb-1 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-panel-2 text-tinta">
-                    <IconoDimia tamano={16} />
-                  </span>
-                ) : null}
-                <div className={`min-w-0 max-w-[85%] ${m.de === "yo" ? "" : "flex-1"}`}>
-                  <p className={`rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap ${m.de === "yo" ? "ml-auto w-fit rounded-br-md bg-acento text-acento-tinta" : "rounded-bl-md bg-panel-2 text-tinta"}`}>
-                    {m.texto}
-                  </p>
-                  {m.pasos?.length ? (
-                    <ul className="mt-1.5 flex flex-wrap gap-1.5 px-1">
-                      {m.pasos.map((p, i) => (
-                        <li key={i} title={p.detalle} className="inline-flex h-6 max-w-full items-center gap-1.5 rounded-md border border-linea bg-panel px-2 text-[11.5px] text-tinta-2">
-                          <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none rounded-full ${p.detalle.startsWith("falló") ? "bg-critico" : "bg-bueno"}`} />
-                          <span className="truncate">{p.herramienta.replace("proponer_", "propuso ").replaceAll("_", " ")}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {m.propuesta ? (
-                    <div className={`mt-2 rounded-xl border p-3 transition-colors duration-150 ${m.resuelta ? "border-linea bg-panel" : "border-acento/40 bg-acento-suave/60"}`}>
-                      <p className="text-[11.5px] font-semibold text-tinta-3 uppercase">Propuesta</p>
-                      <p className="mt-1 text-[13.5px] leading-snug text-tinta">{m.propuesta.resumen}</p>
-                      {m.resuelta ? (
-                        <p className={`mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>
-                          {m.resuelta === "aprobada" ? <Check size={14} /> : <X size={14} />}
-                          {m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}
-                        </p>
-                      ) : (
-                        <div className="mt-2.5 flex gap-2">
-                          <button type="button" onClick={() => aprobar(m.id, m.propuesta!)} className="inline-flex h-8 items-center rounded-lg bg-acento px-3 text-[13px] font-semibold text-acento-tinta transition-[filter,transform] duration-100 hover:brightness-110 active:scale-[0.98]">
-                            Hacerlo
-                          </button>
-                          <button type="button" onClick={() => rechazar(m.id)} className="inline-flex h-8 items-center rounded-lg border border-linea bg-panel px-3 text-[13px] font-medium text-tinta-2 transition-colors duration-100 hover:bg-panel-2 hover:text-tinta">
-                            No, gracias
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-            {escribiendo ? (
-              <div className="aparece-arriba flex items-end gap-2">
-                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-panel-2 text-tinta">
-                  <IconoDimia tamano={16} />
-                </span>
-                <p className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-panel-2 px-4 py-3" aria-label="Consultando">
-                  {[0, 1, 2].map((i) => (
-                    <i key={i} aria-hidden="true" className="late h-1.5 w-1.5 rounded-full bg-tinta-3" style={{ animationDelay: `${i * 180}ms`, animationDuration: "1s" }} />
-                  ))}
-                </p>
-              </div>
-            ) : null}
-            {acuerdo && mensajes.length <= 1 && !escribiendo ? (
-              <div className="flex flex-wrap gap-1.5 pt-1 pl-10">
-                {SUGERENCIAS.map((s) => (
-                  <button key={s} type="button" onClick={() => preguntar(s)} className="rounded-full border border-linea bg-panel px-3 py-1.5 text-[12.5px] text-tinta-2 transition-colors duration-150 hover:border-acento hover:text-acento">
-                    {s}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+      <aside
+        role="dialog"
+        aria-label={`Chat con ${agente.nombre}`}
+        aria-hidden={!abierto}
+        className={`fixed top-0 right-0 bottom-0 z-40 flex w-[450px] max-w-full flex-col bg-paper text-tinta shadow-[-1px_0_0_0_var(--linea)] transition-transform duration-300 ease-in-out motion-reduce:transition-none ${abierto ? "translate-x-0" : "translate-x-full"}`}
+      >
+        {/* Cabecera: 58 px, el agente como botón que despliega los demás */}
+        <header className="relative flex h-[58px] flex-none items-center justify-between px-4 shadow-[0_1px_0_0_var(--linea)]">
+          <button
+            type="button"
+            onClick={() => setEligiendo((v) => !v)}
+            aria-expanded={eligiendo}
+            className="flex h-8 items-center gap-2 px-2 text-[14px] font-medium tracking-[-0.14px] text-tinta transition-colors duration-150 hover:bg-panel-2"
+          >
+            <IconoAgente nombre={agente.nombre} tamano={22} />
+            {agente.nombre}
+            <ChevronDown size={14} className="text-tinta-3" />
+          </button>
+          <div className="flex gap-0.5">
+            <button type="button" onClick={hiloNuevo} aria-label="Hilo nuevo" className="flex h-8 w-8 items-center justify-center text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><Plus size={16} /></button>
+            <a href={`/agentes/${agente.id}`} aria-label="Ver al agente" className="flex h-8 w-8 items-center justify-center text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><Maximize2 size={15} /></a>
+            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="flex h-8 w-8 items-center justify-center text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><X size={16} /></button>
           </div>
+          {eligiendo ? (
+            <ul role="listbox" aria-label="Agentes" className="absolute top-[58px] left-3 z-10 w-72 border border-linea bg-panel py-1 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+              {todos.map((a) => (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={a.id === agente.id}
+                    onClick={() => { setAgenteId(a.id); setEligiendo(false); }}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150 hover:bg-panel-2 ${a.id === agente.id ? "bg-panel-2" : ""}`}
+                  >
+                    <IconoAgente nombre={a.nombre} tamano={24} />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-[13px] font-medium text-tinta">{a.nombre}</span>
+                      <span className="truncate text-[11.5px] text-tinta-3">{a.trabajo}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+              <li className="border-t border-linea">
+                <a href="/agentes/nuevo" className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-acento transition-colors duration-150 hover:bg-panel-2"><Plus size={14} />Nuevo agente</a>
+              </li>
+            </ul>
+          ) : null}
+        </header>
 
-          {acuerdo ? (
-            <form onSubmit={enviar} className="flex items-center gap-2 border-t border-linea bg-panel px-3 py-3">
-              <input
+        {/* Hilo: fondo de puntos, 16 de aire, 8 entre mensajes */}
+        <div ref={lista} className="flex flex-1 flex-col gap-2 overflow-y-auto bg-[radial-gradient(circle,rgba(125,125,125,0.1)_1px,transparent_1px)] bg-[size:12px_12px] p-4">
+          {mensajes.map((m) => (
+            <article key={m.id} className={`aparece-arriba flex flex-col gap-1 ${m.de === "yo" ? "items-end" : "items-start"}`}>
+              <div className={`max-w-[92%] px-4 py-3 text-[14px] leading-[22.75px] tracking-[-0.16px] whitespace-pre-wrap ${m.de === "yo" ? "bg-panel-2 text-tinta" : "bg-panel text-tinta shadow-[0_0_0_1px_var(--linea),0_1px_2px_0_rgba(0,0,0,0.05)]"}`}>
+                {m.de === "agente" ? <span className="mb-1 block text-[14px] font-medium text-acento">{agente.nombre}</span> : null}
+                {m.texto}
+                {m.pasos?.length ? (
+                  <ul className="mt-2.5 flex flex-col gap-1.5 border-t border-linea pt-2.5 text-[13px] leading-[19px]">
+                    {m.pasos.map((p, i) => (
+                      <li key={i} title={p.detalle} className="flex items-center gap-2 text-tinta-2">
+                        <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${p.detalle.startsWith("falló") ? "bg-critico" : "bg-bueno"}`} />
+                        <span className="truncate">{p.herramienta.replace("proponer_", "propuso ").replaceAll("_", " ")}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+              {m.propuesta ? (
+                <div className={`w-[92%] px-4 py-3 text-[14px] leading-[22.75px] tracking-[-0.16px] ${m.resuelta ? "bg-panel shadow-[0_0_0_1px_var(--linea)]" : "bg-panel shadow-[0_0_0_1.5px_var(--laton)]"}`}>
+                  <span className="numeros mb-1 block text-[10px] tracking-[0.14em] text-laton uppercase">Necesita su visto bueno</span>
+                  {m.propuesta.resumen}
+                  {m.resuelta ? (
+                    <p className={`mt-2 text-[13px] font-medium ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>{m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}</p>
+                  ) : (
+                    <div className="mt-3 flex gap-2">
+                      <button type="button" onClick={() => aprobar(m.id, m.propuesta!)} className="h-[34px] bg-tinta px-3.5 text-[13px] font-medium text-paper transition-[filter] duration-100 hover:brightness-110">Aprobar</button>
+                      <button type="button" onClick={() => rechazar(m.id)} className="h-[34px] bg-panel px-3.5 text-[13px] text-tinta-2 shadow-[0_0_0_1px_var(--linea)] transition-colors duration-100 hover:text-tinta">Ahora no</button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </article>
+          ))}
+          {escribiendo ? (
+            <div className="flex items-center gap-1 self-start bg-panel px-4 py-3 shadow-[0_0_0_1px_var(--linea)]" aria-label="Consultando">
+              {[0, 1, 2].map((i) => (
+                <i key={i} aria-hidden="true" className="late h-1.5 w-1.5 bg-tinta-3" style={{ animationDelay: `${i * 180}ms`, animationDuration: "1s" }} />
+              ))}
+            </div>
+          ) : null}
+          {acuerdo && conectado && mensajes.length <= 1 && !escribiendo ? (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {SUGERENCIAS.map((s) => (
+                <button key={s} type="button" onClick={() => preguntar(s)} className="h-[26px] bg-panel px-2.5 text-[12px] font-medium text-tinta-2 shadow-[0_0_0_1px_var(--linea),0_1px_2px_0_rgba(0,0,0,0.05)] transition-colors duration-150 hover:text-tinta">{s}</button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Compositor */}
+        {acuerdo ? (
+          <form onSubmit={enviar} className="flex flex-none flex-col gap-2 px-4 pb-4 pt-2">
+            <div className="flex flex-col bg-panel shadow-[0_0_0_1px_var(--linea)] transition-shadow duration-150 focus-within:shadow-[0_0_0_1.5px_rgba(31,71,196,0.5)]">
+              <textarea
                 ref={campo}
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
-                placeholder="Pregunta o pide algo"
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void preguntar(texto); } }}
+                rows={2}
+                placeholder="Pregunte o pida algo"
                 aria-label="Mensaje"
-                className="h-10 min-w-0 flex-1 rounded-lg border border-linea bg-panel px-3 text-[14px] text-tinta outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-tinta-3 focus:border-acento focus:ring-2 focus:ring-acento/20"
+                className="min-h-[58px] resize-none border-0 bg-transparent px-4 pt-4 text-[14px] leading-[21px] tracking-[-0.16px] text-tinta outline-none placeholder:text-tinta-3"
               />
-              <button type="submit" disabled={!texto.trim() || escribiendo} aria-label="Enviar" className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-acento text-acento-tinta transition-[filter,transform] duration-100 hover:brightness-110 active:scale-95 disabled:bg-linea disabled:text-tinta-3">
-                <SendHorizontal size={18} />
-              </button>
-            </form>
-          ) : (
-            <div className="border-t border-linea bg-panel-2 px-5 py-5">
-              <p className="text-[13.5px] leading-relaxed text-tinta-2">
-                Este chat guarda la conversación en este navegador para poder seguirla. El copiloto consulta los datos de tu negocio y no hace nada sin que lo apruebes.
-              </p>
-              <div className="mt-4 flex justify-center">
-                <button type="button" onClick={aceptar} className="inline-flex h-11 items-center rounded-full bg-acento px-8 text-[15px] font-semibold text-acento-tinta transition-[filter,transform] duration-100 hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento/30">
-                  Estoy de acuerdo
+              <div className="flex items-center justify-end px-3 pt-2 pb-3">
+                <button type="submit" disabled={!texto.trim() || escribiendo} aria-label="Enviar" className="flex h-[26px] w-[26px] items-center justify-center bg-acento text-acento-tinta shadow-[0_0_0_1px_var(--acento)] transition-[filter] duration-100 hover:brightness-110 disabled:bg-linea disabled:text-tinta-3 disabled:shadow-none">
+                  <ArrowUp size={14} />
                 </button>
               </div>
             </div>
-          )}
-        </section>
-      ) : null}
+          </form>
+        ) : (
+          <div className="flex-none px-4 pb-4 pt-2">
+            <div className="bg-panel p-4 shadow-[0_0_0_1px_var(--linea)]">
+              <p className="text-[13px] leading-relaxed text-tinta-2">El chat guarda la conversación en este navegador. El agente consulta los datos del negocio y no hace nada sin su visto bueno.</p>
+              <button type="button" onClick={aceptar} className="mt-3 h-9 bg-tinta px-4 text-[13px] font-medium text-paper transition-[filter] duration-100 hover:brightness-110">De acuerdo</button>
+            </div>
+          </div>
+        )}
+      </aside>
 
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
-        aria-label={abierto ? "Cerrar el chat" : `Chatear con ${nombre}`}
-        className="fixed right-5 bottom-5 z-40 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-acento text-acento-tinta transition-[transform,filter] duration-200 hover:scale-105 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-acento/30"
+        aria-label={abierto ? "Cerrar el chat" : "Hablar con un agente"}
+        className={`fixed right-5 bottom-5 z-30 flex h-12 w-12 items-center justify-center bg-tinta text-paper transition-[transform,opacity] duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento ${abierto ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
-        <span key={String(abierto)} className="pop flex">
-          {abierto ? <X size={26} /> : <MessageCircle size={26} />}
-        </span>
+        <IconoAgente nombre="Recepción" tamano={48} />
       </button>
     </>
   );

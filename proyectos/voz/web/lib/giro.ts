@@ -18,6 +18,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
 
   const mensajes: Pestana[] = [{ href: "/bandeja", nombre: "Conversaciones" }];
   if (recados) mensajes.push({ href: "/recados", nombre: "Recados" });
+  mensajes.push({ href: "/agentes", nombre: "Agentes" });
 
   const clientes: Pestana[] = [
     { href: "/clientes", nombre: "Clientes" },
