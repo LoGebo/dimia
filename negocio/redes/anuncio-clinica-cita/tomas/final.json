@@ -1,0 +1,49 @@
+{
+  "created_at": "2026-09-19T01:56:22.755095Z",
+  "display_name": "Cinema Studio 4.0",
+  "id": "6868a954-4ed5-4c47-b8b2-dbce993a9706",
+  "job_type": "cinematic_studio_video_4_0",
+  "min_result_url": null,
+  "params": {
+    "aspect_ratio": "9:16",
+    "bitrate_mode": "standard",
+    "camera_aperture": null,
+    "camera_lens": null,
+    "camera_model": null,
+    "color_palette": null,
+    "duration": 15,
+    "era_control": null,
+    "extension_mode": null,
+    "generate_audio": true,
+    "genre": null,
+    "genre_control": null,
+    "height": 1920,
+    "light": null,
+    "light_custom": null,
+    "light_preset": null,
+    "medias": [
+      {
+        "data": {
+          "id": "4bfb6983-4774-452f-b762-9ad4243c569f",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/4bfb6983-4774-452f-b762-9ad4243c569f_resize.jpg"
+        },
+        "role": "start_image"
+      }
+    ],
+    "model": "default",
+    "multi_prompt": [],
+    "multi_shot_mode": "custom",
+    "multi_shots": false,
+    "pacing": null,
+    "prompt": "One continuous 15-second shot in three movements, no cuts. Movement one: a wide, perfectly static frame of an empty contemporary medical clinic reception after closing time; the room is quiet and orderly, lit only by practical ceiling and desk lights with deep controlled shadows. A black desk telephone on the reception counter begins to ring. Movement two: a slow, controlled dolly in toward the telephone; the call is answered automatically and a single small square blue status light on the phone turns on. Realistic phone materials, natural shallow depth of field, restrained movement. Movement three: a gentle focus change from the telephone to the computer monitor beside it, showing a clean dark calendar interface built only from simple geometric shapes; one appointment slot changes from pending to confirmed and a small green square locks into place. No readable text on the screen. Photorealistic institutional cinematography, ARRI Alexa 35, 35mm to 50mm, no camera shake, no crash zoom. Sound: a desk phone ringing in an empty clinic, a soft click as the call is picked up, quiet room tone. No music, no voice, no text. No robots, no holograms, no glowing circuits, no floating graphics, no rounded interfaces, no people.",
+    "prompt_language": "en",
+    "reference_elements": [],
+    "resolution": "1080p",
+    "speedramp": "auto",
+    "width": 1080
+  },
+  "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_015622_6868a954-4ed5-4c47-b8b2-dbce993a9706.mp4",
+  "status": "completed",
+  "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_015622_6868a954-4ed5-4c47-b8b2-dbce993a9706_thumbnail.webp"
+}

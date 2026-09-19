@@ -1,0 +1,49 @@
+{
+  "created_at": "2026-09-19T01:47:37.071558Z",
+  "display_name": "Cinema Studio 4.0",
+  "id": "d0d7a8ef-dda1-4fc4-b2f4-2ba6c5fa1ee6",
+  "job_type": "cinematic_studio_video_4_0",
+  "min_result_url": null,
+  "params": {
+    "aspect_ratio": "9:16",
+    "bitrate_mode": "standard",
+    "camera_aperture": null,
+    "camera_lens": null,
+    "camera_model": null,
+    "color_palette": null,
+    "duration": 15,
+    "era_control": null,
+    "extension_mode": null,
+    "generate_audio": true,
+    "genre": null,
+    "genre_control": null,
+    "height": 854,
+    "light": null,
+    "light_custom": null,
+    "light_preset": null,
+    "medias": [
+      {
+        "data": {
+          "id": "7201d01f-71a8-4f31-b122-89d51d8cbc7d",
+          "type": "media_input",
+          "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/7201d01f-71a8-4f31-b122-89d51d8cbc7d_resize.jpg"
+        },
+        "role": "start_image"
+      }
+    ],
+    "model": "default",
+    "multi_prompt": [],
+    "multi_shot_mode": "custom",
+    "multi_shots": false,
+    "pacing": null,
+    "prompt": "test",
+    "prompt_language": "en",
+    "reference_elements": [],
+    "resolution": "480p",
+    "speedramp": "auto",
+    "width": 480
+  },
+  "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_014737_d0d7a8ef-dda1-4fc4-b2f4-2ba6c5fa1ee6.mp4",
+  "status": "completed",
+  "thumbnail_url": "https://cdn.higgsfield.ai/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_014737_d0d7a8ef-dda1-4fc4-b2f4-2ba6c5fa1ee6_thumbnail.webp"
+}

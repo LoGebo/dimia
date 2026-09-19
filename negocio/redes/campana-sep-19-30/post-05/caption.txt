@@ -1,0 +1,5 @@
+El cliente puede llamar o escribir.
+
+Dimia conecta ambas conversaciones con las reglas y los sistemas del negocio para que la acción no termine en una nota aislada.
+
+Escriba DEMO para verlo en operación.

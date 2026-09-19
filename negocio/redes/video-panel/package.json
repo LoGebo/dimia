@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit",
     "render:anuncio": "remotion render src/index.ts AnuncioLanzamiento salida/anuncio-lanzamiento.mp4 --crf 16",
     "logotipo": "python3 generar-logotipo.py",
-    "render:torre": "remotion render src/index.ts SpotTorre salida/spot-torre.mp4 --crf 16"
+    "render:campana": "remotion render src/index.ts Reel06 ../campana-sep-19-30/post-06/reel-final-1080x1920.mp4 --crf 16 && remotion render src/index.ts Reel08 ../campana-sep-19-30/post-08/reel-final-1080x1920.mp4 --crf 16",
+    "render:torre": "remotion render src/index.ts SpotTorre salida/spot-torre.mp4 --crf 16",
+    "render:clinica": "for v in julian andre; do remotion render src/index.ts SpotClinica salida/spot-clinica-$v.mp4 --crf 16 --props=\"{\\\"voz\\\":\\\"$v\\\"}\"; done"
   },
   "keywords": [],
   "author": "",

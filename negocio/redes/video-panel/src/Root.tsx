@@ -4,6 +4,7 @@ import { ALTO, ANCHO, FPS } from "./marca";
 import { DURACION_TOTAL, VideoPanel } from "./VideoPanel";
 import { Anuncio, DURACION_ANUNCIO } from "./anuncio/Anuncio";
 import { DURACION_SPOT, Spot } from "./torre/Spot";
+import { DURACION_SPOT as DURACION_CLINICA, Spot as SpotClinica, type Voz } from "./clinica/Spot";
 import { Post } from "./posts/Post";
 import { Anuncio as AnuncioPauta } from "./anuncios/Anuncio";
 import { Ganador } from "./anuncios/Ganadores";
@@ -11,6 +12,7 @@ import { Carrusel } from "./anuncios/Carrusel";
 import { Buzon } from "./anuncios/Buzon";
 import { Vocera, duracionVocera, type VoceraProps } from "./anuncios/Vocera";
 import { AntesDespues, DURACION_ANTES_DESPUES } from "./anuncios/AntesDespues";
+import { ReelFotos, REEL_06, REEL_08 } from "./campana/ReelFotos";
 import "./tipografia";
 
 export const RemotionRoot: React.FC = () => (
@@ -58,5 +60,8 @@ export const RemotionRoot: React.FC = () => (
       width={ANCHO}
       height={ALTO}
     />
+    <Composition id="SpotClinica" component={SpotClinica} durationInFrames={DURACION_CLINICA} fps={FPS} width={ANCHO} height={ALTO} defaultProps={{ voz: "julian" as Voz }} />
+    <Composition id="Reel06" component={ReelFotos} durationInFrames={REEL_06.duracion * FPS} fps={FPS} width={ANCHO} height={ALTO} defaultProps={REEL_06} />
+    <Composition id="Reel08" component={ReelFotos} durationInFrames={REEL_08.duracion * FPS} fps={FPS} width={ANCHO} height={ALTO} defaultProps={REEL_08} />
   </>
 );

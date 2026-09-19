@@ -1,0 +1,5 @@
+Un mensaje puede ser el inicio de algo más que una respuesta.
+
+Dimia entiende la solicitud, consulta las reglas del negocio, registra la acción y activa el seguimiento correspondiente.
+
+Escenario de demostración. Escriba DEMO para revisar su proceso.

@@ -1,0 +1,34 @@
+[
+  {
+    "created_at": "2026-09-19T02:44:36.684344Z",
+    "display_name": "Text to Speech V2",
+    "id": "cc7b2f27-099b-47c3-9f02-093d7c28599b",
+    "job_type": "text2speech_v2",
+    "min_result_url": null,
+    "params": {
+      "batch_size": 1,
+      "model": "elevenlabs",
+      "prompt": "Dimia trabaja por usted, incluso cuando no está disponible. Su inteligencia artificial responde al instante, agenda citas en segundos y convierte cada oportunidad en un nuevo cliente. Con Dimia, ninguna llamada queda sin respuesta y ningún cliente se pierde.",
+      "voice": {
+        "age": "young",
+        "gender": "male",
+        "id": "95429266-c0ac-4137-a209-63b8812b0f23",
+        "name": "Julian",
+        "source": "https://d1xarpci4ikg0w.cloudfront.net/audio_voice_preset/preview/6d53a63c-d1a3-44e2-a6a7-62777b97aa34.mp3",
+        "supported_models": [
+          "elevenlabs",
+          "minimax",
+          "seed_speech",
+          "qwen_audio"
+        ],
+        "thumbnail_url": "https://d1xarpci4ikg0w.cloudfront.net/audio_voice/thumbnail/c0cd67eb-773b-4bb4-9353-7a01af6966d6.webp",
+        "type": "preset",
+        "waveform_url": "https://d1xarpci4ikg0w.cloudfront.net/waveform/b0ea0c60-f5f1-4217-b71d-0cd076c3ac1c.json"
+      },
+      "voice_id": "95429266-c0ac-4137-a209-63b8812b0f23",
+      "voice_type": "preset"
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_024436_cc7b2f27-099b-47c3-9f02-093d7c28599b.mp3",
+    "status": "completed"
+  }
+]

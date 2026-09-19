@@ -1,0 +1,23 @@
+[
+  {
+    "created_at": "2026-09-19T01:43:26.423577Z",
+    "display_name": "Nano Banana Pro",
+    "id": "b1e294b6-b72c-41ca-98b1-260e4f92dbc0",
+    "job_type": "nano_banana_pro",
+    "min_result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_014326_b1e294b6-b72c-41ca-98b1-260e4f92dbc0_min.webp",
+    "params": {
+      "application": null,
+      "aspect_ratio": "9:16",
+      "batch_size": 1,
+      "height": 2752,
+      "input_image": null,
+      "input_images": [],
+      "prompt": "Wide shot, eye level, of the empty reception of a private medical clinic at night, closed. A long bone-white reception counter with a black office desk telephone and a dark computer monitor turned off, a steel-gray chair behind it, a narrow brass door handle on a closed consulting-room door in the background. Most lights are off; one desk lamp and a strip of ceiling light remain on. Photorealistic still from a restrained institutional commercial, shot on an ARRI Alexa 35 with a 35mm lens at f/4, subtle film texture. A real contemporary private medical clinic in Monterrey, Mexico, after business hours: a space people actually use, natural materials, slight everyday wear. Deep ink-blue shadows, bone-white surfaces, steel-gray details, one very restrained cobalt-blue accent and one small brass detail. Rectilinear architecture, level camera, balanced negative space, realistic practical lighting. Vertical 9:16; the bottom third of the frame is calm. No people, no text, no logos, no readable screens, no glow, no neon, no lens flare.",
+      "resolution": "2k",
+      "surface": null,
+      "width": 1536
+    },
+    "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IyW3v6JeJ1UAMdpWlmMusOXGat/hf_20260919_014326_b1e294b6-b72c-41ca-98b1-260e4f92dbc0.png",
+    "status": "completed"
+  }
+]
