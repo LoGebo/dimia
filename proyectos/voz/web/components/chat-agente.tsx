@@ -19,6 +19,7 @@ type Mensaje = {
 
 export type AgenteChat = { id: string; nombre: string; trabajo: string; activo: boolean };
 
+const ANCHO_CAJON = 450;
 const CLAVE_ACUERDO = "chat_agente_acuerdo";
 const claveHistorial = (negocio: string, agente: string) => `chat_agente_historial:${negocio}:${agente}`;
 const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
@@ -79,6 +80,13 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
       if (acuerdo) campo.current?.focus();
     }
   }, [abierto, mensajes, escribiendo, acuerdo]);
+
+  // El cajón empuja la pantalla en vez de taparla: el contenido deja el
+  // espacio (ver --cajon en el layout) y todo sigue visible y usable.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--cajon", abierto && window.innerWidth >= 1024 ? `${ANCHO_CAJON}px` : "0px");
+    return () => document.documentElement.style.setProperty("--cajon", "0px");
+  }, [abierto]);
 
   useEffect(() => {
     function tecla(e: KeyboardEvent) {
@@ -148,7 +156,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
         role="dialog"
         aria-label={`Chat con ${agente.nombre}`}
         aria-hidden={!abierto}
-        className={`fixed top-0 right-0 bottom-0 z-40 flex w-[450px] max-w-full flex-col bg-paper text-tinta shadow-[-1px_0_0_0_var(--linea)] transition-transform duration-300 ease-in-out motion-reduce:transition-none ${abierto ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 bottom-0 z-40 flex w-[450px] max-w-full flex-col border-l border-linea bg-paper text-tinta transition-transform duration-300 ease-in-out motion-reduce:transition-none ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Cabecera: 58 px, el agente como botón que despliega los demás */}
         <header className="relative flex h-[58px] flex-none items-center justify-between px-4 shadow-[0_1px_0_0_var(--linea)]">

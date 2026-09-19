@@ -45,7 +45,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           />
         </BarraLateral>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div
+          className="flex min-w-0 flex-1 flex-col transition-[padding-right] duration-300 ease-in-out motion-reduce:transition-none"
+          style={{ paddingRight: "var(--cajon, 0px)" }}
+        >
           <CajonMenu
             email={usuario.email}
             negocio={membresia?.nombre ?? actual.nombre}

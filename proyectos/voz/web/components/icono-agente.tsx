@@ -27,6 +27,7 @@ function color(nombre: string): [string, string] {
   let h = 0;
   for (const c of nombre) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   if (/recepci/i.test(nombre)) return COLORES[0] as [string, string];
+  if (/^nuevo$/i.test(nombre.trim())) return ["#8b95a8", "#5a6478"];
   return COLORES[1 + (h % (COLORES.length - 1))] as [string, string];
 }
 
