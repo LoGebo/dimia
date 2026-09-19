@@ -90,21 +90,25 @@ export function lineaWhatsApp(): Promise<string | null> {
 
 export type PermisoAgente = "leer" | "navegar" | "anotar" | "escribir" | "agendar" | "formularios";
 export type Agente = {
-  id: string; nombre: string; trabajo: string; reglas: string | null;
+  id: string; nombre: string; trabajo: string | null; reglas: string | null; avatar: string | null;
   permisos: PermisoAgente[]; estado: "activo" | "en_pausa"; creado: string;
 };
 
+const SELECT_AGENTE = "select id, nombre, trabajo, reglas, avatar, permisos, estado, creado from agente";
+
 export function agentes(): Promise<Agente[]> {
-  return datos((q, id) =>
-    q<Agente>("select id, nombre, trabajo, reglas, permisos, estado, creado from agente where tenant_id = $1 order by creado", [id]),
-  );
+  return datos((q, id) => q<Agente>(`${SELECT_AGENTE} where tenant_id = $1 order by creado`, [id]));
 }
 
 export function agente(agenteId: string): Promise<Agente | null> {
   return datos(async (q, id) => {
-    const filas = await q<Agente>("select id, nombre, trabajo, reglas, permisos, estado, creado from agente where tenant_id = $1 and id = $2", [id, agenteId]);
+    const filas = await q<Agente>(`${SELECT_AGENTE} where tenant_id = $1 and id = $2`, [id, agenteId]);
     return filas[0] ?? null;
   });
+}
+
+export function pluginsInstalados(): Promise<string[]> {
+  return datos(async (q, id) => (await q<{ clave: string }>("select clave from plugin_instalado where tenant_id = $1", [id])).map((f) => f.clave));
 }
 
 export type ReglaWa = { id: string; tipo: "bienvenida" | "palabra"; disparador: string | null; respuesta: string; activo: boolean; orden: number };

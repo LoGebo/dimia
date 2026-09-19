@@ -1545,32 +1545,39 @@ export async function ejecutarPropuesta(p: Propuesta): Promise<Estado> {
 
 const PERMISOS_AGENTE = ["leer", "navegar", "anotar", "escribir", "agendar", "formularios"] as const;
 
-export async function crearAgente(_previo: Estado, fd: FormData): Promise<Estado> {
-  const nombre = texto(fd, "nombre");
-  const trabajo = texto(fd, "trabajo");
-  const reglas = texto(fd, "reglas");
-  if (!nombre) return { error: "Ponle nombre al agente." };
-  if (!trabajo) return { error: "Dile en una frase cuál es su trabajo." };
-  const permisos = PERMISOS_AGENTE.filter((p) => fd.get(`permiso_${p}`) === "on");
-  let creado: { id: string } | undefined;
+/** Un agente nuevo, sin trabajo todavía: se lo pregunta él mismo en el chat. */
+export async function crearAgenteVacio(): Promise<Estado & { id?: string }> {
+  let id: string | undefined;
   const estado = await intentar(() =>
     datos(async (q, negocioId) => {
+      const n = (await q<{ n: string }>("select count(*)::text as n from agente where tenant_id = $1", [negocioId]))[0]?.n ?? "0";
       const filas = await q<{ id: string }>(
-        "insert into agente (tenant_id, nombre, trabajo, reglas, permisos) values ($1, $2, $3, $4, $5) returning id",
-        [negocioId, nombre, trabajo, reglas || null, permisos],
+        "insert into agente (tenant_id, nombre, estado) values ($1, $2, 'en_pausa') returning id",
+        [negocioId, Number(n) ? `Nuevo agente ${Number(n) + 1}` : "Nuevo agente"],
       );
-      creado = filas[0];
+      id = filas[0]?.id;
     }),
   );
-  if (estado.error) return estado;
-  redirect(`/agentes/${creado!.id}`);
+  return estado.error ? estado : { id };
 }
 
-export async function cambiarEstadoAgente(agenteId: string, estado: "activo" | "en_pausa"): Promise<Estado> {
+export async function actualizarAgente(
+  agenteId: string,
+  cambios: { nombre?: string; trabajo?: string; reglas?: string; avatar?: string; permisos?: string[]; estado?: "activo" | "en_pausa" },
+): Promise<Estado> {
+  const permisos = cambios.permisos?.filter((p) => (PERMISOS_AGENTE as readonly string[]).includes(p));
   return intentar(() =>
     datos(async (q, negocioId) => {
-      await q("update agente set estado = $3, actualizado = now() where tenant_id = $1 and id = $2", [negocioId, agenteId, estado]);
-      return { ok: estado === "activo" ? "Agente activo." : "Agente en pausa." };
+      await q(
+        `update agente set
+           nombre = coalesce($3, nombre), trabajo = coalesce($4, trabajo), reglas = coalesce($5, reglas),
+           avatar = coalesce($6, avatar), permisos = coalesce($7, permisos), estado = coalesce($8, estado),
+           actualizado = now()
+         where tenant_id = $1 and id = $2`,
+        [negocioId, agenteId, cambios.nombre?.trim() || null, cambios.trabajo?.trim() || null, cambios.reglas ?? null,
+         cambios.avatar ?? null, permisos ?? null, cambios.estado ?? null],
+      );
+      return { ok: "Guardado." };
     }),
   );
 }
@@ -1583,4 +1590,15 @@ export async function borrarAgente(agenteId: string): Promise<Estado> {
   );
   if (estado.error) return estado;
   redirect("/agentes");
+}
+
+export async function alternarPlugin(clave: string, instalar: boolean): Promise<Estado> {
+  if (!/^[a-z0-9-]{2,40}$/.test(clave)) return { error: "Integración desconocida." };
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      if (instalar) await q("insert into plugin_instalado (tenant_id, clave) values ($1, $2) on conflict do nothing", [negocioId, clave]);
+      else await q("delete from plugin_instalado where tenant_id = $1 and clave = $2", [negocioId, clave]);
+      return { ok: instalar ? "Agregada." : "Quitada." };
+    }),
+  );
 }

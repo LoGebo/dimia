@@ -319,3 +319,9 @@ input[type="date"] {
   align-items: center;
   justify-content: center;
 }
+
+/* Agentes: la app dentro del panel usa la letra del sistema, como una app de mensajes. */
+.agentes {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}

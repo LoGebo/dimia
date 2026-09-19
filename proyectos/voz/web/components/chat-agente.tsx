@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowUp, ChevronDown, Maximize2, Plus, X } from "lucide-react";
-import { IconoAgente } from "@/components/icono-agente";
+import { AvatarAgente } from "@/components/avatar-agente";
 import { ejecutarPropuesta, preguntarCopiloto } from "@/lib/acciones";
 import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
 
@@ -17,7 +17,7 @@ type Mensaje = {
   resultado?: string;
 };
 
-export type AgenteChat = { id: string; nombre: string; trabajo: string; activo: boolean };
+export type AgenteChat = { id: string; nombre: string; trabajo: string | null; avatar?: string | null; activo: boolean };
 
 const ANCHO_CAJON = 450;
 const CLAVE_ACUERDO = "chat_agente_acuerdo";
@@ -34,6 +34,7 @@ const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?"
  */
 export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: AgenteChat[] }) {
   const router = useRouter();
+  const ruta = usePathname();
   const todos: AgenteChat[] = [{ id: "recepcion", nombre: "Recepción", trabajo: "Contesta y agenda", activo: true }, ...agentes];
   const [abierto, setAbierto] = useState(false);
   const [agenteId, setAgenteId] = useState("recepcion");
@@ -50,7 +51,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
   const saludo = (a: AgenteChat): Mensaje =>
     a.id === "recepcion"
       ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes, cobros o llamadas, o pídame algo y se lo propongo antes de hacerlo.` }
-      : { id: 1, de: "agente", texto: `Soy ${a.nombre}. ${a.trabajo} Todavía no tengo computadora: en cuanto la tenga, aquí me pide la tarea y aquí le aviso.` };
+      : { id: 1, de: "agente", texto: `Soy ${a.nombre}. ${a.trabajo ?? ""} Todavía no tengo computadora: en cuanto la tenga, aquí me pide la tarea y aquí le aviso.` };
 
   useEffect(() => {
     try {
@@ -150,6 +151,8 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
     void preguntar(texto);
   }
 
+  if (ruta.startsWith("/agentes")) return null;
+
   return (
     <>
       <aside
@@ -166,7 +169,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
             aria-expanded={eligiendo}
             className="flex h-8 items-center gap-2 px-2 text-[14px] font-medium tracking-[-0.14px] text-tinta transition-colors duration-150 hover:bg-panel-2"
           >
-            <IconoAgente nombre={agente.nombre} trabajo={agente.trabajo} tamano={22} />
+            <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} />
             {agente.nombre}
             <ChevronDown size={14} className="text-tinta-3" />
           </button>
@@ -186,10 +189,10 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
                     onClick={() => { setAgenteId(a.id); setEligiendo(false); }}
                     className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150 hover:bg-panel-2 ${a.id === agente.id ? "bg-panel-2" : ""}`}
                   >
-                    <IconoAgente nombre={a.nombre} trabajo={a.trabajo} tamano={26} />
+                    <AvatarAgente nombre={a.nombre} avatar={a.avatar} tamano={26} />
                     <span className="flex min-w-0 flex-col">
                       <span className="text-[13px] font-medium text-tinta">{a.nombre}</span>
-                      <span className="truncate text-[11.5px] text-tinta-3">{a.trabajo}</span>
+                      <span className="truncate text-[11.5px] text-tinta-3">{a.trabajo ?? "Sin trabajo todavía"}</span>
                     </span>
                   </button>
                 </li>
@@ -289,7 +292,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
         aria-label={abierto ? "Cerrar el chat" : "Hablar con un agente"}
         className={`fixed right-5 bottom-5 z-30 rounded-[16px] transition-[transform,opacity] duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acento ${abierto ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
-        <IconoAgente nombre={agente.nombre} trabajo={agente.trabajo} tamano={52} />
+        <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={52} />
       </button>
     </>
   );
