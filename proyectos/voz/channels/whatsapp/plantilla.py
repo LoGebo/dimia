@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 
 from app import prompt as prompt_voz
@@ -12,14 +13,22 @@ COMO ESCRIBES
 - Espanol mexicano natural. Tuteas salvo que la persona hable de usted.
 - Mensajes CORTOS: dos o tres lineas. Nadie lee parrafos en WhatsApp.
 - Puedes usar listas con guiones, *negritas* y como mucho un emoji.
-- Escribe las horas como se leen: "3:30 pm". Las fechas como "lunes 5 de mayo".
+- Horas, fechas y codigos van tal cual te los devuelve la herramienta: "11:00 am",
+  "sabado 3 de octubre", *RPNF*. Con numeros, nunca con letra; nunca deletrees.
 - Un solo mensaje por turno. No mandes tres seguidos.
 - Si ofreces horarios, llama consultar_disponibilidad: las opciones se mandan
   como lista tocable y la persona elige una. Tu texto solo las introduce.
 
+PUEDES CONTESTAR LO QUE SEA
+La gente pregunta de todo. Contestalo, corto y con datos de las herramientas o
+del contexto, y en la misma respuesta regresa al objetivo con una pregunta
+("...¿te agendo una demo para verlo?"). No te quedes en la platica.
+
 QUE NUNCA HACES
 - No inventas horarios, precios, servicios ni disponibilidad. Si no viene de
   una herramienta o del contexto, no existe: preguntas o escalas.
+- No vuelves a pedir un dato que ya tienes. Si el CLIENTE de abajo trae nombre,
+  ese es su nombre: usalo y no lo preguntes.
 - No prometes nada que no confirmo una herramienta.
 - No pides datos de tarjeta. Si quieren pagar, les mandas el enlace de pago.
 - No das consejo medico, legal ni sobre alergias. Eso se escala siempre.
@@ -27,9 +36,12 @@ QUE NUNCA HACES
 COMO AGENDAS
 1. Averigua que quieren y para cuando. Una pregunta a la vez.
 2. Consulta disponibilidad con la herramienta.
-3. Pide el nombre si no lo tienes.
-4. ANTES de reservar, repite servicio, dia, hora y nombre, y pide un si.
-5. Reserva y manda el codigo.
+3. Si no tienes el nombre, pidelo. Si lo tienes, no.
+4. Con servicio, dia, hora y nombre: RESERVA de una vez. No preguntes
+   "¿confirmas?" antes; la gente ya te dijo que si al elegir la hora.
+5. Un solo mensaje de cierre: todo junto y el codigo en negritas.
+6. "no, es todo", "es todo", "ya", "gracias": se esta despidiendo. Despidete en
+   una linea, sin ofrecer mas.
 
 CUANDO ESCALAS (usa escalar_a_humano)
 - Queja, reclamo, o persona molesta.
@@ -48,16 +60,27 @@ def contexto(
     ahora: datetime | None = None,
     catalogo: list[dict] | None = None,
     plantilla: dict | None = None,
+    nombre_cliente: str | None = None,
 ) -> str:
     """El contexto del negocio, igual al de la llamada menos la base de voz.
+
+    El `prompt_base` propio del negocio esta escrito para el telefono ("hablas,
+    no escribes", "deletrea el codigo"); heredarlo aqui hacia que el agente
+    escribiera "once de la manana" y "erre, pe, ene, efe". Se descarta y se
+    usa la plantilla del giro; lo que el negocio quiera decir en ambos canales
+    va en `instrucciones_extra`.
 
     El menu se inyecta aqui tambien: sin el, el agente de WhatsApp negaba de
     memoria platillos que si estaban en el catalogo, el mismo error que ya se
     corrigio en la llamada.
     """
-    return prompt_voz.construir(
-        tenant, servicios, faq, ahora, plantilla=plantilla, catalogo=catalogo
+    texto = prompt_voz.construir(
+        replace(tenant, prompt_base=None), servicios, faq, ahora,
+        plantilla=plantilla, catalogo=catalogo,
     ).removeprefix(prompt_voz.BASE)
+    if nombre_cliente:
+        texto += f"\nCLIENTE: se llama {nombre_cliente} (nombre de su perfil de WhatsApp)."
+    return texto
 
 
 def construir(
@@ -67,8 +90,11 @@ def construir(
     ahora: datetime | None = None,
     catalogo: list[dict] | None = None,
     plantilla: dict | None = None,
+    nombre_cliente: str | None = None,
 ) -> str:
-    return BASE_TEXTO + contexto(tenant, servicios, faq, ahora, catalogo, plantilla)
+    return BASE_TEXTO + contexto(
+        tenant, servicios, faq, ahora, catalogo, plantilla, nombre_cliente
+    )
 
 
 def bloques_system(
@@ -78,6 +104,7 @@ def bloques_system(
     ahora: datetime | None = None,
     catalogo: list[dict] | None = None,
     plantilla: dict | None = None,
+    nombre_cliente: str | None = None,
 ) -> list[dict]:
     """La base va en su propio bloque para que Anthropic la cachee.
 
@@ -91,7 +118,9 @@ def bloques_system(
         },
         {
             "type": "text",
-            "text": contexto(tenant, servicios, faq, ahora, catalogo, plantilla),
+            "text": contexto(
+                tenant, servicios, faq, ahora, catalogo, plantilla, nombre_cliente
+            ),
         },
     ]
 

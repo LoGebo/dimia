@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, tzinfo
 from typing import Any, Protocol
 
 from app.supabase_client import Agenda, Tenant
@@ -55,6 +57,37 @@ def _a_dict(bloque: Any) -> dict[str, Any]:
     if callable(volcado):
         return volcado(exclude_none=True)
     return dict(bloque)
+
+
+_HORA = re.compile(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?", re.I)
+
+
+def opcion_escrita(texto: str, opciones: dict[str, Any], tz: tzinfo) -> str | None:
+    """La opcion que corresponde a una hora escrita a mano: "11", "11:00 am", "a las 11".
+
+    La lista tocable no obliga a tocar; mucha gente contesta escribiendo la hora.
+    Sin esto el modelo se quedaba sin `opcion_id` y se iba por las ramas.
+    Solo casa si hay exactamente una opcion con esa hora.
+    """
+    if not opciones or not texto:
+        return None
+    encontrado = _HORA.search(texto)
+    if not encontrado:
+        return None
+    hora = int(encontrado.group(1))
+    minuto = int(encontrado.group(2) or 0)
+    sufijo = (encontrado.group(3) or "").lower().replace(".", "")
+    if sufijo == "pm" and hora < 12:
+        hora += 12
+    if sufijo == "am" and hora == 12:
+        hora = 0
+    candidatas = []
+    for clave, opcion in opciones.items():
+        local = datetime.fromisoformat(opcion.inicio_iso).astimezone(tz)
+        horas_posibles = {local.hour} if sufijo else {local.hour, local.hour % 12}
+        if hora in horas_posibles and local.minute == minuto:
+            candidatas.append(clave)
+    return candidatas[0] if len(candidatas) == 1 else None
 
 
 class AgenteWhatsApp:
@@ -121,7 +154,9 @@ class AgenteWhatsApp:
                 self.agenda, contexto.tenant, contexto.servicios, sesion,
                 herramientas_giro=contexto.herramientas_giro,
             )
-            sesion.agregar_usuario(self._texto_usuario(entrante, sesion.opciones))
+            sesion.agregar_usuario(
+                self._texto_usuario(entrante, sesion.opciones, contexto.tenant.tz)
+            )
             sesion.recortar(self.cfg.sesion_max_turnos)
             texto = await self._conversar(contexto, sesion, herramientas)
 
@@ -238,12 +273,15 @@ class AgenteWhatsApp:
         )
 
     def _texto_usuario(
-        self, entrante: MensajeEntrante, opciones: dict[str, Any]
+        self, entrante: MensajeEntrante, opciones: dict[str, Any], tz: tzinfo
     ) -> str:
         if entrante.seleccion_id and entrante.seleccion_id in opciones:
             return f"{entrante.texto} [opcion_id={entrante.seleccion_id}]"
         if entrante.seleccion_id:
             return f"{entrante.texto} [la opcion elegida ya expiro]"
+        elegida = opcion_escrita(entrante.texto, opciones, tz)
+        if elegida:
+            return f"{entrante.texto} [opcion_id={elegida}]"
         return entrante.texto
 
     async def _conversar(
@@ -260,6 +298,7 @@ class AgenteWhatsApp:
             system=plantilla.bloques_system(
                 contexto.tenant, contexto.servicios, contexto.faq,
                 catalogo=contexto.catalogo, plantilla=contexto.plantilla,
+                nombre_cliente=sesion.nombre_perfil,
             ),
             sesion=sesion,
             herramientas=herramientas,

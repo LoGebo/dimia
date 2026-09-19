@@ -90,6 +90,11 @@ def _cambios(cuerpo: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+# Meta escribe avisos ("Continue setting up your account") desde sus propios
+# numeros; no son clientes y no se les contesta.
+NUMEROS_DE_META = frozenset({"16465894168"})
+
+
 def parse_webhook(cuerpo: dict[str, Any]) -> list[MensajeEntrante]:
     entrantes: list[MensajeEntrante] = []
     for valor in _cambios(cuerpo):
@@ -102,6 +107,8 @@ def parse_webhook(cuerpo: dict[str, Any]) -> list[MensajeEntrante]:
         }
         for mensaje in valor.get("messages", []) or []:
             wa_id = mensaje.get("from", "")
+            if wa_id in NUMEROS_DE_META:
+                continue
             texto, seleccion = _texto_y_seleccion(mensaje)
             entrantes.append(
                 MensajeEntrante(

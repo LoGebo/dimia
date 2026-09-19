@@ -302,7 +302,10 @@ class Herramientas:
             return (
                 "Esa opcion ya no es valida. Vuelve a llamar consultar_disponibilidad."
             )
-        nombre = str(argumentos.get("nombre_cliente", "")).strip()
+        nombre = (
+            str(argumentos.get("nombre_cliente", "")).strip()
+            or (self.sesion.nombre_perfil or "").strip()
+        )
         if not nombre:
             return "Falta el nombre. Pideselo antes de reservar."
 

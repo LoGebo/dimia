@@ -995,3 +995,46 @@ async def test_un_numero_a_mitad_de_otra_conversacion_no_es_calificacion(tenant,
 
     assert agenda.calificaciones == []
     assert salidas[0].texto == "Perfecto, mesa para dos."
+
+
+def test_hora_escrita_se_casa_con_la_opcion_pendiente():
+    from zoneinfo import ZoneInfo
+
+    from channels.whatsapp.agente import opcion_escrita
+    from channels.whatsapp.sesion import OpcionHorario
+
+    tz = ZoneInfo("America/Mexico_City")
+    opciones = {
+        "a": OpcionHorario("2026-10-03T17:00:00+00:00", "r", "s", "sabado 3 de octubre, 11:00 am"),
+        "b": OpcionHorario("2026-10-03T19:30:00+00:00", "r", "s", "sabado 3 de octubre, 1:30 pm"),
+    }
+    assert opcion_escrita("11:00 am", opciones, tz) == "a"
+    assert opcion_escrita("a las 11", opciones, tz) == "a"
+    assert opcion_escrita("1:30 pm", opciones, tz) == "b"
+    assert opcion_escrita("la de la 1", opciones, tz) is None  # 1:00 no existe
+    assert opcion_escrita("si", opciones, tz) is None
+    assert opcion_escrita("11", {}, tz) is None
+
+
+def test_el_prompt_de_whatsapp_no_hereda_el_de_voz(tenant):
+    from dataclasses import replace
+
+    from channels.whatsapp import plantilla
+
+    voz = replace(tenant, prompt_base="Hablas por telefono. Deletrea los codigos.")
+    texto = plantilla.construir(voz, [], [], nombre_cliente="Ana")
+    assert "Deletrea" not in texto
+    assert "CLIENTE: se llama Ana" in texto
+
+
+def test_los_avisos_de_meta_no_son_clientes():
+    from channels.whatsapp.parser import parse_webhook
+
+    cuerpo = {
+        "entry": [{"changes": [{"field": "messages", "value": {
+            "metadata": {"display_phone_number": "12487479738", "phone_number_id": "1"},
+            "messages": [{"from": "16465894168", "id": "m1", "type": "text",
+                          "text": {"body": "Continue setting up your account"}}],
+        }}]}]
+    }
+    assert parse_webhook(cuerpo) == []
