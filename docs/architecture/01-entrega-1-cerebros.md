@@ -1,6 +1,6 @@
 # Entrega #1 — Cerebros por agente con Codex del negocio (2026-09-20)
 
-Estado: **funciona en producción** (probado con dos agentes de Dimia).
+Estado: **en producción con el Codex real de Dimia** (20 sep 2026). Modo prueba de Claude retirado.
 
 ## Qué se construyó
 
@@ -48,16 +48,21 @@ panel (Vercel)  ──HTTPS+secreto──▶  dimia-agentes (Fly, orquestador Py
 - Toolsets del API en esta entrega: `memory, skills, todo, web` (sin terminal ni pantalla;
   llegan en la #2 con la computadora del negocio).
 
-## Modo prueba (temporal, no producto)
+## Modo prueba (retirado)
 
-`PRUEBA_ANTHROPIC_TOKEN` en el orquestador mete el token de Claude Code del dueño de Dimia
-como `ANTHROPIC_TOKEN` en los perfiles y cambia el modelo a Anthropic. Sirve para probar la
-plataforma sin cuenta de ChatGPT. Anthropic no permite intermediar estos tokens para
-terceros; se retira cuando entre el Codex real (quitar el secreto y redeploy).
+`PRUEBA_ANTHROPIC_TOKEN` sigue en el código como llave de escape para probar sin ChatGPT;
+está sin definir en producción. No es producto: Anthropic no permite intermediar esos tokens.
+
+## Onboarding de Codex: lo que hay que saber
+
+- OpenAI tiene apagada por defecto la «autorización con código de dispositivo para Codex»;
+  el dueño la activa en chatgpt.com → Ajustes → Seguridad. La tarjeta del panel lo dice.
+- El access token dura ~10 días; el orquestador lo renueva 30 min antes y lo empuja a la
+  máquina. Modelo por defecto `gpt-5.5` (`MODELO_CODEX`).
+- Primer turno tras reiniciar la máquina: 20 s–2 min; después, 3–5 s.
 
 ## Lo pendiente de esta entrega
 
-- Onboarding de Codex desde el panel probado de punta a punta con una cuenta ChatGPT real.
 - Recepción sigue con el copiloto anterior; pasarla a Hermes cuando tenga sus herramientas
   de agenda como MCP/skill (entrega #5).
 - `agente_mensaje` guarda solo texto; los pasos de herramienta se mandan al panel pero no se
