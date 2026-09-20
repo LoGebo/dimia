@@ -60,13 +60,21 @@ async def renovar_si_hace_falta(tenant: str, margen=timedelta(minutes=30)) -> di
 
 # --- Máquina --------------------------------------------------------------
 
-async def _esperar_hermes(direccion: str, segundos: int = 90) -> None:
-    """La máquina «encendida» no es Hermes listo: el gateway tarda ~15 s en subir."""
-    import asyncio
+def memoria_para(agentes: int) -> int:
+    """Cada agente trae su Hermes, su Chromium y su escritorio: ~1 GB. Tope 8 GB."""
+    return min(8192, 1024 + 1024 * max(1, agentes))
+
+
+def _host(m) -> str:
+    return m["direccion"].rsplit(":", 1)[0]
+
+
+async def _esperar_hermes(host: str, pantalla: int, segundos: int = 120) -> None:
+    """La máquina «encendida» no es el Hermes del agente listo: tarda ~20 s en subir."""
     async with httpx.AsyncClient(timeout=3) as http:
         for _ in range(segundos):
             try:
-                if (await http.get(f"http://{direccion}/health")).status_code < 500:
+                if (await http.get(f"http://{host}:{hermes.puerto(pantalla)}/health")).status_code < 500:
                     return
             except httpx.HTTPError:
                 pass
@@ -90,32 +98,35 @@ async def asegurar_maquina(tenant: str) -> dict:
     sus perfiles y tokens al día. Devuelve la fila de maquina_negocio."""
     prov = proveedor()
     m = await maquina(tenant)
+    n_agentes = len(await _agentes(tenant))
     if m is None:
         llave = vault.llave_nueva()
         etiqueta = tenant.replace("-", "")[:20]
-        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, ["gateway", "run"], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=2, memoria_mb=2048, disco_gb=5)  # Chromium por agente pesa
+        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, [], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=2, memoria_mb=memoria_para(n_agentes), disco_gb=5)
         await db.ejecutar(
             "insert into maquina_negocio (tenant_id, proveedor, referencia, disco, direccion, llave) values ($1, $2, $3, $4, $5, $6)",
             tenant, prov.nombre, creada.referencia, creada.disco, creada.direccion, vault.cifrar(llave))
         m = await maquina(tenant)
         await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
     else:
-        if not (await prov.obtener(m["referencia"])).encendida:
+        actual = await prov.obtener(m["referencia"])
+        if not actual.encendida:
             await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
+        if actual.memoria_mb < memoria_para(n_agentes):
+            await prov.redimensionar(m["referencia"], memoria_para(n_agentes))
         viva = await prov.arrancar(m["referencia"])
         if viva.direccion != m["direccion"]:
             await db.ejecutar("update maquina_negocio set direccion = $2 where tenant_id = $1", tenant, viva.direccion)
             m = await maquina(tenant)
     await sincronizar(tenant, m)
-    await _esperar_hermes((await maquina(tenant))["direccion"])
     await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", tenant)
     return await maquina(tenant)
 
 
 async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     """Escribe en la máquina lo que cambió: perfiles nuevos o editados, el
-    auth.json vigente, skills e integraciones. Reinicia Hermes si aparecieron
-    perfiles o si quien llama lo pide (cambió una instalación)."""
+    auth.json vigente, skills e integraciones. Cada agente tiene su propio
+    Hermes; el supervisor de la máquina lo arranca o reinicia al ver los archivos."""
     prov = proveedor()
     if config.PRUEBA_ANTHROPIC_TOKEN:  # modo prueba: sin Codex, el token va en el .env del perfil
         t = {"acceso": "", "refresco": "", "version": -1}
@@ -130,6 +141,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     pantallas: dict[str, int] = {}
     usadas = {a["pantalla"] for a in agentes if a["pantalla"]}
     borrar: list[str] = []
+    configs_nuevos: dict[str, str] = {}
+    configs = m["configs"] if isinstance(m["configs"], dict) else json.loads(m["configs"] or "{}")  # asyncpg entrega jsonb como texto
     todas_skills = catalogo.skills()
     for a in agentes:
         aid = str(a["id"])
@@ -168,21 +181,21 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             nuevos.append(aid)
         else:
             archivos[f"{hermes.HOME}/profiles/{aid}/SOUL.md"] = soul  # barato: siempre al día
-            archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = hermes.config_yaml(llave, raiz=False, pantalla=pantalla, mcp=mcp)
+            nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp)
+            if nuevo_cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
+                archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = nuevo_cfg
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
-    archivos[f"{hermes.HOME}/pantallas.json"] = hermes.pantallas_json(pantallas)
-    primera_vez = not instalados
-    archivos.update(hermes.archivos_raiz(vault.descifrar(m["llave"])))  # barato: la raíz siempre al día
-    if primera_vez or m["version_token"] != t["version"]:
-        archivos[f"{hermes.HOME}/auth.json"] = auth
+        configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp)
+    archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
     codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
     if codigo != 0:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")
-    await db.ejecutar("update maquina_negocio set perfiles = $2, version_token = $3 where tenant_id = $1", tenant, list(instalados | set(nuevos)), t["version"])
-    if nuevos or primera_vez or reiniciar:
-        viva = await prov.reiniciar(m["referencia"])
-        await db.ejecutar("update maquina_negocio set direccion = $2 where tenant_id = $1", tenant, viva.direccion)
+    await db.ejecutar("update maquina_negocio set perfiles = $2, version_token = $3, configs = $4::jsonb where tenant_id = $1", tenant, list(instalados | set(nuevos)), t["version"], json.dumps(configs_nuevos))
+    # Ningún reinicio de máquina: el supervisor levanta o reinicia el Hermes de cada agente al ver sus archivos.
+    for aid, n in pantallas.items():
+        if aid in nuevos or reiniciar:
+            await _esperar_hermes(_host(m), n)
 
 
 async def empujar_tokens(tenant: str) -> None:
@@ -197,8 +210,8 @@ async def empujar_tokens(tenant: str) -> None:
 
 # --- Turnos ---------------------------------------------------------------
 
-def _url(m, agente_id: str, ruta: str) -> str:
-    return f"http://{m['direccion']}/p/{agente_id}{ruta}"
+def _url(m, pantalla: int, ruta: str) -> str:
+    return f"http://{_host(m)}:{hermes.puerto(pantalla)}{ruta}"
 
 
 async def _sesion(tenant: str, agente, m, llave: str, http: httpx.AsyncClient) -> str:
@@ -206,7 +219,7 @@ async def _sesion(tenant: str, agente, m, llave: str, http: httpx.AsyncClient) -
         return agente["sesion_hermes"]
     import uuid
     sid = f"panel_{uuid.uuid4().hex[:12]}"
-    r = await http.post(_url(m, str(agente["id"]), "/api/sessions"), headers={"Authorization": f"Bearer {llave}"}, json={"id": sid, "title": f"Panel {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}"})  # el título es único en Hermes
+    r = await http.post(_url(m, agente["pantalla"], "/api/sessions"), headers={"Authorization": f"Bearer {llave}"}, json={"id": sid, "title": f"Panel {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}"})  # el título es único en Hermes
     r.raise_for_status()
     await db.ejecutar("update agente set sesion_hermes = $2 where id = $1 and tenant_id = $3", agente["id"], sid, tenant)
     return sid
@@ -284,7 +297,7 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str) -> Trabajo | No
 
 async def _turno(tenant: str, agente_id: str, texto: str):
     """Genera eventos {evento, texto}. Un solo lugar traduce los fallos a español."""
-    agente = await db.uno("select id, nombre, llave, sesion_hermes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
     if not agente:
         yield {"evento": "error", "texto": "Ese agente no existe."}
         return
@@ -297,6 +310,8 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     except SinCodex:
         yield {"evento": "sin_codex", "texto": "Conecte su cuenta de ChatGPT para que este agente pueda trabajar."}
         return
+    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla from agente where id = $1", agente_id)
+    await _esperar_hermes(_host(m), agente["pantalla"])
     previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
     trabajo = (await db.uno("select trabajo from agente where id = $1", agente["id"]))["trabajo"]
@@ -309,7 +324,7 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     respuesta: list[str] = []
     async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=600)) as http:
         sid = await _sesion(tenant, agente, m, llave, http)
-        async with http.stream("POST", _url(m, agente_id, f"/api/sessions/{sid}/chat/stream"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}, json={"input": texto, "model": nivel}) as r:
+        async with http.stream("POST", _url(m, agente["pantalla"], f"/api/sessions/{sid}/chat/stream"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}, json={"input": texto, "model": nivel}) as r:
             if r.status_code == 401:
                 yield {"evento": "error", "texto": "La máquina del agente rechazó la llave; se volverá a sincronizar."}
                 await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)

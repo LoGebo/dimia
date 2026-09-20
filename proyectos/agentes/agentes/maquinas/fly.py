@@ -26,7 +26,8 @@ class Fly:
         mounts = m.get("config", {}).get("mounts") or []
         return Maquina(
             referencia=m["id"], disco=mounts[0]["volume"] if mounts else None,
-            direccion=f"[{m.get('private_ip')}]:{PUERTO_HERMES}", encendida=m.get("state") == "started")
+            direccion=f"[{m.get('private_ip')}]:{PUERTO_HERMES}", encendida=m.get("state") == "started",
+            memoria_mb=int(m.get("config", {}).get("guest", {}).get("memory_mb") or 0))
 
     async def crear(self, etiqueta, imagen, comando, entorno, cpus, memoria_mb, disco_gb):
         r = await self.http.post(f"/apps/{self.app}/volumes", json={"name": f"d_{etiqueta}", "region": config.FLY_REGION, "size_gb": disco_gb})
@@ -35,7 +36,7 @@ class Fly:
         r = await self.http.post(f"/apps/{self.app}/machines", json={
             "name": f"m-{etiqueta}", "region": config.FLY_REGION,
             "config": {
-                "image": imagen, "env": entorno, "init": {"cmd": comando},
+                "image": imagen, "env": entorno, **({"init": {"cmd": comando}} if comando else {}),
                 "guest": {"cpu_kind": "shared", "cpus": cpus, "memory_mb": memoria_mb},
                 "mounts": [{"volume": volumen, "path": "/opt/data"}],
                 "restart": {"policy": "on-failure", "max_retries": 3},
@@ -67,6 +68,18 @@ class Fly:
         r = await self.http.post(f"/apps/{self.app}/machines/{referencia}/restart")
         r.raise_for_status()
         return await self._esperar(referencia, "started")
+
+    async def redimensionar(self, referencia, memoria_mb):
+        """Cambia la RAM (la máquina se reinicia si estaba encendida)."""
+        r = await self.http.get(f"/apps/{self.app}/machines/{referencia}")
+        r.raise_for_status()
+        cfg = r.json()["config"]
+        cfg["guest"]["memory_mb"] = memoria_mb
+        if memoria_mb > 2048 and cfg["guest"].get("cpus", 1) < 4:
+            cfg["guest"]["cpus"] = 4  # Fly exige más CPU para más RAM compartida
+        r = await self.http.post(f"/apps/{self.app}/machines/{referencia}", json={"config": cfg})
+        r.raise_for_status()
+        await self._esperar(referencia, "started")
 
     async def ejecutar(self, referencia, comando, timeout=60):
         r = await self.http.post(f"/apps/{self.app}/machines/{referencia}/exec", json={"command": comando, "timeout": timeout}, timeout=timeout + 15)

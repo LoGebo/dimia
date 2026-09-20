@@ -31,10 +31,10 @@ def test_soul_habla_de_usted():
 
 def test_config_lleva_rutas_de_modelo():
     import yaml
-    c = yaml.safe_load(hermes.config_yaml("k" * 20, raiz=False, pantalla=1))
+    c = yaml.safe_load(hermes.config_yaml("k" * 20, pantalla=1))
     rutas = c["platforms"]["api_server"]["extra"]["model_routes"]
     assert set(rutas) == {"fuerte", "rapido"} and rutas["rapido"]["provider"] == "openai-codex"
-    assert c["browser"]["cdp_url"].endswith(":9201")
+    assert c["browser"]["cdp_url"].endswith(":9201") and c["gateway"]["api_server"]["port"] == 8701 and "computer_use" in c["platform_toolsets"]["api_server"]
 
 
 def test_catalogo_lee_las_skills():

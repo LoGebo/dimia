@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Escritorio del agente: una sola ventana, sin marco ni botones (no se puede
-     minimizar ni mover), siempre maximizada. El dueño ve la página, no un escritorio. -->
+<!-- Escritorio del agente: ventanas con marco pero sin minimizar (no hay barra
+     de tareas donde recuperarlas); el navegador abre maximizado. -->
 <openbox_config xmlns="http://openbox.org/3.4/rc">
   <focus><focusNew>yes</focusNew><followMouse>no</followMouse></focus>
-  <theme><keepBorder>no</keepBorder></theme>
+  <theme><titleLayout>LC</titleLayout><keepBorder>yes</keepBorder></theme>
   <desktops><number>1</number></desktops>
+  <menu><file>/opt/dimia/openbox-menu.xml</file></menu>
   <keyboard/>
-  <mouse/>
+  <mouse>
+    <context name="Root"><mousebinding button="Right" action="Press"><action name="ShowMenu"><menu>root-menu</menu></action></mousebinding></context>
+    <context name="Titlebar"><mousebinding button="Left" action="Drag"><action name="Move"/></mousebinding></context>
+    <context name="Frame"><mousebinding button="Left" action="Press"><action name="Focus"/><action name="Raise"/></mousebinding></context>
+    <context name="Client"><mousebinding button="Left" action="Press"><action name="Focus"/><action name="Raise"/></mousebinding></context>
+    <context name="Close"><mousebinding button="Left" action="Click"><action name="Close"/></mousebinding></context>
+  </mouse>
   <applications>
-    <application class="*">
-      <decor>no</decor>
-      <maximized>yes</maximized>
-      <focus>yes</focus>
-    </application>
+    <application class="Chromium*"><maximized>yes</maximized><focus>yes</focus></application>
   </applications>
 </openbox_config>

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Levanta las pantallas de los agentes (vigilante en segundo plano) y después
-# arranca Hermes exactamente como lo haría su propia imagen.
-python3 /opt/dimia/pantallas.py &
-exec /opt/hermes/docker/entrypoint-dispatch.sh "$@"
+# Prepara lo que la imagen oficial hace en su arranque (permisos, skills) y
+# luego deja al supervisor levantar un escritorio y un Hermes por agente.
+chown -R 10000:10000 /opt/data 2>/dev/null
+exec python3 /opt/dimia/escritorios.py

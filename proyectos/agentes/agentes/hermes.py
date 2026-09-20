@@ -13,10 +13,16 @@ from agentes import config
 HOME = "/opt/data"
 UID = "10000"  # usuario `hermes` dentro de la imagen oficial
 
-TOOLSETS = ["memory", "skills", "todo", "web", "browser", "vision"]  # sin terminal: la caja sigue siendo compartida
+# Hermes completo: terminal, archivos, código y escritorio (computer_use) además de navegador y web.
+# El terminal corre en la máquina del negocio como el usuario hermes; entre agentes del mismo negocio no hay muro, como en Grok Bot.
+TOOLSETS = ["memory", "skills", "todo", "web", "browser", "vision", "terminal", "file", "code_execution", "computer_use"]
 
 
-def config_yaml(llave: str, raiz: bool, pantalla: int | None = None, mcp: dict | None = None) -> str:
+def puerto(pantalla: int) -> int:
+    return 8700 + pantalla
+
+
+def config_yaml(llave: str, pantalla: int, mcp: dict | None = None) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
     if config.PRUEBA_ANTHROPIC_TOKEN:
         modelo = {"default": config.PRUEBA_ANTHROPIC_MODELO, "provider": "anthropic"}
@@ -25,7 +31,7 @@ def config_yaml(llave: str, raiz: bool, pantalla: int | None = None, mcp: dict |
         "model": modelo,
         "terminal": {"backend": "local"},
         "platform_toolsets": {"api_server": TOOLSETS},
-        "gateway": {"api_server": {"enabled": True, "host": "::", "port": 8642, "key": llave, "max_concurrent_runs": 4}},
+        "gateway": {"api_server": {"enabled": True, "host": "::", "port": puerto(pantalla), "key": llave, "max_concurrent_runs": 4}, "multiplex_profiles": False},
         # Dos alias que el orquestador elige por turno según Jev.
         "platforms": {"api_server": {"extra": {"model_routes": {
             "fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"},
@@ -35,19 +41,16 @@ def config_yaml(llave: str, raiz: bool, pantalla: int | None = None, mcp: dict |
         # detrás de tool_search y el modelo no lo encuentra.
         "tools": {"tool_search": {"enabled": "off"}},
     }
-    if raiz:
-        c["gateway"]["multiplex_profiles"] = True
     if mcp:
         c["mcp_servers"] = mcp
-    if pantalla:
-        # El Chromium de su pantalla (pantallas.py lo levanta con CDP en 9200+n).
-        # backend off = las herramientas browser_* de siempre (no la CLI de Browser Use), sobre nuestro CDP.
-        c["browser"] = {"backend": "off", "cdp_url": f"http://127.0.0.1:{9200 + pantalla}", "inactivity_timeout": 600}
+    # El Chromium de su pantalla (escritorios.py lo levanta con CDP en 9200+n).
+    # backend off = las herramientas browser_* de siempre (no la CLI de Browser Use), sobre nuestro CDP.
+    c["browser"] = {"backend": "off", "cdp_url": f"http://127.0.0.1:{9200 + pantalla}", "inactivity_timeout": 600}
     return yaml.safe_dump(c, allow_unicode=True, sort_keys=False)
 
 
-def env(llave: str) -> str:
-    base = f"API_SERVER_ENABLED=true\nAPI_SERVER_HOST=::\nAPI_SERVER_KEY={llave}\n"
+def env(llave: str, pantalla: int) -> str:
+    base = f"API_SERVER_ENABLED=true\nAPI_SERVER_HOST=::\nAPI_SERVER_PORT={puerto(pantalla)}\nAPI_SERVER_KEY={llave}\n"
     if config.PRUEBA_ANTHROPIC_TOKEN:
         base += f"ANTHROPIC_TOKEN={config.PRUEBA_ANTHROPIC_TOKEN}\n"
     return base
@@ -60,7 +63,7 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
         "Escribe en español de México. Frases cortas. Primero el resultado, después el método.",
         "Sin superlativos, sin signos de admiración, sin anglicismos donde exista palabra en español.",
         "Nunca inventa cifras, clientes ni resultados; si falta un dato, lo pide.",
-        "Tiene una computadora con navegador propio y el dueño ve su pantalla en vivo. Para buscar, leer o usar sitios web use el navegador (browser_navigate, browser_snapshot, browser_click), no web_extract; así el dueño ve lo que hace.",
+        "Tiene una computadora propia (escritorio Linux con navegador, terminal, archivos, hoja de cálculo y documentos) y el dueño ve su pantalla en vivo. Para buscar, leer o usar sitios web use el navegador (browser_navigate, browser_snapshot, browser_click), no web_extract; para otras aplicaciones use computer_use; guarde lo que produzca en la carpeta escritorio/. Así el dueño ve lo que hace.",
     ]
     if trabajo:
         partes.append(f"\n## Su trabajo\n{trabajo}")
@@ -69,16 +72,12 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
     return "\n".join(partes) + "\n"
 
 
-def archivos_raiz(llave: str) -> dict[str, str]:
-    return {f"{HOME}/config.yaml": config_yaml(llave, raiz=True), f"{HOME}/.env": env(llave)}
-
-
-def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int | None, mcp: dict | None = None) -> dict[str, str]:
+def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None) -> dict[str, str]:
     p = f"{HOME}/profiles/{agente_id}"
-    return {f"{p}/config.yaml": config_yaml(llave, raiz=False, pantalla=pantalla, mcp=mcp), f"{p}/.env": env(llave), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    return {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
 
 
-def pantallas_json(mapa: dict[str, int]) -> str:
+def escritorios_json(mapa: dict[str, int]) -> str:
     return json.dumps(mapa)
 
 
