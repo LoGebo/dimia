@@ -37,11 +37,13 @@ const OJOS: Record<Forma, [number, number]> = { gota: [50, 66], circulo: [50, 52
 export function AvatarAgente({ nombre, avatar, tamano = 40, activo }: { nombre: string; avatar?: string | null; tamano?: number; activo?: boolean }) {
   const { forma, color } = rasgos(nombre, avatar);
   const [cx, cy] = OJOS[forma];
+  // Cada agente respira y parpadea a destiempo de los demás.
+  const espera = `${-(hash(nombre) % 4000) / 1000}s`;
   return (
-    <span className="relative inline-flex flex-none" style={{ width: tamano, height: tamano }}>
-      <svg viewBox="0 0 100 100" width={tamano} height={tamano} aria-hidden="true">
+    <span data-avatar="" className="relative inline-flex flex-none" style={{ width: tamano, height: tamano }}>
+      <svg viewBox="0 0 100 100" width={tamano} height={tamano} aria-hidden="true" className="avatar-cuerpo overflow-visible" style={{ "--avatar-espera": espera } as React.CSSProperties}>
         <path d={TRAZO[forma]} fill={color} />
-        <g fill="#0b0f17">
+        <g fill="#0b0f17" className="avatar-ojos">
           <rect x={cx - 15} y={cy - 8} width="7" height="16" rx="3.5" transform={`rotate(-8 ${cx - 11} ${cy})`} />
           <rect x={cx + 8} y={cy - 8} width="7" height="16" rx="3.5" transform={`rotate(8 ${cx + 11} ${cy})`} />
         </g>
