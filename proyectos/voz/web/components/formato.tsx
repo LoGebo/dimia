@@ -12,8 +12,9 @@ export function Formato({ texto }: { texto: string }) {
         if (lista) {
           const numerada = /^\s*\d+[.)]/.test(lineas[0]!);
           const Tag = numerada ? "ol" : "ul";
+          const inicio = numerada ? Number(/^\s*(\d+)/.exec(lineas[0]!)![1]) : undefined;
           return (
-            <Tag key={i} className={`space-y-1 pl-5 ${numerada ? "list-decimal" : "list-disc"}`}>
+            <Tag key={i} start={inicio} className={`space-y-1 pl-5 ${numerada ? "list-decimal" : "list-disc"}`}>
               {lineas.map((l, j) => <li key={j}>{inline(l.replace(/^\s*([-•*]|\d+[.)])\s+/, ""))}</li>)}
             </Tag>
           );
@@ -25,7 +26,14 @@ export function Formato({ texto }: { texto: string }) {
   );
 }
 
+/** Negritas, enlaces [texto](url) y direcciones sueltas. */
 function inline(t: string) {
-  const partes = t.split(/(\*\*[^*]+\*\*)/g);
-  return partes.map((p, i) => (p.startsWith("**") && p.endsWith("**") ? <strong key={i} className="font-semibold">{p.slice(2, -2)}</strong> : p));
+  const partes = t.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\)|https?:\/\/[^\s)]+)/g);
+  return partes.map((p, i) => {
+    if (p.startsWith("**") && p.endsWith("**")) return <strong key={i} className="font-semibold">{p.slice(2, -2)}</strong>;
+    const enlace = /^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/.exec(p);
+    if (enlace) return <a key={i} href={enlace[2]} target="_blank" rel="noreferrer" className="underline decoration-tinta-3 underline-offset-2 hover:decoration-tinta">{enlace[1]}</a>;
+    if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noreferrer" className="break-all underline decoration-tinta-3 underline-offset-2 hover:decoration-tinta">{p.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>;
+    return p;
+  });
 }
