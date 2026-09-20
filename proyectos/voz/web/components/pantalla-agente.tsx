@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Circle, Monitor, Settings2, Trash2 } from "lucide-react";
+import { PantallaVivo } from "@/components/pantalla-vivo";
 import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
 import { actualizarAgente, borrarAgente } from "@/lib/acciones";
 import type { AgenteHilo } from "@/components/hilo-agente";
@@ -187,10 +188,14 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
           ) : (
             <>
               {visibles.has("pantalla") ? (
-                <div className="space-y-2">
-                  <div className="flex aspect-[16/10] items-center justify-center rounded-2xl border border-linea bg-panel-2 text-tinta-3"><Monitor size={22} strokeWidth={1.5} /></div>
-                  <p className="text-center text-[13px] text-tinta-3">Pantalla de {agente.nombre}</p>
-                </div>
+                !recepcion && agente.trabajo ? (
+                  <PantallaVivo agenteId={agente.id} nombre={agente.nombre} />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex aspect-[16/10] items-center justify-center rounded-2xl border border-linea bg-panel-2 text-tinta-3"><Monitor size={22} strokeWidth={1.5} /></div>
+                    <p className="text-center text-[13px] text-tinta-3">Pantalla de {agente.nombre}</p>
+                  </div>
+                )
               ) : null}
               {visibles.has("grabar") ? (
                 <div className="rounded-2xl border border-linea p-4">

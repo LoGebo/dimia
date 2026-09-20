@@ -6,7 +6,13 @@ import logging
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+import base64
+import hashlib
+import hmac
+import time
+
+import websockets
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -135,3 +141,75 @@ async def estado_maquina(tenant: str = Depends(negocio_id)):
     from agentes.maquinas import proveedor
     viva = await proveedor().obtener(m["referencia"])
     return {"estado": "encendida" if viva.encendida else "dormida", "proveedor": m["proveedor"], "perfiles": m["perfiles"], "ultimo_uso": m["ultimo_uso"].isoformat()}
+
+
+# --- Pantalla del agente (VNC en el navegador) ---
+
+def _firmar(datos: dict) -> str:
+    cuerpo = base64.urlsafe_b64encode(json.dumps(datos).encode()).decode().rstrip("=")
+    firma = hmac.new(config.PANEL_SECRETO.encode(), cuerpo.encode(), hashlib.sha256).hexdigest()[:32]
+    return f"{cuerpo}.{firma}"
+
+
+def _verificar(token: str) -> dict | None:
+    try:
+        cuerpo, firma = token.split(".")
+    except ValueError:
+        return None
+    if not hmac.compare_digest(firma, hmac.new(config.PANEL_SECRETO.encode(), cuerpo.encode(), hashlib.sha256).hexdigest()[:32]):
+        return None
+    d = json.loads(base64.urlsafe_b64decode(cuerpo + "=" * (-len(cuerpo) % 4)))
+    return d if d.get("exp", 0) > time.time() else None
+
+
+@app.post("/agentes/{agente_id}/pantalla")
+async def pantalla(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    """Despierta la máquina y devuelve una URL firmada (10 min) para ver la pantalla del agente."""
+    a = await db.uno("select pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        raise HTTPException(404)
+    try:
+        await negocio.asegurar_maquina(tenant)
+    except negocio.SinCodex:
+        raise HTTPException(409, "Conecte su cuenta de ChatGPT primero")
+    a = await db.uno("select pantalla from agente where id = $1", agente_id)
+    token = _firmar({"t": tenant, "a": str(agente_id), "n": a["pantalla"], "exp": int(time.time()) + 600})
+    ws = config.PUBLICO_URL.replace("https://", "wss://").replace("http://", "ws://")
+    return {"url": f"{ws}/pantalla/{token}"}
+
+
+@app.websocket("/pantalla/{token}")
+async def pantalla_ws(ws: WebSocket, token: str):
+    """Puente entre el navegador del dueño y el noVNC de la máquina (red privada)."""
+    d = _verificar(token)
+    if not d:
+        await ws.close(code=4401)
+        return
+    m = await negocio.maquina(d["t"])
+    if not m:
+        await ws.close(code=4404)
+        return
+    host = m["direccion"].rsplit(":", 1)[0]
+    await ws.accept(subprotocol="binary")
+    await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", d["t"])
+    try:
+        async with websockets.connect(f"ws://{host}:{6080 + int(d['n'])}/websockify", subprotocols=["binary"], max_size=None) as maquina_ws:
+            async def hacia_maquina():
+                while True:
+                    await maquina_ws.send(await ws.receive_bytes())
+
+            async def hacia_navegador():
+                async for dato in maquina_ws:
+                    await ws.send_bytes(dato if isinstance(dato, bytes) else dato.encode())
+
+            t1, t2 = asyncio.create_task(hacia_maquina()), asyncio.create_task(hacia_navegador())
+            _, pendientes = await asyncio.wait({t1, t2}, return_when=asyncio.FIRST_COMPLETED)
+            for p in pendientes:
+                p.cancel()
+    except (WebSocketDisconnect, OSError, websockets.exceptions.WebSocketException):
+        pass
+    finally:
+        try:
+            await ws.close()
+        except Exception:  # noqa: BLE001
+            pass

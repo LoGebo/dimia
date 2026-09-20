@@ -75,7 +75,7 @@ async def _negocio(tenant: str):
 
 
 async def _agentes(tenant: str):
-    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version from agente where tenant_id = $1 order by creado", tenant)
+    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla from agente where tenant_id = $1 order by creado", tenant)
 
 
 async def maquina(tenant: str):
@@ -90,7 +90,7 @@ async def asegurar_maquina(tenant: str) -> dict:
     if m is None:
         llave = vault.llave_nueva()
         etiqueta = tenant.replace("-", "")[:20]
-        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, ["gateway", "run"], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=1, memoria_mb=1024, disco_gb=3)
+        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, ["gateway", "run"], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=2, memoria_mb=2048, disco_gb=5)  # Chromium por agente pesa
         await db.ejecutar(
             "insert into maquina_negocio (tenant_id, proveedor, referencia, disco, direccion, llave) values ($1, $2, $3, $4, $5, $6)",
             tenant, prov.nombre, creada.referencia, creada.disco, creada.direccion, vault.cifrar(llave))
@@ -120,28 +120,36 @@ async def sincronizar(tenant: str, m) -> None:
     archivos: dict[str, str] = {}
     instalados = set(m["perfiles"])
     nuevos: list[str] = []
+    pantallas: dict[str, int] = {}
+    usadas = {a["pantalla"] for a in agentes if a["pantalla"]}
     for a in agentes:
         aid = str(a["id"])
         llave = vault.descifrar(a["llave"]) if a["llave"] else None
         if llave is None:
             llave = vault.llave_nueva()
             await db.ejecutar("update agente set llave = $2 where id = $1", a["id"], vault.cifrar(llave))
+        pantalla = a["pantalla"]
+        if not pantalla:  # la primera libre; ponytail: hasta 50 pantallas por negocio, como Grok Bot
+            pantalla = next(n for n in range(1, 51) if n not in usadas)
+            usadas.add(pantalla)
+            await db.ejecutar("update agente set pantalla = $2 where id = $1", a["id"], pantalla)
+        pantallas[aid] = pantalla
         soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"])
         if aid not in instalados:
-            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth))
+            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla))
             nuevos.append(aid)
         else:
             archivos[f"{hermes.HOME}/profiles/{aid}/SOUL.md"] = soul  # barato: siempre al día
+            archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = hermes.config_yaml(llave, raiz=False, pantalla=pantalla)
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
+    archivos[f"{hermes.HOME}/pantallas.json"] = hermes.pantallas_json(pantallas)
     primera_vez = not instalados
     if primera_vez:
         archivos.update(hermes.archivos_raiz(vault.descifrar(m["llave"])))
         archivos[f"{hermes.HOME}/auth.json"] = auth
     elif m["version_token"] != t["version"]:
         archivos[f"{hermes.HOME}/auth.json"] = auth
-    if not archivos:
-        return
     codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos), timeout=60)
     if codigo != 0:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")

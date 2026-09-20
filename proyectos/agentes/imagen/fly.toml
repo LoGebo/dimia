@@ -1,0 +1,5 @@
+# Solo para construir y subir la imagen al registro de Fly:
+#   flyctl deploy --build-only --push -a dimia-cerebros --image-label hermes-v1
+app = "dimia-cerebros"
+[build]
+  dockerfile = "Dockerfile"
