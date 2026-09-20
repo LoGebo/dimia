@@ -86,6 +86,10 @@ def mcp_dimia(token: str) -> dict:
     return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
+def mcp_whatsapp(token: str) -> dict:
+    return {"whatsapp": {"url": f"{config.PUBLICO_URL}/mcp-whatsapp/", "headers": {"Authorization": f"Bearer {token}"}}}
+
+
 def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[str]:
     """Un solo `sh -c` que deja los archivos en su lugar con el dueño correcto.
     ponytail: base64 en la línea de comando; suficiente para archivos de KB."""

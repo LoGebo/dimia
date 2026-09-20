@@ -38,19 +38,21 @@ async def _ciclo():
 from agentes import mcp_dimia  # noqa: E402
 
 app_mcp = mcp_dimia.app()
+app_mcp_wa = mcp_dimia.app_whatsapp()
 
 
 @asynccontextmanager
 async def vida(_: FastAPI):
     tarea = asyncio.create_task(_ciclo())
     # El transporte MCP montado necesita su propio ciclo de vida (Starlette no lo arranca solo).
-    async with app_mcp.router.lifespan_context(app_mcp):
+    async with app_mcp.router.lifespan_context(app_mcp), app_mcp_wa.router.lifespan_context(app_mcp_wa):
         yield
     tarea.cancel()
 
 
 app = FastAPI(title="Dimia agentes", lifespan=vida)
 app.mount("/mcp", app_mcp)
+app.mount("/mcp-whatsapp", app_mcp_wa)
 
 
 async def negocio_id(authorization: str = Header(""), x_negocio: str = Header("")) -> str:

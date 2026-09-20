@@ -89,3 +89,31 @@ def app():
     return servidor.streamable_http_app(
         streamable_http_path="/", stateless_http=True, json_response=True,
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
+
+
+# --- WhatsApp: escribir a clientes por la línea del negocio ---------------
+
+whatsapp = MCPServer("whatsapp", instructions="Manda mensajes de WhatsApp desde la línea del negocio. Solo con permiso explícito del dueño en este hilo; nunca invente destinatarios.")
+
+
+@whatsapp.tool(name="enviar_whatsapp", description="Envía un mensaje de WhatsApp a un teléfono (10 dígitos de México o con lada) desde la línea del negocio. Úselo solo cuando el dueño lo haya aprobado en el hilo.")
+async def enviar_whatsapp(ctx: Context, telefono: str, mensaje: str) -> str:
+    t = await _tenant(ctx)
+    digitos = "".join(c for c in telefono if c.isdigit())
+    if len(digitos) == 10:
+        digitos = "52" + digitos
+    if not (11 <= len(digitos) <= 15) or not mensaje.strip():
+        return "Teléfono o mensaje inválido."
+    if not await db.uno("select 1 from tenant where id = $1 and telefono_entrada is not null", t):
+        return "Este negocio no tiene línea de WhatsApp configurada."
+    import json as _json
+    await db.ejecutar(
+        "insert into outbox (tenant_id, canal, destino, plantilla, payload) values ($1, 'whatsapp', $2, 'campana', $3::jsonb)",
+        t, digitos, _json.dumps({"mensaje": mensaje.strip(), "origen": "agente"}))
+    return f"Mensaje en cola para +{digitos}. Sale en menos de un minuto; si el cliente no ha escrito en 24 h, WhatsApp puede rechazarlo y el panel lo mostrará."
+
+
+def app_whatsapp():
+    return whatsapp.streamable_http_app(
+        streamable_http_path="/", stateless_http=True, json_response=True,
+        transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))

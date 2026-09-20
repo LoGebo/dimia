@@ -146,13 +146,18 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"])
         # Instalaciones de este agente: integración Dimia (MCP con su token) y skills.
         inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
-        mcp = None
-        if any(i["tipo"] == "integracion" and i["clave"] == "dimia" for i in inst):
+        mcp: dict | None = None
+        integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
+        if integraciones & {"dimia", "whatsapp"}:
             token = a["mcp_token"]
             if not token:
                 token = vault.llave_nueva()
                 await db.ejecutar("update agente set mcp_token = $2 where id = $1", a["id"], token)
-            mcp = hermes.mcp_dimia(token)
+            mcp = {}
+            if "dimia" in integraciones:
+                mcp.update(hermes.mcp_dimia(token))
+            if "whatsapp" in integraciones:
+                mcp.update(hermes.mcp_whatsapp(token))
         raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
         borrar.append(raiz_skills)
         for i in inst:

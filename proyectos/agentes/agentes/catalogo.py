@@ -12,7 +12,7 @@ INTEGRACIONES = {
     "gmail": {"nombre": "Gmail", "detalle": "Leer y mandar correo", "lista": False},
     "google-calendar": {"nombre": "Google Calendar", "detalle": "Ver y mover citas", "lista": False},
     "google-drive": {"nombre": "Google Drive", "detalle": "Archivos y documentos", "lista": False},
-    "whatsapp": {"nombre": "WhatsApp", "detalle": "Escribir a clientes", "lista": False},
+    "whatsapp": {"nombre": "WhatsApp", "detalle": "Escribir a clientes desde la línea del negocio", "lista": True},
     "notion": {"nombre": "Notion", "detalle": "Documentos y tablas", "lista": False},
     "slack": {"nombre": "Slack", "detalle": "Avisos al equipo", "lista": False},
 }
