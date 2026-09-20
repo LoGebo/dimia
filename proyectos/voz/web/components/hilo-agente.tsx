@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Monitor, PanelRightOpen, Plus } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { actualizarAgente, ejecutarPropuesta, preguntarCopiloto } from "@/lib/acciones";
+import { actualizarAgente, conectarCodex, ejecutarPropuesta, estadoCodex, hiloNuevoAgente, mensajesAgente, preguntarCopiloto } from "@/lib/acciones";
 import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
 
 type Opcion = { letra: string; titulo: string; detalle: string; trabajo?: string; nombre?: string };
@@ -41,6 +41,9 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const router = useRouter();
   const conectado = agente.id === "recepcion";
   const sinTrabajo = !conectado && !agente.trabajo;
+  const conCerebro = !conectado && !sinTrabajo; // agente con trabajo: vive en su Hermes
+  const [codex, setCodex] = useState<{ codigo: string; url: string } | null>(null);
+  const [pideCodex, setPideCodex] = useState(false);
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
@@ -52,9 +55,17 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
       ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes, cobros o llamadas, o pídame algo y se lo propongo antes de hacerlo.` }
       : sinTrabajo
         ? { id: 1, de: "agente", texto: "Hola. Mucho gusto.\n¿Para qué me quiere más?", opciones: ROLES }
-        : { id: 1, de: "agente", texto: `Soy ${agente.nombre}. ${agente.trabajo} Cuando tenga computadora, aquí me pide la tarea y aquí le aviso.` };
+        : { id: 1, de: "agente", texto: `Soy ${agente.nombre}. ${agente.trabajo}` };
 
   useEffect(() => {
+    setCodex(null);
+    setPideCodex(false);
+    if (conCerebro) {
+      // El historial vive en el orquestador, no en el navegador.
+      void mensajesAgente(agente.id).then((h) => setMensajes(h.length ? h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto })) : [saludo()]));
+      void estadoCodex().then((e) => setPideCodex(e.estado === "sin_conectar"));
+      return;
+    }
     try {
       const guardado = sessionStorage.getItem(clave(negocio, agente.id));
       setMensajes(guardado ? (JSON.parse(guardado) as Mensaje[]) : [saludo()]);
@@ -65,13 +76,65 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   }, [agente.id]);
 
   useEffect(() => {
-    try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40))); } catch {}
+    try { if (mensajes.length && !conCerebro) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40))); } catch {}
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
-  }, [mensajes, negocio, agente.id]);
+  }, [mensajes, negocio, agente.id, conCerebro]);
+
+  // Mientras el dueño teclea el código en ChatGPT, preguntamos cada 4 s si ya quedó.
+  useEffect(() => {
+    if (!codex) return;
+    const t = setInterval(async () => {
+      const e = await estadoCodex();
+      if (e.estado === "conectado") {
+        setCodex(null);
+        setPideCodex(false);
+        setMensajes((m) => [...m, { id: Date.now(), de: "agente", texto: "Cuenta de ChatGPT conectada. Ya puedo trabajar." }]);
+      }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [codex]);
+
+  async function pedirCodigo() {
+    const r = await conectarCodex();
+    if ("error" in r) { setMensajes((m) => [...m, { id: Date.now(), de: "agente", texto: r.error }]); return; }
+    setCodex(r);
+  }
 
   function hiloNuevo() {
+    if (conCerebro) void hiloNuevoAgente(agente.id);
     try { sessionStorage.removeItem(clave(negocio, agente.id)); } catch {}
     setMensajes([saludo()]);
+  }
+
+  /** Un turno con el cerebro real: llega en pedazos por SSE. */
+  async function turnoCerebro(t: string) {
+    const idAgente = Date.now() + 1;
+    setMensajes((m) => [...m, { id: idAgente, de: "agente", texto: "" }]);
+    const pegar = (texto: string) => setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto: x.texto + texto } : x)));
+    const poner = (texto: string) => setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto } : x)));
+    try {
+      const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t }) });
+      if (!r.ok || !r.body) { poner("No pude hablar con mi máquina. Intente de nuevo en un momento."); return; }
+      const lector = r.body.pipeThrough(new TextDecoderStream()).getReader();
+      let resto = "";
+      for (;;) {
+        const { value, done } = await lector.read();
+        if (done) break;
+        resto += value;
+        const partes = resto.split("\n\n");
+        resto = partes.pop() ?? "";
+        for (const p of partes) {
+          const linea = p.split("\n").find((l) => l.startsWith("data:"));
+          if (!linea) continue;
+          const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string };
+          if (e.evento === "texto") pegar(e.texto);
+          else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); }
+          else if (e.evento === "error") poner(e.texto);
+        }
+      }
+    } catch {
+      poner("Se cortó la conexión con mi máquina. Intente de nuevo.");
+    }
   }
 
   async function elegir(idMensaje: number, o: Opcion) {
@@ -93,6 +156,20 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     setTexto("");
     const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t }];
     setMensajes(propios);
+
+    if (conCerebro) {
+      const cambio = /^(ll[aá]mate|te llamas|tu nombre es)\s+(.{2,40})$/i.exec(t);
+      if (cambio) {
+        const nombre = cambio[2]!.replace(/[.!]+$/, "").trim();
+        await actualizarAgente(agente.id, { nombre });
+        setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Hecho, ahora soy ${nombre}.` }]);
+        router.refresh();
+        return;
+      }
+      setEscribiendo(true);
+      try { await turnoCerebro(t); } finally { setEscribiendo(false); }
+      return;
+    }
 
     if (!conectado) {
       // Sin cerebro todavía: lo que sí puede hacer es tomar su nombre y su trabajo.
@@ -207,8 +284,25 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
             ) : null}
           </article>
         ))}
+        {pideCodex ? (
+          <div className="w-full max-w-[520px] rounded-2xl border border-acento/40 bg-acento-suave/50 p-4">
+            <p className="text-[12px] font-medium text-tinta-3">Cuenta de ChatGPT</p>
+            {codex ? (
+              <>
+                <p className="mt-1 text-[15px] leading-snug text-tinta">Abra <a href={codex.url} target="_blank" rel="noreferrer" className="underline">{codex.url.replace("https://", "")}</a> e ingrese este código:</p>
+                <p className="numeros mt-2 text-[28px] font-semibold tracking-wider text-tinta">{codex.codigo}</p>
+                <p className="mt-1 text-[13px] text-tinta-3">En cuanto termine, seguimos aquí solos.</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-[15px] leading-snug text-tinta">Sus agentes piensan con su suscripción de ChatGPT (Plus o Pro). Conéctela una vez y la usan todos.</p>
+                <button type="button" onClick={pedirCodigo} className="mt-3 h-9 rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta transition-[filter] duration-100 hover:brightness-110">Conectar ChatGPT</button>
+              </>
+            )}
+          </div>
+        ) : null}
         {escribiendo ? (
-          <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} />{agente.nombre} está consultando…</div>
+          <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} />{agente.nombre} está {conCerebro ? "trabajando" : "consultando"}…</div>
         ) : null}
         {conectado && mensajes.length <= 1 && !escribiendo ? (
           <div className="flex flex-wrap gap-2 pt-1">

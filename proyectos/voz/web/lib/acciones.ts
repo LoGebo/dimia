@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { elevado, type Consulta } from "@/lib/db";
+import { orquestador, type EstadoCodex, type MensajeAgente } from "@/lib/agentes";
 import { usuarioActual, iniciarSesionLocal, registrarLocal, cerrarSesion, modoSupabase } from "@/lib/auth";
 import { avance } from "@/lib/listo";
 import { CONDICION_SEGMENTO, alcanceCampana, negocio, type SegmentoCliente } from "@/lib/consultas";
@@ -1640,4 +1641,31 @@ export async function borrarGrupo(grupoId: string): Promise<Estado> {
   );
   if (estado.error) return estado;
   redirect("/agentes");
+}
+
+// --- Agentes con cerebro (orquestador) ---------------------------------
+
+export async function estadoCodex(): Promise<EstadoCodex> {
+  const r = await orquestador("/codex/estado");
+  if (!r.ok) return { estado: "sin_conectar" };
+  return r.json();
+}
+
+export async function conectarCodex(): Promise<{ codigo: string; url: string } | { error: string }> {
+  const r = await orquestador("/codex/iniciar", { method: "POST" });
+  if (!r.ok) return { error: "No se pudo iniciar la conexión con ChatGPT. Intente en un minuto." };
+  return r.json();
+}
+
+export async function desconectarCodex(): Promise<void> {
+  await orquestador("/codex", { method: "DELETE" });
+}
+
+export async function mensajesAgente(agenteId: string): Promise<MensajeAgente[]> {
+  const r = await orquestador(`/agentes/${agenteId}/mensajes`);
+  return r.ok ? r.json() : [];
+}
+
+export async function hiloNuevoAgente(agenteId: string): Promise<void> {
+  await orquestador(`/agentes/${agenteId}/hilo-nuevo`, { method: "POST" });
 }
