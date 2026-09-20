@@ -92,7 +92,7 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
   const recepcion = agente.id === "recepcion";
 
   return (
-    <div className="flex min-w-0 flex-1">
+    <div className="flex min-h-0 min-w-0 flex-1">
       <HiloAgente agente={agente} negocio={negocio} panelAbierto={abierto} alternarPanel={alternarPanel} />
 
       <aside

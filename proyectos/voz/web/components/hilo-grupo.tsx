@@ -87,8 +87,8 @@ export function HiloGrupo({ grupo, agentes, negocio }: { grupo: Grupo; agentes: 
   const hora = new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date());
 
   return (
-    <div className="flex min-w-0 flex-1">
-      <section className="flex min-w-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-14 flex-none items-center justify-between border-b border-linea px-4">
           <div className="flex items-center gap-2.5">
             <AvataresGrupo miembros={miembros} tamano={28} />
@@ -98,7 +98,7 @@ export function HiloGrupo({ grupo, agentes, negocio }: { grupo: Grupo; agentes: 
           <button type="button" onClick={() => setPanel((v) => !v)} aria-pressed={panel} aria-label="Miembros" className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-linea ${panel ? "text-acento" : "text-tinta-3 hover:text-tinta"}`}><Users size={18} /></button>
         </header>
 
-        <div ref={lista} className="flex flex-1 flex-col gap-3 overflow-y-auto px-6 py-5">
+        <div ref={lista} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5">
           <p className="text-center text-[12px] text-tinta-3">Hoy {hora}</p>
           {mensajes.map((m) => {
             const a = m.de === "yo" ? null : porId.get(m.de);

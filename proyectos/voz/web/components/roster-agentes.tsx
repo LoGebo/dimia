@@ -47,7 +47,7 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
   const claseFila = (es: boolean) => `flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors duration-150 ${es ? "bg-linea" : "hover:bg-linea/60"}`;
 
   return (
-    <aside className="relative flex w-[300px] flex-none flex-col border-r border-linea bg-panel-2">
+    <aside className="relative flex min-h-0 w-[300px] flex-none flex-col border-r border-linea bg-panel-2">
       <div className="flex items-center gap-2 px-3 pt-3 pb-2">
         <label className="flex h-10 flex-1 items-center gap-2 rounded-xl bg-linea/70 px-3 text-tinta-3 focus-within:bg-linea">
           <Search size={16} strokeWidth={2} aria-hidden="true" />
@@ -71,7 +71,7 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
         </div>
       </div>
 
-      <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 py-1">
+      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1">
         {agentesVisibles.map((a) => (
           <li key={a.id}>
             <Link href={`/agentes/${a.id}`} aria-current={ruta === `/agentes/${a.id}` ? "page" : undefined} className={claseFila(ruta === `/agentes/${a.id}`)}>

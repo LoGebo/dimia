@@ -141,7 +141,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const hora = new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date());
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex h-14 flex-none items-center justify-between border-b border-linea px-4">
         <div className="flex items-center gap-2.5">
           <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={26} />
@@ -155,7 +155,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         </div>
       </header>
 
-      <div ref={lista} className="flex flex-1 flex-col gap-3 overflow-y-auto px-6 py-5">
+      <div ref={lista} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-5">
         <p className="text-center text-[12px] text-tinta-3">Hoy {hora}</p>
         {mensajes.map((m) => (
           <article key={m.id} className={`flex flex-col gap-2 ${m.de === "yo" ? "items-end" : "items-start"}`}>
