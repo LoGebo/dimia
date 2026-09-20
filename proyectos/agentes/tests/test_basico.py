@@ -27,3 +27,11 @@ def test_comando_escribe_y_cambia_dueno():
 def test_soul_habla_de_usted():
     s = hermes.soul("Cotizador", "Cotiza servicios", None, "Clínica Sol")
     assert "de usted" in s and "Cotiza servicios" in s
+
+
+def test_config_lleva_rutas_de_modelo():
+    import yaml
+    c = yaml.safe_load(hermes.config_yaml("k" * 20, raiz=False, pantalla=1))
+    rutas = c["platforms"]["api_server"]["extra"]["model_routes"]
+    assert set(rutas) == {"fuerte", "rapido"} and rutas["rapido"]["provider"] == "openai-codex"
+    assert c["browser"]["cdp_url"].endswith(":9201")

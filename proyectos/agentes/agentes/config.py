@@ -21,7 +21,9 @@ FLY_API_TOKEN = os.environ.get("FLY_API_TOKEN", "")
 FLY_APP_CEREBROS = os.environ.get("FLY_APP_CEREBROS", "dimia-cerebros")
 FLY_REGION = os.environ.get("FLY_REGION", "dfw")
 HERMES_IMAGEN = os.environ.get("HERMES_IMAGEN", "registry.fly.io/dimia-cerebros:hermes-v1")  # imagen/ : Hermes + pantallas
-MODELO_CODEX = os.environ.get("MODELO_CODEX", "gpt-5.5")
+MODELO_CODEX = os.environ.get("MODELO_CODEX", "gpt-5.5")            # el fuerte
+MODELO_CODEX_RAPIDO = os.environ.get("MODELO_CODEX_RAPIDO", "gpt-5.4-mini")  # el rápido: misma suscripción, menos cupo
+TYPESAFE_API_KEY = os.environ.get("TYPESAFE_API_KEY", "")  # Jev, la puerta; la única llave de plataforma en el camino caliente
 # SOLO PRUEBA (no producto): token OAuth de Claude Code del dueño de Dimia para
 # probar la plataforma sin cuenta de ChatGPT. Anthropic no permite intermediar
 # estos tokens para terceros; se quita cuando entre el Codex real.

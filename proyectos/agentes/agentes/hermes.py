@@ -26,6 +26,10 @@ def config_yaml(llave: str, raiz: bool, pantalla: int | None = None) -> str:
         "terminal": {"backend": "local"},
         "platform_toolsets": {"api_server": TOOLSETS},
         "gateway": {"api_server": {"enabled": True, "host": "::", "port": 8642, "key": llave, "max_concurrent_runs": 4}},
+        # Dos alias que el orquestador elige por turno según Jev.
+        "platforms": {"api_server": {"extra": {"model_routes": {
+            "fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"},
+            "rapido": {"model": config.MODELO_CODEX_RAPIDO, "provider": "openai-codex"}}}}},
         "auth": {"adopt_external_logins": False},
         # Todas las herramientas a la vista: sin esto Hermes esconde el navegador
         # detrás de tool_search y el modelo no lo encuentra.

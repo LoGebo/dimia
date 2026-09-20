@@ -6,7 +6,9 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from agentes import codex, config, db, hermes, vault
+import time
+
+from agentes import codex, config, db, hermes, jev, vault
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -198,12 +200,19 @@ async def turno(tenant: str, agente_id: str, texto: str):
     except SinCodex:
         yield {"evento": "sin_codex", "texto": "Conecte su cuenta de ChatGPT para que este agente pueda trabajar."}
         return
+    previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
+    historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
+    trabajo = (await db.uno("select trabajo from agente where id = $1", agente["id"]))["trabajo"]
+    nivel, decision = await jev.decidir(trabajo, historial, texto)
+    inicio = time.perf_counter()
+    pasos = 0
+    ok = False
     await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], texto)
     llave = vault.descifrar(agente["llave"] or (await db.uno("select llave from agente where id = $1", agente["id"]))["llave"])
     respuesta: list[str] = []
     async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=600)) as http:
         sid = await _sesion(tenant, agente, m, llave, http)
-        async with http.stream("POST", _url(m, agente_id, f"/api/sessions/{sid}/chat/stream"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}, json={"input": texto}) as r:
+        async with http.stream("POST", _url(m, agente_id, f"/api/sessions/{sid}/chat/stream"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}, json={"input": texto, "model": nivel}) as r:
             if r.status_code == 401:
                 yield {"evento": "error", "texto": "La máquina del agente rechazó la llave; se volverá a sincronizar."}
                 await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)
@@ -227,7 +236,8 @@ async def turno(tenant: str, agente_id: str, texto: str):
                             respuesta.append(t)
                             yield {"evento": "texto", "texto": t}
                     elif evento == "tool.started":
-                        yield {"evento": "herramienta", "texto": d.get("name") or d.get("tool") or ""}
+                        pasos += 1
+                        yield {"evento": "herramienta", "texto": d.get("name") or d.get("tool") or d.get("tool_name") or ""}
                     elif evento == "run.failed":
                         msg = json.dumps(d)
                         if "401" in msg or "unauthorized" in msg.lower() or "credential" in msg.lower():
@@ -242,7 +252,12 @@ async def turno(tenant: str, agente_id: str, texto: str):
                             if isinstance(t, str) and t:
                                 respuesta.append(t)
                                 yield {"evento": "texto", "texto": t}
+                        ok = True
                         yield {"evento": "fin", "texto": ""}
+    await db.ejecutar(
+        "insert into agente_turno (tenant_id, agente_id, nivel, modelo, jev, pasos, ms, ok) values ($1, $2, $3, $4, $5, $6, $7, $8)",
+        tenant, agente["id"], nivel, config.MODELO_CODEX_RAPIDO if nivel == "rapido" else config.MODELO_CODEX,
+        json.dumps(decision) if decision else None, pasos, int((time.perf_counter() - inicio) * 1000), ok)
     if respuesta:
         await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'agente', $3)", tenant, agente["id"], "".join(respuesta))
 
