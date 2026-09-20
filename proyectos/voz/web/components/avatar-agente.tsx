@@ -57,27 +57,16 @@ export function AvatarAgente({ nombre, avatar, tamano = 40, activo }: { nombre: 
         style={{ "--avatar-espera": espera, shapeRendering: "geometricPrecision" } as React.CSSProperties}
       >
         <defs>
-          {/* Luz de arriba y sombra de abajo: el cuerpo tiene volumen, no es un sticker plano. */}
+          {/* Casi plano: apenas un poco mas de luz arriba, como en Grok Bot. */}
           <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={aclarar(color, 0.22)} />
-            <stop offset="0.55" stopColor={color} />
-            <stop offset="1" stopColor={color} stopOpacity="0.92" />
+            <stop offset="0" stopColor={aclarar(color, 0.08)} />
+            <stop offset="1" stopColor={color} />
           </linearGradient>
-          <radialGradient id={`${id}-b`} cx="0.35" cy="0.25" r="0.6">
-            <stop offset="0" stopColor="#ffffff" stopOpacity="0.45" />
-            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
-          </radialGradient>
-          <filter id={`${id}-s`} x="-20%" y="-20%" width="140%" height="150%">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0b0f17" floodOpacity="0.18" />
-          </filter>
         </defs>
-        <path d={TRAZO[forma]} fill={`url(#${id}-g)`} filter={`url(#${id}-s)`} />
-        <path d={TRAZO[forma]} fill={`url(#${id}-b)`} />
+        <path d={TRAZO[forma]} fill={`url(#${id}-g)`} />
         <g fill="#0b0f17" className="avatar-ojos">
           <rect x={cx - 15} y={cy - 8} width="7" height="16" rx="3.5" transform={`rotate(-8 ${cx - 11} ${cy})`} />
           <rect x={cx + 8} y={cy - 8} width="7" height="16" rx="3.5" transform={`rotate(8 ${cx + 11} ${cy})`} />
-          <circle cx={cx - 10} cy={cy - 4} r="1.4" fill="#ffffff" opacity="0.9" />
-          <circle cx={cx + 13} cy={cy - 4} r="1.4" fill="#ffffff" opacity="0.9" />
         </g>
       </svg>
       {activo !== undefined ? (
