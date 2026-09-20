@@ -17,7 +17,7 @@ Grok Bot 0.30.0 (`app.asar`) que estaba en Descargas. Lo que no se pudo verifica
 | 2 | Hermes Agent, una instancia por agente | **Se sostiene con una precisión.** Hermes no aísla agentes dentro de un proceso («not designed for true multi-tenancy»); cada agente es **un proceso Hermes con su propio `HERMES_HOME`**, orquestado por nosotros. Hermes no trae escritorio: la caja es aparte. |
 | 3 | Jev resuelve ~90 % de pasos de computer use | **Se ajusta.** Jev solo lee texto y devuelve decisiones tipadas; no ve capturas ni emite clics. Es la **puerta**; el grounding lo hace un VLM chico. Cascada de tres capas, 60–75 % fuera del frontier. |
 | 4 | Un sandbox persistente con escritorio por agente | **Decidido: como Grok Bot.** Una computadora por negocio (archivos y logins compartidos) y **una pantalla propia por agente** (escritorio virtual, mouse y teclado propios). |
-| 5 | E2B Desktop para el MVP, Firecracker propio a escala | **Se sostiene** si se decide tener sandbox. Fly (donde ya vive Dimia) es el camino de escala, no OVH a mano. |
+| 5 | E2B Desktop para el MVP, Firecracker propio a escala | **Decidido: Fly Machines para todo** (cerebros y computadora del negocio). Más barato en uso real, una sola infraestructura, escala por API. E2B queda como plan B si la pausa sin RAM estorba. |
 | 6 | Cuotas por plan con ledger propio y corte humano | **Se sostiene.** |
 | 7 | Marketplace = skills/MCP/gateway de Hermes, alcance por agente | **Se sostiene en la idea, no en la implementación** (depende de la decisión 2). |
 | 8 | Economía: Dimia solo paga sandbox + Jev | **Se sostiene** con Codex; se suman los contenedores Hermes y el grounding chico. Sin respaldo de clave de plataforma por decisión explícita. |
@@ -105,10 +105,9 @@ Telegram/Discord/Slack/WhatsApp/Signal/Email. Meses de trabajo ya hechos.
   `MEMORY.md`, skills) por proceso, no objetos en memoria. El dashboard tiene un solo login
   que ve todos los perfiles. Issue #104556 (abierto, P3) pide multiusuario; #71335 fue una
   corrupción de grants OAuth entre procesos; #30286 sigue abierto sobre auth compartida.
-- No trae escritorio ni computer use. Los backends son shell/`execute_code`. El control de
-  escritorio es un MCP de comunidad (`computer-use-linux`), no de Nous. El navegador
-  «de primera» viene por suscripción a Nous Portal (Browser Use). La premisa «sandbox
-  = desktop + browser» no está en Hermes.
+- Corrección tras leer el código: **sí trae computer use y navegador nativos**
+  (`tools/computer_use/` con cua-driver; `tools/browser_tool.py` con Chromium local, CDP o
+  nube). Lo que no trae es la máquina con escritorio: eso es la computadora del negocio (§4).
 - `delegate_task` no es un router por paso: «the pin is global: delegate_task has no
   per-task model parameter». La política de ruteo del §3 hay que construirla igual.
 - El OAuth que lo hacía atractivo (§1) ya no se puede usar como base.
@@ -125,9 +124,11 @@ Hermes, Cotizador es otro. Se materializa así:
 - Orquestación nuestra: crear/arrancar/parar/borrar máquinas por `agente.id`; respaldo del
   volumen. Esto es el «servicio agentes».
 - El token de Codex no vive en el contenedor: lo pide al vault del negocio (§1).
-- Hermes aporta loop, herramientas, memoria, skills, `delegate_task`. Lo que no aporta y
-  construimos: ruteo por paso (§3), cuotas (§6), la caja con escritorio (§4) cableada como
-  backend de terminal + MCP de computer use, y la API hacia el panel.
+- Hermes aporta loop, herramientas (incluidos computer use y navegador), memoria, skills,
+  `delegate_task` y un servidor HTTP propio (`hermes gateway run`, `/api/sessions/{id}/
+  chat/stream`, Bearer). Lo que no aporta y construimos: orquestador de máquinas, vault
+  Codex con refrescador único, ruteo por paso (§3), cuotas (§6), backend de terminal y
+  pantalla hacia la computadora del negocio (§4), y la API hacia el panel.
 - Consecuencia de cuota: cada agente vivo cuesta RAM fija, por eso «número de agentes» es
   una dimensión real del plan.
 - Riesgos aceptados: proyecto pre-1.0 (v0.21.x), `auth.json` sin cifrado documentado (por
@@ -206,7 +207,7 @@ agente no contamina a otro; borrar un agente es borrar su caja.
 
 **Decidido (Gabriel): el modelo de Grok Bot.**
 
-- **Una computadora por negocio** (microVM E2B): archivos en `/workspace`, navegador con
+- **Una computadora por negocio** (Fly Machine, Firecracker): archivos en `/workspace`, navegador con
   las sesiones iniciadas del negocio, apps instaladas. Se pausa cuando ningún agente la usa.
 - **Una pantalla por agente** («la computadorcita»): escritorio virtual propio con su
   ventana de navegador, su mouse y su teclado. Recepción y Cotizador trabajan al mismo
@@ -253,9 +254,19 @@ uso intermitente: centavos a pocos dólares al mes. 2 vCPU / 4 GiB ≈ 0.1656 US
 `reanudar` + `ejecutar`) para poder cambiar a Fly Machines/Sprites en la etapa de
 crecimiento sin tocar el loop. No OVH a mano. Se justifica en el PR como pide el handoff.
 
-**Pendiente de decidir.** E2B con la prueba de pausa previa (mi recomendación), o Fly
-Machines desde el inicio aceptando construir escritorio y vigilante nosotros. Nota: los
-cerebros (Hermes) van en Fly de todos modos; solo la caja con escritorio está en duda.
+**Decidido (Gabriel): Fly Machines para todo.**
+
+- Cerebros: una Fly Machine chica por agente (imagen oficial de Hermes, volumen con
+  `HERMES_HOME`), parada a 0 USD cuando duerme, arranca al primer mensaje.
+- Computadora del negocio: una Fly Machine grande por negocio (Firecracker) con volumen,
+  escritorio virtual armado por nosotros (Xvfb + noVNC + Chromium), una pantalla por agente.
+  Parada cuando ningún agente la usa; los logins persisten en disco, las ventanas abiertas no.
+- Razones: precio en uso real (2 h/día ≈ 6 vs 10 USD; 24/7 ≈ 66 vs 121 USD por caja), una
+  sola infraestructura que ya se opera (voz, webhooks), sin tope de concurrencia por plan,
+  sin sesiones máximas de 24 h, todo por API desde el orquestador.
+- Lo que se cede: pausa con RAM (E2B) y escritorio prehecho. Se acepta.
+- Plan B documentado: E2B detrás de la misma interfaz (`crear`, `parar`, `despertar`,
+  `ejecutar`) si la pausa sin RAM resulta un problema en la práctica.
 
 ## 6. Cuotas, contador y corte
 
@@ -292,7 +303,7 @@ respaldo por decisión explícita.
 Negocio (tenant, RLS)
 ├── Codex OAuth del negocio (vault, un solo refrescador)      ← frontier
 ├── Plan Dimia y cuotas: ledger Postgres, contador, corte humano
-├── Computadora del negocio (E2B, microVM, pausa en idle)
+├── Computadora del negocio (Fly Machine grande, Firecracker, parada en idle)
 │   ├── /workspace y navegador con sesiones del negocio (compartidos)
 │   ├── pantalla A ← Recepción
 │   └── pantalla B ← Cotizador
@@ -314,8 +325,9 @@ voz y webhooks.
    Hermes por agente en Fly, arrancado a demanda, hablando con el panel por API/SSE.
    Criterio: Recepción y Cotizador contestan cada uno con su memoria; 401 → «reconecte su
    cuenta de ChatGPT»; dos negocios nunca comparten token.
-2. Computadora del negocio en E2B: crear, pausar, reanudar, navegador persistente, una
-   pantalla por agente, prueba de 4 ciclos de pausa. Criterio: dos agentes del mismo negocio
+2. Computadora del negocio en Fly: crear, parar, despertar, escritorio virtual y navegador
+   persistente, una pantalla por agente, herramientas de computer use de Hermes apuntadas a
+   esa pantalla. Criterio: dos agentes del mismo negocio
    comparten login y trabajan a la vez; dos negocios no.
 3. Cascada de ruteo y piloto de una semana; fijar cuotas con datos.
 4. Rutinas (cron + webhook) y caché de acciones.
