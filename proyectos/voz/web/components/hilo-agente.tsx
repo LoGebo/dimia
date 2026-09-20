@@ -291,7 +291,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
               <>
                 <p className="mt-1 text-[15px] leading-snug text-tinta">Abra <a href={codex.url} target="_blank" rel="noreferrer" className="underline">{codex.url.replace("https://", "")}</a> e ingrese este código:</p>
                 <p className="numeros mt-2 text-[28px] font-semibold tracking-wider text-tinta">{codex.codigo}</p>
-                <p className="mt-1 text-[13px] text-tinta-3">En cuanto termine, seguimos aquí solos.</p>
+                <p className="mt-1 text-[13px] text-tinta-3">Si ChatGPT le pide «habilitar la autorización con código de dispositivo», actívela en chatgpt.com → Ajustes → Seguridad y vuelva a pulsar Conectar.</p>
               </>
             ) : (
               <>
