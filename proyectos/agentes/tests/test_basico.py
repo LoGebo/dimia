@@ -35,3 +35,15 @@ def test_config_lleva_rutas_de_modelo():
     rutas = c["platforms"]["api_server"]["extra"]["model_routes"]
     assert set(rutas) == {"fuerte", "rapido"} and rutas["rapido"]["provider"] == "openai-codex"
     assert c["browser"]["cdp_url"].endswith(":9201")
+
+
+def test_catalogo_lee_las_skills():
+    from agentes import catalogo
+    s = catalogo.skills()
+    assert {"resumen-del-dia", "seguimiento-clientes", "cotizar-planes", "cobranza-amable"} <= set(s)
+    assert all(len(v["detalle"]) <= 60 and v["detalle"].endswith(".") for v in s.values())
+
+
+def test_comando_borra_solo_dentro_de_perfiles():
+    cmd = hermes.comando_escribir({}, borrar=["/opt/data/profiles/x/skills/dimia", "/etc"])
+    assert "rm -rf /opt/data/profiles/x/skills/dimia" in cmd[2] and "/etc" not in cmd[2]

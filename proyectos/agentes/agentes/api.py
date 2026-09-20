@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 import base64
 import hashlib
+import re
 import hmac
 import time
 
@@ -16,7 +17,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket,
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from agentes import codex, config, cuotas, db, negocio
+from agentes import catalogo, codex, config, cuotas, db, negocio
 
 log = logging.getLogger("agentes")
 config.guardia()
@@ -34,14 +35,22 @@ async def _ciclo():
         await asyncio.sleep(300)
 
 
+from agentes import mcp_dimia  # noqa: E402
+
+app_mcp = mcp_dimia.app()
+
+
 @asynccontextmanager
 async def vida(_: FastAPI):
     tarea = asyncio.create_task(_ciclo())
-    yield
+    # El transporte MCP montado necesita su propio ciclo de vida (Starlette no lo arranca solo).
+    async with app_mcp.router.lifespan_context(app_mcp):
+        yield
     tarea.cancel()
 
 
 app = FastAPI(title="Dimia agentes", lifespan=vida)
+app.mount("/mcp", app_mcp)
 
 
 async def negocio_id(authorization: str = Header(""), x_negocio: str = Header("")) -> str:
@@ -131,6 +140,35 @@ async def hilo_nuevo(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
 async def mensajes(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     filas = await db.todos("select id, de, texto, creado from agente_mensaje where agente_id = $1 and tenant_id = $2 order by id desc limit 60", agente_id, tenant)
     return [dict(f) | {"creado": f["creado"].isoformat()} for f in reversed(filas)]
+
+
+@app.get("/catalogo")
+async def ver_catalogo(tenant: str = Depends(negocio_id)):
+    """Skills e integraciones, con en qué agentes del negocio están instaladas."""
+    filas = await db.todos("select agente_id, tipo, clave from agente_instalacion where tenant_id = $1", tenant)
+    instalado: dict[str, list[str]] = {}
+    for f in filas:
+        instalado.setdefault(f"{f['tipo']}:{f['clave']}", []).append(str(f["agente_id"]))
+    return {
+        "skills": [{"clave": k, "nombre": v["nombre"], "detalle": v["detalle"], "agentes": instalado.get(f"skill:{k}", [])} for k, v in catalogo.skills().items()],
+        "integraciones": [{"clave": k, **{x: v[x] for x in ("nombre", "detalle", "lista")}, "agentes": instalado.get(f"integracion:{k}", [])} for k, v in catalogo.INTEGRACIONES.items()],
+    }
+
+
+class Instalacion(BaseModel):
+    tipo: str
+    clave: str
+    instalar: bool
+
+
+@app.post("/agentes/{agente_id}/instalaciones")
+async def instalaciones(agente_id: uuid.UUID, cuerpo: Instalacion, tenant: str = Depends(negocio_id)):
+    if cuerpo.tipo not in ("skill", "integracion") or not re.fullmatch(r"[a-z0-9-]{2,40}", cuerpo.clave):
+        raise HTTPException(400)
+    error = await negocio.instalar(tenant, str(agente_id), cuerpo.tipo, cuerpo.clave, cuerpo.instalar)
+    if error:
+        raise HTTPException(400, error)
+    return {"ok": True}
 
 
 @app.get("/cuotas")

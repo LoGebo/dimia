@@ -16,7 +16,7 @@ UID = "10000"  # usuario `hermes` dentro de la imagen oficial
 TOOLSETS = ["memory", "skills", "todo", "web", "browser", "vision"]  # sin terminal: la caja sigue siendo compartida
 
 
-def config_yaml(llave: str, raiz: bool, pantalla: int | None = None) -> str:
+def config_yaml(llave: str, raiz: bool, pantalla: int | None = None, mcp: dict | None = None) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
     if config.PRUEBA_ANTHROPIC_TOKEN:
         modelo = {"default": config.PRUEBA_ANTHROPIC_MODELO, "provider": "anthropic"}
@@ -37,6 +37,8 @@ def config_yaml(llave: str, raiz: bool, pantalla: int | None = None) -> str:
     }
     if raiz:
         c["gateway"]["multiplex_profiles"] = True
+    if mcp:
+        c["mcp_servers"] = mcp
     if pantalla:
         # El Chromium de su pantalla (pantallas.py lo levanta con CDP en 9200+n).
         # backend off = las herramientas browser_* de siempre (no la CLI de Browser Use), sobre nuestro CDP.
@@ -70,19 +72,23 @@ def archivos_raiz(llave: str) -> dict[str, str]:
     return {f"{HOME}/config.yaml": config_yaml(llave, raiz=True), f"{HOME}/.env": env(llave)}
 
 
-def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int | None) -> dict[str, str]:
+def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int | None, mcp: dict | None = None) -> dict[str, str]:
     p = f"{HOME}/profiles/{agente_id}"
-    return {f"{p}/config.yaml": config_yaml(llave, raiz=False, pantalla=pantalla), f"{p}/.env": env(llave), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    return {f"{p}/config.yaml": config_yaml(llave, raiz=False, pantalla=pantalla, mcp=mcp), f"{p}/.env": env(llave), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
 
 
 def pantallas_json(mapa: dict[str, int]) -> str:
     return json.dumps(mapa)
 
 
-def comando_escribir(archivos: dict[str, str]) -> list[str]:
+def mcp_dimia(token: str) -> dict:
+    return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}}}
+
+
+def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[str]:
     """Un solo `sh -c` que deja los archivos en su lugar con el dueño correcto.
     ponytail: base64 en la línea de comando; suficiente para archivos de KB."""
-    pasos = []
+    pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/profiles/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
         modo = "600" if ruta.endswith((".env", "auth.json")) else "644"

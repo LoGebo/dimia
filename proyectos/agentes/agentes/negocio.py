@@ -8,7 +8,7 @@ import httpx
 
 import time
 
-from agentes import codex, config, cuotas, db, hermes, jev, vault
+from agentes import catalogo, codex, config, cuotas, db, hermes, jev, vault
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -77,7 +77,7 @@ async def _negocio(tenant: str):
 
 
 async def _agentes(tenant: str):
-    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla from agente where tenant_id = $1 order by creado", tenant)
+    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token from agente where tenant_id = $1 order by creado", tenant)
 
 
 async def maquina(tenant: str):
@@ -111,9 +111,10 @@ async def asegurar_maquina(tenant: str) -> dict:
     return await maquina(tenant)
 
 
-async def sincronizar(tenant: str, m) -> None:
-    """Escribe en la máquina lo que cambió: perfiles nuevos o editados y el
-    auth.json vigente. Reinicia Hermes solo si aparecieron perfiles."""
+async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
+    """Escribe en la máquina lo que cambió: perfiles nuevos o editados, el
+    auth.json vigente, skills e integraciones. Reinicia Hermes si aparecieron
+    perfiles o si quien llama lo pide (cambió una instalación)."""
     prov = proveedor()
     if config.PRUEBA_ANTHROPIC_TOKEN:  # modo prueba: sin Codex, el token va en el .env del perfil
         t = {"acceso": "", "refresco": "", "version": -1}
@@ -127,6 +128,8 @@ async def sincronizar(tenant: str, m) -> None:
     nuevos: list[str] = []
     pantallas: dict[str, int] = {}
     usadas = {a["pantalla"] for a in agentes if a["pantalla"]}
+    borrar: list[str] = []
+    todas_skills = catalogo.skills()
     for a in agentes:
         aid = str(a["id"])
         llave = vault.descifrar(a["llave"]) if a["llave"] else None
@@ -140,26 +143,38 @@ async def sincronizar(tenant: str, m) -> None:
             await db.ejecutar("update agente set pantalla = $2 where id = $1", a["id"], pantalla)
         pantallas[aid] = pantalla
         soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"])
+        # Instalaciones de este agente: integración Dimia (MCP con su token) y skills.
+        inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
+        mcp = None
+        if any(i["tipo"] == "integracion" and i["clave"] == "dimia" for i in inst):
+            token = a["mcp_token"]
+            if not token:
+                token = vault.llave_nueva()
+                await db.ejecutar("update agente set mcp_token = $2 where id = $1", a["id"], token)
+            mcp = hermes.mcp_dimia(token)
+        raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
+        borrar.append(raiz_skills)
+        for i in inst:
+            if i["tipo"] == "skill" and i["clave"] in todas_skills:
+                archivos[f"{raiz_skills}/{i['clave']}/SKILL.md"] = todas_skills[i["clave"]]["contenido"]
         if aid not in instalados:
-            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla))
+            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp))
             nuevos.append(aid)
         else:
             archivos[f"{hermes.HOME}/profiles/{aid}/SOUL.md"] = soul  # barato: siempre al día
-            archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = hermes.config_yaml(llave, raiz=False, pantalla=pantalla)
+            archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = hermes.config_yaml(llave, raiz=False, pantalla=pantalla, mcp=mcp)
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
     archivos[f"{hermes.HOME}/pantallas.json"] = hermes.pantallas_json(pantallas)
     primera_vez = not instalados
-    if primera_vez:
-        archivos.update(hermes.archivos_raiz(vault.descifrar(m["llave"])))
+    archivos.update(hermes.archivos_raiz(vault.descifrar(m["llave"])))  # barato: la raíz siempre al día
+    if primera_vez or m["version_token"] != t["version"]:
         archivos[f"{hermes.HOME}/auth.json"] = auth
-    elif m["version_token"] != t["version"]:
-        archivos[f"{hermes.HOME}/auth.json"] = auth
-    codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos), timeout=60)
+    codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
     if codigo != 0:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")
     await db.ejecutar("update maquina_negocio set perfiles = $2, version_token = $3 where tenant_id = $1", tenant, list(instalados | set(nuevos)), t["version"])
-    if nuevos or primera_vez:
+    if nuevos or primera_vez or reiniciar:
         viva = await prov.reiniciar(m["referencia"])
         await db.ejecutar("update maquina_negocio set direccion = $2 where tenant_id = $1", tenant, viva.direccion)
 
@@ -297,3 +312,28 @@ async def renovar_todos() -> None:
             pass
         except Exception as e:  # noqa: BLE001
             log.warning("renovación %s: %s", f["tenant_id"], e)
+
+
+async def instalar(tenant: str, agente_id: str, tipo: str, clave: str, poner: bool) -> str | None:
+    """Alta o baja de una skill/integración en un agente; deja la máquina al día."""
+    if tipo == "skill" and clave not in catalogo.skills():
+        return "Esa skill no existe."
+    if tipo == "integracion" and not catalogo.INTEGRACIONES.get(clave, {}).get("lista"):
+        return "Esa integración todavía no está lista."
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        return "Ese agente no existe."
+    if poner:
+        await db.ejecutar("insert into agente_instalacion (agente_id, tenant_id, tipo, clave) values ($1, $2, $3, $4) on conflict do nothing", agente_id, tenant, tipo, clave)
+    else:
+        await db.ejecutar("delete from agente_instalacion where agente_id = $1 and tipo = $2 and clave = $3", agente_id, tipo, clave)
+    m = await maquina(tenant)
+    if m:
+        prov = proveedor()
+        if (await prov.obtener(m["referencia"])).encendida:
+            try:
+                await sincronizar(tenant, m, reiniciar=True)
+            except SinCodex:
+                pass
+        else:
+            await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)  # al despertar se reescribe todo
+    return None

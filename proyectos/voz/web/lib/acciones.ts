@@ -1695,3 +1695,18 @@ export async function cuotasNegocio(): Promise<Cuotas | null> {
   const r = await orquestador("/cuotas");
   return r.ok ? r.json() : null;
 }
+
+export type Catalogo = {
+  skills: { clave: string; nombre: string; detalle: string; agentes: string[] }[];
+  integraciones: { clave: string; nombre: string; detalle: string; lista: boolean; agentes: string[] }[];
+};
+export async function catalogoAgentes(): Promise<Catalogo> {
+  const r = await orquestador("/catalogo");
+  return r.ok ? r.json() : { skills: [], integraciones: [] };
+}
+
+export async function instalarEnAgente(agenteId: string, tipo: "skill" | "integracion", clave: string, instalar: boolean): Promise<Estado> {
+  const r = await orquestador(`/agentes/${agenteId}/instalaciones`, { method: "POST", body: JSON.stringify({ tipo, clave, instalar }) });
+  if (!r.ok) return { error: "No se pudo cambiar; intente de nuevo." };
+  return { ok: instalar ? "Puesta." : "Quitada." };
+}
