@@ -14,7 +14,7 @@ import time
 
 import websockets
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
 from agentes import catalogo, codex, config, cuotas, db, negocio
@@ -119,15 +119,35 @@ async def turno(agente_id: uuid.UUID, cuerpo: Turno, tenant: str = Depends(negoc
     if not texto or len(texto) > 8000:
         raise HTTPException(400, "Mensaje vacío o demasiado largo")
 
-    async def eventos():
-        try:
-            async for e in negocio.turno(tenant, str(agente_id), texto):
-                yield f"data: {json.dumps(e, ensure_ascii=False)}\n\n"
-        except Exception as e:  # noqa: BLE001
-            log.exception("turno %s/%s", tenant, agente_id)
-            yield f"data: {json.dumps({'evento': 'error', 'texto': 'La máquina del agente no respondió. Intente de nuevo en un momento.'})}\n\n"
+    t = await negocio.iniciar_turno(tenant, str(agente_id), texto)
+    if t is None:
+        raise HTTPException(409, "El agente todavía está con el mensaje anterior.")
+    return _sse(t.seguir())
 
-    return StreamingResponse(eventos(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+def _sse(eventos):
+    async def cuerpo():
+        async for e in eventos:
+            yield f"data: {json.dumps(e, ensure_ascii=False)}\n\n"
+    return StreamingResponse(cuerpo(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.get("/agentes/{agente_id}/estado")
+async def estado_agente(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        raise HTTPException(404)
+    return {"trabajando": negocio.trabajando(str(agente_id))}
+
+
+@app.get("/agentes/{agente_id}/turno/seguir")
+async def seguir_turno(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    """Se engancha al turno en curso (repite lo que ya salió y sigue). 204 si no hay."""
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        raise HTTPException(404)
+    ev = negocio.seguir(str(agente_id))
+    if ev is None:
+        return Response(status_code=204)
+    return _sse(ev)
 
 
 @app.post("/agentes/{agente_id}/hilo-nuevo")

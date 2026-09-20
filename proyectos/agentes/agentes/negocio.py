@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
+import asyncio
 import time
 
 from agentes import catalogo, codex, config, cuotas, db, hermes, jev, vault
@@ -206,9 +207,78 @@ async def _sesion(tenant: str, agente, m, llave: str, http: httpx.AsyncClient) -
     return sid
 
 
-async def turno(tenant: str, agente_id: str, texto: str):
-    """Genera eventos {evento, texto} para el panel. Un solo lugar traduce los
-    fallos a español."""
+class Trabajo:
+    """Un turno en curso: los eventos que ya salieron y una señal para los que
+    siguen. Vive en memoria mientras el turno corre; el panel puede irse y
+    volver a engancharse."""
+
+    def __init__(self) -> None:
+        self.eventos: list[dict] = []
+        self.terminado = False
+        self.cambio = asyncio.Condition()
+
+    async def publicar(self, e: dict) -> None:
+        async with self.cambio:
+            self.eventos.append(e)
+            self.cambio.notify_all()
+
+    async def cerrar(self) -> None:
+        async with self.cambio:
+            self.terminado = True
+            self.cambio.notify_all()
+
+    async def seguir(self):
+        i = 0
+        while True:
+            async with self.cambio:
+                while i >= len(self.eventos) and not self.terminado:
+                    await self.cambio.wait()
+                pendientes = self.eventos[i:]
+                i = len(self.eventos)
+                fin = self.terminado
+            for e in pendientes:
+                yield e
+            if fin and i >= len(self.eventos):
+                return
+
+
+_trabajos: dict[str, Trabajo] = {}  # agente_id -> turno en curso
+
+
+def trabajando(agente_id: str) -> bool:
+    t = _trabajos.get(agente_id)
+    return t is not None and not t.terminado
+
+
+def seguir(agente_id: str):
+    """Eventos del turno en curso (o nada si no hay)."""
+    t = _trabajos.get(agente_id)
+    return t.seguir() if t else None
+
+
+async def iniciar_turno(tenant: str, agente_id: str, texto: str) -> Trabajo | None:
+    """Arranca el turno en segundo plano; None si ese agente ya está trabajando."""
+    if trabajando(agente_id):
+        return None
+    t = Trabajo()
+    _trabajos[agente_id] = t
+
+    async def correr():
+        try:
+            async for e in _turno(tenant, agente_id, texto):
+                await t.publicar(e)
+        except Exception:  # noqa: BLE001
+            log.exception("turno %s/%s", tenant, agente_id)
+            await t.publicar({"evento": "error", "texto": "La máquina del agente no respondió. Intente de nuevo en un momento."})
+        finally:
+            await t.cerrar()
+
+    asyncio.create_task(correr())
+    return t
+
+
+async def _turno(tenant: str, agente_id: str, texto: str):
+    """Genera eventos {evento, texto}. Un solo lugar traduce los fallos a español."""
     agente = await db.uno("select id, nombre, llave, sesion_hermes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
     if not agente:
         yield {"evento": "error", "texto": "Ese agente no existe."}
@@ -254,6 +324,8 @@ async def turno(tenant: str, agente_id: str, texto: str):
                         continue
                     if evento == "assistant.delta":
                         t = d.get("text") or d.get("delta") or d.get("content") or ""
+                        if not respuesta:
+                            t = t.lstrip()  # el modelo suele abrir con saltos de línea
                         if t:
                             respuesta.append(t)
                             yield {"evento": "texto", "texto": t}

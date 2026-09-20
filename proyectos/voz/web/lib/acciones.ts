@@ -1710,3 +1710,8 @@ export async function instalarEnAgente(agenteId: string, tipo: "skill" | "integr
   if (!r.ok) return { error: "No se pudo cambiar; intente de nuevo." };
   return { ok: instalar ? "Puesta." : "Quitada." };
 }
+
+export async function agenteTrabajando(agenteId: string): Promise<boolean> {
+  const r = await orquestador(`/agentes/${agenteId}/estado`);
+  return r.ok ? ((await r.json()) as { trabajando: boolean }).trabajando : false;
+}

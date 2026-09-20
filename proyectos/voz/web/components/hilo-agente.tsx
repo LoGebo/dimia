@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Monitor, PanelRightOpen, Plus } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { actualizarAgente, conectarCodex, ejecutarPropuesta, estadoCodex, hiloNuevoAgente, mensajesAgente, preguntarCopiloto } from "@/lib/acciones";
+import { actualizarAgente, agenteTrabajando, conectarCodex, ejecutarPropuesta, estadoCodex, hiloNuevoAgente, mensajesAgente, preguntarCopiloto } from "@/lib/acciones";
+import { Formato } from "@/components/formato";
 import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
 
 type Opcion = { letra: string; titulo: string; detalle: string; trabajo?: string; nombre?: string };
@@ -29,6 +30,12 @@ const ROLES: Opcion[] = [
   { letra: "D", titulo: "Otra cosa", detalle: "Dígamelo con sus palabras" },
 ];
 
+const NOMBRE_HERRAMIENTA: Record<string, string> = {
+  browser_navigate: "abriendo una página", browser_snapshot: "leyendo la página", browser_click: "haciendo clic", browser_type: "escribiendo en la página",
+  browser_scroll: "recorriendo la página", browser_vision: "mirando la pantalla", web_search: "buscando en la web", web_extract: "leyendo un sitio",
+  skill_view: "consultando sus instrucciones", memory: "recordando", mcp__dimia__citas: "revisando las citas", mcp__dimia__cobros: "revisando los cobros",
+  mcp__dimia__buscar_cliente: "buscando al cliente", mcp__dimia__clientes_sin_volver: "buscando clientes", mcp__dimia__servicios: "consultando los servicios",
+};
 const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
 const clave = (negocio: string, agente: string) => `hilo_agente:${negocio}:${agente}`;
 
@@ -46,6 +53,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const [pideCodex, setPideCodex] = useState(false);
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
+  const [haciendo, setHaciendo] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
@@ -61,9 +69,19 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     setCodex(null);
     setPideCodex(false);
     if (conCerebro) {
-      // El historial vive en el orquestador, no en el navegador.
-      void mensajesAgente(agente.id).then((h) => setMensajes(h.length ? h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto })) : [saludo()]));
+      // Primero lo último que se vio (instantáneo); el historial real llega del orquestador detrás.
+      try {
+        const guardado = sessionStorage.getItem(clave(negocio, agente.id));
+        setMensajes(guardado ? (JSON.parse(guardado) as Mensaje[]) : []);
+      } catch { setMensajes([]); }
+      void mensajesAgente(agente.id).then((h) => {
+        const lista = h.length ? h.map((m) => ({ id: m.id, de: m.de === "yo" ? ("yo" as const) : ("agente" as const), texto: m.texto })) : [saludo()];
+        setMensajes(lista);
+        try { sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(lista.slice(-40))); } catch {}
+      });
       void estadoCodex().then((e) => setPideCodex(e.estado === "sin_conectar"));
+      // Si se fue a media respuesta, el agente siguió trabajando: engancharse.
+      void agenteTrabajando(agente.id).then((si) => { if (si) void seguirTurno(); });
       return;
     }
     try {
@@ -76,9 +94,9 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   }, [agente.id]);
 
   useEffect(() => {
-    try { if (mensajes.length && !conCerebro) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40))); } catch {}
+    try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40))); } catch {}
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
-  }, [mensajes, negocio, agente.id, conCerebro]);
+  }, [mensajes, negocio, agente.id]);
 
   // Mientras el dueño teclea el código en ChatGPT, preguntamos cada 4 s si ya quedó.
   useEffect(() => {
@@ -106,15 +124,17 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     setMensajes([saludo()]);
   }
 
-  /** Un turno con el cerebro real: llega en pedazos por SSE. */
-  async function turnoCerebro(t: string) {
+  /** Lee el SSE del orquestador y va pintando la respuesta; la burbuja aparece con el primer texto. */
+  async function leerEventos(r: Response) {
     const idAgente = Date.now() + 1;
-    setMensajes((m) => [...m, { id: idAgente, de: "agente", texto: "" }]);
-    const pegar = (texto: string) => setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto: x.texto + texto } : x)));
-    const poner = (texto: string) => setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto } : x)));
+    let creada = false;
+    const pegar = (texto: string) => {
+      if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); return; }
+      setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto: x.texto + texto } : x)));
+    };
+    const poner = (texto: string) => { if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); } else setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto } : x))); };
     try {
-      const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t }) });
-      if (!r.ok || !r.body) { poner("No pude hablar con mi máquina. Intente de nuevo en un momento."); return; }
+      if (!r.ok || !r.body) { poner(r.status === 409 ? "Todavía estoy con su mensaje anterior; deme un momento." : "No pude hablar con mi máquina. Intente de nuevo en un momento."); return; }
       const lector = r.body.pipeThrough(new TextDecoderStream()).getReader();
       let resto = "";
       for (;;) {
@@ -127,13 +147,34 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
           const linea = p.split("\n").find((l) => l.startsWith("data:"));
           if (!linea) continue;
           const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string };
-          if (e.evento === "texto") pegar(e.texto);
+          if (e.evento === "texto") { setHaciendo(null); pegar(e.texto); }
+          else if (e.evento === "herramienta") setHaciendo(NOMBRE_HERRAMIENTA[e.texto] ?? e.texto.replace(/^mcp__dimia__/, "").replaceAll("_", " "));
           else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); }
           else if (e.evento === "error" || e.evento === "cuota") poner(e.texto);
         }
       }
     } catch {
       poner("Se cortó la conexión con mi máquina. Intente de nuevo.");
+    } finally {
+      setHaciendo(null);
+    }
+  }
+
+  async function turnoCerebro(t: string) {
+    const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t }) });
+    await leerEventos(r);
+  }
+
+  async function seguirTurno() {
+    setEscribiendo(true);
+    try {
+      const r = await fetch(`/api/agentes/${agente.id}/seguir`);
+      if (r.status === 204) return;
+      await leerEventos(r);
+      const h = await mensajesAgente(agente.id);
+      if (h.length) setMensajes(h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto })));
+    } finally {
+      setEscribiendo(false);
     }
   }
 
@@ -236,8 +277,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         <p className="text-center text-[12px] text-tinta-3">Hoy {hora}</p>
         {mensajes.map((m) => (
           <article key={m.id} className={`flex flex-col gap-2 ${m.de === "yo" ? "items-end" : "items-start"}`}>
-            <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap ${m.de === "yo" ? "rounded-br-md bg-acento text-acento-tinta" : "rounded-bl-md bg-linea text-tinta"}`}>
-              {m.texto}
+            <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${m.de === "yo" ? "rounded-br-md bg-acento text-acento-tinta whitespace-pre-wrap" : "rounded-bl-md bg-linea text-tinta"}`}>
+              {m.de === "yo" ? m.texto : <Formato texto={m.texto} />}
             </div>
             {m.opciones ? (
               <div className="w-full max-w-[640px] rounded-2xl border border-linea bg-panel p-2">
@@ -302,7 +343,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
           </div>
         ) : null}
         {escribiendo ? (
-          <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} />{agente.nombre} está {conCerebro ? "trabajando" : "consultando"}…</div>
+          <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} /><span className="inline-flex gap-0.5"><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:0ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:150ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:300ms]" /></span>{haciendo ? `${agente.nombre} está ${haciendo}` : `${agente.nombre} está ${conCerebro ? "pensando" : "consultando"}`}</div>
         ) : null}
         {conectado && mensajes.length <= 1 && !escribiendo ? (
           <div className="flex flex-wrap gap-2 pt-1">

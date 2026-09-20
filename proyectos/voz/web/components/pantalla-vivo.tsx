@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Monitor } from "lucide-react";
+import { Maximize2, Monitor, X } from "lucide-react";
 import { urlPantalla } from "@/lib/acciones";
 
 type Estado = "apagada" | "conectando" | "en_vivo" | "error";
@@ -13,7 +13,8 @@ const NOVNC = "https://cdn.jsdelivr.net/gh/novnc/noVNC@v1.6.0/core/rfb.js";
  * Se ve solamente; con «Tomar el control» el dueño puede usar el mouse y el
  * teclado, como en Grok Bot.
  */
-export function PantallaVivo({ agenteId, nombre }: { agenteId: string; nombre: string }) {
+export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar }: { agenteId: string; nombre: string; grande?: boolean; ocultar?: () => void; cerrar?: () => void }) {
+  const [ampliada, setAmpliada] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
   const rfb = useRef<RFBInstancia | null>(null);
   const [estado, setEstado] = useState<Estado>("apagada");
@@ -33,7 +34,8 @@ export function PantallaVivo({ agenteId, nombre }: { agenteId: string; nombre: s
       if (!vivo || !caja.current) return;
       const conexion = new RFB(caja.current, r.url, { wsProtocols: ["binary"] });
       conexion.scaleViewport = true;
-      conexion.viewOnly = true;
+      conexion.viewOnly = !grande;
+      if (grande) setControl(true);
       conexion.background = "transparent";
       conexion.addEventListener("connect", () => setEstado("en_vivo"));
       conexion.addEventListener("disconnect", () => { if (vivo) setEstado("apagada"); });
@@ -49,9 +51,28 @@ export function PantallaVivo({ agenteId, nombre }: { agenteId: string; nombre: s
     setControl(!control);
   }
 
+  if (grande) {
+    return (
+      <div role="dialog" aria-modal="true" aria-label={`Pantalla de ${nombre}`} className="fixed inset-0 z-50 flex flex-col bg-tinta/90 p-4 sm:p-8" onMouseDown={(e) => { if (e.target === e.currentTarget) cerrar?.(); }}>
+        <div className="flex items-center justify-between pb-3 text-paper">
+          <p className="text-[15px] font-semibold">Pantalla de {nombre}{estado === "en_vivo" ? (control ? " · usted tiene el control" : " · solo ver") : ""}</p>
+          <div className="flex items-center gap-2">
+            {estado === "en_vivo" ? <button type="button" onClick={alternarControl} className="h-9 rounded-full border border-paper/30 px-4 text-[13px] hover:bg-paper/10">{control ? "Soltar el control" : "Tomar el control"}</button> : null}
+            <button type="button" onClick={cerrar} aria-label="Cerrar" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-paper/10"><X size={18} /></button>
+          </div>
+        </div>
+        <div ref={caja} className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-black">
+          {estado !== "en_vivo" ? <div className="absolute inset-0 flex items-center justify-center text-[14px] text-paper/70">{estado === "conectando" ? "Encendiendo la computadora…" : aviso ?? "Computadora apagada."}</div> : null}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
-      <div ref={caja} className={`relative aspect-[16/10] overflow-hidden rounded-2xl border bg-panel-2 ${control ? "border-acento" : "border-linea"}`}>
+      {ampliada ? <PantallaVivo agenteId={agenteId} nombre={nombre} grande cerrar={() => setAmpliada(false)} /> : null}
+      <div ref={caja} role={estado === "en_vivo" ? "button" : undefined} tabIndex={estado === "en_vivo" ? 0 : -1} onClick={() => { if (estado === "en_vivo" && !control) setAmpliada(true); }} onKeyDown={(e) => { if (e.key === "Enter" && estado === "en_vivo") setAmpliada(true); }} aria-label="Ver en grande" className={`group relative aspect-[16/10] overflow-hidden rounded-2xl border bg-panel-2 ${control ? "border-acento" : "cursor-zoom-in border-linea"}`}>
+        {estado === "en_vivo" && !control ? <span className="pointer-events-none absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-tinta/70 text-paper opacity-0 transition-opacity duration-150 group-hover:opacity-100"><Maximize2 size={14} /></span> : null}
         {estado !== "en_vivo" ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-tinta-3">
             <Monitor size={22} strokeWidth={1.5} />
@@ -59,11 +80,14 @@ export function PantallaVivo({ agenteId, nombre }: { agenteId: string; nombre: s
           </div>
         ) : null}
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p className="text-[13px] text-tinta-3">Pantalla de {nombre}</p>
-        {estado === "en_vivo" ? (
-          <button type="button" onClick={alternarControl} aria-pressed={control} className={`h-7 rounded-full border px-3 text-[12.5px] transition-colors duration-150 ${control ? "border-acento bg-acento text-acento-tinta" : "border-linea text-tinta-2 hover:text-tinta"}`}>{control ? "Soltar el control" : "Tomar el control"}</button>
-        ) : null}
+        <div className="flex items-center gap-1.5">
+          {estado === "en_vivo" ? (
+            <button type="button" onClick={alternarControl} aria-pressed={control} className={`h-7 rounded-full border px-3 text-[12.5px] transition-colors duration-150 ${control ? "border-acento bg-acento text-acento-tinta" : "border-linea text-tinta-2 hover:text-tinta"}`}>{control ? "Soltar el control" : "Tomar el control"}</button>
+          ) : null}
+          {ocultar ? <button type="button" onClick={ocultar} className="h-7 rounded-full px-2 text-[12.5px] text-tinta-3 hover:text-tinta">Ocultar</button> : null}
+        </div>
       </div>
     </div>
   );
