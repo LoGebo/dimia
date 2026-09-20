@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Circle, Monitor, Settings2, Trash2 } from "lucide-react";
-import { AvatarAgente } from "@/components/avatar-agente";
+import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
 import { actualizarAgente, borrarAgente } from "@/lib/acciones";
 import type { AgenteHilo } from "@/components/hilo-agente";
 import { HiloAgente } from "@/components/hilo-agente";
@@ -33,6 +33,35 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
   const [visibles, setVisibles] = useState<Set<string>>(new Set(ACCIONES.map((a) => a.clave)));
   const [ajustes, setAjustes] = useState(false);
   const [marcados, setMarcados] = useState<Set<string>>(new Set(permisos));
+  const [nombre, setNombre] = useState(agente.nombre);
+  const [trabajo, setTrabajo] = useState(agente.trabajo ?? "");
+  const [avatar, setAvatar] = useState(agente.avatar);
+  const [guardando, setGuardando] = useState(false);
+  const actual = rasgos(agente.nombre, avatar);
+
+  async function guardarIdentidad(cambios: { nombre?: string; trabajo?: string; avatar?: string }) {
+    setGuardando(true);
+    // Al renombrar se fija la cara que ya tenía: sin esto cambiaría con el nombre.
+    if (cambios.nombre && !avatar) {
+      cambios = { ...cambios, avatar: `${actual.forma}:${actual.color}` };
+      setAvatar(cambios.avatar!);
+    }
+    await actualizarAgente(agente.id, cambios);
+    setGuardando(false);
+    router.refresh();
+  }
+
+  function elegirForma(forma: string) {
+    const nuevo = `${forma}:${actual.color}`;
+    setAvatar(nuevo);
+    void guardarIdentidad({ avatar: nuevo });
+  }
+
+  function elegirColor(color: string) {
+    const nuevo = `${actual.forma}:${color}`;
+    setAvatar(nuevo);
+    void guardarIdentidad({ avatar: nuevo });
+  }
 
   useEffect(() => {
     try {
@@ -77,10 +106,53 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 pb-6">
           {ajustes ? (
             <div className="space-y-5">
-              <div className="flex flex-col items-center gap-2 py-2">
-                <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={72} />
-                <p className="text-[16px] font-semibold text-tinta">{agente.nombre}</p>
-                <p className="text-center text-[13px] text-tinta-3">{agente.trabajo ?? "Sin trabajo todavía"}</p>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <AvatarAgente nombre={agente.nombre} avatar={avatar} tamano={72} />
+                {recepcion ? (
+                  <>
+                    <p className="text-[16px] font-semibold text-tinta">{agente.nombre}</p>
+                    <p className="text-center text-[13px] text-tinta-3">{agente.trabajo}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex gap-1.5" role="group" aria-label="Forma">
+                      {FORMAS.map((f) => (
+                        <button key={f} type="button" onClick={() => elegirForma(f)} aria-pressed={actual.forma === f} aria-label={f} className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-150 ${actual.forma === f ? "bg-linea" : "hover:bg-linea/60"}`}>
+                          <AvatarAgente nombre={agente.nombre} avatar={`${f}:${actual.color}`} tamano={26} />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1.5" role="group" aria-label="Color">
+                      {COLORES.map((c) => (
+                        <button key={c} type="button" onClick={() => elegirColor(c)} aria-pressed={actual.color === c} aria-label={c} className={`h-6 w-6 rounded-full border-2 transition-transform duration-150 hover:scale-110 ${actual.color === c ? "border-tinta" : "border-transparent"}`} style={{ background: c }} />
+                      ))}
+                    </div>
+                    <label className="w-full">
+                      <span className="sr-only">Nombre</span>
+                      <input
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        onBlur={() => { if (nombre.trim() && nombre.trim() !== agente.nombre) void guardarIdentidad({ nombre: nombre.trim() }); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                        maxLength={60}
+                        className="w-full rounded-xl bg-linea/60 px-3 py-2 text-center text-[16px] font-semibold text-tinta outline-none focus:bg-linea"
+                      />
+                    </label>
+                    <label className="w-full">
+                      <span className="sr-only">Trabajo</span>
+                      <textarea
+                        value={trabajo}
+                        onChange={(e) => setTrabajo(e.target.value)}
+                        onBlur={() => { if (trabajo.trim() !== (agente.trabajo ?? "")) void guardarIdentidad({ trabajo: trabajo.trim() }); }}
+                        rows={2}
+                        maxLength={200}
+                        placeholder="Qué hace, en una frase"
+                        className="w-full resize-none rounded-xl bg-linea/60 px-3 py-2 text-center text-[13px] leading-snug text-tinta outline-none placeholder:text-tinta-3 focus:bg-linea"
+                      />
+                    </label>
+                    <p className="h-4 text-[11px] text-tinta-3">{guardando ? "Guardando…" : ""}</p>
+                  </>
+                )}
               </div>
               <div>
                 <p className="mb-2 text-[13px] font-medium text-tinta-2">En su pantalla</p>

@@ -3,8 +3,8 @@
  * se reconoce de reojo sin leer el nombre. La forma y el color salen del
  * nombre; Recepción siempre es la gota azul de la casa.
  */
-const FORMAS = ["gota", "circulo", "hexagono", "pastilla"] as const;
-const COLORES = ["#4f7cf5", "#3fb68b", "#f0a33c", "#e2685c", "#8b6cf0", "#2fb3b3", "#d05aa8"];
+export const FORMAS = ["gota", "circulo", "hexagono", "pastilla"] as const;
+export const COLORES = ["#4f7cf5", "#3fb68b", "#f0a33c", "#e2685c", "#8b6cf0", "#2fb3b3", "#d05aa8"];
 
 type Forma = (typeof FORMAS)[number];
 
