@@ -8,6 +8,10 @@ Necesita `WHATSAPP_ACCESS_TOKEN` y `WHATSAPP_WABA_ID` (la WABA real de Dimia,
 no la de prueba). Las de categoria UTILITY se aprueban en minutos; si Meta
 las reclasifica como MARKETING hay que revisar el texto, no el codigo.
 Los parametros se llenan en `app.despachador.plantilla_meta`, en este orden.
+Meta no acepta una variable al inicio ni al final del cuerpo, y rechaza por
+"categoria incorrecta" redacciones que se alejan de las ya aprobadas: copiar
+la forma de `recordatorio_cita` fue lo que paso. Un nombre borrado no se puede
+reutilizar en semanas; si hay que cambiar el texto, es un nombre nuevo.
 """
 
 from __future__ import annotations
@@ -22,23 +26,59 @@ from channels.whatsapp.config import whatsapp_settings
 
 PLANTILLAS: list[dict] = [
     {
-        "name": "cita_confirmacion_24h",
+        "name": "cita_confirmar_24h_botones",
         "language": "es_MX",
         "category": "UTILITY",
         "components": [
             {
                 "type": "BODY",
-                "text": "{{1}}, mañana tienes {{2}} en {{3}}: {{4}}. Tu código es {{5}}. ¿Nos confirmas?",
-                "example": {"body_text": [["Hola Ana", "consulta general", "Clínica Prueba", "jueves 3 de octubre a las 4:30 pm", "7QMB"]]},
+                "text": "Hola {{1}}, te recordamos tu cita mañana {{2}} a las {{3}} en {{4}}. Código {{5}}. ¿Nos confirmas?",
+                "example": {"body_text": [["Ana", "lunes 5 de mayo", "3:30 pm", "Clínica Dental Aurora", "A7K2"]]},
             },
             {
                 "type": "BUTTONS",
                 "buttons": [
-                    {"type": "QUICK_REPLY", "text": "Confirmo"},
-                    {"type": "QUICK_REPLY", "text": "Cambiar"},
+                    {"type": "QUICK_REPLY", "text": "Confirmar"},
                     {"type": "QUICK_REPLY", "text": "Cancelar"},
+                    {"type": "QUICK_REPLY", "text": "Reagendar"},
                 ],
             },
+        ],
+    },
+    {
+        "name": "confirmacion_cita",
+        "language": "es_MX",
+        "category": "UTILITY",
+        "components": [
+            {
+                "type": "BODY",
+                "text": "Hola {{1}}, tu cita en {{2}} quedó el {{3}} a las {{4}}. Código {{5}}. Responde CANCELAR si no podrás.",
+                "example": {"body_text": [["Ana", "Clínica Dental Aurora", "lunes 5 de mayo", "3:30 pm", "A7K2"]]},
+            }
+        ],
+    },
+    {
+        "name": "resena",
+        "language": "es_MX",
+        "category": "UTILITY",
+        "components": [
+            {
+                "type": "BODY",
+                "text": "Hola {{1}}, gracias por venir a {{2}}. Del 1 al 5, ¿cómo te fue? Responde con el número.",
+                "example": {"body_text": [["Ana", "Clínica Dental Aurora"]]},
+            }
+        ],
+    },
+    {
+        "name": "pago_pendiente",
+        "language": "es_MX",
+        "category": "UTILITY",
+        "components": [
+            {
+                "type": "BODY",
+                "text": "Hola {{1}}, tienes un pago pendiente de ${{2}} en {{3}}. Puedes pagar aquí: {{4}} . Si ya pagaste, ignora este mensaje.",
+                "example": {"body_text": [["Ana", "850", "Clínica Dental Aurora", "https://pago.dimia.mx/abc123"]]},
+            }
         ],
     },
     {
@@ -48,8 +88,8 @@ PLANTILLAS: list[dict] = [
         "components": [
             {
                 "type": "BODY",
-                "text": "{{1}}, tu pedido {{2}} en {{3}} ya está listo para recoger.",
-                "example": {"body_text": [["Hola Luis", "A1K4", "Tacos El Paisa"]]},
+                "text": "Hola {{1}}. Tu pedido {{2}} en {{3}} ya está listo para recoger.",
+                "example": {"body_text": [["Luis", "A1K4", "Tacos El Paisa"]]},
             }
         ],
     },
@@ -60,8 +100,8 @@ PLANTILLAS: list[dict] = [
         "components": [
             {
                 "type": "BODY",
-                "text": "{{1}}, tu pedido {{2}} de {{3}} ya va en camino. Llega en {{4}}.",
-                "example": {"body_text": [["Hola Luis", "A1K4", "Tacos El Paisa", "unos 35 minutos"]]},
+                "text": "Hola {{1}}. Tu pedido {{2}} de {{3}} ya va en camino y llega en {{4}} aproximadamente.",
+                "example": {"body_text": [["Luis", "A1K4", "Tacos El Paisa", "unos 35 minutos"]]},
             }
         ],
     },
@@ -92,7 +132,8 @@ async def _principal(crear: bool) -> int:
             if respuesta.is_success:
                 print(f"{plantilla['name']:24} creada: {cuerpo.get('status')}")
             else:
-                print(f"{plantilla['name']:24} rechazada: {cuerpo.get('error', {}).get('message', cuerpo)}")
+                error = cuerpo.get("error", {})
+                print(f"{plantilla['name']:24} rechazada: {error.get('error_user_msg') or error.get('message') or cuerpo}")
     return 0
 
 

@@ -188,7 +188,7 @@ async def test_la_confirmacion_de_24h_sale_como_plantilla_con_botones():
 
     assert tanda.enviados == 1
     _, texto = mensajero.mandados[0]
-    assert texto.startswith("[cita_confirmacion_24h] Hola Ana | Consulta | Clínica Prueba | sábado 3 de octubre a las 11:30 am | 7QMB")
+    assert texto.startswith("[cita_confirmar_24h_botones] Ana | sábado 3 de octubre | 11:30 am | Clínica Prueba | 7QMB")
     assert "cita:confirmo:11111111-2222-3333-4444-555555555555" in texto
     assert "cita:cambiar:" in texto and "cita:cancelo:" in texto
 
@@ -202,6 +202,17 @@ def test_el_pedido_listo_distingue_recoger_de_domicilio():
     assert plantilla_meta({"plantilla": "pedido_listo", "payload": de_paso}).nombre == "pedido_listo_recoger"
     assert "listo para recoger" in redactar("pedido_listo", de_paso)
     assert plantilla_meta({"plantilla": "pedido", "payload": de_paso}) is None
+
+
+def test_lo_que_ya_tiene_plantilla_aprobada_deja_de_salir_como_texto():
+    """Quien reservo por telefono nunca nos escribio: sin plantilla, Meta
+    rechaza el mensaje y la confirmacion nunca llega."""
+    cita = {"negocio": "Clínica", "cliente": "Ana Ruiz", "codigo": "7QMB",
+            "inicio": "2026-10-03T17:30:00+00:00", "zona_horaria": "America/Mexico_City"}
+    assert plantilla_meta({"plantilla": "confirmacion", "payload": cita}).parametros == ["Ana", "Clínica", "sábado 3 de octubre", "11:30 am", "7QMB"]
+    assert plantilla_meta({"plantilla": "resena", "payload": cita}).parametros == ["Ana", "Clínica"]
+    pago = plantilla_meta({"plantilla": "pago", "payload": {"negocio": "Clínica", "monto": "850.00", "enlace_url": "https://p/x"}})
+    assert pago.nombre == "pago_pendiente" and pago.parametros == ["de nuevo", "850", "Clínica", "https://p/x"]
 
 
 # --- De punta a punta contra Postgres ---------------------------------------

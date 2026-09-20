@@ -102,9 +102,9 @@ def cuando(inicio: object, zona_horaria: object) -> str:
     return f"{DIAS[momento.weekday()]} {momento.day} de {MESES[momento.month - 1]} a las {hora}{minutos} {sufijo}"
 
 
-def _saludo(payload: dict) -> str:
-    nombre = (payload.get("cliente") or "").split(" ")[0]
-    return f"Hola {nombre}" if nombre else "Hola"
+def _nombre(payload: dict) -> str:
+    """Va despues de un "Hola" fijo en la plantilla; sin nombre, "de nuevo"."""
+    return (payload.get("cliente") or "").split(" ")[0] or "de nuevo"
 
 
 def _en_cuanto(payload: dict) -> str:
@@ -112,31 +112,47 @@ def _en_cuanto(payload: dict) -> str:
     return f"unos {int(minutos)} minutos" if minutos else "un momento"
 
 
+def _fecha_y_hora(payload: dict) -> tuple[str, str]:
+    momento = cuando(payload.get("inicio"), payload.get("zona_horaria"))
+    fecha, _, hora = momento.partition(" a las ")
+    return fecha, hora
+
+
 def plantilla_meta(fila: dict) -> PlantillaMeta | None:
     """La plantilla de Meta que corresponde a la fila, o None si va como texto.
 
     Meta solo entrega texto libre a quien nos escribio en las ultimas 24 horas.
     Todo lo que sale de la cola hacia alguien que reservo por telefono tiene
-    que ir como plantilla aprobada; por eso estas no tienen version de texto
-    en produccion.
+    que ir como plantilla aprobada; los nombres son los de la WABA de Dimia
+    (`channels/whatsapp/plantillas_meta.py`). Lo que no tiene plantilla —el
+    pedido con sus renglones, la campaña— sigue saliendo como texto.
     """
     payload = fila.get("payload") or {}
     plantilla = fila.get("plantilla")
+    nombre = _nombre(payload)
+    negocio = str(payload.get("negocio") or "el negocio")
+    codigo = str(payload.get("codigo") or "")
     if plantilla == "confirmacion_24h":
         cita = str(fila.get("booking_id") or "")
+        fecha, hora = _fecha_y_hora(payload)
         return PlantillaMeta(
-            "cita_confirmacion_24h",
-            [
-                _saludo(payload),
-                str(payload.get("servicio") or "tu cita"),
-                str(payload.get("negocio") or "el negocio"),
-                cuando(payload.get("inicio"), payload.get("zona_horaria")),
-                str(payload.get("codigo") or ""),
-            ],
-            [f"cita:confirmo:{cita}", f"cita:cambiar:{cita}", f"cita:cancelo:{cita}"],
+            "cita_confirmar_24h_botones",
+            [nombre, fecha, hora, negocio, codigo],
+            [f"cita:confirmo:{cita}", f"cita:cancelo:{cita}", f"cita:cambiar:{cita}"],
+        )
+    if plantilla == "confirmacion":
+        fecha, hora = _fecha_y_hora(payload)
+        return PlantillaMeta("confirmacion_cita", [nombre, negocio, fecha, hora, codigo], [])
+    if plantilla == "resena":
+        return PlantillaMeta("resena", [nombre, negocio], [])
+    if plantilla == "pago":
+        return PlantillaMeta(
+            "pago_pendiente",
+            [nombre, _pesos(payload.get("monto")).lstrip("$"), negocio, str(payload.get("enlace_url") or "")],
+            [],
         )
     if plantilla == "pedido_listo":
-        comunes = [_saludo(payload), str(payload.get("codigo") or ""), str(payload.get("negocio") or "el negocio")]
+        comunes = [nombre, codigo, negocio]
         if payload.get("tipo") == "domicilio":
             return PlantillaMeta("pedido_en_camino", [*comunes, _en_cuanto(payload)], [])
         return PlantillaMeta("pedido_listo_recoger", comunes, [])
