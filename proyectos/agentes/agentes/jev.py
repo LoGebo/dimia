@@ -8,6 +8,7 @@ import httpx
 from agentes import config
 
 URL = "https://api.typesafe.ai/v1/systemone"
+URL_VERCEL = "https://ai-gateway.vercel.sh/v1/evaluate"  # mismo Jev, misma forma de respuesta
 UMBRAL_RAPIDO = 0.7  # menos seguridad que esto y el turno va al fuerte
 
 CRITERIOS = {
@@ -18,16 +19,20 @@ CRITERIOS = {
 
 async def decidir(trabajo: str | None, historial: list[str], texto: str) -> tuple[str, dict | None]:
     """Devuelve ('rapido'|'fuerte', respuesta_de_jev)."""
-    if not config.TYPESAFE_API_KEY:
+    if config.VERCEL_AI_GATEWAY_KEY:
+        url, llave, modelo = URL_VERCEL, config.VERCEL_AI_GATEWAY_KEY, "typesafe-ai/jev"
+    elif config.TYPESAFE_API_KEY:
+        url, llave, modelo = URL, config.TYPESAFE_API_KEY, "jev-latest"
+    else:
         return "fuerte", None
     contexto = "\n".join(historial[-4:])
     estado = f"Trabajo del agente: {trabajo or 'sin definir'}\nConversación reciente:\n{contexto}\nÚltimo mensaje del dueño: {texto}"
-    cuerpo = {"state": estado, "model": "jev-latest", "questions": {
+    cuerpo = {"state": estado, "model": modelo, "questions": {
         "nivel": {"type": "choice", "instructions": "¿Qué tanto razonamiento y trabajo pide el último mensaje?", "criteria": CRITERIOS}}}
     t = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=8) as c:
-            r = await c.post(URL, json=cuerpo, headers={"Authorization": f"Bearer {config.TYPESAFE_API_KEY}"})
+            r = await c.post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"})
         r.raise_for_status()
         d = r.json()
     except (httpx.HTTPError, ValueError):
