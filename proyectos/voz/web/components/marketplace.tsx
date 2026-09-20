@@ -14,14 +14,14 @@ const AGENTES = [
 ];
 
 const INTEGRACIONES = [
-  { clave: "gmail", nombre: "Gmail", detalle: "Leer y mandar correo", color: "#ea4335", letra: "M" },
-  { clave: "google-calendar", nombre: "Google Calendar", detalle: "Ver y mover citas", color: "#4285f4", letra: "31" },
-  { clave: "google-drive", nombre: "Google Drive", detalle: "Archivos y documentos", color: "#fbbc04", letra: "D" },
-  { clave: "whatsapp", nombre: "WhatsApp", detalle: "Escribir a clientes", color: "#25d366", letra: "W" },
-  { clave: "granola", nombre: "Granola", detalle: "Notas de reuniones", color: "#1f1f1f", letra: "G" },
-  { clave: "adobe", nombre: "Adobe", detalle: "Diseños y PDF", color: "#ff0000", letra: "A" },
-  { clave: "notion", nombre: "Notion", detalle: "Documentos y tablas", color: "#0b0f17", letra: "N" },
-  { clave: "slack", nombre: "Slack", detalle: "Avisos al equipo", color: "#4a154b", letra: "S" },
+  { clave: "gmail", nombre: "Gmail", detalle: "Leer y mandar correo", logo: "/integraciones/gmail.svg" },
+  { clave: "google-calendar", nombre: "Google Calendar", detalle: "Ver y mover citas", logo: "/integraciones/google-calendar.svg" },
+  { clave: "google-drive", nombre: "Google Drive", detalle: "Archivos y documentos", logo: "/integraciones/google-drive.svg" },
+  { clave: "whatsapp", nombre: "WhatsApp", detalle: "Escribir a clientes", logo: "/integraciones/whatsapp.svg" },
+  { clave: "granola", nombre: "Granola", detalle: "Notas de reuniones", logo: "/integraciones/granola.svg" },
+  { clave: "adobe", nombre: "Adobe", detalle: "Diseños y PDF", logo: "/integraciones/adobe.svg" },
+  { clave: "notion", nombre: "Notion", detalle: "Documentos y tablas", logo: "/integraciones/notion.png" },
+  { clave: "slack", nombre: "Slack", detalle: "Avisos al equipo", logo: "/integraciones/slack.svg" },
 ];
 
 /** Agentes listos e integraciones que se agregan con un botón. */
@@ -84,7 +84,10 @@ export function Marketplace({ instalados }: { instalados: string[] }) {
               const si = puestos.has(i.clave);
               return (
                 <li key={i.clave} className="flex items-center gap-3.5 py-3">
-                  <span aria-hidden="true" className="flex h-12 w-12 flex-none items-center justify-center rounded-[14px] text-[15px] font-bold text-white" style={{ background: i.color }}>{i.letra}</span>
+                  <span aria-hidden="true" className="flex h-12 w-12 flex-none items-center justify-center rounded-[14px] border border-linea bg-white p-2.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={i.logo} alt="" className="h-full w-full object-contain" />
+                  </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[15px] font-semibold text-tinta">{i.nombre}</span>
                     <span className="truncate text-[13px] text-tinta-3">{i.detalle}</span>

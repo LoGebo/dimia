@@ -34,18 +34,50 @@ const TRAZO: Record<Forma, string> = {
 
 const OJOS: Record<Forma, [number, number]> = { gota: [50, 66], circulo: [50, 52], hexagono: [50, 52], pastilla: [50, 50] };
 
+function aclarar(hex: string, cuanto: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const c = (v: number) => Math.min(255, Math.round(v + (255 - v) * cuanto));
+  return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map(c).map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
 export function AvatarAgente({ nombre, avatar, tamano = 40, activo }: { nombre: string; avatar?: string | null; tamano?: number; activo?: boolean }) {
   const { forma, color } = rasgos(nombre, avatar);
   const [cx, cy] = OJOS[forma];
   // Cada agente respira y parpadea a destiempo de los demás.
   const espera = `${-(hash(nombre) % 4000) / 1000}s`;
+  const id = `av${hash(`${nombre}${forma}${color}`).toString(36)}`;
   return (
     <span data-avatar="" className="relative inline-flex flex-none" style={{ width: tamano, height: tamano }}>
-      <svg viewBox="0 0 100 100" width={tamano} height={tamano} aria-hidden="true" className="avatar-cuerpo overflow-visible" style={{ "--avatar-espera": espera } as React.CSSProperties}>
-        <path d={TRAZO[forma]} fill={color} />
+      <svg
+        viewBox="0 0 100 100"
+        width={tamano}
+        height={tamano}
+        aria-hidden="true"
+        className="avatar-cuerpo overflow-visible"
+        style={{ "--avatar-espera": espera, shapeRendering: "geometricPrecision" } as React.CSSProperties}
+      >
+        <defs>
+          {/* Luz de arriba y sombra de abajo: el cuerpo tiene volumen, no es un sticker plano. */}
+          <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={aclarar(color, 0.22)} />
+            <stop offset="0.55" stopColor={color} />
+            <stop offset="1" stopColor={color} stopOpacity="0.92" />
+          </linearGradient>
+          <radialGradient id={`${id}-b`} cx="0.35" cy="0.25" r="0.6">
+            <stop offset="0" stopColor="#ffffff" stopOpacity="0.45" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+          <filter id={`${id}-s`} x="-20%" y="-20%" width="140%" height="150%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0b0f17" floodOpacity="0.18" />
+          </filter>
+        </defs>
+        <path d={TRAZO[forma]} fill={`url(#${id}-g)`} filter={`url(#${id}-s)`} />
+        <path d={TRAZO[forma]} fill={`url(#${id}-b)`} />
         <g fill="#0b0f17" className="avatar-ojos">
           <rect x={cx - 15} y={cy - 8} width="7" height="16" rx="3.5" transform={`rotate(-8 ${cx - 11} ${cy})`} />
           <rect x={cx + 8} y={cy - 8} width="7" height="16" rx="3.5" transform={`rotate(8 ${cx + 11} ${cy})`} />
+          <circle cx={cx - 10} cy={cy - 4} r="1.4" fill="#ffffff" opacity="0.9" />
+          <circle cx={cx + 13} cy={cy - 4} r="1.4" fill="#ffffff" opacity="0.9" />
         </g>
       </svg>
       {activo !== undefined ? (
