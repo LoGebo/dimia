@@ -71,8 +71,14 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
   return (
     <div className="space-y-2">
       {ampliada ? <PantallaVivo agenteId={agenteId} nombre={nombre} grande cerrar={() => setAmpliada(false)} /> : null}
-      <div ref={caja} role={estado === "en_vivo" ? "button" : undefined} tabIndex={estado === "en_vivo" ? 0 : -1} onClick={() => { if (estado === "en_vivo" && !control) setAmpliada(true); }} onKeyDown={(e) => { if (e.key === "Enter" && estado === "en_vivo") setAmpliada(true); }} aria-label="Ver en grande" className={`group relative aspect-[16/10] overflow-hidden rounded-2xl border bg-panel-2 ${control ? "border-acento" : "cursor-zoom-in border-linea"}`}>
-        {estado === "en_vivo" && !control ? <span className="pointer-events-none absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-tinta/70 text-paper opacity-0 transition-opacity duration-150 group-hover:opacity-100"><Maximize2 size={14} /></span> : null}
+      <div className={`group relative aspect-[16/10] overflow-hidden rounded-2xl border bg-panel-2 ${control ? "border-acento" : "border-linea"}`}>
+        <div ref={caja} className="absolute inset-0" />
+        {/* noVNC se queda con los clics del canvas; el botón encima abre la vista grande cuando solo se mira. */}
+        {estado === "en_vivo" && !control ? (
+          <button type="button" onClick={() => setAmpliada(true)} aria-label="Ver en grande" className="absolute inset-0 z-10 cursor-zoom-in">
+            <span className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-tinta/70 text-paper opacity-0 transition-opacity duration-150 group-hover:opacity-100"><Maximize2 size={14} /></span>
+          </button>
+        ) : null}
         {estado !== "en_vivo" ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-tinta-3">
             <Monitor size={22} strokeWidth={1.5} />

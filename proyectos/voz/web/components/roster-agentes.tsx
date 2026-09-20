@@ -40,7 +40,7 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
     setMenu(false);
     empezar(async () => {
       const r = await crearAgenteVacio();
-      if (r.id) router.push(`/agentes/${r.id}`);
+      if (r.id) { router.refresh(); window.history.pushState(null, "", `/agentes/${r.id}`); }
     });
   }
 
@@ -74,13 +74,13 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1">
         {agentesVisibles.map((a) => (
           <li key={a.id}>
-            <Link href={`/agentes/${a.id}`} aria-current={ruta === `/agentes/${a.id}` ? "page" : undefined} className={claseFila(ruta === `/agentes/${a.id}`)}>
+            <a href={`/agentes/${a.id}`} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); window.history.pushState(null, "", `/agentes/${a.id}`); } }} aria-current={ruta === `/agentes/${a.id}` ? "page" : undefined} className={claseFila(ruta === `/agentes/${a.id}`)}>
               <AvatarAgente nombre={a.nombre} avatar={a.avatar} tamano={44} activo={a.activo} />
               <span className="flex min-w-0 flex-col">
                 <span className="truncate text-[15px] font-semibold text-tinta">{a.nombre}</span>
                 <span className="truncate text-[13px] text-tinta-3">{a.trabajo ?? "Sin trabajo todavía"}</span>
               </span>
-            </Link>
+            </a>
           </li>
         ))}
         {gruposVisibles.length ? <li className="px-3 pt-3 pb-1 text-[12px] font-medium text-tinta-3">Grupos</li> : null}

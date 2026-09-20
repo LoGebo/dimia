@@ -60,6 +60,7 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
         "Escribe en español de México. Frases cortas. Primero el resultado, después el método.",
         "Sin superlativos, sin signos de admiración, sin anglicismos donde exista palabra en español.",
         "Nunca inventa cifras, clientes ni resultados; si falta un dato, lo pide.",
+        "Tiene una computadora con navegador propio y el dueño ve su pantalla en vivo. Para buscar, leer o usar sitios web use el navegador (browser_navigate, browser_snapshot, browser_click), no web_extract; así el dueño ve lo que hace.",
     ]
     if trabajo:
         partes.append(f"\n## Su trabajo\n{trabajo}")

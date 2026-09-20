@@ -37,12 +37,27 @@ def pantalla(agente: str, n: int):
     env = {"DISPLAY": disp, "HOME": f"{DATOS}/profiles/{agente}"}
     lanzar((agente, "wm"), ["openbox"], env)
     lanzar((agente, "chromium"), [
-        "chromium", "--no-sandbox", "--disable-dev-shm-usage", "--no-first-run", "--no-default-browser-check",
+        "chromium", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
         "--lang=es-MX", f"--window-size={ANCHO},{ALTO}", "--window-position=0,0", "--start-maximized",
         f"--remote-debugging-port={9200 + n}", "--remote-allow-origins=*", f"--user-data-dir={perfil}",
         "about:blank"], env)
-    lanzar((agente, "vnc"), ["x11vnc", "-display", disp, "-rfbport", str(5900 + n), "-localhost", "-forever", "-shared", "-nopw", "-quiet"], env)
+    lanzar((agente, "vnc"), ["x11vnc", "-display", disp, "-rfbport", str(5900 + n), "-localhost", "-forever", "-shared", "-nopw", "-quiet", "-noxdamage"], env)
+    pestaña_viva(n)
     lanzar((agente, "novnc"), ["websockify", "--web", "/usr/share/novnc", f"[::]:{6080 + n}", f"localhost:{5900 + n}"])
+
+
+def pestaña_viva(n: int):
+    """Hermes cierra las pestañas al terminar; sin pestañas Chromium no pinta
+    ventana y la pantalla se ve vacía. Si no queda ninguna, abre una en blanco."""
+    import json as _json
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{9200 + n}/json", timeout=2) as r:
+            paginas = [t for t in _json.load(r) if t.get("type") == "page" and not t.get("url", "").startswith("chrome://")]
+        if not paginas:
+            urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{9200 + n}/json/new?about:blank", method="PUT"), timeout=2).read()
+    except Exception:  # noqa: BLE001  (Chromium arrancando)
+        pass
 
 
 def main():
