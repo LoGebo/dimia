@@ -1602,3 +1602,42 @@ export async function alternarPlugin(clave: string, instalar: boolean): Promise<
     }),
   );
 }
+
+export async function crearGrupo(nombre: string, miembros: string[]): Promise<Estado & { id?: string }> {
+  const n = nombre.trim();
+  if (!n) return { error: "Ponle nombre al grupo." };
+  if (miembros.length < 2) return { error: "Un grupo necesita al menos dos agentes." };
+  let id: string | undefined;
+  const estado = await intentar(() =>
+    datos(async (q, negocioId) => {
+      const filas = await q<{ id: string }>(
+        "insert into grupo_agentes (tenant_id, nombre, miembros, responsable) values ($1, $2, $3, $4) returning id",
+        [negocioId, n.slice(0, 60), miembros, miembros[0]],
+      );
+      id = filas[0]?.id;
+    }),
+  );
+  return estado.error ? estado : { id };
+}
+
+export async function actualizarGrupo(grupoId: string, cambios: { nombre?: string; miembros?: string[]; responsable?: string }): Promise<Estado> {
+  return intentar(() =>
+    datos(async (q, negocioId) => {
+      await q(
+        "update grupo_agentes set nombre = coalesce($3, nombre), miembros = coalesce($4, miembros), responsable = coalesce($5, responsable) where tenant_id = $1 and id = $2",
+        [negocioId, grupoId, cambios.nombre?.trim() || null, cambios.miembros ?? null, cambios.responsable ?? null],
+      );
+      return { ok: "Guardado." };
+    }),
+  );
+}
+
+export async function borrarGrupo(grupoId: string): Promise<Estado> {
+  const estado = await intentar(() =>
+    datos(async (q, negocioId) => {
+      await q("delete from grupo_agentes where tenant_id = $1 and id = $2", [negocioId, grupoId]);
+    }),
+  );
+  if (estado.error) return estado;
+  redirect("/agentes");
+}

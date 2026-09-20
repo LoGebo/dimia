@@ -107,6 +107,19 @@ export function agente(agenteId: string): Promise<Agente | null> {
   });
 }
 
+export type GrupoAgentes = { id: string; nombre: string; miembros: string[]; responsable: string | null; creado: string };
+
+export function gruposAgentes(): Promise<GrupoAgentes[]> {
+  return datos((q, id) => q<GrupoAgentes>("select id, nombre, miembros, responsable, creado from grupo_agentes where tenant_id = $1 order by creado", [id]));
+}
+
+export function grupoAgentes(grupoId: string): Promise<GrupoAgentes | null> {
+  return datos(async (q, id) => {
+    const filas = await q<GrupoAgentes>("select id, nombre, miembros, responsable, creado from grupo_agentes where tenant_id = $1 and id = $2", [id, grupoId]);
+    return filas[0] ?? null;
+  });
+}
+
 export function pluginsInstalados(): Promise<string[]> {
   return datos(async (q, id) => (await q<{ clave: string }>("select clave from plugin_instalado where tenant_id = $1", [id])).map((f) => f.clave));
 }
