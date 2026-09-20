@@ -69,6 +69,7 @@ cita, total del pedido, monto y método del pago, motivo/resultado/resumen del c
 | `evento_registrar(tenant, cliente, tipo, entidad, id, datos)` | Escribir un evento; con tenant ajeno no escribe | solo motor (los triggers son definidores) |
 | `equipo_productividad(tenant, desde, hasta)` | Citas, cobrado y comisión por persona | motor y panel |
 | `resenas_resumen(tenant, dias)` / `clientes_por_origen(tenant, dias)` | Para el resumen y para insights | motor y panel |
+| `confirmacion_pendiente(tenant, telefono, booking)` · `booking_confirmar_cliente(tenant, booking)` · `cancelar_reserva_por_cliente(tenant, booking)` · `cancelar_sin_confirmar(horas)` | El ciclo de la confirmación de 24 h | solo motor |
 | `resena_responder(tenant, telefono, texto)` | Registrar un 1–5 si se le preguntó hace poco; compara teléfonos normalizados | solo motor |
 | `tenant_por_numero(numero)` | El negocio y el origen de un número marcado | motor |
 | `tenant_permitido(tenant)` | Verdadero si no hay usuario en la sesión o el tenant es suyo | interno |
@@ -84,6 +85,11 @@ migración que la crea.
   Una conversación que ya está abierta no vuelve a resolverlo en cada turno.
 - Cambiar `estado` o `llegada` deja evento.
 - Marcar una cita `completada` programa la pregunta de reseña (`outbox` 'resena').
+- La cita de mañana pregunta por WhatsApp con botones (`outbox` 'confirmacion_24h'); la
+  respuesta escribe `booking.confirmado_por_cliente` y `cita.confirmada` con autor `cliente`.
+  Lo que nadie confirmó se cancela dos horas antes solo si `tenant.sin_confirmar = 'cancelar'`.
+- Un pedido que pasa a `entregado` avisa que está listo o que va en camino (`outbox`
+  'pedido_listo'), con `tenant.tiempo_entrega_min` como estimado.
 - Un `pago` pendiente con `enlace_url` sale por WhatsApp (`outbox` 'pago').
 - Un mensaje del cliente o una cita nueva cierran el contacto de campaña como
   `contestado` o `agendo`. Una cita capturada por el equipo no cuenta como `agendo`

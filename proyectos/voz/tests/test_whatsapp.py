@@ -967,6 +967,9 @@ class AgendaConResena(AgendaFalsa):
     async def resena_esperando(self, tenant_id, telefono) -> bool:
         return self.esperando
 
+    async def confirmacion_pendiente(self, tenant_id, telefono, booking_id=None):
+        return None
+
     async def resena_responder(self, tenant_id, telefono, texto) -> dict:
         self.calificaciones.append(texto)
         return {"ok": True, "calificacion": int(texto), "resena_url": None}
@@ -1114,3 +1117,105 @@ async def test_buscar_reserva_pasa_el_nombre(tenant, cfg):
     h = Herramientas(agenda, tenant, [], SesionWhatsApp(tenant.id, "ig-123"))
     await h.ejecutar("buscar_reserva", {"nombre": "Roberto Salas"})
     assert agenda.consulta == {"telefono": "ig-123", "codigo": None, "nombre": "Roberto Salas"}
+
+
+# ------------------------------------------------- confirmacion 24 h
+
+
+def _boton(payload: str, texto: str, mensaje_id: str = "wamid.b") -> dict:
+    return {
+        "id": mensaje_id,
+        "from": NUMERO_CLIENTE,
+        "type": "button",
+        "button": {"payload": payload, "text": texto},
+    }
+
+
+class AgendaConConfirmacion(AgendaFalsa):
+    def __init__(self, tenant: Tenant, cita: dict | None) -> None:
+        super().__init__(tenant)
+        self.cita = cita
+        self.confirmadas: list[uuid.UUID] = []
+        self.canceladas: list[uuid.UUID] = []
+        self.buscadas: list[tuple[str, uuid.UUID | None]] = []
+
+    async def confirmacion_pendiente(self, tenant_id, telefono, booking_id=None):
+        self.buscadas.append((telefono, booking_id))
+        if self.cita and (booking_id is None or str(booking_id) == self.cita["id"]):
+            return self.cita
+        return None
+
+    async def booking_confirmar_cliente(self, tenant_id, booking_id) -> dict:
+        self.confirmadas.append(booking_id)
+        return {"ok": True}
+
+    async def cancelar_reserva_por_cliente(self, tenant_id, booking_id) -> dict:
+        self.canceladas.append(booking_id)
+        return {"ok": True}
+
+
+def _cita_pendiente() -> dict:
+    return {
+        "id": str(uuid.uuid4()),
+        "codigo": "7QMB",
+        "inicio": "2026-10-03T17:30:00+00:00",
+        "servicio": "Consulta general",
+        "zona_horaria": "America/Mexico_City",
+    }
+
+
+async def test_el_boton_confirmo_confirma_sin_despertar_al_modelo(tenant, cfg):
+    cita = _cita_pendiente()
+    agenda = AgendaConConfirmacion(tenant, cita)
+    llm = LLMFalso([])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(
+        parse_webhook(_envoltura(_boton(f"cita:confirmo:{cita['id']}", "Confirmo")))[0]
+    )
+
+    assert agenda.confirmadas == [uuid.UUID(cita["id"])]
+    assert agenda.buscadas[0][1] == uuid.UUID(cita["id"])
+    assert llm.llamadas == []
+    assert "Confirmada" in salidas[0].texto and "11:30 am" in salidas[0].texto
+    assert [t["autor"] for t in agenda.turnos] == ["cliente", "agente"]
+
+
+async def test_cancelo_escrito_cancela_la_cita_pendiente(tenant, cfg):
+    cita = _cita_pendiente()
+    agenda = AgendaConConfirmacion(tenant, cita)
+    llm = LLMFalso([])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("Cancelo.")))[0])
+
+    assert agenda.canceladas == [uuid.UUID(cita["id"])]
+    assert llm.llamadas == []
+    assert "cancelada" in salidas[0].texto
+
+
+async def test_cambiar_le_pasa_la_cita_al_modelo_con_su_codigo(tenant, cfg):
+    cita = _cita_pendiente()
+    agenda = AgendaConConfirmacion(tenant, cita)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Claro, ¿qué día te acomoda?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(
+        parse_webhook(_envoltura(_boton(f"cita:cambiar:{cita['id']}", "Cambiar")))[0]
+    )
+
+    assert agenda.confirmadas == [] and agenda.canceladas == []
+    ultimo = llm.llamadas[0]["messages"][-1]["content"]
+    assert "7QMB" in str(ultimo) and "cambiar" in str(ultimo)
+    assert salidas[0].texto == "Claro, ¿qué día te acomoda?"
+
+
+async def test_un_si_sin_cita_pendiente_sigue_al_modelo(tenant, cfg):
+    agenda = AgendaConConfirmacion(tenant, None)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("¿En qué te ayudo?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("si")))[0])
+
+    assert agenda.confirmadas == []
+    assert salidas[0].texto == "¿En qué te ayudo?"

@@ -33,9 +33,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
+from zoneinfo import ZoneInfo
 
 from app.cierre import ModeloNoContesto, resumir
 from app.salientes import SinTroncal, marcar
@@ -48,6 +50,7 @@ POR_VUELTA = 25
 VENCE_EN_HORAS = 12
 CADA_RECORDATORIO_SEG = 3600
 VENTANA_RECORDATORIO_HORAS = 24
+HORAS_CANCELAR_SIN_CONFIRMAR = 2
 CADA_CIERRE_SEG = 600
 CONVERSACION_FRIA_MIN = 120
 CADA_CAMPANA_SEG = 300
@@ -58,6 +61,86 @@ class Mensajero(Protocol):
     """Lo que el despachador necesita de un canal para poder mandar."""
 
     async def enviar_texto(self, destino: str, texto: str) -> str: ...
+
+    async def enviar_plantilla(
+        self, destino: str, nombre: str, parametros: Sequence[str], botones: Sequence[str] = ()
+    ) -> str: ...
+
+
+@dataclass(frozen=True, slots=True)
+class PlantillaMeta:
+    """Una plantilla aprobada en Meta y como se llena desde el payload."""
+
+    nombre: str
+    parametros: list[str]
+    botones: list[str]
+
+
+DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+MESES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+    "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+
+
+def cuando(inicio: object, zona_horaria: object) -> str:
+    """'jueves 3 de octubre a las 4:30 pm', en la hora del negocio."""
+    if isinstance(inicio, datetime):
+        momento = inicio
+    else:
+        try:
+            momento = datetime.fromisoformat(str(inicio))
+        except (TypeError, ValueError):
+            return ""
+    try:
+        momento = momento.astimezone(ZoneInfo(str(zona_horaria or "America/Mexico_City")))
+    except Exception:
+        momento = momento.astimezone(ZoneInfo("America/Mexico_City"))
+    hora = momento.hour % 12 or 12
+    sufijo = "am" if momento.hour < 12 else "pm"
+    minutos = f":{momento.minute:02d}" if momento.minute else ""
+    return f"{DIAS[momento.weekday()]} {momento.day} de {MESES[momento.month - 1]} a las {hora}{minutos} {sufijo}"
+
+
+def _saludo(payload: dict) -> str:
+    nombre = (payload.get("cliente") or "").split(" ")[0]
+    return f"Hola {nombre}" if nombre else "Hola"
+
+
+def _en_cuanto(payload: dict) -> str:
+    minutos = payload.get("tiempo_entrega_min")
+    return f"unos {int(minutos)} minutos" if minutos else "un momento"
+
+
+def plantilla_meta(fila: dict) -> PlantillaMeta | None:
+    """La plantilla de Meta que corresponde a la fila, o None si va como texto.
+
+    Meta solo entrega texto libre a quien nos escribio en las ultimas 24 horas.
+    Todo lo que sale de la cola hacia alguien que reservo por telefono tiene
+    que ir como plantilla aprobada; por eso estas no tienen version de texto
+    en produccion.
+    """
+    payload = fila.get("payload") or {}
+    plantilla = fila.get("plantilla")
+    if plantilla == "confirmacion_24h":
+        cita = str(fila.get("booking_id") or "")
+        return PlantillaMeta(
+            "cita_confirmacion_24h",
+            [
+                _saludo(payload),
+                str(payload.get("servicio") or "tu cita"),
+                str(payload.get("negocio") or "el negocio"),
+                cuando(payload.get("inicio"), payload.get("zona_horaria")),
+                str(payload.get("codigo") or ""),
+            ],
+            [f"cita:confirmo:{cita}", f"cita:cambiar:{cita}", f"cita:cancelo:{cita}"],
+        )
+    if plantilla == "pedido_listo":
+        comunes = [_saludo(payload), str(payload.get("codigo") or ""), str(payload.get("negocio") or "el negocio")]
+        if payload.get("tipo") == "domicilio":
+            return PlantillaMeta("pedido_en_camino", [*comunes, _en_cuanto(payload)], [])
+        return PlantillaMeta("pedido_listo_recoger", comunes, [])
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,6 +228,25 @@ def redactar(plantilla: str, payload: dict) -> str:
             "Responde *confirmo* o *cancelo* y lo resolvemos por aquí."
         )
 
+    if plantilla == "confirmacion_24h":
+        momento = cuando(payload.get("inicio"), payload.get("zona_horaria"))
+        return (
+            f"{saludo or 'Hola, '}mañana tienes {payload.get('servicio', 'tu cita')} en "
+            f"*{negocio}*: {momento}.\nTu código es *{payload.get('codigo', '')}*.\n\n"
+            "¿Nos confirmas? Responde *confirmo*, *cambiar* o *cancelo*."
+        )
+
+    if plantilla == "pedido_listo":
+        if payload.get("tipo") == "domicilio":
+            return (
+                f"{saludo or 'Hola, '}tu pedido *{payload.get('codigo', '')}* de *{negocio}* "
+                f"ya va en camino. Llega en {_en_cuanto(payload)}."
+            )
+        return (
+            f"{saludo or 'Hola, '}tu pedido *{payload.get('codigo', '')}* en *{negocio}* "
+            "ya está listo para recoger."
+        )
+
     return (
         f"{saludo}cancelamos tu {payload.get('servicio', 'cita')} en *{negocio}*. "
         "Cuando quieras agendar de nuevo, escríbenos."
@@ -201,8 +303,14 @@ class Despachador:
                     continue
                 if fila["canal"] != "whatsapp":
                     raise ValueError(f"canal no soportado: {fila['canal']}")
-                texto = redactar(fila["plantilla"], fila["payload"])
-                await self.mensajero.enviar_texto(fila["destino"], texto)
+                meta = plantilla_meta(fila)
+                if meta is not None:
+                    await self.mensajero.enviar_plantilla(
+                        fila["destino"], meta.nombre, meta.parametros, meta.botones
+                    )
+                else:
+                    texto = redactar(fila["plantilla"], fila["payload"])
+                    await self.mensajero.enviar_texto(fila["destino"], texto)
                 await self.agenda.outbox_marcar_enviado(fila["id"])
                 if fila.get("campana_contacto_id"):
                     await self.agenda.campana_contacto_resultado(
@@ -236,6 +344,10 @@ class Despachador:
         ya corre lo hace solo.
         """
         return await self.agenda.encolar_recordatorios(VENTANA_RECORDATORIO_HORAS)
+
+    async def sin_confirmar(self) -> int:
+        """Cancela lo que nadie confirmo, solo donde el negocio lo pidio."""
+        return await self.agenda.cancelar_sin_confirmar(HORAS_CANCELAR_SIN_CONFIRMAR)
 
     async def _marcar(self, fila: dict) -> None:
         """Un solo intento por fila: el outbox no vuelve a marcar.
@@ -323,7 +435,10 @@ class Despachador:
                     self._ultimo_recordatorio = ahora
                     cuantos = await self.recordatorios()
                     if cuantos:
-                        log.info("%d recordatorios encolados", cuantos)
+                        log.info("%d confirmaciones encoladas", cuantos)
+                    canceladas = await self.sin_confirmar()
+                    if canceladas:
+                        log.info("%d citas canceladas por falta de confirmacion", canceladas)
 
                 if ahora - self._ultima_campana >= CADA_CAMPANA_SEG:
                     self._ultima_campana = ahora
@@ -359,9 +474,8 @@ async def _principal() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
-    from app.llm_texto import cliente_texto
-
     from app.config import settings
+    from app.llm_texto import cliente_texto
 
     await agenda.conectar()
     cliente = WhatsAppCliente()

@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from app.despachador import VENCE_EN_HORAS, Despachador, redactar
+from app.despachador import VENCE_EN_HORAS, Despachador, plantilla_meta, redactar
 
 PEDIDO = {
     "negocio": "Antojitos Mimi",
@@ -61,6 +61,12 @@ class MensajeroFalso:
             raise RuntimeError("WhatsApp respondio 400")
         self.mandados.append((destino, texto))
         return "wamid.enviado"
+
+    async def enviar_plantilla(self, destino, nombre, parametros, botones=()):
+        if destino in self.falla_en:
+            raise RuntimeError("WhatsApp respondio 400")
+        self.mandados.append((destino, f"[{nombre}] " + " | ".join(parametros) + " " + " ".join(botones)))
+        return "wamid.plantilla"
 
 
 def _fila(
@@ -165,6 +171,37 @@ async def test_cola_vacia_no_hace_nada():
     tanda = await Despachador(agenda, MensajeroFalso()).tanda()
 
     assert (tanda.reclamados, tanda.enviados, tanda.fallidos) == (0, 0, 0)
+
+
+async def test_la_confirmacion_de_24h_sale_como_plantilla_con_botones():
+    """Quien reservo por telefono nunca nos escribio: Meta solo le entrega
+    plantillas aprobadas, y los botones llevan la cita en el payload."""
+    fila = _fila(plantilla="confirmacion_24h")
+    fila["booking_id"] = uuid.UUID("11111111-2222-3333-4444-555555555555")
+    fila["payload"] = {
+        "negocio": "Clínica Prueba", "cliente": "Ana Ruiz", "servicio": "Consulta",
+        "codigo": "7QMB", "inicio": "2026-10-03T17:30:00+00:00", "zona_horaria": "America/Mexico_City",
+    }
+    mensajero = MensajeroFalso()
+
+    tanda = await Despachador(AgendaFalsa([fila]), mensajero).tanda()
+
+    assert tanda.enviados == 1
+    _, texto = mensajero.mandados[0]
+    assert texto.startswith("[cita_confirmacion_24h] Hola Ana | Consulta | Clínica Prueba | sábado 3 de octubre a las 11:30 am | 7QMB")
+    assert "cita:confirmo:11111111-2222-3333-4444-555555555555" in texto
+    assert "cita:cambiar:" in texto and "cita:cancelo:" in texto
+
+
+def test_el_pedido_listo_distingue_recoger_de_domicilio():
+    de_casa = {"negocio": "Tacos", "cliente": "Luis", "codigo": "A1", "tipo": "domicilio", "tiempo_entrega_min": 35}
+    de_paso = {"negocio": "Tacos", "cliente": "Luis", "codigo": "A1", "tipo": "recoger"}
+
+    assert plantilla_meta({"plantilla": "pedido_listo", "payload": de_casa}).nombre == "pedido_en_camino"
+    assert "unos 35 minutos" in plantilla_meta({"plantilla": "pedido_listo", "payload": de_casa}).parametros[-1]
+    assert plantilla_meta({"plantilla": "pedido_listo", "payload": de_paso}).nombre == "pedido_listo_recoger"
+    assert "listo para recoger" in redactar("pedido_listo", de_paso)
+    assert plantilla_meta({"plantilla": "pedido", "payload": de_paso}) is None
 
 
 # --- De punta a punta contra Postgres ---------------------------------------

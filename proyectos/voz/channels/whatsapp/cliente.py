@@ -103,6 +103,47 @@ class WhatsAppCliente:
             }
         )
 
+    async def enviar_plantilla(
+        self,
+        destino: str,
+        nombre: str,
+        parametros: Sequence[str],
+        botones: Sequence[str] = (),
+        idioma: str = "es_MX",
+    ) -> str:
+        """Una plantilla aprobada por Meta, con sus botones de respuesta rapida.
+
+        Es la unica forma de escribirle a alguien que no nos ha escrito en las
+        ultimas 24 horas, que es el caso de todo el que reservo por telefono.
+        Cada boton lleva su payload; la respuesta vuelve como `seleccion_id`.
+        """
+        componentes: list[dict[str, Any]] = []
+        if parametros:
+            componentes.append({
+                "type": "body",
+                "parameters": [{"type": "text", "text": _recortar(p, LIMITE_CUERPO)} for p in parametros],
+            })
+        for indice, payload in enumerate(botones):
+            componentes.append({
+                "type": "button",
+                "sub_type": "quick_reply",
+                "index": str(indice),
+                "parameters": [{"type": "payload", "payload": payload}],
+            })
+        return await self._publicar(
+            {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": destino,
+                "type": "template",
+                "template": {
+                    "name": nombre,
+                    "language": {"code": idioma},
+                    "components": componentes,
+                },
+            }
+        )
+
     async def enviar_lista(
         self,
         destino: str,

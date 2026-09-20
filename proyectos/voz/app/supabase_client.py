@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-
 import json
 import uuid
 from dataclasses import dataclass
@@ -298,6 +297,32 @@ class Agenda:
                          and m.creado > o.enviado))""",
             tenant_id, telefono,
         ) or False
+
+    async def confirmacion_pendiente(
+        self, tenant_id: uuid.UUID, telefono: str, booking_id: uuid.UUID | None = None
+    ) -> dict | None:
+        """La cita que se le pregunto y no ha contestado; None si no hay."""
+        crudo = await self.pool.fetchval(
+            "select public.confirmacion_pendiente($1, $2, $3)", tenant_id, telefono, booking_id
+        )
+        if crudo is None:
+            return None
+        return json.loads(crudo) if isinstance(crudo, str) else dict(crudo)
+
+    async def booking_confirmar_cliente(self, tenant_id: uuid.UUID, booking_id: uuid.UUID) -> dict:
+        crudo = await self.pool.fetchval(
+            "select public.booking_confirmar_cliente($1, $2)", tenant_id, booking_id
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else dict(crudo or {})
+
+    async def cancelar_reserva_por_cliente(self, tenant_id: uuid.UUID, booking_id: uuid.UUID) -> dict:
+        crudo = await self.pool.fetchval(
+            "select public.cancelar_reserva_por_cliente($1, $2)", tenant_id, booking_id
+        )
+        return json.loads(crudo) if isinstance(crudo, str) else dict(crudo or {})
+
+    async def cancelar_sin_confirmar(self, horas: int = 2) -> int:
+        return await self.pool.fetchval("select public.cancelar_sin_confirmar($1)", horas) or 0
 
     async def resena_responder(self, tenant_id: uuid.UUID, telefono: str, texto: str) -> dict:
         crudo = await self.pool.fetchval("select public.resena_responder($1, $2, $3)", tenant_id, telefono, texto)

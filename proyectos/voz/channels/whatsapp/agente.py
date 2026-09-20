@@ -4,7 +4,8 @@ import asyncio
 import logging
 import re
 import time
-from dataclasses import dataclass, field
+import uuid
+from dataclasses import dataclass, field, replace
 from datetime import datetime, tzinfo
 from typing import Any, Protocol
 
@@ -14,7 +15,7 @@ from channels import nucleo
 from channels.whatsapp import deterministas, plantilla
 from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings
-from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
+from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas, fecha_larga, reloj
 from channels.whatsapp.parser import MensajeEntrante
 from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
 
@@ -60,6 +61,36 @@ def _a_dict(bloque: Any) -> dict[str, Any]:
 
 
 _HORA = re.compile(r"(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?", re.I)
+
+
+_PALABRAS_CONFIRMACION = {
+    "confirmo": "confirmo", "confirmar": "confirmo", "confirmado": "confirmo",
+    "si": "confirmo", "si confirmo": "confirmo", "ok": "confirmo",
+    "cancelo": "cancelo", "cancelar": "cancelo", "cancela": "cancelo", "no": "cancelo",
+    "cambiar": "cambiar", "cambio": "cambiar", "mover": "cambiar", "reagendar": "cambiar",
+}
+
+
+def _momento(inicio: Any, tz: Any) -> str:
+    try:
+        momento = inicio if isinstance(inicio, datetime) else datetime.fromisoformat(str(inicio))
+        return f"{fecha_larga(momento, tz)} a las {reloj(momento, tz)}"
+    except (TypeError, ValueError):
+        return "la fecha agendada"
+
+
+def _accion_de_confirmacion(entrante: MensajeEntrante) -> tuple[str | None, uuid.UUID | None]:
+    """Que pidio la persona y de que cita, si es que contesto a la pregunta."""
+    seleccion = entrante.seleccion_id or ""
+    if seleccion.startswith("cita:"):
+        partes = seleccion.split(":", 2)
+        if len(partes) == 3 and partes[1] in ("confirmo", "cambiar", "cancelo"):
+            try:
+                return partes[1], uuid.UUID(partes[2])
+            except ValueError:
+                return partes[1], None
+    llano = deterministas._llano(entrante.texto or "").strip(" .!¡")
+    return _PALABRAS_CONFIRMACION.get(llano), None
 
 
 def opcion_escrita(
@@ -149,6 +180,12 @@ class AgenteWhatsApp:
         if resena is not None:
             return resena
 
+        confirmacion = await self._confirmacion(contexto, entrante)
+        if isinstance(confirmacion, list):
+            return confirmacion
+        if confirmacion is not None:
+            entrante = confirmacion
+
         fija = await self._determinista(contexto, entrante)
         if fija is not None:
             return fija
@@ -210,6 +247,68 @@ class AgenteWhatsApp:
             respuesta=respuesta,
             nombre=entrante.nombre_perfil,
             herramienta="resena",
+            externo_id=entrante.mensaje_id,
+            escalado=False,
+            motivo=None,
+            log=log,
+        )
+        return [SalidaTexto(destino=entrante.wa_id, texto=respuesta)]
+
+    async def _confirmacion(
+        self, contexto: ContextoNegocio, entrante: MensajeEntrante
+    ) -> list[Salida] | MensajeEntrante | None:
+        """La respuesta a la pregunta del dia anterior: confirmo, cambiar o cancelo.
+
+        Llega como boton (`cita:<accion>:<id>`) o escrita. Confirmar y cancelar
+        no necesitan al modelo. Cambiar si: se devuelve el mensaje reescrito
+        con el codigo de la cita para que el modelo ofrezca horarios; sin
+        herramienta para mover, cancela y vuelve a reservar.
+        """
+        accion, booking = _accion_de_confirmacion(entrante)
+        if accion is None:
+            return None
+        tenant_id = contexto.tenant.id
+        try:
+            cita = await self.agenda.confirmacion_pendiente(tenant_id, entrante.telefono, booking)
+        except Exception:
+            log.exception("no se pudo buscar la confirmacion pendiente")
+            return None
+        if cita is None:
+            return None
+
+        if accion == "cambiar":
+            momento = _momento(cita.get("inicio"), contexto.tenant.tz)
+            return replace(
+                entrante,
+                texto=f"Quiero cambiar mi cita {cita['codigo']} del {momento} a otro horario",
+                seleccion_id=None,
+            )
+
+        try:
+            if accion == "confirmo":
+                resultado = await self.agenda.booking_confirmar_cliente(tenant_id, uuid.UUID(cita["id"]))
+            else:
+                resultado = await self.agenda.cancelar_reserva_por_cliente(tenant_id, uuid.UUID(cita["id"]))
+        except Exception:
+            log.exception("no se pudo %s la cita %s", accion, cita.get("id"))
+            return None
+        if not resultado.get("ok"):
+            return None
+
+        momento = _momento(cita.get("inicio"), contexto.tenant.tz)
+        if accion == "confirmo":
+            respuesta = f"Confirmada. Te esperamos el {momento} en {contexto.tenant.nombre}."
+        else:
+            respuesta = "Listo, quedó cancelada. Cuando quieras agendar de nuevo, escríbenos por aquí."
+        await nucleo.registrar_turno(
+            self.agenda,
+            tenant_id=tenant_id,
+            canal="whatsapp",
+            contacto=entrante.telefono,
+            entrante=entrante.texto,
+            respuesta=respuesta,
+            nombre=entrante.nombre_perfil,
+            herramienta="confirmacion",
             externo_id=entrante.mensaje_id,
             escalado=False,
             motivo=None,
