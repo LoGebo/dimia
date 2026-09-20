@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY pantallas.py /opt/dimia/pantallas.py
 COPY arranque.sh /opt/dimia/arranque.sh
+COPY openbox-rc.xml /opt/dimia/openbox-rc.xml
 RUN chmod +x /opt/dimia/arranque.sh
 
 ENTRYPOINT ["/opt/dimia/arranque.sh"]

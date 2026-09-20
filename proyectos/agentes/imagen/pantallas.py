@@ -35,10 +35,11 @@ def pantalla(agente: str, n: int):
     lanzar((agente, "xvfb"), ["Xvfb", disp, "-screen", "0", f"{ANCHO}x{ALTO}x24", "-nolisten", "tcp"])
     time.sleep(0.3)
     env = {"DISPLAY": disp, "HOME": f"{DATOS}/profiles/{agente}"}
-    lanzar((agente, "wm"), ["openbox"], env)
+    lanzar((agente, "wm"), ["openbox", "--config-file", "/opt/dimia/openbox-rc.xml"], env)
     lanzar((agente, "chromium"), [
         "chromium", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
         "--lang=es-MX", f"--window-size={ANCHO},{ALTO}", "--window-position=0,0", "--start-maximized",
+        "--hide-crash-restore-bubble", "--disable-session-crashed-bubble", "--test-type",
         f"--remote-debugging-port={9200 + n}", "--remote-allow-origins=*", f"--user-data-dir={perfil}",
         "about:blank"], env)
     lanzar((agente, "vnc"), ["x11vnc", "-display", disp, "-rfbport", str(5900 + n), "-localhost", "-forever", "-shared", "-nopw", "-quiet", "-noxdamage"], env)
