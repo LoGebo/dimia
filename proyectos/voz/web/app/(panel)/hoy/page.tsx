@@ -24,7 +24,7 @@ import {
 import { fechaCorta, fechaLarga, hora, isoDia, moneda, porcentaje, telefono } from "@/lib/formato";
 import { avance } from "@/lib/listo";
 import { contexto } from "@/lib/sesion";
-import { resumenCitas } from "@/lib/tipos";
+import { confirmacionDe, resumenCitas } from "@/lib/tipos";
 
 const DIAS_GRAFICA = 14;
 
@@ -278,9 +278,13 @@ export default async function Hoy() {
                         titulo={r.cliente_nombre}
                         detalle={`${r.servicio} · ${r.recurso}`}
                         estado={
-                          <Estampa tono={retraso > MINUTOS_TOLERANCIA ? "critico" : retraso > 0 ? "alerta" : "neutro"} late={retraso > MINUTOS_TOLERANCIA}>
-                            {retraso > 0 ? `+${minutosLegibles(retraso)}` : `en ${minutosLegibles(Math.max(0, faltanMin))}`}
-                          </Estampa>
+                          <span className="flex items-center gap-1.5">
+                            {confirmacionDe(r) === "confirmo" ? <Estampa tono="bueno">Confirmó</Estampa> : null}
+                            {confirmacionDe(r) === "sin_confirmar" ? <Estampa tono="alerta">Sin confirmar</Estampa> : null}
+                            <Estampa tono={retraso > MINUTOS_TOLERANCIA ? "critico" : retraso > 0 ? "alerta" : "neutro"} late={retraso > MINUTOS_TOLERANCIA}>
+                              {retraso > 0 ? `+${minutosLegibles(retraso)}` : `en ${minutosLegibles(Math.max(0, faltanMin))}`}
+                            </Estampa>
+                          </span>
                         }
                       />
                     );

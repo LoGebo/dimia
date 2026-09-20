@@ -3,7 +3,7 @@ import { Formulario } from "@/components/formulario";
 import { Boton, Insignia } from "@/components/ui/primitivos";
 import { Reagendar } from "@/components/reagendar";
 import { fechaCorta, hora, telefono } from "@/lib/formato";
-import type { EstadoReserva, Reserva } from "@/lib/tipos";
+import { confirmacionDe, type EstadoReserva, type Reserva } from "@/lib/tipos";
 
 const TONO: Record<EstadoReserva, "bueno" | "neutro" | "critico" | "acento"> = {
   confirmada: "bueno",
@@ -58,6 +58,11 @@ export function ListaReservas({
             {r.codigo}
           </span>
           <Insignia tono={TONO[r.estado]}>{NOMBRE[r.estado]}</Insignia>
+          {confirmacionDe(r) === "confirmo" ? (
+            <Insignia tono="bueno">Confirmó</Insignia>
+          ) : confirmacionDe(r) === "sin_confirmar" ? (
+            <Insignia tono="alerta">Sin confirmar</Insignia>
+          ) : null}
           {r.estado === "confirmada" ? (
             <div className="flex items-center gap-1">
               <Reagendar reserva={r} zona={zona} />

@@ -28,6 +28,10 @@ export type Negocio = {
   resena_activa: boolean;
   resena_url: string | null;
   resena_espera_min: number;
+  /** Qué pasa con la cita que nadie confirmó: se queda marcada o se cancela dos horas antes. */
+  sin_confirmar: "mantener" | "cancelar";
+  /** Minutos que tarda un pedido a domicilio; va en el aviso de "ya va en camino". */
+  tiempo_entrega_min: number | null;
   saludo: string | null;
   slot_granularidad_min: number;
   anticipacion_min: number;
@@ -102,6 +106,10 @@ export type Reserva = {
   fin: string;
   estado: EstadoReserva;
   llegada: string | null;
+  /** Cuándo contestó el cliente a la pregunta del día anterior; null si no ha contestado. */
+  confirmado_por_cliente: string | null;
+  /** Si ya se le preguntó por WhatsApp. Con esto y sin respuesta, la cita está "sin confirmar". */
+  confirmacion_enviada: boolean;
   cliente_id: string | null;
   creado: string;
   precio: string | null;
@@ -115,6 +123,17 @@ export type Reserva = {
 
 /** En qué columna del día va una cita. Se deriva de `estado` y `llegada`. */
 export type PasoCita = "por_llegar" | "en_atencion" | "atendida" | "no_llego" | "cancelada";
+
+/** El estado de la confirmación del día anterior, para pintarlo en Hoy y Agenda. */
+export type Confirmacion = "confirmo" | "sin_confirmar" | null;
+
+export function confirmacionDe(
+  r: Pick<Reserva, "estado" | "confirmado_por_cliente" | "confirmacion_enviada">,
+): Confirmacion {
+  if (r.estado !== "confirmada") return null;
+  if (r.confirmado_por_cliente) return "confirmo";
+  return r.confirmacion_enviada ? "sin_confirmar" : null;
+}
 
 export function pasoDe(r: Pick<Reserva, "estado" | "llegada">): PasoCita {
   if (r.estado === "completada") return "atendida";

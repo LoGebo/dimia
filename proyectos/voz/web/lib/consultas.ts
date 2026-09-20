@@ -174,6 +174,9 @@ export function faq(): Promise<Faq[]> {
 const SELECT_RESERVA = `
   select b.id, b.codigo, b.cliente_nombre, b.telefono, b.personas, b.notas,
          b.inicio, b.fin, b.estado, b.llegada, b.cliente_id, b.creado, s.precio,
+         b.confirmado_por_cliente,
+         exists (select 1 from outbox o where o.booking_id = b.id
+                    and o.plantilla = 'confirmacion_24h' and o.estado = 'enviado') as confirmacion_enviada,
          s.nombre as servicio, r.nombre as recurso,
          b.resource_id, b.service_id, pg.cobrado::text as cobrado
     from booking b

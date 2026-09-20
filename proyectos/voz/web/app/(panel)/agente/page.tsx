@@ -3,7 +3,7 @@ import { Encabezado } from "@/components/encabezado";
 import { BotonEnviar, Formulario } from "@/components/formulario";
 import { Copiar } from "@/components/copiar";
 import { AreaTexto, Campo, Entrada, Insignia, Selector, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
-import { eliminarLinea, guardarLinea, guardarNegocio, guardarPrompt, guardarResenas, guardarSaludo } from "@/lib/acciones";
+import { eliminarLinea, guardarConfirmaciones, guardarLinea, guardarNegocio, guardarPrompt, guardarResenas, guardarSaludo } from "@/lib/acciones";
 import { ConfiguracionCerebro, ConfiguracionVoz } from "@/components/voz";
 import { campanas, catalogo, faq, lineas, negocio, plantillaActual, recursos, reglas, servicios } from "@/lib/consultas";
 import { baseDeFabrica, construirPrompt, saludo } from "@/lib/prompt";
@@ -152,6 +152,37 @@ export default async function Agente() {
               <BotonEnviar>Guardar configuración</BotonEnviar>
             </Formulario>
           </Tarjeta>
+
+          {agenda || pedidos ? (
+            <Tarjeta>
+              <TarjetaCabecera
+                titulo="Avisos por WhatsApp"
+                descripcion={
+                  agenda
+                    ? "Un día antes, el agente pide confirmar la cita con botones. Aquí decides qué pasa con la que nadie confirma."
+                    : "Cuando un pedido sale de la cocina, el cliente recibe el aviso."
+                }
+              />
+              <Formulario accion={guardarConfirmaciones} className="space-y-3 px-4 py-4">
+                <div className={`grid grid-cols-1 gap-3 ${agenda && pedidos ? "sm:grid-cols-2" : ""}`}>
+                  {agenda ? (
+                    <Campo etiqueta="Cita sin confirmar" ayuda="Dos horas antes, si el cliente no contestó.">
+                      <Selector name="sin_confirmar" defaultValue={config.sin_confirmar}>
+                        <option value="mantener">Se queda marcada</option>
+                        <option value="cancelar">Se cancela y libera el lugar</option>
+                      </Selector>
+                    </Campo>
+                  ) : null}
+                  {pedidos ? (
+                    <Campo etiqueta="Entrega a domicilio (min)" ayuda="Lo que se le dice al cliente cuando el pedido sale.">
+                      <Entrada name="tiempo_entrega_min" type="number" min={1} max={240} step={5} defaultValue={config.tiempo_entrega_min ?? ""} placeholder="35" />
+                    </Campo>
+                  ) : null}
+                </div>
+                <BotonEnviar>Guardar avisos</BotonEnviar>
+              </Formulario>
+            </Tarjeta>
+          ) : null}
 
           <Tarjeta>
             <TarjetaCabecera titulo="Reseñas" descripcion="Después de cada cita atendida, el agente pregunta por WhatsApp cómo le fue." />

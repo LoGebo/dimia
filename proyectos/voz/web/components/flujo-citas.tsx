@@ -6,7 +6,7 @@ import { Reagendar } from "@/components/reagendar";
 import { ChipHerramienta } from "@/components/kit/chips-herramienta";
 import { CabeceraColumna, Estampa } from "@/components/kit/operacion";
 import { hora, moneda, telefono } from "@/lib/formato";
-import { pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
+import { confirmacionDe, pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
 
 export const MINUTOS_TOLERANCIA = 15;
 
@@ -212,6 +212,7 @@ function Tarjeta({
     minutosDesde(r.fin, new Date(r.inicio).getTime()) * -1;
   const excedida = paso === "en_atencion" && enSala > duracionEsperada;
   const apagada = paso === "no_llego" || paso === "cancelada";
+  const confirmacion = paso === "por_llegar" ? confirmacionDe(r) : null;
 
   let tiempo: {
     texto: string;
@@ -286,6 +287,10 @@ function Tarjeta({
             <Estampa tono={paso === "cancelada" ? "neutro" : "critico"}>
               {paso === "cancelada" ? "Cancelada" : "No llegó"}
             </Estampa>
+          ) : confirmacion === "confirmo" ? (
+            <Estampa tono="bueno">Confirmó</Estampa>
+          ) : confirmacion === "sin_confirmar" ? (
+            <Estampa tono="alerta">Sin confirmar</Estampa>
           ) : (
             <span className="numeros text-[11px] text-tinta-3">
               {r.codigo}

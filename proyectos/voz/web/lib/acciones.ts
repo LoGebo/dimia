@@ -1062,6 +1062,19 @@ export async function guardarResenas(_previo: Estado, fd: FormData): Promise<Est
   });
 }
 
+export async function guardarConfirmaciones(_previo: Estado, fd: FormData): Promise<Estado> {
+  const sinConfirmar = texto(fd, "sin_confirmar") === "cancelar" ? "cancelar" : "mantener";
+  const crudo = opcional(fd, "tiempo_entrega_min");
+  const entrega = crudo ? Math.max(1, Math.min(240, Math.round(Number(crudo)))) : null;
+  if (crudo && !Number.isFinite(entrega)) return { error: "El tiempo de entrega va en minutos." };
+  return intentar(async () => {
+    await datos((q, negocioId) =>
+      q("update tenant set sin_confirmar = $2, tiempo_entrega_min = $3 where id = $1", [negocioId, sinConfirmar, entrega]),
+    );
+    return { ok: "Avisos guardados." };
+  });
+}
+
 export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
 
 const CAMBIOS_PASO: Record<PasoFlujo, string> = {
