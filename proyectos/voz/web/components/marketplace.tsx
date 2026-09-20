@@ -50,7 +50,7 @@ export function Marketplace({ instalados }: { instalados: string[] }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[880px] px-8 py-8">
+    <div className="mx-auto w-full max-w-[880px] overflow-y-auto px-8 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-[24px] font-semibold text-tinta">Marketplace</h1>
         <span className="text-[13px] text-tinta-3">{puestos.size} integraciones puestas</span>
