@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Circle, Monitor, Settings2, Trash2 } from "lucide-react";
 import { PantallaVivo } from "@/components/pantalla-vivo";
+import { UsoPlan } from "@/components/uso-plan";
 import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
 import { actualizarAgente, borrarAgente } from "@/lib/acciones";
 import type { AgenteHilo } from "@/components/hilo-agente";
@@ -214,6 +215,7 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
                   <p className="text-[13px] leading-relaxed text-tinta-3">Tareas que {agente.nombre} repite solo, cada día o cuando pasa algo. Pídaselo en el chat.</p>
                 </div>
               ) : null}
+              {!recepcion ? <UsoPlan /> : null}
             </>
           )}
         </div>

@@ -16,7 +16,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket,
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from agentes import codex, config, db, negocio
+from agentes import codex, config, cuotas, db, negocio
 
 log = logging.getLogger("agentes")
 config.guardia()
@@ -131,6 +131,11 @@ async def hilo_nuevo(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
 async def mensajes(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     filas = await db.todos("select id, de, texto, creado from agente_mensaje where agente_id = $1 and tenant_id = $2 order by id desc limit 60", agente_id, tenant)
     return [dict(f) | {"creado": f["creado"].isoformat()} for f in reversed(filas)]
+
+
+@app.get("/cuotas")
+async def ver_cuotas(tenant: str = Depends(negocio_id)):
+    return await cuotas.uso(tenant)
 
 
 @app.get("/maquina")

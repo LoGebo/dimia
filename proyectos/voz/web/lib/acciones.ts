@@ -1689,3 +1689,9 @@ export async function urlPantalla(agenteId: string): Promise<{ url: string } | {
   if (!r.ok) return { error: "La computadora no respondió. Intente en un momento." };
   return r.json();
 }
+
+export type Cuotas = { plan: string; nombre: string; uso: Record<"agentes" | "turnos" | "pasos" | "minutos", number>; techos: Record<"agentes" | "turnos" | "pasos" | "minutos", number> };
+export async function cuotasNegocio(): Promise<Cuotas | null> {
+  const r = await orquestador("/cuotas");
+  return r.ok ? r.json() : null;
+}

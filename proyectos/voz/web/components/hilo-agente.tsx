@@ -129,7 +129,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
           const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string };
           if (e.evento === "texto") pegar(e.texto);
           else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); }
-          else if (e.evento === "error") poner(e.texto);
+          else if (e.evento === "error" || e.evento === "cuota") poner(e.texto);
         }
       }
     } catch {

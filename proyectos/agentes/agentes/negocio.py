@@ -8,7 +8,7 @@ import httpx
 
 import time
 
-from agentes import codex, config, db, hermes, jev, vault
+from agentes import codex, config, cuotas, db, hermes, jev, vault
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -97,7 +97,10 @@ async def asegurar_maquina(tenant: str) -> dict:
             "insert into maquina_negocio (tenant_id, proveedor, referencia, disco, direccion, llave) values ($1, $2, $3, $4, $5, $6)",
             tenant, prov.nombre, creada.referencia, creada.disco, creada.direccion, vault.cifrar(llave))
         m = await maquina(tenant)
+        await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
     else:
+        if not (await prov.obtener(m["referencia"])).encendida:
+            await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
         viva = await prov.arrancar(m["referencia"])
         if viva.direccion != m["direccion"]:
             await db.ejecutar("update maquina_negocio set direccion = $2 where tenant_id = $1", tenant, viva.direccion)
@@ -195,6 +198,10 @@ async def turno(tenant: str, agente_id: str, texto: str):
     if not agente:
         yield {"evento": "error", "texto": "Ese agente no existe."}
         return
+    tope = await cuotas.verificar(tenant) or await cuotas.agentes_de_mas(tenant)
+    if tope:
+        yield {"evento": "cuota", "texto": tope}
+        return
     try:
         m = await asegurar_maquina(tenant)
     except SinCodex:
@@ -275,6 +282,7 @@ async def dormir_inactivas() -> None:
             if (await prov.obtener(f["referencia"])).encendida:
                 await prov.parar(f["referencia"])
                 log.info("máquina %s dormida", f["tenant_id"])
+            await db.ejecutar("update maquina_uso set fin = now() where tenant_id = $1 and fin is null", f["tenant_id"])
         except Exception as e:  # noqa: BLE001
             log.warning("no se pudo dormir %s: %s", f["tenant_id"], e)
 
