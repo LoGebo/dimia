@@ -21,7 +21,7 @@ type Mensaje = {
   resultado?: string;
 };
 
-export type AgenteHilo = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean; rol?: "general" | "recepcion" };
+export type AgenteHilo = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean; rol?: "general" | "recepcion"; donde?: "dimia" | "local" };
 
 const ROLES: Opcion[] = [
   { letra: "A", titulo: "Cotizar con proveedores", detalle: "Buscar, pedir precios, comparar", nombre: "Cotizador", trabajo: "Busca proveedores, pide precios y los anota en Clientes." },

@@ -507,3 +507,89 @@ async def pantalla_ws(ws: WebSocket, token: str):
             await ws.close()
         except Exception:  # noqa: BLE001
             pass
+
+
+# --- Agentes en la computadora del dueño (túnel saliente) ---------------------
+
+from pathlib import Path as _Path  # noqa: E402
+
+from agentes import tunel  # noqa: E402
+
+_LOCAL = _Path(__file__).resolve().parent.parent / "local"
+
+
+class Donde(BaseModel):
+    donde: str  # dimia | local
+
+
+@app.post("/agentes/{agente_id}/donde")
+async def donde_agente(agente_id: uuid.UUID, cuerpo: Donde, tenant: str = Depends(negocio_id)):
+    """Dónde corre el agente. Al pasarlo a local se le da un código de emparejamiento y el
+    comando de instalación; al regresarlo a Dimia se cierra su túnel."""
+    if cuerpo.donde not in ("dimia", "local"):
+        raise HTTPException(400)
+    a = await db.uno("select id, donde, codigo_local, rol from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        raise HTTPException(404)
+    if a["rol"] == "recepcion" and cuerpo.donde == "local":
+        raise HTTPException(400, "Recepción corre en Dimia: atiende aunque su computadora esté apagada.")
+    if cuerpo.donde == "local":
+        codigo = a["codigo_local"] or base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
+        await db.ejecutar("update agente set donde = 'local', codigo_local = $2 where id = $1", agente_id, codigo)
+        if a["donde"] == "dimia":
+            await negocio.borrar_agente(tenant, str(agente_id))  # libera su escritorio en la máquina de Dimia
+    else:
+        await db.ejecutar("update agente set donde = 'dimia', host_local = null, visto_local = null where id = $1", agente_id)
+        tu = tunel.de(str(agente_id))
+        if tu:
+            await tu.enviar({"tipo": "apagar"})
+            tunel.quitar(str(agente_id), tu)
+        await db.ejecutar("update maquina_negocio set perfiles = array_remove(perfiles, $2) where tenant_id = $1", tenant, str(agente_id))
+    return await estado_local(agente_id, tenant)
+
+
+@app.get("/agentes/{agente_id}/local")
+async def estado_local(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    a = await db.uno("select donde, codigo_local, host_local, visto_local from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        raise HTTPException(404)
+    tu = tunel.de(str(agente_id))
+    return {"donde": a["donde"], "conectada": tu is not None, "host": (tu.host if tu else None) or a["host_local"],
+            "visto": a["visto_local"].isoformat() if a["visto_local"] else None,
+            "comando": f"curl -fsSL {config.PUBLICO_URL}/local/instalar.sh | bash -s {a['codigo_local']}" if a["donde"] == "local" and a["codigo_local"] else None}
+
+
+@app.get("/local/instalar.sh")
+async def instalar_sh():
+    return Response((_LOCAL / "instalar.sh").read_text().replace("__ORQUESTADOR__", config.PUBLICO_URL), media_type="text/x-shellscript")
+
+
+@app.get("/local/dimia-local.py")
+async def demonio_py():
+    return Response((_LOCAL / "dimia-local.py").read_text(), media_type="text/x-python")
+
+
+@app.websocket("/tunel/{codigo}")
+async def tunel_ws(ws: WebSocket, codigo: str):
+    """El demonio de la computadora del dueño se conecta con su código; por aquí van las
+    llamadas HTTP al Hermes de allá, los archivos del perfil y los comandos de la CLI."""
+    a = await db.uno("select id, tenant_id from agente where codigo_local = $1 and donde = 'local'", codigo)
+    if not a:
+        await ws.close(code=4401)
+        return
+    aid, tenant = str(a["id"]), str(a["tenant_id"])
+    await ws.accept()
+    tu = tunel.registrar(aid, ws)
+    try:
+        await negocio.empujar_local(tenant, aid)
+        while True:
+            m = json.loads(await ws.receive_text())
+            tu.recibir(m)
+            if m.get("tipo") == "latido":
+                await db.ejecutar("update agente set host_local = $2, visto_local = now() where id = $1", a["id"], m.get("host"))
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:  # noqa: BLE001
+        log.warning("túnel %s: %s", aid, e)
+    finally:
+        tunel.quitar(aid, tu)

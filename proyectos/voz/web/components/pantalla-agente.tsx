@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Circle, ImagePlus, Monitor, Settings2, Trash2 } from "lucide-react";
 import { PantallaVivo } from "@/components/pantalla-vivo";
+import { DondeCorre } from "@/components/donde-corre";
 import { UsoPlan } from "@/components/uso-plan";
 import { Rutinas } from "@/components/rutinas";
 import { AjustesFinos } from "@/components/ajustes-finos";
@@ -34,6 +35,7 @@ const CLAVE_ACCIONES = "agentes_acciones";
  */
 export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: AgenteHilo; negocio: string; permisos: string[]; finos?: { personalidad: string | null; reglas: string | null; ajustes: AjustesAgente } }) {
   const router = useRouter();
+  const [donde, setDonde] = useState<"dimia" | "local">(agente.donde ?? "dimia");
   const [abierto, setAbierto] = useState(true);
   const [visibles, setVisibles] = useState<Set<string>>(new Set(ACCIONES.map((a) => a.clave)));
   const [ajustes, setAjustes] = useState(false);
@@ -210,13 +212,19 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
                 </>
               ) : null}
               {agente.trabajo ? <HabilidadesAgente key={`h-${agente.id}`} agenteId={agente.id} /> : null}
+              {!recepcion ? <DondeCorre key={`d-${agente.id}`} agenteId={agente.id} nombre={agente.nombre} donde={donde} alCambiar={setDonde} /> : null}
               <AjustesFinos key={agente.id} agenteId={agente.id} personalidad={finos?.personalidad ?? null} reglas={finos?.reglas ?? null} ajustes={finos?.ajustes ?? {}} alGuardar={() => router.refresh()} />
               {!recepcion ? <button type="button" onClick={() => borrarAgente(agente.id)} className="flex items-center gap-2 text-[13px] text-critico hover:underline"><Trash2 size={14} />Borrar este agente</button> : null}
             </div>
           ) : (
             <>
               {visibles.has("pantalla") ? (
-                agente.trabajo ? (
+                donde === "local" ? (
+                  <div className="space-y-2">
+                    <div className="flex aspect-[16/10] items-center justify-center rounded-2xl border border-linea bg-panel-2 text-tinta-3"><Monitor size={22} strokeWidth={1.5} /></div>
+                    <p className="text-center text-[13px] text-tinta-3">{agente.nombre} trabaja en su computadora: la pantalla es la suya.</p>
+                  </div>
+                ) : agente.trabajo ? (
                   <PantallaVivo agenteId={agente.id} nombre={agente.nombre} ocultar={() => alternarAccion("pantalla")} />
                 ) : (
                   <div className="space-y-2">

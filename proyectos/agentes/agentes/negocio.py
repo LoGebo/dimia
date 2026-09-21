@@ -10,7 +10,7 @@ import asyncio
 import re
 import time
 
-from agentes import catalogo, claude, codex, conexiones, config, cuotas, db, hermes, jev, vault
+from agentes import catalogo, claude, codex, conexiones, config, cuotas, db, hermes, jev, tunel, vault
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -137,8 +137,94 @@ async def _negocio(tenant: str):
     return await db.uno("select id, nombre from tenant where id = $1", tenant)
 
 
+_COLS = "id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token, rol, personalidad, ajustes, donde"
+
+
 async def _agentes(tenant: str):
-    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token, rol, personalidad, ajustes from agente where tenant_id = $1 order by (rol = 'recepcion') desc, creado", tenant)
+    """Los que corren en la computadora de Dimia (los locales van por túnel)."""
+    return await db.todos(f"select {_COLS} from agente where tenant_id = $1 and donde = 'dimia' order by (rol = 'recepcion') desc, creado", tenant)
+
+
+async def _mcp_de(tenant: str, a) -> tuple[dict | None, set[str], list]:
+    """Servidores MCP del agente según sus instalaciones; asegura su token de MCP."""
+    inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
+    mcp: dict | None = None
+    integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
+    if a["rol"] == "recepcion":
+        integraciones |= {"dimia", "whatsapp"}  # Recepción siempre trae la agenda y la línea del negocio
+    cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
+    if integraciones & {"dimia", "whatsapp"} or cuentas:
+        token = a["mcp_token"]
+        if not token:
+            token = vault.llave_nueva()
+            await db.ejecutar("update agente set mcp_token = $2 where id = $1", a["id"], token)
+        mcp = {}
+        if "dimia" in integraciones:
+            mcp.update(hermes.mcp_dimia(token))
+        if "whatsapp" in integraciones:
+            mcp.update(hermes.mcp_whatsapp(token))
+        for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack, higgsfield
+            puente = any(v.get("cuenta") == cuenta and v.get("mcp") for v in catalogo.INTEGRACIONES.values())
+            mcp.update(hermes.mcp_servicio(cuenta, token, puente=puente))
+    return mcp, cuentas, inst
+
+
+async def _credenciales(tenant: str) -> tuple[str, dict, str | None]:
+    """Cerebro elegido, tokens vigentes y (si es Claude) su archivo OAuth."""
+    cual = await cerebro(tenant)
+    claude_json = None
+    if config.PRUEBA_ANTHROPIC_TOKEN:  # modo prueba: sin Codex, el token va en el .env del perfil
+        t = {"acceso": "", "refresco": "", "version": -1}
+    elif cual == "claude":
+        tc = await renovar_claude_si_hace_falta(tenant)
+        if not tc:
+            raise SinCodex()
+        t = {"acceso": "", "refresco": "", "version": 1000 + tc["version"]}  # versión distinta para que se vuelva a empujar
+        claude_json = claude.archivo_oauth(tc["acceso"], tc["refresco"], tc["expira"])
+    else:
+        t = await renovar_si_hace_falta(tenant)
+    return cual, t, claude_json
+
+
+async def perfil_local(tenant: str, agente_id: str) -> tuple[dict[str, str], int]:
+    """El perfil completo de un agente que corre en la computadora del dueño, con rutas
+    relativas a su HERMES_HOME. El demonio de allá lo escribe y arranca Hermes."""
+    a = await db.uno(f"select {_COLS} from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    cual, t, claude_json = await _credenciales(tenant)
+    negocio = await _negocio(tenant)
+    llave = vault.descifrar(a["llave"]) if a["llave"] else None
+    if llave is None:
+        llave = vault.llave_nueva()
+        await db.ejecutar("update agente set llave = $2 where id = $1", a["id"], vault.cifrar(llave))
+    pantalla = a["pantalla"] or 1
+    aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
+    mcp, cuentas, inst = await _mcp_de(tenant, a)
+    archivos = {
+        "config.yaml": hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj, local=True),
+        ".env": hermes.env(llave, pantalla),
+        "SOUL.md": hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"], rol=a["rol"], personalidad=a["personalidad"], ajustes=aj, local=True),
+        "auth.json": codex.auth_json(t["acceso"], t["refresco"]),
+    }
+    if claude_json:
+        archivos[".anthropic_oauth.json"] = claude_json
+    todas = catalogo.skills()
+    for i in inst:
+        if i["tipo"] == "skill" and i["clave"] in todas:
+            archivos[f"skills/dimia/{i['clave']}/SKILL.md"] = todas[i["clave"]]["contenido"]
+    gh = await conexiones.leer(tenant, "github") if "github" in cuentas else None
+    raiz = f"{hermes.HOME}/profiles/{agente_id}/"
+    archivos.update({r.removeprefix(raiz): c for r, c in hermes.archivos_git(agente_id, gh["token"] if gh else None).items()})
+    return archivos, hermes.puerto(pantalla)
+
+
+async def empujar_local(tenant: str, agente_id: str) -> bool:
+    """Si la computadora del agente está conectada, le manda su perfil al día."""
+    tu = tunel.de(agente_id)
+    if not tu:
+        return False
+    archivos, puerto = await perfil_local(tenant, agente_id)
+    await tu.perfil(archivos, puerto)
+    return True
 
 
 async def maquina(tenant: str):
@@ -181,18 +267,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     auth.json vigente, skills e integraciones. Cada agente tiene su propio
     Hermes; el supervisor de la máquina lo arranca o reinicia al ver los archivos."""
     prov = proveedor()
-    cual = await cerebro(tenant)
-    claude_json = None
-    if config.PRUEBA_ANTHROPIC_TOKEN:  # modo prueba: sin Codex, el token va en el .env del perfil
-        t = {"acceso": "", "refresco": "", "version": -1}
-    elif cual == "claude":
-        tc = await renovar_claude_si_hace_falta(tenant)
-        if not tc:
-            raise SinCodex()
-        t = {"acceso": "", "refresco": "", "version": 1000 + tc["version"]}  # versión distinta para que se vuelva a empujar
-        claude_json = claude.archivo_oauth(tc["acceso"], tc["refresco"], tc["expira"])
-    else:
-        t = await renovar_si_hace_falta(tenant)
+    cual, t, claude_json = await _credenciales(tenant)
     negocio = await _negocio(tenant)
     agentes = await _agentes(tenant)
     auth = codex.auth_json(t["acceso"], t["refresco"])
@@ -220,26 +295,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
         soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"], rol=a["rol"], personalidad=a["personalidad"], ajustes=aj)
         # Instalaciones de este agente: integración Dimia (MCP con su token) y skills.
-        inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
-        mcp: dict | None = None
-        integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
-        integraciones.add("dimia")  # todo agente conoce su negocio
-        if a["rol"] == "recepcion":
-            integraciones.add("whatsapp")  # Recepción además escribe por la línea del negocio
-        cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
-        if integraciones & {"dimia", "whatsapp"} or cuentas:
-            token = a["mcp_token"]
-            if not token:
-                token = vault.llave_nueva()
-                await db.ejecutar("update agente set mcp_token = $2 where id = $1", a["id"], token)
-            mcp = {}
-            if "dimia" in integraciones:
-                mcp.update(hermes.mcp_dimia(token))
-            if "whatsapp" in integraciones:
-                mcp.update(hermes.mcp_whatsapp(token))
-            for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack, higgsfield
-                puente = any(v.get("cuenta") == cuenta and v.get("mcp") for v in catalogo.INTEGRACIONES.values())
-                mcp.update(hermes.mcp_servicio(cuenta, token, puente=puente))
+        mcp, cuentas, inst = await _mcp_de(tenant, a)
         gh = await conexiones.leer(tenant, "github") if "github" in cuentas else None
         archivos.update(hermes.archivos_git(aid, gh["token"] if gh else None))
         raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
@@ -271,6 +327,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     for aid, n in pantallas.items():
         if aid in nuevos or reiniciar:
             await _esperar_hermes(_host(m), n)
+    for a in await db.todos("select id from agente where tenant_id = $1 and donde = 'local'", tenant):
+        await empujar_local(tenant, str(a["id"]))
 
 
 async def empujar_tokens(tenant: str) -> None:
@@ -285,8 +343,28 @@ async def empujar_tokens(tenant: str) -> None:
 
 # --- Turnos ---------------------------------------------------------------
 
+class SinComputadora(Exception):
+    """El agente corre en la computadora del dueño y esa computadora no está conectada."""
+
+
 def _url(m, pantalla: int, ruta: str) -> str:
+    if m is None:  # agente local: el túnel resuelve el destino
+        return f"http://local{ruta}"
     return f"http://{_host(m)}:{hermes.puerto(pantalla)}{ruta}"
+
+
+async def _cliente(tenant: str, agente, timeout, despertar: bool = True) -> tuple[httpx.AsyncClient, dict | None]:
+    """El cliente HTTP hacia el Hermes del agente: por túnel si corre en la computadora del
+    dueño (m = None), o hacia la máquina del negocio (despertándola si hace falta)."""
+    if agente["donde"] == "local":
+        tu = tunel.de(str(agente["id"]))
+        if not tu:
+            raise SinComputadora()
+        return tu.cliente(timeout), None
+    m = await asegurar_maquina(tenant) if despertar else await maquina(tenant)
+    if m is None:
+        raise SinComputadora()
+    return httpx.AsyncClient(timeout=timeout), m
 
 
 async def _sesion(tenant: str, agente, m, llave: str, http: httpx.AsyncClient) -> str:
@@ -372,7 +450,7 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str) -> Trabajo | No
 
 async def _turno(tenant: str, agente_id: str, texto: str):
     """Genera eventos {evento, texto}. Un solo lugar traduce los fallos a español."""
-    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
     if not agente:
         yield {"evento": "error", "texto": "Ese agente no existe."}
         return
@@ -381,12 +459,16 @@ async def _turno(tenant: str, agente_id: str, texto: str):
         yield {"evento": "cuota", "texto": tope}
         return
     try:
-        m = await asegurar_maquina(tenant)
+        http, m = await _cliente(tenant, agente, httpx.Timeout(10, read=600))
     except SinCodex:
         yield {"evento": "sin_codex", "texto": "Conecte su cuenta de ChatGPT o de Claude para que este agente pueda trabajar."}
         return
-    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla from agente where id = $1", agente_id)
-    await _esperar_hermes(_host(m), agente["pantalla"])
+    except SinComputadora:
+        yield {"evento": "error", "texto": "Su computadora no está conectada. Ábrala y espere a que Dimia la vea en Ajustes del agente."}
+        return
+    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla, donde from agente where id = $1", agente_id)
+    if m:
+        await _esperar_hermes(_host(m), agente["pantalla"])
     previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
     fa = await db.uno("select trabajo, ajustes from agente where id = $1", agente["id"])
@@ -401,7 +483,7 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], texto)
     llave = vault.descifrar(agente["llave"] or (await db.uno("select llave from agente where id = $1", agente["id"]))["llave"])
     respuesta: list[str] = []
-    async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=600)) as http:
+    async with http:
         sid = await _sesion(tenant, agente, m, llave, http)
         # Runs API (no el chat de sesión): es la única superficie donde las aprobaciones
         # (approval.request) llegan al stream y se resuelven por /v1/runs/{id}/approval.
@@ -549,15 +631,18 @@ async def instalar(tenant: str, agente_id: str, tipo: str, clave: str, poner: bo
 
 async def rutinas(tenant: str, agente_id: str) -> dict:
     """Las tareas programadas del agente (cron de Hermes). Si la máquina duerme, no la despierta."""
-    agente = await db.uno("select id, llave, pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
-    m = await maquina(tenant)
-    if not agente or not m or not agente["pantalla"]:
+    agente = await db.uno("select id, llave, pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not agente or not agente["llave"]:
         return {"estado": "sin_maquina", "rutinas": []}
-    if not (await proveedor().obtener(m["referencia"])).encendida:
+    try:
+        http, m = await _cliente(tenant, agente, 10, despertar=False)
+    except SinComputadora:
+        return {"estado": "dormida", "rutinas": []}
+    if m and not (await proveedor().obtener(m["referencia"])).encendida:
         return {"estado": "dormida", "rutinas": []}
     llave = vault.descifrar(agente["llave"])
     try:
-        async with httpx.AsyncClient(timeout=10) as http:
+        async with http:
             r = await http.get(_url(m, agente["pantalla"], "/api/jobs"), headers={"Authorization": f"Bearer {llave}"})
         r.raise_for_status()
         d = r.json()
@@ -576,7 +661,12 @@ async def rutinas(tenant: str, agente_id: str) -> dict:
 
 
 async def borrar_agente(tenant: str, agente_id: str) -> None:
-    """Cierra su escritorio y borra su perfil en la máquina (si está encendida)."""
+    """Cierra su escritorio y borra su perfil en la máquina (si está encendida); si corre en
+    la computadora del dueño, apaga su demonio."""
+    tu = tunel.de(agente_id)
+    if tu:
+        await tu.enviar({"tipo": "apagar"})
+        tunel.quitar(agente_id, tu)
     m = await maquina(tenant)
     if not m:
         return
@@ -590,14 +680,17 @@ async def borrar_agente(tenant: str, agente_id: str) -> None:
 
 async def aprobar(tenant: str, agente_id: str, run_id: str, request_id: str | None, decision: str) -> str | None:
     """Resuelve una aprobación pendiente en el Hermes del agente: 'once' ejecuta, 'deny' bloquea."""
-    agente = await db.uno("select llave, pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
-    m = await maquina(tenant)
-    if not agente or not m:
+    agente = await db.uno("select id, llave, pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not agente:
         return "Ese agente no existe."
+    try:
+        http, m = await _cliente(tenant, agente, 15, despertar=False)
+    except SinComputadora:
+        return "La computadora del agente no está conectada."
     cuerpo = {"choice": "once" if decision == "aprobar" else "deny"}
     if request_id:
         cuerpo["request_id"] = request_id
-    async with httpx.AsyncClient(timeout=15) as http:
+    async with http:
         r = await http.post(_url(m, agente["pantalla"], f"/v1/runs/{run_id}/approval"), headers={"Authorization": f"Bearer {vault.descifrar(agente['llave'])}"}, json=cuerpo)
     if r.status_code >= 400:
         return f"No se pudo registrar la decisión ({r.status_code})."
@@ -647,6 +740,11 @@ async def uso_cuenta(tenant: str) -> dict:
 # --- Habilidades del agente (marketplace, Skills Hub de Hermes y las que él mismo crea) ---
 
 async def _hermes_cli(tenant: str, agente_id: str, args: str, timeout: int = 90) -> tuple[int, str, str]:
+    if (await db.uno("select donde from agente where id = $1", agente_id))["donde"] == "local":
+        tu = tunel.de(agente_id)
+        if not tu:
+            return 1, "", "La computadora del agente no está conectada."
+        return await tu.ejecutar(args, timeout)
     m = await asegurar_maquina(tenant)
     home = f"{hermes.HOME}/profiles/{agente_id}"
     cmd = ["su", "-s", "/bin/sh", "hermes", "-c", f"cd /opt/hermes && HERMES_HOME={home} /opt/hermes/.venv/bin/hermes {args}"]

@@ -1816,3 +1816,15 @@ export async function quitarSkill(agenteId: string, clave: string, origen: strin
   const r = await orquestador(`/agentes/${agenteId}/skills`, { method: "DELETE", body: JSON.stringify({ clave, origen }) });
   return r.ok ? { ok: "Quitada." } : { error: "No se pudo quitar." };
 }
+
+// --- Dónde corre el agente (Dimia o la computadora del dueño) ---
+export type EstadoLocal = { donde: "dimia" | "local"; conectada: boolean; host: string | null; visto: string | null; comando: string | null };
+export async function estadoLocal(agenteId: string): Promise<EstadoLocal> {
+  const r = await orquestador(`/agentes/${agenteId}/local`);
+  return r.ok ? r.json() : { donde: "dimia", conectada: false, host: null, visto: null, comando: null };
+}
+export async function dondeAgente(agenteId: string, donde: "dimia" | "local"): Promise<EstadoLocal & { error?: string }> {
+  const r = await orquestador(`/agentes/${agenteId}/donde`, { method: "POST", body: JSON.stringify({ donde }) });
+  if (!r.ok) { const d = await r.json().catch(() => ({})); return { donde: "dimia", conectada: false, host: null, visto: null, comando: null, error: d.detail ?? "No se pudo cambiar." }; }
+  return r.json();
+}

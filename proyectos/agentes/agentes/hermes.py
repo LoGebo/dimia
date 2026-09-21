@@ -22,7 +22,7 @@ def puerto(pantalla: int) -> int:
     return 8700 + pantalla
 
 
-def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None) -> str:
+def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None, local: bool = False) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
     rutas = {"fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"}, "rapido": {"model": config.MODELO_CODEX_RAPIDO, "provider": "openai-codex"}}
     if cerebro == "claude":  # Claude Max por el OAuth de Claude Code (archivo .anthropic_oauth.json del perfil)
@@ -43,6 +43,12 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
         # detrás de tool_search y el modelo no lo encuentra.
         "tools": {"tool_search": {"enabled": "off"}},
     }
+    if local:
+        # En la computadora del dueño: sin escritorio virtual ni CDP nuestro; el navegador y el
+        # computer_use son los de su Mac (cua-driver nativo) y la API solo escucha en localhost.
+        c["gateway"]["api_server"]["host"] = "127.0.0.1"
+        c["mcp_servers"] = mcp or {}
+        return yaml.safe_dump(c, allow_unicode=True, sort_keys=False)
     # Navegador rápido con Jev: siempre presente; lo paga Dimia (centavos por tarea).
     c["mcp_servers"] = {**mcp_navegador_rapido(pantalla), **(mcp or {})}
     # El Chromium de su pantalla (escritorios.py lo levanta con CDP en 9200+n).
@@ -58,7 +64,7 @@ def env(llave: str, pantalla: int) -> str:
     return base
 
 
-def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol: str = "general", personalidad: str | None = None, ajustes: dict | None = None) -> str:
+def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol: str = "general", personalidad: str | None = None, ajustes: dict | None = None, local: bool = False) -> str:
     if rol == "recepcion":
         return soul_recepcion(negocio, reglas, personalidad, ajustes)
     trato = "le habla de tú, con cercanía pero sin confianzas" if (ajustes or {}).get("trato") == "tu" else "le habla de usted"
@@ -69,7 +75,8 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol
         "Sin superlativos, sin signos de admiración, sin anglicismos donde exista palabra en español.",
         "Nunca inventa cifras, clientes ni resultados; si falta un dato, lo pide.",
         "Rutinas: si el dueño pide algo repetido («cada lunes», «todos los días a las 9», «cuando pase X»), créelo con la herramienta cronjob con un nombre corto en español y confírmele el horario. Lo que produzca una rutina guárdelo en escritorio/rutinas/ con la fecha en el nombre.",
-        "Tiene una computadora propia (escritorio Linux con navegador, terminal, archivos, hoja de cálculo y documentos) y el dueño ve su pantalla en vivo. Para tareas en sitios web con un objetivo concreto (buscar, filtrar, abrir, llenar) use primero navegar_rapido: es rápido y barato; para leer o extraer lo que quedó en pantalla use browser_snapshot; use browser_click/browser_type solo si navegar_rapido se atora. No use web_extract si puede verse en su navegador. Para otras aplicaciones use computer_use; guarde lo que produzca en la carpeta escritorio/. Así el dueño ve lo que hace.",
+        ("Trabaja en la computadora del dueño (su Mac): puede abrir archivos, usar sus programas y navegar con computer_use y las herramientas browser_*. Guarde lo que produzca en la carpeta Dimia de su escritorio y diga siempre qué archivo tocó. Cada acción que escribe fuera de esa carpeta pide su visto bueno." if local else
+        "Tiene una computadora propia (escritorio Linux con navegador, terminal, archivos, hoja de cálculo y documentos) y el dueño ve su pantalla en vivo. Para tareas en sitios web con un objetivo concreto (buscar, filtrar, abrir, llenar) use primero navegar_rapido: es rápido y barato; para leer o extraer lo que quedó en pantalla use browser_snapshot; use browser_click/browser_type solo si navegar_rapido se atora. No use web_extract si puede verse en su navegador. Para otras aplicaciones use computer_use; guarde lo que produzca en la carpeta escritorio/. Así el dueño ve lo que hace."),
     ]
     if trabajo:
         partes.append(f"\n## Su trabajo\n{trabajo}")

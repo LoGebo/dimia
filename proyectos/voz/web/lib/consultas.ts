@@ -92,10 +92,10 @@ export type PermisoAgente = "leer" | "navegar" | "anotar" | "escribir" | "agenda
 export type Agente = {
   id: string; nombre: string; trabajo: string | null; reglas: string | null; avatar: string | null;
   permisos: PermisoAgente[]; estado: "activo" | "en_pausa"; rol: "general" | "recepcion";
-  personalidad: string | null; ajustes: { trato?: "usted" | "tu"; modelo?: "auto" | "rapido" | "fuerte"; razonamiento?: "bajo" | "medio" | "alto" }; creado: string;
+  personalidad: string | null; ajustes: { trato?: "usted" | "tu"; modelo?: "auto" | "rapido" | "fuerte"; razonamiento?: "bajo" | "medio" | "alto" }; creado: string; donde: "dimia" | "local";
 };
 
-const SELECT_AGENTE = "select id, nombre, trabajo, reglas, avatar, permisos, estado, rol, personalidad, ajustes, creado from agente";
+const SELECT_AGENTE = "select id, nombre, trabajo, reglas, avatar, permisos, estado, rol, personalidad, ajustes, creado, donde from agente";
 
 /** Los agentes del negocio; Recepción existe siempre (se crea la primera vez) y va primero. */
 export function agentes(): Promise<Agente[]> {
