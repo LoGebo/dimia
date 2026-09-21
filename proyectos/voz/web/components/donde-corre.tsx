@@ -67,7 +67,7 @@ export function DondeCorre({ agenteId, nombre, donde, alCambiar }: { agenteId: s
     <div className="space-y-2">
       <p className="text-[13px] font-medium text-tinta-2">Dónde corre</p>
       {opcion("dimia", "En la computadora de Dimia", "Siempre encendida. Tiene su propio escritorio y usted ve su pantalla.")}
-      {opcion("local", "En esta computadora", `${nombre} abre archivos y usa los programas de su Mac. Cada acción que escribe pide su visto bueno. Solo trabaja con la Mac prendida.`)}
+      {opcion("local", "En esta computadora", `${nombre} abre archivos y usa los programas de su Mac. Cada acción que escribe pide su visto bueno. Si la Mac está apagada, trabaja desde la computadora de Dimia.`)}
       {error ? <p className="text-[13px] text-critico">{error}</p> : null}
       {donde === "local" ? (
         <div className="rounded-xl bg-linea/50 p-3">

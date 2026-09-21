@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import base64
 import hashlib
@@ -185,6 +185,31 @@ class Borrador(BaseModel):
 async def ruta_borrador(agente_id: uuid.UUID, cuerpo: Borrador, tenant: str = Depends(negocio_id)):
     """Jev en vivo: el modelo que correría este borrador."""
     return await negocio.ruta_en_vivo(tenant, str(agente_id), cuerpo.texto[:4000], cuerpo.con_imagen)
+
+
+@app.get("/agentes/{agente_id}/ficha-ruta")
+async def ficha_ruta(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    """Un pase de una hora para que el navegador pregunte la ruta directo (sin pasar por Vercel)."""
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        raise HTTPException(404)
+    return {"url": f"{config.PUBLICO_URL}/ruta-vivo/{_firmar({'t': tenant, 'a': str(agente_id), 'exp': int(time.time()) + 3600})}"}
+
+
+_CORS_RUTA = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "86400"}
+
+
+@app.options("/ruta-vivo/{token}")
+async def ruta_vivo_options(token: str):
+    return Response(status_code=204, headers=_CORS_RUTA)
+
+
+@app.post("/ruta-vivo/{token}")
+async def ruta_vivo(token: str, cuerpo: Borrador):
+    d = _verificar(token)
+    if not d:
+        raise HTTPException(401)
+    r = await negocio.ruta_en_vivo(d["t"], d["a"], cuerpo.texto[:4000], cuerpo.con_imagen)
+    return Response(json.dumps(r), media_type="application/json", headers=_CORS_RUTA)
 
 
 @app.post("/agentes/{agente_id}/turno")
@@ -554,8 +579,7 @@ async def donde_agente(agente_id: uuid.UUID, cuerpo: Donde, tenant: str = Depend
     if cuerpo.donde == "local":
         codigo = a["codigo_local"] or base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
         await db.ejecutar("update agente set donde = 'local', codigo_local = $2 where id = $1", agente_id, codigo)
-        if a["donde"] == "dimia":
-            await negocio.borrar_agente(tenant, str(agente_id))  # libera su escritorio en la máquina de Dimia
+        # Su escritorio en Dimia se queda como respaldo; el sincronizar lo apaga cuando la Mac se conecta.
     else:
         await db.ejecutar("update agente set donde = 'dimia', host_local = null, visto_local = null where id = $1", agente_id)
         tu = tunel.de(str(agente_id))
@@ -612,6 +636,7 @@ async def tunel_ws(ws: WebSocket, codigo: str):
     tu = tunel.registrar(aid, ws)
     try:
         await negocio.empujar_local(tenant, aid)
+        await negocio.empujar_tokens(tenant)  # si la máquina de Dimia está encendida, apaga el respaldo de este agente
         while True:
             m = json.loads(await ws.receive_text())
             tu.recibir(m)
@@ -623,6 +648,8 @@ async def tunel_ws(ws: WebSocket, codigo: str):
         log.warning("túnel %s: %s", aid, e)
     finally:
         tunel.quitar(aid, tu)
+        with suppress(Exception):
+            await negocio.empujar_tokens(tenant)  # la Mac se fue: el respaldo en Dimia vuelve a levantarse
 
 
 # --- Jev dentro del arnés: cada Hermes pregunta por el siguiente paso -------------------

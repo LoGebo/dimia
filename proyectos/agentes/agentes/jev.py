@@ -19,6 +19,17 @@ CRITERIOS = {
 }
 
 
+_http: httpx.AsyncClient | None = None
+
+
+def _cliente() -> httpx.AsyncClient:
+    """Una sola conexión viva hacia Jev: ahorra el TLS de cada llamada (~150 ms)."""
+    global _http
+    if _http is None:
+        _http = httpx.AsyncClient(timeout=8, http2=False)
+    return _http
+
+
 async def decidir(trabajo: str | None, historial: list[str], texto: str) -> tuple[str, dict | None]:
     """Devuelve (nivel, respuesta_de_jev); nivel ∈ ligero, rapido, fuerte, profundo."""
     if config.VERCEL_AI_GATEWAY_KEY:
@@ -33,8 +44,7 @@ async def decidir(trabajo: str | None, historial: list[str], texto: str) -> tupl
         "nivel": {"type": "choice", "instructions": "¿Qué tanto razonamiento y trabajo pide el último mensaje?", "criteria": CRITERIOS}}}
     t = time.perf_counter()
     try:
-        async with httpx.AsyncClient(timeout=8) as c:
-            r = await c.post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"})
+        r = await _cliente().post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"})
         r.raise_for_status()
         d = r.json()
     except (httpx.HTTPError, ValueError):
@@ -70,8 +80,7 @@ async def decidir_paso(objetivo: str, contexto: str, nivel_turno: str) -> tuple[
         "paso": {"type": "choice", "instructions": "¿Qué le pide al modelo el siguiente paso del agente?", "criteria": CRITERIOS_PASO}}}
     t = time.perf_counter()
     try:
-        async with httpx.AsyncClient(timeout=3.5) as c:
-            r = await c.post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"})
+        r = await _cliente().post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"}, timeout=3.5)
         r.raise_for_status()
         d = r.json()
     except (httpx.HTTPError, ValueError):

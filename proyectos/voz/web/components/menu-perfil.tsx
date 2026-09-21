@@ -38,8 +38,7 @@ export function MenuPerfil({ email }: { email: string }) {
           <p className="truncate text-[13px] text-tinta-3">{email}</p>
           <div className="mt-3">
             <div className="flex items-baseline justify-between">
-              <p className="text-[14px] font-semibold text-tinta">{uso?.proveedor === "codex" ? "ChatGPT" : uso?.proveedor === "claude" ? "Claude" : "Cuenta"}</p>
-              {uso?.plan ? <p className="text-[12px] text-tinta-3">Plan {uso.plan}</p> : null}
+              <p className="text-[14px] font-semibold text-tinta">Cuenta con la que piensan sus agentes</p>
             </div>
             {uso?.correo ? <p className="truncate text-[12px] text-tinta-3">{uso.correo}</p> : null}
             {uso?.tope ? <p className="mt-2 rounded-lg bg-critico/10 px-2.5 py-1.5 text-[12.5px] text-critico">Cupo agotado: los agentes esperan a que se reinicie.</p> : null}

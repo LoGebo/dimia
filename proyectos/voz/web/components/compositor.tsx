@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
 import { ArrowUp, FileText, Paperclip, X } from "lucide-react";
-import { rutaBorrador, type RutaBorrador } from "@/lib/acciones";
+import { fichaRuta, rutaBorrador, type RutaBorrador } from "@/lib/acciones";
 
 export type Nivel = "ligero" | "rapido" | "fuerte" | "profundo";
 export type Adjunto = { id: number; tipo: "imagen" | "texto"; nombre: string; tamano: number; datos?: string; contenido?: string };
@@ -53,11 +53,32 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
   const menuRef = useRef<HTMLDivElement>(null);
   const version = useRef(0);
   const cache = useRef(new Map<string, RutaBorrador>());
+  const directo = useRef<string | null>(null); // pase para preguntarle al orquestador sin pasar por Vercel
+
+  useEffect(() => {
+    if (!conJev) return;
+    directo.current = null;
+    let vivo = true;
+    const pedir = () => { void fichaRuta(agenteId).then((f) => { if (vivo) directo.current = f?.url ?? null; }); };
+    pedir();
+    const t = setInterval(pedir, 50 * 60 * 1000); // el pase dura una hora
+    return () => { vivo = false; clearInterval(t); };
+  }, [agenteId, conJev]);
+
+  async function clasificar(t: string, imagen: boolean): Promise<RutaBorrador> {
+    if (directo.current) {
+      try {
+        const r = await fetch(directo.current, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t, con_imagen: imagen }) });
+        if (r.ok) return r.json();
+      } catch {}
+    }
+    return rutaBorrador(agenteId, t, imagen);
+  }
 
   const hayImagen = adjuntos.some((a) => a.tipo === "imagen");
   const puedeEnviar = (texto.trim().length > 0 || adjuntos.length > 0) && !ocupado;
 
-  // Jev en vivo: 250 ms después de la última tecla; se ignoran las respuestas viejas.
+  // Jev en vivo: 150 ms después de la última tecla; se ignoran las respuestas viejas.
   useEffect(() => {
     if (!conJev) return;
     const t = texto.trim();
@@ -68,13 +89,13 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
     const mia = ++version.current;
     setClasificando(true);
     const timer = setTimeout(async () => {
-      const r = await rutaBorrador(agenteId, t, hayImagen);
+      const r = await clasificar(t, hayImagen);
       if (mia !== version.current) return;
       cache.current.set(llave, r);
       if (cache.current.size > 60) cache.current.delete(cache.current.keys().next().value!);
       setRuta(r);
       setClasificando(false);
-    }, 250);
+    }, 150);
     return () => clearTimeout(timer);
   }, [texto, hayImagen, agenteId, conJev]);
 

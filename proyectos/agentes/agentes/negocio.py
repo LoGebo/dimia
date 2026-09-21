@@ -141,8 +141,11 @@ _COLS = "id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token, 
 
 
 async def _agentes(tenant: str):
-    """Los que corren en la computadora de Dimia (los locales van por túnel)."""
-    return await db.todos(f"select {_COLS} from agente where tenant_id = $1 and donde = 'dimia' order by (rol = 'recepcion') desc, creado", tenant)
+    """Los que corren en la computadora de Dimia: los de aquí y los locales cuya Mac no está
+    conectada (la de Dimia es su respaldo). Cuando la Mac vuelve, el siguiente sincronizar
+    apaga su escritorio de aquí."""
+    filas = await db.todos(f"select {_COLS} from agente where tenant_id = $1 order by (rol = 'recepcion') desc, creado", tenant)
+    return [a for a in filas if a["donde"] == "dimia" or tunel.de(str(a["id"])) is None]
 
 
 async def _mcp_de(tenant: str, a) -> tuple[dict | None, set[str], list]:
@@ -366,23 +369,28 @@ async def _cliente(tenant: str, agente, timeout, despertar: bool = True) -> tupl
     dueño (m = None), o hacia la máquina del negocio (despertándola si hace falta)."""
     if agente["donde"] == "local":
         tu = tunel.de(str(agente["id"]))
-        if not tu:
-            raise SinComputadora()
-        return tu.cliente(timeout), None
+        if tu:
+            return tu.cliente(timeout), None
+        log.info("agente %s: su Mac no está conectada; corre en la computadora de Dimia", agente["id"])
     m = await asegurar_maquina(tenant) if despertar else await maquina(tenant)
     if m is None:
         raise SinComputadora()
     return httpx.AsyncClient(timeout=timeout), m
 
 
+def _columna_sesion(m) -> str:
+    return "sesion_local" if m is None else "sesion_hermes"  # cada lugar (Mac o Dimia) tiene su hilo
+
+
 async def _sesion(tenant: str, agente, m, llave: str, http: httpx.AsyncClient) -> str:
-    if agente["sesion_hermes"]:
-        return agente["sesion_hermes"]
+    col = _columna_sesion(m)
+    if agente[col]:
+        return agente[col]
     import uuid
     sid = f"panel_{uuid.uuid4().hex[:12]}"
     r = await http.post(_url(m, agente["pantalla"], "/api/sessions"), headers={"Authorization": f"Bearer {llave}"}, json={"id": sid, "title": f"Panel {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}"})  # el título es único en Hermes
     r.raise_for_status()
-    await db.ejecutar("update agente set sesion_hermes = $2 where id = $1 and tenant_id = $3", agente["id"], sid, tenant)
+    await db.ejecutar(f"update agente set {col} = $2 where id = $1 and tenant_id = $3", agente["id"], sid, tenant)
     return sid
 
 
@@ -464,14 +472,15 @@ def modelo_de(cerebro: str, nivel: str) -> str:
 async def ruta_en_vivo(tenant: str, agente_id: str, texto: str, con_imagen: bool = False) -> dict:
     """Lo que el compositor enseña mientras el dueño escribe: qué modelo correría y con qué
     seguridad lo dice Jev. Mismo criterio que el turno; si Jev no contesta, «automático»."""
-    a = await db.uno("select trabajo, ajustes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    a, cual, previos = await asyncio.gather(
+        db.uno("select trabajo, ajustes from agente where id = $1 and tenant_id = $2", agente_id, tenant),
+        cerebro(tenant),
+        db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente_id))
     if not a:
         return {"ruta": None}
-    cual = await cerebro(tenant)
     aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
     if aj.get("modelo") in config.NIVELES:
         return {"ruta": aj["modelo"], "modelo": modelo_de(cual, aj["modelo"]), "confianza": None, "fijo": True}
-    previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente_id)
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
     nivel, d = await jev.decidir(a["trabajo"], historial, texto + (" [trae imagen]" if con_imagen else ""))
     if not d:
@@ -497,7 +506,7 @@ def _entrada(texto: str, adjuntos: list[dict] | None):
 
 async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = None, adjuntos: list[dict] | None = None):
     """Genera eventos {evento, texto}. Un solo lugar traduce los fallos a español."""
-    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    agente = await db.uno("select id, nombre, llave, sesion_hermes, sesion_local, pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
     if not agente:
         yield {"evento": "error", "texto": "Ese agente no existe."}
         return
@@ -513,7 +522,7 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
     except SinComputadora:
         yield {"evento": "error", "texto": "Su computadora no está conectada. Ábrala y espere a que Dimia la vea en Ajustes del agente."}
         return
-    agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla, donde from agente where id = $1", agente_id)
+    agente = await db.uno("select id, nombre, llave, sesion_hermes, sesion_local, pantalla, donde from agente where id = $1", agente_id)
     if m:
         await _esperar_hermes(_host(m), agente["pantalla"])
     previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
@@ -543,7 +552,7 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
             await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)
             return
         if r0.status_code == 404:  # sesión perdida (disco nuevo, reinicio): abrir otra
-            await db.ejecutar("update agente set sesion_hermes = null where id = $1", agente["id"])
+            await db.ejecutar(f"update agente set {_columna_sesion(m)} = null where id = $1", agente["id"])
             yield {"evento": "error", "texto": "Se perdió el hilo anterior; vuelva a enviar el mensaje."}
             return
         if r0.status_code >= 400:
@@ -605,7 +614,7 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
 
 
 async def hilo_nuevo(tenant: str, agente_id: str) -> None:
-    await db.ejecutar("update agente set sesion_hermes = null where id = $1 and tenant_id = $2", agente_id, tenant)
+    await db.ejecutar("update agente set sesion_hermes = null, sesion_local = null where id = $1 and tenant_id = $2", agente_id, tenant)
 
 
 async def despertar_para_rutinas() -> None:

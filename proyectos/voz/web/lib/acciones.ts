@@ -1837,3 +1837,6 @@ export async function rutaBorrador(agenteId: string, texto: string, conImagen: b
     return r.ok ? r.json() : { ruta: "fuerte", confianza: null };
   } catch { return { ruta: "fuerte", confianza: null }; }
 }
+export async function fichaRuta(agenteId: string): Promise<{ url: string } | null> {
+  try { const r = await orquestador(`/agentes/${agenteId}/ficha-ruta`); return r.ok ? r.json() : null; } catch { return null; }
+}
