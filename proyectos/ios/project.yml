@@ -1,0 +1,60 @@
+# El proyecto se genera con `xcodegen` (brew install xcodegen); el .xcodeproj no se versiona.
+name: Dimia
+options:
+  bundleIdPrefix: mx.dimia
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_STRICT_CONCURRENCY: complete
+    DEVELOPMENT_TEAM: 4W65YUHMHD
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+targets:
+  Dimia:
+    type: application
+    platform: iOS
+    sources:
+      - path: Dimia
+    info:
+      path: Dimia/Info.plist
+      properties:
+        CFBundleDisplayName: Dimia
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        LSApplicationCategoryType: public.app-category.business
+        NSAppTransportSecurity: { NSAllowsArbitraryLoads: false }
+        CFBundleDevelopmentRegion: es-MX
+        CFBundleLocalizations: [es-MX]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.dimia.app
+        INFOPLIST_KEY_UIUserInterfaceStyle: Automatic
+  DimiaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DimiaTests
+    dependencies:
+      - target: Dimia
+schemes:
+  Dimia:
+    build:
+      targets:
+        Dimia: all
+        DimiaTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [DimiaTests]
