@@ -30,10 +30,11 @@ async def _ciclo():
     while True:
         try:
             await negocio.renovar_todos()
+            await negocio.despertar_para_rutinas()
             await negocio.dormir_inactivas()
         except Exception as e:  # noqa: BLE001
             log.warning("ciclo: %s", e)
-        await asyncio.sleep(300)
+        await asyncio.sleep(120)
 
 
 from agentes import conexiones, mcp_dimia, mcp_servicios  # noqa: E402

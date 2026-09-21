@@ -472,10 +472,26 @@ async def hilo_nuevo(tenant: str, agente_id: str) -> None:
     await db.ejecutar("update agente set sesion_hermes = null where id = $1 and tenant_id = $2", agente_id, tenant)
 
 
+async def despertar_para_rutinas() -> None:
+    """Una rutina próxima (≤ 3 min) enciende la máquina y la mantiene despierta 20 min; al
+    pasar, se vuelve a leer la agenda del agente para saber la siguiente."""
+    filas = await db.todos("select distinct tenant_id from agente where rutina_proxima between now() - interval '10 minutes' and now() + interval '3 minutes'")
+    for f in filas:
+        t = str(f["tenant_id"])
+        try:
+            await asegurar_maquina(t)
+            for a in await db.todos("select id from agente where tenant_id = $1 and rutina_proxima is not null", t):
+                await rutinas(t, str(a["id"]))  # refresca rutina_proxima con lo que diga Hermes
+        except Exception as e:  # noqa: BLE001
+            log.warning("rutinas %s: %s", t, e)
+
+
 async def dormir_inactivas() -> None:
-    """Para las máquinas sin uso; el próximo turno las despierta."""
+    """Para las máquinas sin uso; el próximo turno (o una rutina) las despierta."""
     prov = proveedor()
-    filas = await db.todos("select tenant_id, referencia from maquina_negocio where ultimo_uso < now() - make_interval(mins => $1)", config.MINUTOS_SIN_USO)
+    filas = await db.todos("""select m.tenant_id, m.referencia from maquina_negocio m
+                              where m.ultimo_uso < now() - make_interval(mins => $1)
+                                and not exists (select 1 from agente a where a.tenant_id = m.tenant_id and a.rutina_proxima between now() - interval '10 minutes' and now() + interval '25 minutes')""", config.MINUTOS_SIN_USO)
     for f in filas:
         try:
             if (await prov.obtener(f["referencia"])).encendida:
@@ -544,6 +560,8 @@ async def rutinas(tenant: str, agente_id: str) -> dict:
         lista = d if isinstance(d, list) else d.get("jobs") or d.get("data") or []
     except (httpx.HTTPError, ValueError):
         return {"estado": "sin_respuesta", "rutinas": []}
+    proximas = [j.get("next_run_at") or j.get("next_run") for j in lista if not j.get("paused", False) and (j.get("next_run_at") or j.get("next_run"))]
+    await db.ejecutar("update agente set rutina_proxima = $2 where id = $1", agente["id"], min((datetime.fromisoformat(x) for x in proximas), default=None) if proximas else None)
     return {"estado": "ok", "rutinas": [{
         "id": j.get("id") or j.get("job_id"), "nombre": j.get("name") or j.get("prompt", "")[:60],
         "horario": (j["schedule"].get("display") or j["schedule"].get("expr") if isinstance(j.get("schedule"), dict) else j.get("schedule")) or "",
