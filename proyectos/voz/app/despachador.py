@@ -159,6 +159,17 @@ def plantilla_meta(fila: dict) -> PlantillaMeta | None:
     return None
 
 
+def _botones_sociales(fila: dict) -> list | None:
+    """Los botones de la pregunta de 24 h como respuestas rápidas de Instagram/Messenger."""
+    if fila.get("plantilla") != "confirmacion_24h" or not fila.get("booking_id"):
+        return None
+    from channels.whatsapp.cliente import OpcionLista
+
+    cita = str(fila["booking_id"])
+    return [OpcionLista(f"cita:confirmo:{cita}", "Confirmo"), OpcionLista(f"cita:cancelo:{cita}", "Cancelar"),
+            OpcionLista(f"cita:cambiar:{cita}", "Cambiar hora")]
+
+
 @dataclass(frozen=True, slots=True)
 class Tanda:
     reclamados: int
@@ -276,9 +287,11 @@ class Despachador:
         mensajero: Mensajero,
         por_vuelta: int = POR_VUELTA,
         llm: object | None = None,
+        social: object | None = None,
     ) -> None:
         self.agenda = agenda
         self.mensajero = mensajero
+        self.social = social  # Instagram y Messenger (channels.social.cliente.ClienteSocial)
         self.por_vuelta = por_vuelta
         self.llm = llm
         self._ultimo_recordatorio = 0.0
@@ -316,6 +329,18 @@ class Despachador:
                     self._salientes.add(tarea)
                     tarea.add_done_callback(self._salientes.discard)
                     marcando += 1
+                    continue
+                if fila["canal"] in ("instagram", "messenger"):
+                    # Sin plantillas de Meta aquí: texto y, para la pregunta de 24 h, respuestas
+                    # rápidas con el mismo payload `cita:<accion>:<id>` que entienden los agentes.
+                    if self.social is None:
+                        raise ValueError(f"canal {fila['canal']} sin cliente social")
+                    await self.social.enviar_texto(
+                        fila["destino"], redactar(fila["plantilla"], fila["payload"]), fila["canal"],
+                        opciones=_botones_sociales(fila), etiqueta="CONFIRMED_EVENT_UPDATE",
+                    )
+                    await self.agenda.outbox_marcar_enviado(fila["id"])
+                    enviados += 1
                     continue
                 if fila["canal"] != "whatsapp":
                     raise ValueError(f"canal no soportado: {fila['canal']}")
@@ -493,12 +518,15 @@ async def _principal() -> None:
     from app.config import settings
     from app.llm_texto import cliente_texto
 
+    from channels.social.cliente import ClienteSocial
+
     await agenda.conectar()
     cliente = WhatsAppCliente()
+    social = ClienteSocial()
     llm = cliente_texto(settings())
     try:
         log.info("despachador arriba, revisando la cola cada %ds", INTERVALO_SEG)
-        await Despachador(agenda, cliente, llm=llm).correr()
+        await Despachador(agenda, cliente, llm=llm, social=social).correr()
     finally:
         await cliente.cerrar()
         await agenda.cerrar()

@@ -6,6 +6,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from app.franjas import franja_a_horas
+from app import telefonos
 from app.supabase_client import Agenda, Slot, Tenant
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.sesion import OpcionHorario, SesionWhatsApp, nombre_plausible
@@ -60,6 +61,10 @@ AGENDA: list[dict[str, Any]] = [
                     "description": "id de la opcion que eligio el cliente",
                 },
                 "nombre_cliente": {"type": "string"},
+                "telefono": {
+                    "type": "string",
+                    "description": "WhatsApp del cliente con lada (10 digitos). Solo hace falta cuando escribe por Instagram o Messenger: ahi se lo pides antes de reservar, porque la confirmacion y el recordatorio le llegan por WhatsApp.",
+                },
                 "personas": {"type": "integer"},
                 "notas": {"type": "string", "description": "alergias o preferencias"},
             },
@@ -347,6 +352,15 @@ class Herramientas:
         )
         if not nombre:
             return "Falta el nombre. Pideselo antes de reservar."
+        # Por Instagram/Messenger la sesion trae el id del remitente, no un telefono: sin
+        # WhatsApp no hay forma de mandarle la confirmacion ni el recordatorio (Meta no deja
+        # escribirle por Instagram pasadas 24 h de su ultimo mensaje).
+        telefono = self.sesion.telefono
+        if telefonos.normalizar(telefono) is None:
+            dado = telefonos.normalizar(str(argumentos.get("telefono") or ""))
+            if dado is None:
+                return "Falta el numero de WhatsApp del cliente (10 digitos con lada). Pideselo antes de reservar: ahi le llega la confirmacion."
+            telefono = dado
 
         resultado = await self.agenda.reservar(
             tenant_id=self.tenant.id,
@@ -354,7 +368,7 @@ class Herramientas:
             recurso_id=uuid.UUID(opcion.recurso_id),
             inicio=datetime.fromisoformat(opcion.inicio_iso),
             nombre=nombre,
-            telefono=self.sesion.telefono,
+            telefono=telefono,
             personas=int(argumentos.get("personas") or 1),
             notas=str(argumentos.get("notas") or "") or None,
         )

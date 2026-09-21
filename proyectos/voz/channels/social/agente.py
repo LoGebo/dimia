@@ -23,7 +23,9 @@ from channels import nucleo
 from channels.social.config import SocialSettings, social_settings
 from channels.social.parser import CanalSocial, MensajeSocial
 from channels.whatsapp import deterministas, plantilla
-from channels.whatsapp.agente import opcion_escrita
+import uuid
+
+from channels.whatsapp.agente import _accion_de_confirmacion, _momento, opcion_escrita
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
 from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
@@ -120,6 +122,9 @@ class AgenteSocial:
         fija = await self._determinista(contexto, entrante)
         if fija is not None:
             return fija
+        confirmada = await self._confirmacion(contexto, entrante)
+        if confirmada is not None:
+            return confirmada
 
         sesion = self.registro.obtener(
             contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil
@@ -181,6 +186,40 @@ class AgenteSocial:
             return f"{entrante.texto} [la opcion elegida ya expiro]"
         elegida = opcion_escrita(entrante.texto, opciones, tz)
         return f"{entrante.texto} [opcion_id={elegida}]" if elegida else entrante.texto
+
+    async def _confirmacion(
+        self, contexto: ContextoNegocio, entrante: MensajeSocial
+    ) -> list[Envio] | None:
+        """La respuesta a la pregunta de 24 h (botón `cita:<accion>:<id>` o escrita), igual
+        que en WhatsApp: confirmar y cancelar sin modelo; cambiar sigue al modelo."""
+        accion, booking = _accion_de_confirmacion(entrante)
+        if accion is None or accion == "cambiar":
+            return None
+        tenant_id = contexto.tenant.id
+        try:
+            cita = await self.agenda.confirmacion_pendiente(tenant_id, entrante.remitente_id, booking)
+            if cita is None:
+                return None
+            if accion == "confirmo":
+                resultado = await self.agenda.booking_confirmar_cliente(tenant_id, uuid.UUID(cita["id"]))
+            else:
+                resultado = await self.agenda.cancelar_reserva_por_cliente(tenant_id, uuid.UUID(cita["id"]))
+        except Exception:
+            log.exception("no se pudo resolver la confirmación por %s", entrante.canal)
+            return None
+        if not resultado.get("ok"):
+            return None
+        momento = _momento(cita.get("inicio"), contexto.tenant.tz)
+        if accion == "confirmo":
+            texto = f"Confirmada. Te esperamos el {momento} en {contexto.tenant.nombre}."
+        else:
+            texto = f"Cancelada la cita del {momento}. Cuando quieras agendar de nuevo, escríbenos."
+        await nucleo.registrar_turno(
+            self.agenda, tenant_id=tenant_id, canal=entrante.canal, contacto=entrante.remitente_id,
+            entrante=entrante.texto, respuesta=texto, nombre=entrante.nombre_perfil,
+            herramienta="confirmacion", externo_id=entrante.mensaje_id or None, escalado=False, motivo=None, log=log,
+        )
+        return [(entrante.remitente_id, texto, ())]
 
     async def _determinista(
         self, contexto: ContextoNegocio, entrante: MensajeSocial

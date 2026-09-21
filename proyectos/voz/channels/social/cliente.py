@@ -58,6 +58,7 @@ class ClienteSocial:
         texto: str,
         canal: CanalSocial = "messenger",
         opciones: list[OpcionLista] | None = None,
+        etiqueta: str | None = None,
     ) -> str:
         # El dueno lee este texto en la pantalla de Mensajes: tiene que decirle
         # que le falta, no un error de la libreria de HTTP.
@@ -79,14 +80,12 @@ class ClienteSocial:
                 {"content_type": "text", "title": o.titulo[:20], "payload": o.id}
                 for o in opciones[:MAX_RESPUESTAS_RAPIDAS]
             ]
-        respuesta = await self.http.post(
-            url,
-            json={
-                "recipient": {"id": destino},
-                "message": mensaje,
-                "messaging_type": "RESPONSE",
-            },
-        )
+        cuerpo: dict[str, Any] = {"recipient": {"id": destino}, "message": mensaje, "messaging_type": "RESPONSE"}
+        if etiqueta and canal == "messenger":
+            # Fuera de la ventana de 24 h Messenger solo entrega con etiqueta (recordatorio de cita:
+            # CONFIRMED_EVENT_UPDATE). Instagram no tiene etiquetas: ahi manda la ventana.
+            cuerpo.update({"messaging_type": "MESSAGE_TAG", "tag": etiqueta})
+        respuesta = await self.http.post(url, json=cuerpo)
         if respuesta.status_code >= 400:
             raise RuntimeError(
                 f"{canal} {respuesta.status_code}: {respuesta.text[:200]}"
