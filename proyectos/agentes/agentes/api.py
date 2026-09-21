@@ -12,6 +12,7 @@ import re
 import hmac
 import time
 
+import httpx
 import websockets
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, StreamingResponse
