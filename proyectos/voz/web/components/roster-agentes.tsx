@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, LayoutGrid, Plus, Search, Users } from "lucide-react";
+import { Check, ChevronDown, FolderPlus, LayoutGrid, MoreHorizontal, Plus, Search, Users } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { AvataresGrupo } from "@/components/avatares-grupo";
 import { crearAgenteVacio, crearGrupo } from "@/lib/acciones";
@@ -12,7 +12,26 @@ export type AgenteRoster = { id: string; nombre: string; trabajo: string | null;
 export type GrupoRoster = { id: string; nombre: string; miembros: string[] };
 
 /** La lista de agentes y grupos, como los contactos de una app de mensajes. */
-export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; grupos: GrupoRoster[] }) {
+type Seccion = { id: string; nombre: string; ids: string[]; plegada?: boolean };
+const claveSecciones = (negocio: string) => `secciones_agentes:${negocio}`;
+// Las secciones viven en localStorage; se leen como «store externo» para que la hidratación
+// pinte el servidor sin ellas y el cliente con ellas (un setState en efecto se perdía).
+const cacheSecciones = new Map<string, Seccion[]>();
+function leerSecciones(negocio: string): Seccion[] {
+  let crudo = "";
+  try { crudo = localStorage.getItem(claveSecciones(negocio)) ?? ""; } catch {}
+  const llave = `${negocio}\u0000${crudo}`;
+  if (!cacheSecciones.has(llave)) { let v: Seccion[] = []; try { v = crudo ? (JSON.parse(crudo) as Seccion[]) : []; } catch {} cacheSecciones.set(llave, v); }
+  return cacheSecciones.get(llave)!;
+}
+const SIN_SECCIONES: Seccion[] = [];
+function suscribirSecciones(cb: () => void) {
+  window.addEventListener("storage", cb);
+  window.addEventListener("secciones-agentes", cb);
+  return () => { window.removeEventListener("storage", cb); window.removeEventListener("secciones-agentes", cb); };
+}
+
+export function RosterAgentes({ agentes, grupos, negocio = "" }: { agentes: AgenteRoster[]; grupos: GrupoRoster[]; negocio?: string }) {
   const ruta = usePathname();
   const router = useRouter();
   const [busqueda, setBusqueda] = useState("");
@@ -20,6 +39,16 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
   const [nuevoGrupo, setNuevoGrupo] = useState(false);
   const [pendiente, empezar] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
+  // Secciones con nombre en la lista (como Grok Bot): se guardan en este navegador.
+  const secciones = useSyncExternalStore(suscribirSecciones, () => leerSecciones(negocio), () => SIN_SECCIONES);
+  const [menuAgente, setMenuAgente] = useState<string | null>(null);
+  const [renombrando, setRenombrando] = useState<string | null>(null);
+  function guardarSecciones(nx: Seccion[]) { try { localStorage.setItem(claveSecciones(negocio), JSON.stringify(nx)); } catch {} window.dispatchEvent(new Event("secciones-agentes")); }
+  function nuevaSeccion() { setMenu(false); const id = `s${Date.now()}`; guardarSecciones([...secciones, { id, nombre: "Nueva sección", ids: [] }]); setRenombrando(id); }
+  function mover(agenteId: string, seccionId: string | null) {
+    guardarSecciones(secciones.map((sec) => ({ ...sec, ids: sec.id === seccionId ? Array.from(new Set([...sec.ids, agenteId])) : sec.ids.filter((x) => x !== agenteId) })));
+    setMenuAgente(null);
+  }
 
   const todos: AgenteRoster[] = agentes;
   const porId = new Map(todos.map((a) => [a.id, a]));
@@ -44,6 +73,29 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
 
   const claseFila = (es: boolean) => `flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors duration-150 ${es ? "bg-linea" : "hover:bg-linea/60"}`;
 
+  const enSeccion = new Set(secciones.flatMap((sec) => sec.ids));
+  const filaAgente = (a: AgenteRoster) => (
+    <li key={a.id} className="group relative">
+      <a href={`/agentes/${a.id}`} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); window.history.pushState(null, "", `/agentes/${a.id}`); } }} aria-current={ruta === `/agentes/${a.id}` ? "page" : undefined} className={claseFila(ruta === `/agentes/${a.id}`)}>
+        <AvatarAgente nombre={a.nombre} avatar={a.avatar} tamano={44} activo={a.activo} />
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-[15px] font-semibold text-tinta">{a.nombre}</span>
+          <span className="truncate text-[13px] text-tinta-3">{a.trabajo ?? "Sin trabajo todavía"}</span>
+        </span>
+      </a>
+      {secciones.length ? (
+        <button type="button" onClick={() => setMenuAgente(menuAgente === a.id ? null : a.id)} aria-label="Mover a una sección" className="absolute top-1/2 right-2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-tinta-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 hover:bg-linea hover:text-tinta focus:opacity-100"><MoreHorizontal size={16} /></button>
+      ) : null}
+      {menuAgente === a.id ? (
+        <div className="absolute top-12 right-2 z-20 w-52 rounded-2xl border border-linea bg-panel p-1.5 shadow-[0_8px_24px_rgba(11,15,23,0.12)]">
+          <p className="px-3 pt-1 pb-1.5 text-[11.5px] text-tinta-3">Mover a</p>
+          {secciones.map((sec) => <button key={sec.id} type="button" onClick={() => mover(a.id, sec.id)} className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[13.5px] text-tinta hover:bg-linea/60">{sec.nombre}{sec.ids.includes(a.id) ? <Check size={14} /> : null}</button>)}
+          <button type="button" onClick={() => mover(a.id, null)} className="flex w-full rounded-xl px-3 py-2 text-left text-[13.5px] text-tinta-2 hover:bg-linea/60">Sin sección</button>
+        </div>
+      ) : null}
+    </li>
+  );
+
   return (
     <aside className="relative flex min-h-0 w-[300px] flex-none flex-col border-r border-linea bg-panel-2">
       <div className="flex items-center gap-2 px-3 pt-3 pb-2">
@@ -64,23 +116,37 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
               <button type="button" onClick={() => { setMenu(false); setNuevoGrupo(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[14px] text-tinta transition-colors duration-150 hover:bg-linea/60">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-linea"><Users size={15} /></span>Nuevo grupo
               </button>
+              <button type="button" onClick={nuevaSeccion} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[14px] text-tinta transition-colors duration-150 hover:bg-linea/60">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-linea"><FolderPlus size={15} /></span>Nueva sección
+              </button>
             </div>
           ) : null}
         </div>
       </div>
 
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1">
-        {agentesVisibles.map((a) => (
-          <li key={a.id}>
-            <a href={`/agentes/${a.id}`} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); window.history.pushState(null, "", `/agentes/${a.id}`); } }} aria-current={ruta === `/agentes/${a.id}` ? "page" : undefined} className={claseFila(ruta === `/agentes/${a.id}`)}>
-              <AvatarAgente nombre={a.nombre} avatar={a.avatar} tamano={44} activo={a.activo} />
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate text-[15px] font-semibold text-tinta">{a.nombre}</span>
-                <span className="truncate text-[13px] text-tinta-3">{a.trabajo ?? "Sin trabajo todavía"}</span>
-              </span>
-            </a>
-          </li>
-        ))}
+        {secciones.map((sec) => {
+          const mios = agentesVisibles.filter((a) => sec.ids.includes(a.id));
+          if (q && !mios.length) return null;
+          return (
+            <li key={sec.id} className="pt-1">
+              <div className="group/s flex items-center gap-1 px-2 py-1">
+                <button type="button" onClick={() => guardarSecciones(secciones.map((x) => (x.id === sec.id ? { ...x, plegada: !x.plegada } : x)))} aria-expanded={!sec.plegada} className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-[12px] font-medium text-tinta-3 hover:text-tinta">
+                  <ChevronDown size={13} className={`flex-none transition-transform duration-150 ${sec.plegada ? "-rotate-90" : ""}`} />
+                  {renombrando === sec.id ? (
+                    <input autoFocus defaultValue={sec.nombre} onBlur={(e) => { guardarSecciones(secciones.map((x) => (x.id === sec.id ? { ...x, nombre: e.target.value.trim() || x.nombre } : x))); setRenombrando(null); }} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setRenombrando(null); }} onClick={(e) => e.stopPropagation()} className="min-w-0 flex-1 rounded-md bg-linea px-1.5 py-0.5 text-[12px] text-tinta outline-none" />
+                  ) : <span className="truncate">{sec.nombre}</span>}
+                  <span className="numeros text-[11px]">{mios.length}</span>
+                </button>
+                <button type="button" onClick={() => setRenombrando(sec.id)} className="rounded px-1 text-[11px] text-tinta-3 opacity-0 group-hover/s:opacity-100 hover:text-tinta">Renombrar</button>
+                <button type="button" onClick={() => guardarSecciones(secciones.filter((x) => x.id !== sec.id))} className="rounded px-1 text-[11px] text-tinta-3 opacity-0 group-hover/s:opacity-100 hover:text-critico">Quitar</button>
+              </div>
+              {!sec.plegada ? <ul className="space-y-0.5">{mios.map(filaAgente)}</ul> : null}
+            </li>
+          );
+        })}
+        {secciones.length && agentesVisibles.some((a) => !enSeccion.has(a.id)) ? <li className="px-3 pt-2 pb-1 text-[12px] font-medium text-tinta-3">Sin sección</li> : null}
+        {agentesVisibles.filter((a) => !enSeccion.has(a.id)).map(filaAgente)}
         {gruposVisibles.length ? <li className="px-3 pt-3 pb-1 text-[12px] font-medium text-tinta-3">Grupos</li> : null}
         {gruposVisibles.map((g) => {
           const miembros = g.miembros.map((id) => porId.get(id)).filter((m): m is AgenteRoster => !!m);

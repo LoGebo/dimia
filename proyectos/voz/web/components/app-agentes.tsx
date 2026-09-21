@@ -25,7 +25,7 @@ export function AppAgentes({ agentes, grupos, negocio, children }: { agentes: Ag
   const agente = id === "recepcion" ? agentes.find((a) => a.rol === "recepcion") : agentes.find((a) => a.id === id);
   return (
     <>
-      <RosterAgentes agentes={agentes} grupos={grupos} />
+      <RosterAgentes agentes={agentes} grupos={grupos} negocio={negocio} />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {esAgente && primeraVez && id === "recepcion" ? (
           <BienvenidaAgentes negocio={negocio} verRecepcion={() => setSaltar(true)} />
