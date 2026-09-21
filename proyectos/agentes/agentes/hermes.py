@@ -41,8 +41,8 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None) -> str:
         # detrás de tool_search y el modelo no lo encuentra.
         "tools": {"tool_search": {"enabled": "off"}},
     }
-    if mcp:
-        c["mcp_servers"] = mcp
+    # Navegador rápido con Jev: siempre presente; lo paga Dimia (centavos por tarea).
+    c["mcp_servers"] = {**mcp_navegador_rapido(pantalla), **(mcp or {})}
     # El Chromium de su pantalla (escritorios.py lo levanta con CDP en 9200+n).
     # backend off = las herramientas browser_* de siempre (no la CLI de Browser Use), sobre nuestro CDP.
     c["browser"] = {"backend": "off", "cdp_url": f"http://127.0.0.1:{9200 + pantalla}", "inactivity_timeout": 600}
@@ -63,7 +63,7 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
         "Escribe en español de México. Frases cortas. Primero el resultado, después el método.",
         "Sin superlativos, sin signos de admiración, sin anglicismos donde exista palabra en español.",
         "Nunca inventa cifras, clientes ni resultados; si falta un dato, lo pide.",
-        "Tiene una computadora propia (escritorio Linux con navegador, terminal, archivos, hoja de cálculo y documentos) y el dueño ve su pantalla en vivo. Para buscar, leer o usar sitios web use el navegador (browser_navigate, browser_snapshot, browser_click), no web_extract; para otras aplicaciones use computer_use; guarde lo que produzca en la carpeta escritorio/. Así el dueño ve lo que hace.",
+        "Tiene una computadora propia (escritorio Linux con navegador, terminal, archivos, hoja de cálculo y documentos) y el dueño ve su pantalla en vivo. Para tareas en sitios web con un objetivo concreto (buscar, filtrar, abrir, llenar) use primero navegar_rapido: es rápido y barato; para leer o extraer lo que quedó en pantalla use browser_snapshot; use browser_click/browser_type solo si navegar_rapido se atora. No use web_extract si puede verse en su navegador. Para otras aplicaciones use computer_use; guarde lo que produzca en la carpeta escritorio/. Así el dueño ve lo que hace.",
     ]
     if trabajo:
         partes.append(f"\n## Su trabajo\n{trabajo}")
@@ -81,6 +81,20 @@ def escritorios_json(mapa: dict[str, int]) -> str:
     return json.dumps(mapa)
 
 
+def mcp_navegador_rapido(pantalla: int) -> dict:
+    llave_jev = config.VERCEL_AI_GATEWAY_KEY or config.TYPESAFE_API_KEY
+    if not llave_jev:
+        return {}
+    env = {
+        "BU_CDP_URL": f"http://127.0.0.1:{9200 + pantalla}", "DISPLAY": f":{pantalla}",
+        "TYPESAFE_API_KEY": config.TYPESAFE_API_KEY or "x", "VERCEL_AI_GATEWAY_KEY": config.VERCEL_AI_GATEWAY_KEY,
+        # El modelo chico que escribe texto en formularios, por la misma puerta de Vercel.
+        "TEXT_MODEL_API_KEY": config.VERCEL_AI_GATEWAY_KEY or config.TYPESAFE_API_KEY, "TEXT_MODEL_BASE_URL": "https://ai-gateway.vercel.sh/v1",
+        "TEXT_MODEL": config.MODELO_TEXTO_CHICO, "TEXT_MODEL_REASONING": "none",
+    }
+    return {"navegador_rapido": {"command": "/opt/jev/bin/python", "args": ["/opt/dimia/navegar_rapido.py"], "env": env}}
+
+
 def mcp_dimia(token: str) -> dict:
     return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}}}
 
@@ -95,7 +109,7 @@ def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[s
     pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/profiles/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
-        modo = "600" if ruta.endswith((".env", "auth.json")) else "644"
+        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml")) else "644"  # config lleva llaves de MCP
         pasos.append(f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && printf %s {b64} | base64 -d > {shlex.quote(ruta)}.tmp && chmod {modo} {shlex.quote(ruta)}.tmp && mv {shlex.quote(ruta)}.tmp {shlex.quote(ruta)}")
     pasos.append(f"chown -R {UID}:{UID} {HOME}")
     return ["sh", "-c", " && ".join(pasos)]
