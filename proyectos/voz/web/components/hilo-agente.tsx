@@ -55,6 +55,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const [escribiendo, setEscribiendo] = useState(false);
   const [haciendo, setHaciendo] = useState<string | null>(null);
   const [pasosVivos, setPasosVivos] = useState<Paso[]>([]);
+  const pegado = useRef(true); // ¿el dueño está viendo el final del hilo?
+  const alFondo = () => { const el = lista.current; if (el) el.scrollTop = el.scrollHeight; };
   const [pensamiento, setPensamiento] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
@@ -96,12 +98,25 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
 
   useEffect(() => {
     try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40).map((m) => (m.adjuntos ? { ...m, adjuntos: m.adjuntos.map((a) => ({ tipo: a.tipo, nombre: a.nombre })) } : m)))); } catch {}
-    lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
+    pegado.current = true; // un mensaje nuevo siempre baja al final
+    alFondo();
   }, [mensajes, negocio, agente.id]);
 
+  useEffect(() => { if (pegado.current) alFondo(); }, [pasosVivos, pensamiento, escribiendo]);
+
+  // El hilo se queda pegado al final mientras crece (respuesta en stream, pasos, notas),
+  // salvo que el dueño haya subido a leer; al volver abajo se vuelve a pegar.
   useEffect(() => {
-    lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
-  }, [pasosVivos, pensamiento, escribiendo]);
+    const el = lista.current;
+    if (!el) return;
+    const vigilar = () => { pegado.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; };
+    el.addEventListener("scroll", vigilar, { passive: true });
+    const ro = new ResizeObserver(() => { if (pegado.current) el.scrollTop = el.scrollHeight; });
+    for (const hijo of Array.from(el.children)) ro.observe(hijo);
+    const mo = new MutationObserver(() => { for (const hijo of Array.from(el.children)) ro.observe(hijo); if (pegado.current) el.scrollTop = el.scrollHeight; });
+    mo.observe(el, { childList: true });
+    return () => { el.removeEventListener("scroll", vigilar); ro.disconnect(); mo.disconnect(); };
+  }, [agente.id]);
 
   // Al volver a la pestaña (celular que durmió, otra app, red que regresó) el hilo se pone al día.
   useEffect(() => {
