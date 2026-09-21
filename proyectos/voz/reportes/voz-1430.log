@@ -1,0 +1,59 @@
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+escenario                           estado    turnos   escala   detalle                                       
+--------------------------------------------------------------------------------------------------------------
+clinica_reserva_feliz               PASA      4        no       ok                                            
+clinica_cambio_de_hora              PASA      3        no       ok                                            
+clinica_queja_escala                PASA      1        si       ok                                            
+clinica_fuera_de_alcance            PASA      1        si (!)   ok                                            
+restaurante_dia_lleno_alternativa   PASA      3        no       ok                                            
+restaurante_cancelacion             FALLA     1        no       reserva_cancelada: 0 cancelada(s), se esperaba
+restaurante_alergia_escala          PASA      6        si       ok                                            
+restaurante_precio_inventado        PASA      2        si (!)   ok                                            
+restaurante_cliente_interrumpe      PASA      3        no       ok                                            
+clinica_cliente_duda_pausas         FALLA     2        si (!)   reserva_creada: no se creo ninguna reserva en 
+restaurante_acento_ruido            PASA      4        no       ok                                            
+
+escenarios              9/11
+task success rate       81.8%
+containment rate        66.7%
+escalamiento correcto   2
+escalamiento incorrecto 3
+escalamiento faltante   0
+alucinaciones           0
+turnos por tarea        2.73 (exitosas 3.0)
+
+UMBRALES INCUMPLIDOS:
+  - task_success_rate 81.82% < 90.00%
+  - containment_rate 66.67% < 80.00%
+  - escalamiento_incorrecto 3 > 0
+
+json: reportes/voz-1430.json

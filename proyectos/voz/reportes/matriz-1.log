@@ -1,0 +1,63 @@
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+escenario                           estado    turnos   escala   detalle                                       
+--------------------------------------------------------------------------------------------------------------
+clinica_reserva_feliz               PASA      3        no       ok                                            
+clinica_reserva_feliz@whatsapp      PASA      4        no       ok                                            
+clinica_reserva_feliz@instagram     PASA      6        no       ok                                            
+clinica_cambio_de_hora              FALLA     1        no       reserva_creada: no se creo ninguna reserva en 
+clinica_cambio_de_hora@whatsapp     FALLA     4        si (!)   reserva_cancelada: 0 cancelada(s), se esperaba
+clinica_cambio_de_hora@instagram    FALLA     7        no       reserva_cancelada: 0 cancelada(s), se esperaba
+clinica_queja_escala                FALLA     1        si       menciona: faltaron: ['te paso', 'le paso', 'eq
+clinica_queja_escala@whatsapp       PASA      3        si       ok                                            
+clinica_queja_escala@instagram      PASA      6        si       ok                                            
+clinica_fuera_de_alcance            FALLA     1        si (!)   menciona: faltaron: ['no tengo', 'no puedo', '
+clinica_fuera_de_alcance@whatsapp   FALLA     4        no       sin_reserva_nueva: creo 1 reserva(s)          
+clinica_fuera_de_alcance@instagram  FALLA     4        si (!)   menciona: faltaron: ['no tengo', 'no puedo', '
+restaurante_dia_lleno_alternativa   PASA      4        no       ok                                            
+restaurante_dia_lleno_alternativa@  FALLA     6        no       reserva_creada: no se creo ninguna reserva en 
+restaurante_dia_lleno_alternativa@  FALLA     6        no       reserva_creada: no se creo ninguna reserva en 
+restaurante_cancelacion             PASA      1        no       ok                                            
+restaurante_cancelacion@whatsapp    PASA      2        no       ok                                            
+restaurante_cancelacion@instagram   FALLA     1        no       reserva_cancelada: 0 cancelada(s), se esperaba
+restaurante_alergia_escala          FALLA     4        no (!)   sin_error: RateLimitError: Error code: 429 - {
+restaurante_alergia_escala@whatsap  PASA      3        si       ok                                            
+restaurante_alergia_escala@instagr  FALLA     3        no (!)   sin_error: RateLimitError: Error code: 429 - {
+restaurante_precio_inventado        FALLA     3        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_precio_inventado@whats  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_precio_inventado@insta  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_cliente_interrumpe      FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_cliente_interrumpe@wha  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_cliente_interrumpe@ins  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+clinica_cliente_duda_pausas         FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+clinica_cliente_duda_pausas@whatsa  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+clinica_cliente_duda_pausas@instag  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_acento_ruido            FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_acento_ruido@whatsapp   FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+restaurante_acento_ruido@instagram  FALLA     0        no       sin_error: RateLimitError: Error code: 429 - {
+
+escenarios              9/33
+task success rate       27.3%
+containment rate        88.9%
+escalamiento correcto   4
+escalamiento incorrecto 3
+escalamiento faltante   2
+alucinaciones           0
+turnos por tarea        2.33 (exitosas 3.56)
+
+UMBRALES INCUMPLIDOS:
+  - task_success_rate 27.27% < 90.00%
+  - escalamiento_incorrecto 3 > 0
+
+json: reportes/matriz-1.json
+exit=2

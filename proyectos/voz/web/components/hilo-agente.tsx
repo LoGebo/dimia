@@ -102,6 +102,16 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
   }, [pasosVivos, pensamiento, escribiendo]);
 
+  // Al volver a la pestaña (celular que durmió, otra app, red que regresó) el hilo se pone al día.
+  useEffect(() => {
+    function volver() { if (document.visibilityState === "visible" && !escribiendo) void reengancharse(); }
+    document.addEventListener("visibilitychange", volver);
+    window.addEventListener("focus", volver);
+    window.addEventListener("online", volver);
+    return () => { document.removeEventListener("visibilitychange", volver); window.removeEventListener("focus", volver); window.removeEventListener("online", volver); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agente.id, escribiendo, conCerebro]);
+
   function hiloNuevo() {
     if (conCerebro) void hiloNuevoAgente(agente.id);
     try { sessionStorage.removeItem(clave(negocio, agente.id)); } catch {}
@@ -109,16 +119,17 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   }
 
   /** Lee el SSE del orquestador y va pintando la respuesta; la burbuja aparece con el primer texto. */
-  async function leerEventos(r: Response) {
+  async function leerEventos(r: Response): Promise<boolean> {
     const idAgente = Date.now() + 1;
     let creada = false;
+    let termino = false; // llegó «fin» (o un error definitivo): si no, el navegador cortó el stream
     const pegar = (texto: string) => {
       if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); return; }
       setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto: x.texto + texto } : x)));
     };
     const poner = (texto: string) => { if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); } else setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto } : x))); };
     try {
-      if (!r.ok || !r.body) { poner(r.status === 409 ? "Todavía estoy con su mensaje anterior; deme un momento." : "No pude hablar con mi máquina. Intente de nuevo en un momento."); return; }
+      if (!r.ok || !r.body) { poner(r.status === 409 ? "Todavía estoy con su mensaje anterior; deme un momento." : "No pude hablar con mi máquina. Intente de nuevo en un momento."); return true; }
       const lector = r.body.pipeThrough(new TextDecoderStream()).getReader();
       let resto = "";
       for (;;) {
@@ -148,23 +159,42 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
             const que = ACCION[a.texto] ?? a.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " ");
             setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: a.run_id, request_id: a.request_id, resumen: `${agente.nombre} quiere ${que}.`, detalle: a.detalle || undefined } }]);
           }
-          else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); }
-          else if (e.evento === "error" || e.evento === "cuota") poner(e.texto);
+          else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); termino = true; }
+          else if (e.evento === "error" || e.evento === "cuota") { poner(e.texto); termino = true; }
+          else if (e.evento === "fin") termino = true;
         }
       }
     } catch {
-      poner("Se cortó la conexión con mi máquina. Intente de nuevo.");
+      // Se cortó el stream (el celular durmió la pestaña, se fue la red): el agente sigue
+      // trabajando en su máquina; abajo se vuelve a enganchar.
     } finally {
       setHaciendo(null);
       setPensamiento(null);
       setPasosVivos((l) => { if (l.length) setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, pasos: l } : x))); return []; });
     }
+    return termino;
+  }
+
+  /** Vuelve a engancharse al turno en curso o, si ya acabó, trae la respuesta guardada. */
+  async function reengancharse() {
+    if (!conCerebro) return;
+    const sigue = await agenteTrabajando(agente.id);
+    if (sigue) { void seguirTurno(); return; }
+    const h = await mensajesAgente(agente.id);
+    if (h.length) setMensajes(h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto, pasos: m.pasos ?? undefined })));
   }
 
   async function turnoCerebro(t: string, extra?: { ruta?: Nivel; adjuntos?: Adjunto[] }) {
     const adjuntos = (extra?.adjuntos ?? []).map((a) => (a.tipo === "imagen" ? { tipo: "imagen", nombre: a.nombre, datos: a.datos } : { tipo: "texto", nombre: a.nombre, contenido: a.contenido }));
-    const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t, ruta: extra?.ruta, adjuntos: adjuntos.length ? adjuntos : undefined }) });
-    await leerEventos(r);
+    let r: Response;
+    try {
+      r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t, ruta: extra?.ruta, adjuntos: adjuntos.length ? adjuntos : undefined }) });
+    } catch {
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: "No pude mandar el mensaje: revise su conexión e intente de nuevo." }]);
+      return;
+    }
+    const termino = await leerEventos(r);
+    if (!termino) await reengancharse();
   }
 
   async function seguirTurno() {
@@ -172,7 +202,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     try {
       const r = await fetch(`/api/agentes/${agente.id}/seguir`);
       if (r.status === 204) return;
-      await leerEventos(r);
+      const termino = await leerEventos(r);
+      if (!termino && await agenteTrabajando(agente.id)) { void seguirTurno(); return; }
       const h = await mensajesAgente(agente.id);
       if (h.length) setMensajes(h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto, pasos: m.pasos ?? undefined })));
     } finally {

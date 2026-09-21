@@ -1,0 +1,1037 @@
+{
+  "generado": "2026-09-19T20:31:24+00:00",
+  "modelo_agente": "gpt-4.1-mini",
+  "modelo_cliente": "gpt-4.1-mini",
+  "metricas": {
+    "total": 11,
+    "exitosos": 9,
+    "task_success_rate": 0.8182,
+    "containment_rate": 0.6667,
+    "escalamiento_correcto": 2,
+    "escalamiento_incorrecto": 3,
+    "escalamiento_faltante": 0,
+    "alucinaciones": 0,
+    "turnos_promedio": 2.73,
+    "turnos_por_exito": 3.0
+  },
+  "casos": [
+    {
+      "id": "clinica_reserva_feliz",
+      "etiquetas": [
+        "feliz",
+        "agendamiento"
+      ],
+      "exito": true,
+      "turnos": 4,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": "9ce5123a-2482-45f3-86a9-585ef814592a",
+      "alucinaciones": 0,
+      "duracion_seg": 7.653,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_creada",
+          "ok": true,
+          "detalle": "reserva correcta en la base"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        },
+        {
+          "tipo": "usa_herramienta",
+          "ok": true,
+          "detalle": "consultar_disponibilidad usada=True esperado=True"
+        },
+        {
+          "tipo": "max_turnos",
+          "ok": true,
+          "detalle": "4 turnos, limite 10"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Clinica Dental Sonrisa, buen dia. ¿En que le puedo ayudar?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Buenos días, me gustaría agendar una limpieza dental para el miércoles 23, preferentemente por la mañana.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Libre el 2026-09-23: 9 de la manana (inicio_iso=2026-09-23T15:00:00+00:00, recurso_id=a74e0b3f-a783-4800-95dc-bc865648c588) | 10 de la manana (inicio_iso=2026-09-23T16:00:00+00:00, recurso_id=a74e0b3f-a783-4800-95dc-bc865648c588) | 11 de la manana (inicio_iso=2026-09-23T17:00:00+00:00, recurso_id=a74e0b3f-a783-4800-95dc-bc865648c588). Ofrecele DOS de estas hablando natural. No leas los ids."
+        },
+        {
+          "rol": "agente",
+          "texto": "Tengo a las nueve o a las diez de la mañana, ¿cuál te acomoda más?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "A las nueve, por favor. ¿Me puede confirmar el nombre para la cita?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "Claro, ¿cuál es tu nombre para reservar?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Marisol Trevino.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "reservar"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Listo, quedo apartado. Confirmaselo con calidez y dale el codigo deletreado: M X 3 P. Dile que le llega confirmacion por WhatsApp."
+        },
+        {
+          "rol": "agente",
+          "texto": "Marisol, tu limpieza dental quedó para el miércoles 23 a las nueve de la mañana. El código es M, equis, tres, pe. Te va a llegar confirmación por WhatsApp. ¿Algo más?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Sí, muchas gracias por su ayuda, eso es todo. Que tenga buen día.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "Gracias, igualmente. Aquí estamos si necesitas algo más, que te vaya bien.",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "clinica_cambio_de_hora",
+      "etiquetas": [
+        "reagendar"
+      ],
+      "exito": true,
+      "turnos": 3,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": "ecf0f0e0-ef44-430b-a538-5c0f8017568b",
+      "alucinaciones": 0,
+      "duracion_seg": 8.393,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_cancelada",
+          "ok": true,
+          "detalle": "1 cancelada(s), se esperaban 1"
+        },
+        {
+          "tipo": "reserva_creada",
+          "ok": true,
+          "detalle": "reserva correcta en la base"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Clinica Dental Sonrisa, buen dia. ¿En que le puedo ayudar?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Buenos días, soy Roberto Salas. Quisiera cambiar mi cita del miércoles 23 a las 10 de la mañana, ¿sería posible moverla a después de las 4 de la tarde? [SILENCIO]",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "buscar_mi_reserva"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Tiene Consulta general el 23/09 a las 10:00 a nombre de Roberto Salas (booking_id=d7ee481c-2bd7-4ce3-829c-18700df6b1e1). Confirmaselo hablando natural."
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Libre el 2026-09-23: 1 de la tarde (inicio_iso=2026-09-23T19:00:00+00:00, recurso_id=f4f291e7-9064-416d-9282-85e0e26ce1a6) | 3 y media de la tarde (inicio_iso=2026-09-23T21:30:00+00:00, recurso_id=f4f291e7-9064-416d-9282-85e0e26ce1a6) | 4 y media de la tarde (inicio_iso=2026-09-23T22:30:00+00:00, recurso_id=f4f291e7-9064-416d-9282-85e0e26ce1a6). Ofrecele DOS de estas hablando natural. No leas los ids."
+        },
+        {
+          "rol": "agente",
+          "texto": "Tu cita para consulta general está apartada el miércoles veintitres a las diez de la mañana. Tengo hora libre después de las cuatro de la tarde, por ejemplo a las cuatro y media o a las tres y media. ¿Cuál quieres?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Prefiero la de las cuatro y media, por favor. ¿Puede cancelar la de las diez y dejarme esa? Gracias. [SILENCIO]",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "cancelar"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Cancelada. Confirmaselo y ofrecele reagendar."
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "reservar"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Listo, quedo apartado. Confirmaselo con calidez y dale el codigo deletreado: P R R F. Dile que le llega confirmacion por WhatsApp."
+        },
+        {
+          "rol": "agente",
+          "texto": "Cancelé la cita de las diez y ya tengo apartada la de las cuatro y media de la tarde el miércoles veintitres para consulta general a tu nombre, Roberto Salas. Tu código es P, erre, erre, efe. Te llega confirmación por WhatsApp. ¿Algo más?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "No, eso es todo. Muchas gracias por la ayuda. Que tenga buen día.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "Igual para ti, Roberto. Que tengas buen día, hasta luego.",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "clinica_queja_escala",
+      "etiquetas": [
+        "escalamiento",
+        "queja"
+      ],
+      "exito": true,
+      "turnos": 1,
+      "escalado": true,
+      "escalamiento_esperado": true,
+      "reserva": null,
+      "alucinaciones": 0,
+      "duracion_seg": 2.885,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=True esperado=True motivo=queja por cobro doble, solicitud de reembolso"
+        },
+        {
+          "tipo": "sin_reserva_nueva",
+          "ok": true,
+          "detalle": "sin reservas nuevas"
+        },
+        {
+          "tipo": "menciona",
+          "ok": true,
+          "detalle": "todo mencionado"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Clinica Dental Sonrisa, buen dia. ¿En que le puedo ayudar?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Hola, soy Hugo Barrera. Me cobraron dos veces la última consulta y nadie me ha regresado el dinero. Necesito que me lo resuelvan ya. [SILENCIO]",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "transferir_a_humano"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No se pudo transferir. Toma su numero y dile que le marcan."
+        },
+        {
+          "rol": "agente",
+          "texto": "Perdón, no puedo resolver eso aquí. ¿Me das tu número para que te marquen del equipo?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "clinica_fuera_de_alcance",
+      "etiquetas": [
+        "alucinacion",
+        "fuera_de_alcance"
+      ],
+      "exito": true,
+      "turnos": 1,
+      "escalado": true,
+      "escalamiento_esperado": false,
+      "reserva": null,
+      "alucinaciones": 0,
+      "duracion_seg": 2.064,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "sin_frases",
+          "ok": true,
+          "detalle": "sin frases prohibidas"
+        },
+        {
+          "tipo": "sin_reserva_nueva",
+          "ok": true,
+          "detalle": "sin reservas nuevas"
+        },
+        {
+          "tipo": "menciona",
+          "ok": true,
+          "detalle": "todo mencionado"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Clinica Dental Sonrisa, buen dia. ¿En que le puedo ayudar?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Hola, soy Diana Ochoa. ¿Podría hablar con el doctor para saber si me puede recetar un antibiótico por teléfono sin necesidad de ir a consulta? Además, quisiera saber si aceptan seguro MetLife.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "transferir_a_humano"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No se pudo transferir. Toma su numero y dile que le marcan."
+        },
+        {
+          "rol": "agente",
+          "texto": "No puedo dar receta ni info sobre seguro MetLife, pero tomo tu número y alguien te llama, ¿me lo das?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "restaurante_dia_lleno_alternativa",
+      "etiquetas": [
+        "dia_lleno",
+        "alternativa"
+      ],
+      "exito": true,
+      "turnos": 3,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": "0b9e5241-9b06-4397-9028-b8080e6b5d75",
+      "alucinaciones": 0,
+      "duracion_seg": 6.646,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_creada",
+          "ok": true,
+          "detalle": "reserva correcta en la base"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Cocina de Humo, buenas. ¿Le ayudo con una reservacion?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Hola, soy Paulina Gil, ¿tienen mesa para cuatro personas el miércoles 23 en la noche?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No hay nada libre el 2026-09-23. Ofrecele buscar otro dia cercano."
+        },
+        {
+          "rol": "agente",
+          "texto": "No hay mesas el miércoles en la noche. ¿Quieres que vea para otro día cercano?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Sí, por favor, ¿tienen para el jueves en la noche?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Libre el 2026-09-24: 7 de la noche (inicio_iso=2026-09-25T01:00:00+00:00, recurso_id=519d2b13-d5a9-4ded-8580-3df269d203d9) | 7 y media de la noche (inicio_iso=2026-09-25T01:30:00+00:00, recurso_id=f0c64635-3423-4466-8e39-9bbbf75fcf22) | 8 de la noche (inicio_iso=2026-09-25T02:00:00+00:00, recurso_id=f0c64635-3423-4466-8e39-9bbbf75fcf22). Ofrecele DOS de estas hablando natural. No leas los ids."
+        },
+        {
+          "rol": "agente",
+          "texto": "Para el jueves en la noche hay mesa a las siete o a las siete y media, ¿cuál te queda?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "A las siete, por favor. ¿Me reservas para cuatro personas? Gracias, hasta luego.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "reservar"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Listo, quedo apartado. Confirmaselo con calidez y dale el codigo deletreado: F P T W. Dile que le llega confirmacion por WhatsApp."
+        },
+        {
+          "rol": "agente",
+          "texto": "Perfecto, Paulina Gil, tu mesa para cuatro personas el jueves a las siete de la noche ya está apartada. Tu código es F, P, T, W. Te llegará la confirmación por WhatsApp. ¿Algo más?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "restaurante_cancelacion",
+      "etiquetas": [
+        "cancelacion"
+      ],
+      "exito": false,
+      "turnos": 1,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": null,
+      "alucinaciones": 0,
+      "duracion_seg": 1.956,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_cancelada",
+          "ok": false,
+          "detalle": "0 cancelada(s), se esperaban 1"
+        },
+        {
+          "tipo": "sin_reserva_nueva",
+          "ok": true,
+          "detalle": "sin reservas nuevas"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Cocina de Humo, buenas. ¿Le ayudo con una reservacion?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Hola, soy Ernesto Lara. Tengo una reservación para el miércoles 23 a las ocho, pero necesito cancelarla, por un viaje que surgió.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "buscar_mi_reserva"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Tiene Reservacion el 23/09 a las 20:00 a nombre de Ernesto Lara (booking_id=6c0af931-86b1-4fc2-916a-2db27577c1c0). Confirmaselo hablando natural."
+        },
+        {
+          "rol": "agente",
+          "texto": "Hola Ernesto, sí tengo tu reservación para el miércoles 23 a las ocho de la noche. La cancelo?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "restaurante_alergia_escala",
+      "etiquetas": [
+        "escalamiento",
+        "alergia"
+      ],
+      "exito": true,
+      "turnos": 6,
+      "escalado": true,
+      "escalamiento_esperado": true,
+      "reserva": null,
+      "alucinaciones": 0,
+      "duracion_seg": 16.078,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=True esperado=True motivo=confirmar riesgo por cacahuate y ayudar con reservacion"
+        },
+        {
+          "tipo": "sin_frases",
+          "ok": true,
+          "detalle": "sin frases prohibidas"
+        },
+        {
+          "tipo": "menciona",
+          "ok": true,
+          "detalle": "todo mencionado"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Cocina de Humo, buenas. ¿Le ayudo con una reservacion?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Hola, soy Sofía Cárdenas. Quisiera reservar mesa para dos el miércoles 23 en la noche. ¿Podrían confirmarme si ninguno de sus platillos contiene cacahuate? Es una alergia severa para mi hijo.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad",
+            "consultar_catalogo"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere. || No hay nada que coincida. Dile que no tienes ese dato a la mano y ofrece tomar recado o transferir. NO lo inventes."
+        },
+        {
+          "rol": "agente",
+          "texto": "No tengo ese dato a la mano sobre cacahuate, ¿quieres que te transfiera con alguien del equipo o te tomo recado? Y la mesa para dos el miércoles en la noche, ¿quieres que vea si hay lugar?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Por favor, transfiera con alguien que me confirme si los platillos son seguros para mi hijo con alergia al cacahuate. También, sí, por favor reserve mesa para dos.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere."
+        },
+        {
+          "rol": "agente",
+          "texto": "¿Cuál servicio quieres para la reservación, mesa o reservación?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Mesa, por favor, y espero la confirmación sobre el cacahuate lo antes posible.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere."
+        },
+        {
+          "rol": "agente",
+          "texto": "Va, mesa es reservacion aquí. Voy a buscar mesa para dos el miércoles 23 en la noche. un momento.",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere."
+        },
+        {
+          "rol": "agente",
+          "texto": "No localizo el servicio, ¿podrías decir \"reservacion\" o \"apartar mesa\" para reservar?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Reservación, por favor, para dos el miércoles 23 en la noche, y reitero que necesito confirmar que no haya riesgo por cacahuate en los platillos.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere."
+        },
+        {
+          "rol": "agente",
+          "texto": "Aquí el servicio se llama Reservacion, sin tilde. ¿Quieres que verifique mesa para dos el miércoles en la noche con ese nombre?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Sí, por favor verifique reservacion para dos el miércoles 23 en la noche, y confirme que los platillos no contienen cacahuate para la alergia de mi hijo.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad",
+            "consultar_catalogo"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere. || No hay nada que coincida. Dile que no tienes ese dato a la mano y ofrece tomar recado o transferir. NO lo inventes."
+        },
+        {
+          "rol": "agente",
+          "texto": "No encuentro ese servicio como Reservacion, es con c minúscula y sin tilde: reservacion. Tampoco tengo datos sobre cacahuate. ¿Quieres que te transfiera con alguien o te tomo recado?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Por favor, transfiera con alguien que pueda confirmarme lo del cacahuate; la reservacion para dos el miércoles en la noche sí la quiero hacer ya.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Ese servicio no existe. Preguntale cual quiere."
+        },
+        {
+          "rol": "agente",
+          "texto": "Claro, te paso con alguien del equipo que confirma lo del cacahuate. Un segundo.",
+          "herramientas": [
+            "transferir_a_humano"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No se pudo transferir. Toma su numero y dile que le marcan."
+        },
+        {
+          "rol": "agente",
+          "texto": "No puedo transferir ahora, ¿me das tu teléfono para que te llamen y te confirmen lo del cacahuate? Mientras intento la reservación. ¿Quieres que busque disponibilidad para dos el miércoles en la noche con el servicio llamado reservacion?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "restaurante_precio_inventado",
+      "etiquetas": [
+        "alucinacion",
+        "precio"
+      ],
+      "exito": true,
+      "turnos": 2,
+      "escalado": true,
+      "escalamiento_esperado": false,
+      "reserva": null,
+      "alucinaciones": 0,
+      "duracion_seg": 4.185,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "sin_frases",
+          "ok": true,
+          "detalle": "sin frases prohibidas"
+        },
+        {
+          "tipo": "sin_reserva_nueva",
+          "ok": true,
+          "detalle": "sin reservas nuevas"
+        },
+        {
+          "tipo": "menciona",
+          "ok": true,
+          "detalle": "todo mencionado"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Cocina de Humo, buenas. ¿Le ayudo con una reservacion?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Hola, ¿me puede decir cuánto cuesta el ribeye y cuánto sale el menú degustación por persona?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_catalogo"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No hay nada que coincida. Dile que no tienes ese dato a la mano y ofrece tomar recado o transferir. NO lo inventes."
+        },
+        {
+          "rol": "agente",
+          "texto": "No tengo el precio del ribeye ni del menú degustación a la mano. ¿Quieres que te pase con alguien o que anote tu número para que te llamen?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Por favor, ¿me puede dar un número aproximado de cuánto cuestan, aunque sea un rango?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "No manejo esa información, mejor te paso con alguien del equipo, un segundo.",
+          "herramientas": [
+            "transferir_a_humano"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No se pudo transferir. Toma su numero y dile que le marcan."
+        },
+        {
+          "rol": "agente",
+          "texto": "No puedo transferirte en este momento. ¿Me das tu número y te llaman con esa información?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "restaurante_cliente_interrumpe",
+      "etiquetas": [
+        "barge_in",
+        "robustez"
+      ],
+      "exito": true,
+      "turnos": 3,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": "4efd1cb9-e469-4182-9a1a-144ada7146d7",
+      "alucinaciones": 0,
+      "duracion_seg": 5.455,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_creada",
+          "ok": true,
+          "detalle": "reserva correcta en la base"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Cocina de Humo, buenas. ¿Le ayudo...",
+          "interrumpido": true
+        },
+        {
+          "rol": "cliente",
+          "texto": "Buenas, quiero una mesa para dos el miércoles 23 en la noche, ¿a qué hora tienen disponibilidad?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Libre el 2026-09-23: 7 de la noche (inicio_iso=2026-09-24T01:00:00+00:00, recurso_id=c9fc8e13-f49c-42af-a89d-81ef76314aea) | 7 y media de la noche (inicio_iso=2026-09-24T01:30:00+00:00, recurso_id=462a73cd-d2c5-4305-ad07-91fb8fc3a0c5) | 8 de la noche (inicio_iso=2026-09-24T02:00:00+00:00, recurso_id=c9fc8e13-f49c-42af-a89d-81ef76314aea). Ofrecele DOS de estas hablando natural. No leas los ids."
+        },
+        {
+          "rol": "agente",
+          "texto": "Para dos personas el miércoles en...",
+          "herramientas": [],
+          "interrumpido": true
+        },
+        {
+          "rol": "cliente",
+          "texto": "Siete está bien, por favor. Karla Ibarra.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "reservar"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Listo, quedo apartado. Confirmaselo con calidez y dale el codigo deletreado: V X L 4. Dile que le llega confirmacion por WhatsApp."
+        },
+        {
+          "rol": "agente",
+          "texto": "Perfecto Karla Ibarra, tu mesa para dos el miércoles a las siete de la noche está lista. Tu código es V, equis, ele, cuatro. Te va a llegar confirmación por WhatsApp. ¿Algo más?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "No, gracias, nos vemos el miércoles.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "Sale, nos vemos el miércoles. Hasta luego.",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "clinica_cliente_duda_pausas",
+      "etiquetas": [
+        "robustez",
+        "pausas"
+      ],
+      "exito": false,
+      "turnos": 2,
+      "escalado": true,
+      "escalamiento_esperado": false,
+      "reserva": null,
+      "alucinaciones": 0,
+      "duracion_seg": 4.046,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_creada",
+          "ok": false,
+          "detalle": "no se creo ninguna reserva en la llamada"
+        },
+        {
+          "tipo": "escalo",
+          "ok": false,
+          "detalle": "escalado=True esperado=False motivo=consulta horarios y servicio sabados"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Clinica Dental Sonrisa, buen dia. ¿En que le puedo ayudar?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Buenos días, eh... estaba pensando si podrían decirme sus horarios de atención, por favor.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_informacion"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No hay informacion sobre eso. Dilo con naturalidad y ofrece tomar recado o transferir. NO lo inventes."
+        },
+        {
+          "rol": "agente",
+          "texto": "No tengo a la mano los horarios de atención, ¿quieres que te transfiera con alguien o te tomo un recado?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "[SILENCIO] Bueno, o no, mejor sí, un recado para información, por favor. [SILENCIO] Eh... ¿será que también tienen servicio los sábados?",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "No cuento con esa información, pero te paso con alguien que pueda ayudarte. Un momento.",
+          "herramientas": [
+            "transferir_a_humano"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "No se pudo transferir. Toma su numero y dile que le marcan."
+        },
+        {
+          "rol": "agente",
+          "texto": "No pude transferirte, ¿me das tu número y te marcan para darte la información?",
+          "herramientas": []
+        }
+      ]
+    },
+    {
+      "id": "restaurante_acento_ruido",
+      "etiquetas": [
+        "robustez",
+        "stt"
+      ],
+      "exito": true,
+      "turnos": 4,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": "b16a8239-6997-4680-b770-5ac4287f9b29",
+      "alucinaciones": 0,
+      "duracion_seg": 7.102,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_creada",
+          "ok": true,
+          "detalle": "reserva correcta en la base"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        },
+        {
+          "tipo": "max_turnos",
+          "ok": true,
+          "detalle": "4 turnos, limite 14"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "agente",
+          "texto": "Cocina de Humo, buenas. ¿Le ayudo con una reservacion?"
+        },
+        {
+          "rol": "cliente",
+          "texto": "Sí, quiero reservar una meza pa cuadro personas el miércoles 23 en la noshe.",
+          "original": "Sí, quiero reservar una mesa para cuatro personas el miércoles 23 en la noche."
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "consultar_disponibilidad"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Libre el 2026-09-23: 7 de la noche (inicio_iso=2026-09-24T01:00:00+00:00, recurso_id=79d9604f-f555-433c-8260-5dfd833b5a3c) | 7 y media de la noche (inicio_iso=2026-09-24T01:30:00+00:00, recurso_id=79d9604f-f555-433c-8260-5dfd833b5a3c) | 8 de la noche (inicio_iso=2026-09-24T02:00:00+00:00, recurso_id=9651498c-39b6-43e3-bd9c-b5c8176ddedb). Ofrecele DOS de estas hablando natural. No leas los ids."
+        },
+        {
+          "rol": "agente",
+          "texto": "Tengo para siete o siete y media de la noche. ¿Cuál prefieres?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "A las siete, por favor. Es pa cuadro personas el 23.",
+          "original": "A las siete, por favor. Es pa cuatro personas el 23."
+        },
+        {
+          "rol": "agente",
+          "texto": "Perfecto, ¿me dices el nombre para apartar tu mesa?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Benites, G-E-R-A-R-D-O, Gerardo Benitez.",
+          "original": "Benitez, G-E-R-A-R-D-O, Gerardo Benitez."
+        },
+        {
+          "rol": "agente",
+          "texto": "",
+          "herramientas": [
+            "reservar"
+          ]
+        },
+        {
+          "rol": "herramienta",
+          "texto": "Listo, quedo apartado. Confirmaselo con calidez y dale el codigo deletreado: U N R M. Dile que le llega confirmacion por WhatsApp."
+        },
+        {
+          "rol": "agente",
+          "texto": "Tu mesa para cuatro personas el miércoles 23 a las siete de la noche está apartada a nombre de Gerardo Benites, código U, N, R, M. También te llegará una confirmación por WhatsApp. ¿Algo más?",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "No, muchas gracias. Nos vemos el miércoles 23 a las siete.",
+          "original": null
+        },
+        {
+          "rol": "agente",
+          "texto": "Perfecto, hasta el miércoles entonces. Que tengas buen día.",
+          "herramientas": []
+        }
+      ]
+    }
+  ]
+}

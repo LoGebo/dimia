@@ -1,0 +1,59 @@
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+fallo transferencia
+Traceback (most recent call last):
+  File "/Users/geboou/Desktop/rjd/proyectos/voz/agent/agent.py", line 509, in transferir_a_humano
+    room = ctx.session._room_io._room
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_Sesion' object has no attribute '_room_io'
+escenario                           estado    turnos   escala   detalle                                       
+--------------------------------------------------------------------------------------------------------------
+clinica_cambio_de_hora              PASA      4        no       ok                                            
+clinica_cambio_de_hora@whatsapp     PASA      3        no       ok                                            
+clinica_cambio_de_hora@instagram    PASA      4        no       ok                                            
+clinica_queja_escala                PASA      1        si       ok                                            
+clinica_queja_escala@whatsapp       PASA      8        si       ok                                            
+clinica_queja_escala@instagram      PASA      7        si       ok                                            
+clinica_fuera_de_alcance            PASA      1        si (!)   ok                                            
+clinica_fuera_de_alcance@whatsapp   PASA      3        si (!)   ok                                            
+clinica_fuera_de_alcance@instagram  PASA      4        si (!)   ok                                            
+restaurante_dia_lleno_alternativa   PASA      4        no       ok                                            
+restaurante_dia_lleno_alternativa@  PASA      5        no       ok                                            
+restaurante_dia_lleno_alternativa@  PASA      5        no       ok                                            
+restaurante_cancelacion             PASA      2        no       ok                                            
+restaurante_cancelacion@whatsapp    PASA      2        no       ok                                            
+restaurante_cancelacion@instagram   PASA      3        no       ok                                            
+restaurante_alergia_escala          FALLA     4        no (!)   escalo: escalado=False esperado=True motivo=No
+restaurante_alergia_escala@whatsap  PASA      5        si       ok                                            
+restaurante_alergia_escala@instagr  PASA      5        si       ok                                            
+restaurante_precio_inventado        PASA      3        no       ok                                            
+restaurante_precio_inventado@whats  PASA      5        no       ok                                            
+restaurante_precio_inventado@insta  PASA      4        no       ok                                            
+restaurante_cliente_interrumpe      PASA      3        no       ok                                            
+restaurante_cliente_interrumpe@wha  PASA      3        no       ok                                            
+restaurante_cliente_interrumpe@ins  PASA      3        no       ok                                            
+clinica_cliente_duda_pausas         PASA      4        no       ok                                            
+clinica_cliente_duda_pausas@whatsa  PASA      3        no       ok                                            
+clinica_cliente_duda_pausas@instag  PASA      4        no       ok                                            
+restaurante_acento_ruido            PASA      3        no       ok                                            
+restaurante_acento_ruido@whatsapp   PASA      4        no       ok                                            
+restaurante_acento_ruido@instagram  PASA      4        no       ok                                            
+
+escenarios              29/30
+task success rate       96.7%
+containment rate        87.5%
+escalamiento correcto   5
+escalamiento incorrecto 3
+escalamiento faltante   1
+alucinaciones           0
+turnos por tarea        3.77 (exitosas 3.76)
+
+UMBRALES INCUMPLIDOS:
+  - escalamiento_incorrecto 3 > 0
+
+json: reportes/matriz-2.json
+exit=2

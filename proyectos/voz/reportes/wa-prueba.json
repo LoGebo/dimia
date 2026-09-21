@@ -1,0 +1,85 @@
+{
+  "generado": "2026-09-19T20:34:25+00:00",
+  "modelo_agente": "gpt-4.1-mini",
+  "modelo_cliente": "gpt-4.1-mini",
+  "metricas": {
+    "total": 1,
+    "exitosos": 0,
+    "task_success_rate": 0.0,
+    "containment_rate": 1.0,
+    "escalamiento_correcto": 0,
+    "escalamiento_incorrecto": 0,
+    "escalamiento_faltante": 0,
+    "alucinaciones": 0,
+    "turnos_promedio": 3.0,
+    "turnos_por_exito": 0.0
+  },
+  "casos": [
+    {
+      "id": "clinica_reserva_feliz@whatsapp",
+      "etiquetas": [
+        "feliz",
+        "agendamiento"
+      ],
+      "exito": false,
+      "turnos": 3,
+      "escalado": false,
+      "escalamiento_esperado": false,
+      "reserva": "1fc3d801-c532-4f37-b9b2-e5ea3a6bcb3d",
+      "alucinaciones": 0,
+      "duracion_seg": 8.681,
+      "error": null,
+      "veredictos": [
+        {
+          "tipo": "reserva_creada",
+          "ok": false,
+          "detalle": "nombre 'Cliente de prueba' no contiene 'Marisol'"
+        },
+        {
+          "tipo": "escalo",
+          "ok": true,
+          "detalle": "escalado=False esperado=False motivo=None"
+        },
+        {
+          "tipo": "usa_herramienta",
+          "ok": true,
+          "detalle": "consultar_disponibilidad usada=True esperado=True"
+        },
+        {
+          "tipo": "max_turnos",
+          "ok": true,
+          "detalle": "3 turnos, limite 10"
+        }
+      ],
+      "transcripcion": [
+        {
+          "rol": "cliente",
+          "texto": "Hola, quiero una limpieza dental el miércoles 23, preferible en la mañana. Tienen horarios?"
+        },
+        {
+          "rol": "agente",
+          "texto": "Para limpieza dental el miércoles 23 hay varios horarios por la mañana disponibles. ¿Cuál prefieres? Te mando las opciones para que elijas.\n- 9:00 am\n- 9:30 am\n- 10:00 am\n- 10:30 am\n- 11:00 am\n- 11:30 am\n- 12:00 pm\n- 12:30 pm\n[9:00 am]\n[9:30 am]\n[10:00 am]\n[10:30 am]\n[11:00 am]\n[11:30 am]\n[12:00 pm]\n[12:30 pm]",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Quiero a las 9:00 am porfa. Me anotas?"
+        },
+        {
+          "rol": "agente",
+          "texto": "Listo, Cliente de prueba, tu limpieza dental quedó apartada para el miércoles 23 a las 9:00 am. Tu código es *RGDX*. ¡Te esperamos!",
+          "herramientas": []
+        },
+        {
+          "rol": "cliente",
+          "texto": "Soy Marisol Trevino. Confirmo mi cita para el miércoles 23 a las 9:00 am, con código RGDX. Gracias."
+        },
+        {
+          "rol": "agente",
+          "texto": "Hola Marisol, tu cita para limpieza dental el miércoles 23 a las 9:00 am ya está confirmada con código *RGDX*. ¿Quieres que te mande recordatorio ese día?",
+          "herramientas": []
+        }
+      ]
+    }
+  ]
+}
