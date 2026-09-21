@@ -341,3 +341,22 @@ arreglo del issue #884 de E2B; precio primario de Blaxel; cifras exactas de lím
 suscripción (agregadores); benchmarks OSWorld de modelos de 2026 (agregadores); soporte de
 escritorio en Fly Sprites; el estado más reciente del bloqueo de Anthropic más allá del
 texto legal vigente leído hoy.
+
+---
+
+## Regla fija: qué es Hermes y qué no (2026-09-21)
+
+- **Pestaña Agentes = Hermes.** Cada agente es un Hermes con su computadora, integraciones y
+  rutinas. Recepción dentro de esa pestaña pasa a Hermes (pendiente), con las herramientas
+  de Dimia para agendar, cancelar, anotar y cobrar, y aprobación del dueño en el hilo.
+- **Voz, WhatsApp e Instagram con clientes = el motor de `proyectos/voz`.** Modelo directo
+  por tenant con las herramientas básicas (disponibilidad, reservar, buscar/cancelar cita,
+  catálogo, escalar, pedido). Una llamada exige respuesta en menos de un segundo y un flujo
+  determinista con la garantía de no traslape en la base; Hermes es un agente de tareas
+  largas y no cabe ahí.
+- **Entre los dos:** la integración Dimia (Hermes lee y, con permiso, escribe en la agenda
+  del motor) y, más adelante, una cola para que el motor le encargue a un Hermes lo que no
+  cabe en una llamada («mándele la cotización por correo»).
+- **Cerebro de los Hermes:** Codex (ChatGPT) o Claude Max del negocio; el último conectado
+  manda y se puede cambiar. Claude Max se ofrece por decisión del dueño de Dimia pese a que
+  Anthropic no lo permite para terceros; queda documentado como riesgo aceptado.
