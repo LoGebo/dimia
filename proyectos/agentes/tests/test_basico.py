@@ -47,3 +47,33 @@ def test_catalogo_lee_las_skills():
 def test_comando_borra_solo_dentro_de_perfiles():
     cmd = hermes.comando_escribir({}, borrar=["/opt/data/agentes/x/skills/dimia", "/etc"])
     assert "rm -rf /opt/data/agentes/x/skills/dimia" in cmd[2] and "/etc" not in cmd[2]
+
+
+def test_no_duerme_una_maquina_con_turno_en_curso(monkeypatch):
+    """Un encargo largo (20+ min) se moría porque el temporizador apagaba la máquina."""
+    import asyncio
+    from agentes import negocio
+
+    class Prov:
+        paradas = []
+        async def obtener(self, ref):
+            return type("M", (), {"encendida": True})()
+        async def parar(self, ref):
+            self.paradas.append(ref)
+
+    ejecutados = []
+    async def ejecutar(sql, *args):
+        ejecutados.append((sql, args))
+    async def todos(sql, *args):
+        return [{"tenant_id": "t1", "referencia": "m1"}, {"tenant_id": "t2", "referencia": "m2"}]
+    prov = Prov()
+    monkeypatch.setattr(negocio, "proveedor", lambda: prov)
+    monkeypatch.setattr(negocio.db, "ejecutar", ejecutar)
+    monkeypatch.setattr(negocio.db, "todos", todos)
+    negocio._trabajos["agente-x"] = negocio.Trabajo("t1")  # t1 está trabajando
+    try:
+        asyncio.run(negocio.dormir_inactivas())
+    finally:
+        negocio._trabajos.pop("agente-x", None)
+    assert prov.paradas == ["m2"]
+    assert any("ultimo_uso = now()" in sql and args == ("t1",) for sql, args in ejecutados)

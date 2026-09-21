@@ -67,10 +67,12 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
 
   useEffect(() => {
     let vivo = true;
-    async function conectar() {
+    let reintentos = 0;
+    async function conectar(nuevoPase = false) {
       setEstado("conectando");
       // La vista grande recibe la URL de la miniatura: la computadora ya está encendida, solo se conecta.
-      const r = url ? { url } : await urlPantalla(agenteId);
+      // Si la conexión se cayó (el pase dura 10 min; la red va y viene), se pide un pase nuevo.
+      const r = url && !nuevoPase ? { url } : await urlPantalla(agenteId);
       if (!vivo) return;
       if ("error" in r) { setAviso(r.error); setEstado("error"); return; }
       setUrlActual(r.url);
@@ -85,7 +87,11 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
       if (grande) setControl(true);
       conexion.background = "transparent";
       conexion.addEventListener("connect", () => setEstado("en_vivo"));
-      conexion.addEventListener("disconnect", () => { if (vivo) setEstado("apagada"); });
+      conexion.addEventListener("disconnect", () => {
+        if (!vivo) return;
+        setEstado("apagada");
+        if (reintentos++ < 20) setTimeout(() => { if (vivo) void conectar(true); }, 4000); // se reengancha solo
+      });
       rfb.current = conexion;
     }
     void conectar();

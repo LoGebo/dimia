@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 import asyncio
+from zoneinfo import ZoneInfo
 from contextlib import suppress
 import re
 import time
@@ -423,7 +424,8 @@ class Trabajo:
     siguen. Vive en memoria mientras el turno corre; el panel puede irse y
     volver a engancharse."""
 
-    def __init__(self) -> None:
+    def __init__(self, tenant: str = "") -> None:
+        self.tenant = tenant
         self.eventos: list[dict] = []
         self.terminado = False
         self.cambio = asyncio.Condition()
@@ -477,7 +479,7 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str, ruta: str | Non
     """Arranca el turno en segundo plano; None si ese agente ya está trabajando."""
     if trabajando(agente_id):
         return None
-    t = Trabajo()
+    t = Trabajo(tenant)
     _trabajos[agente_id] = t
 
     async def correr():
@@ -694,6 +696,15 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                             yield {"evento": "pensando", "texto": t[:200]}
                     elif evento == "run.failed":
                         msg = json.dumps(d)
+                        if "429" in msg or "usage limit" in msg.lower() or "rate limit" in msg.lower():
+                            reinicia = ""
+                            with suppress(Exception):
+                                u = await uso_cuenta(tenant)
+                                v = next((x for x in u.get("ventanas", []) if x["usado_pct"] >= 99), None) or (u.get("ventanas") or [None])[0]
+                                if v and v.get("reinicia"):
+                                    reinicia = f" Se reinicia {datetime.fromtimestamp(int(v['reinicia']), tz=ZoneInfo('America/Mexico_City')):%d %b %H:%M}."
+                            yield {"evento": "cuota", "texto": f"Se agotó el cupo de su suscripción de ChatGPT por ahora.{reinicia} Mientras, los agentes esperan; vea el detalle en su perfil."}
+                            return
                         if "401" in msg or "unauthorized" in msg.lower() or "credential" in msg.lower():
                             if await cerebro(tenant) == "claude":
                                 await desconectar_claude(tenant)
@@ -785,13 +796,23 @@ async def despertar_para_rutinas() -> None:
             log.warning("rutinas %s: %s", t, e)
 
 
+def _tenants_trabajando() -> set[str]:
+    return {t.tenant for t in _trabajos.values() if not t.terminado and t.tenant}
+
+
 async def dormir_inactivas() -> None:
-    """Para las máquinas sin uso; el próximo turno (o una rutina) las despierta."""
+    """Para las máquinas sin uso; el próximo turno (o una rutina) las despierta. Nunca una
+    con un turno en curso: un encargo largo (20+ min) se moría a la mitad por esto."""
     prov = proveedor()
+    ocupados = _tenants_trabajando()
+    for tenant in ocupados:
+        await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", tenant)
     filas = await db.todos("""select m.tenant_id, m.referencia from maquina_negocio m
                               where m.ultimo_uso < now() - make_interval(mins => $1)
                                 and not exists (select 1 from agente a where a.tenant_id = m.tenant_id and a.rutina_proxima between now() - interval '10 minutes' and now() + interval '25 minutes')""", config.MINUTOS_SIN_USO)
     for f in filas:
+        if str(f["tenant_id"]) in ocupados:
+            continue
         try:
             if (await prov.obtener(f["referencia"])).encendida:
                 await prov.parar(f["referencia"])
