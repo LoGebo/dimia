@@ -282,6 +282,12 @@ async def iniciar_conexion(servicio: str, tenant: str = Depends(negocio_id)):
         if not config.GOOGLE_CLIENT_ID:
             raise HTTPException(503, "Google todavía no está disponible.")
         return {"modo": "oauth", "url": conexiones.google_url(tenant)}
+    if s["modo"] == "mcp_oauth":
+        try:
+            return {"modo": "oauth", "url": await conexiones.mcp_oauth_url(tenant, servicio)}
+        except Exception as e:  # noqa: BLE001
+            log.warning("mcp oauth %s: %s", servicio, e)
+            raise HTTPException(502, f"No se pudo iniciar la autorización con {s['nombre']}.")
     return {"modo": "token", "ayuda": s["ayuda"]}
 
 
@@ -301,6 +307,35 @@ async def conectar_por_token(servicio: str, cuerpo: TokenServicio, tenant: str =
 async def quitar_conexion(servicio: str, tenant: str = Depends(negocio_id)):
     await db.ejecutar("delete from conexion_servicio where tenant_id = $1 and servicio = $2", tenant, servicio)
     return {"ok": True}
+
+
+@app.get("/oauth/mcp/callback")
+async def mcp_callback(state: str = "", code: str = "", error: str = ""):
+    msg = error and f"El servicio no dio permiso ({error})." or await conexiones.mcp_oauth_callback(state, code)
+    cuerpo = f"<p>{msg}</p>" if msg else "<p>Cuenta conectada. Ya puede cerrar esta ventana y volver al panel.</p>"
+    return HTMLResponse(f"<!doctype html><html lang='es'><meta charset='utf-8'><title>Dimia</title><body style='font-family:system-ui;max-width:32rem;margin:4rem auto;font-size:17px'>{cuerpo}<script>setTimeout(()=>window.close(),{2500 if not msg else 8000})</script></body></html>")
+
+
+@app.api_route("/mcp-proxy/{servicio}/{ruta:path}", methods=["POST", "GET", "DELETE"])
+async def mcp_proxy(servicio: str, ruta: str, request: Request):
+    """Puente al MCP alojado del servicio con el token OAuth del negocio; el agente entra con su propio token."""
+    s = conexiones.SERVICIOS.get(servicio)
+    if not s or s["modo"] != "mcp_oauth":
+        raise HTTPException(404)
+    token_agente = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    f = await db.uno("select tenant_id from agente where mcp_token = $1 and mcp_token is not null", token_agente) if token_agente else None
+    if not f:
+        raise HTTPException(401)
+    token = await conexiones.mcp_token(str(f["tenant_id"]), servicio)
+    if not token:
+        raise HTTPException(409, f"{s['nombre']} no está conectado; el dueño debe conectarlo en Marketplace.")
+    cab = {k: v for k, v in request.headers.items() if k.lower() in ("content-type", "accept", "mcp-session-id", "mcp-protocol-version")}
+    cab["Authorization"] = f"Bearer {token}"
+    cuerpo = await request.body()
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=300)) as c:
+        r = await c.request(request.method, s["mcp_url"], headers=cab, content=cuerpo)
+    salida = {k: v for k, v in r.headers.items() if k.lower() in ("content-type", "mcp-session-id", "mcp-protocol-version")}
+    return Response(content=r.content, status_code=r.status_code, headers=salida)
 
 
 @app.get("/oauth/google/callback")

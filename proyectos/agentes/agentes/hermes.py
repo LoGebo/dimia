@@ -129,9 +129,11 @@ def mcp_dimia(token: str) -> dict:
     return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}, "trust": "untrusted"}}
 
 
-def mcp_servicio(nombre: str, token: str) -> dict:
-    """google | notion | slack: el MCP del orquestador para ese servicio."""
-    return {nombre: {"url": f"{config.PUBLICO_URL}/mcp-{nombre}/", "headers": {"Authorization": f"Bearer {token}"}}}
+def mcp_servicio(nombre: str, token: str, puente: bool = False) -> dict:
+    """google | notion | slack: el MCP del orquestador para ese servicio. Con puente=True es un MCP
+    externo (Higgsfield…) al que el orquestador entra con el OAuth del negocio."""
+    ruta = f"/mcp-proxy/{nombre}/" if puente else f"/mcp-{nombre}/"
+    return {nombre: {"url": f"{config.PUBLICO_URL}{ruta}", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
 def mcp_whatsapp(token: str) -> dict:

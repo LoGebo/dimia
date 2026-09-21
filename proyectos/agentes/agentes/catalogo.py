@@ -15,6 +15,7 @@ INTEGRACIONES = {
     "whatsapp": {"nombre": "WhatsApp", "detalle": "Escribir a clientes desde la línea del negocio", "lista": True},
     "notion": {"nombre": "Notion", "detalle": "Páginas y bases de datos", "lista": True, "cuenta": "notion"},
     "slack": {"nombre": "Slack", "detalle": "Leer y publicar en canales", "lista": True, "cuenta": "slack"},
+    "higgsfield": {"nombre": "Higgsfield", "detalle": "Imágenes y video con IA (Sora, Veo, Kling, Nano Banana)", "lista": True, "cuenta": "higgsfield", "mcp": True},
 }
 
 

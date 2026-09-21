@@ -235,8 +235,9 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
                 mcp.update(hermes.mcp_dimia(token))
             if "whatsapp" in integraciones:
                 mcp.update(hermes.mcp_whatsapp(token))
-            for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack
-                mcp.update(hermes.mcp_servicio(cuenta, token))
+            for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack, higgsfield
+                puente = any(v.get("cuenta") == cuenta and v.get("mcp") for v in catalogo.INTEGRACIONES.values())
+                mcp.update(hermes.mcp_servicio(cuenta, token, puente=puente))
         raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
         borrar.append(raiz_skills)
         for i in inst:

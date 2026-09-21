@@ -14,6 +14,8 @@ from agentes import config, db, vault
 
 SERVICIOS = {
     "google": {"modo": "oauth", "nombre": "Google"},
+    # MCP alojados con OAuth estándar (registro dinámico + PKCE): el orquestador autoriza y hace de puente.
+    "higgsfield": {"modo": "mcp_oauth", "nombre": "Higgsfield", "mcp_url": "https://mcp.higgsfield.ai/mcp", "alcances": "openid email offline_access"},
     "notion": {"modo": "token", "nombre": "Notion", "ayuda": "En notion.so/my-integrations cree una integración interna, copie el «Internal Integration Secret» y comparta con ella las páginas que el agente puede ver."},
     "slack": {"modo": "token", "nombre": "Slack", "ayuda": "En api.slack.com/apps cree una app, agregue los permisos chat:write, channels:read y channels:history, instálela en su espacio y copie el «Bot User OAuth Token» (empieza con xoxb-)."},
 }
@@ -121,3 +123,78 @@ async def conectar_token(tenant: str, servicio: str, token: str) -> str | None:
             return "Servicio desconocido."
     await guardar(tenant, servicio, {"token": token}, cuenta, None)
     return None
+
+
+# --- MCP alojados con OAuth (Higgsfield y los que vengan) ---------------------
+
+async def _descubrir_as(mcp_url: str) -> dict:
+    """Metadatos del servidor de autorización (RFC 8414) del recurso MCP."""
+    origen = mcp_url.split("/", 3)
+    base = f"{origen[0]}//{origen[2]}"
+    async with httpx.AsyncClient(timeout=15) as c:
+        r = await c.get(f"{base}/.well-known/oauth-authorization-server")
+        if r.status_code != 200:  # probar por el recurso protegido
+            rp = await c.get(f"{base}/.well-known/oauth-protected-resource")
+            servidores = rp.json().get("authorization_servers") or [] if rp.status_code == 200 else []
+            for asv in servidores:
+                r = await c.get(f"{asv.rstrip('/')}/.well-known/oauth-authorization-server")
+                if r.status_code == 200:
+                    break
+        r.raise_for_status()
+        return r.json()
+
+
+async def mcp_oauth_url(tenant: str, servicio: str) -> str:
+    s = SERVICIOS[servicio]
+    meta = await _descubrir_as(s["mcp_url"])
+    redirect = f"{config.PUBLICO_URL}/oauth/mcp/callback"
+    client_id = None
+    if meta.get("registration_endpoint"):
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.post(meta["registration_endpoint"], json={
+                "client_name": "Dimia", "redirect_uris": [redirect], "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"], "token_endpoint_auth_method": "none", "scope": s.get("alcances", "")})
+        if r.status_code in (200, 201):
+            client_id = r.json().get("client_id")
+    if not client_id:
+        raise RuntimeError("El servicio no aceptó registrar a Dimia como cliente.")
+    verificador = base64.urlsafe_b64encode(hashlib.sha256(str(time.time_ns()).encode()).digest()).decode().rstrip("=")
+    reto = base64.urlsafe_b64encode(hashlib.sha256(verificador.encode()).digest()).decode().rstrip("=")
+    estado = _firmar({"t": tenant, "s": servicio, "v": verificador, "c": client_id, "te": meta["token_endpoint"], "exp": int(time.time()) + 600})
+    return meta["authorization_endpoint"] + "?" + urlencode({
+        "client_id": client_id, "redirect_uri": redirect, "response_type": "code", "scope": s.get("alcances", ""),
+        "code_challenge": reto, "code_challenge_method": "S256", "state": estado, "resource": s["mcp_url"]})
+
+
+async def mcp_oauth_callback(estado: str, codigo: str) -> str | None:
+    d = _verificar(estado)
+    if not d or d.get("s") not in SERVICIOS:
+        return "Enlace vencido o inválido; vuelva a intentarlo desde el panel."
+    s = SERVICIOS[d["s"]]
+    async with httpx.AsyncClient(timeout=20) as c:
+        r = await c.post(d["te"], data={"grant_type": "authorization_code", "code": codigo, "redirect_uri": f"{config.PUBLICO_URL}/oauth/mcp/callback",
+                                        "client_id": d["c"], "code_verifier": d["v"], "resource": s["mcp_url"]})
+    if r.status_code != 200:
+        return f"{s['nombre']} no aceptó la autorización ({r.status_code})."
+    t = r.json()
+    await guardar(d["t"], d["s"], {"access_token": t["access_token"], "refresh_token": t.get("refresh_token"), "client_id": d["c"], "token_endpoint": d["te"]},
+                  None, datetime.now(timezone.utc) + timedelta(seconds=int(t.get("expires_in", 3600))))
+    return None
+
+
+async def mcp_token(tenant: str, servicio: str) -> str | None:
+    c = await leer(tenant, servicio)
+    if not c:
+        return None
+    if not c["_expira"] or c["_expira"] > datetime.now(timezone.utc) + timedelta(minutes=2):
+        return c["access_token"]
+    if not c.get("refresh_token"):
+        return c["access_token"]
+    async with httpx.AsyncClient(timeout=20) as http:
+        r = await http.post(c["token_endpoint"], data={"grant_type": "refresh_token", "refresh_token": c["refresh_token"], "client_id": c["client_id"], "resource": SERVICIOS[servicio]["mcp_url"]})
+    if r.status_code != 200:
+        return None
+    t = r.json()
+    await guardar(tenant, servicio, {**{k: c[k] for k in ("client_id", "token_endpoint")}, "access_token": t["access_token"], "refresh_token": t.get("refresh_token") or c["refresh_token"]},
+                  c["_cuenta"], datetime.now(timezone.utc) + timedelta(seconds=int(t.get("expires_in", 3600))))
+    return t["access_token"]
