@@ -574,7 +574,19 @@ async def estado_local(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     tu = tunel.de(str(agente_id))
     return {"donde": a["donde"], "conectada": tu is not None, "host": (tu.host if tu else None) or a["host_local"],
             "visto": a["visto_local"].isoformat() if a["visto_local"] else None,
-            "comando": f"curl -fsSL {config.PUBLICO_URL}/local/instalar.sh | bash -s {a['codigo_local']}" if a["donde"] == "local" and a["codigo_local"] else None}
+            "comando": f"curl -fsSL {config.PUBLICO_URL}/local/instalar.sh | bash -s {a['codigo_local']}" if a["donde"] == "local" and a["codigo_local"] else None,
+            "descarga": f"{config.PUBLICO_URL}/local/Instalar-Dimia-{a['codigo_local']}.command" if a["donde"] == "local" and a["codigo_local"] else None}
+
+
+@app.get("/local/Instalar-Dimia-{codigo}.command")
+async def instalar_command(codigo: str):
+    """El mismo instalador, como archivo .command: al abrirlo, macOS lo corre en Terminal
+    sin que el dueño escriba nada. (El código va dentro; solo sirve para ese agente.)"""
+    if not await db.uno("select 1 from agente where codigo_local = $1 and donde = 'local'", codigo):
+        raise HTTPException(404)
+    guion = (_LOCAL / "instalar.sh").read_text().replace("__ORQUESTADOR__", config.PUBLICO_URL)
+    guion = guion.replace('CODIGO="${1:-}"', f'CODIGO="{codigo}"', 1) + '\necho; echo "Puede cerrar esta ventana."; read -r -t 60 _ || true\n'
+    return Response(guion, media_type="application/x-sh", headers={"Content-Disposition": f'attachment; filename="Instalar-Dimia-{codigo}.command"'})
 
 
 @app.get("/local/instalar.sh")

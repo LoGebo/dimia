@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, Copy } from "lucide-react";
 import { dondeAgente, estadoLocal, type EstadoLocal } from "@/lib/acciones";
 
@@ -12,6 +12,7 @@ export function DondeCorre({ agenteId, nombre, donde, alCambiar }: { agenteId: s
   const [estado, setEstado] = useState<EstadoLocal | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [verComando, setVerComando] = useState(false);
   const [pendiente, empezar] = useTransition();
 
   useEffect(() => {
@@ -23,14 +24,27 @@ export function DondeCorre({ agenteId, nombre, donde, alCambiar }: { agenteId: s
     return () => { vivo = false; clearInterval(t); };
   }, [agenteId, donde]);
 
+  // Aviso del navegador cuando la Mac se conecta (si el dueño lo permitió).
+  const antes = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!estado) return;
+    if (antes.current === false && estado.conectada && typeof Notification !== "undefined" && Notification.permission === "granted") {
+      new Notification(`${nombre} ya corre en su Mac`, { body: estado.host ? `Conectada · ${estado.host}` : "Conectada" });
+    }
+    antes.current = estado.conectada;
+  }, [estado, nombre]);
+
   function cambiar(d: "dimia" | "local") {
     if (d === donde) return;
     setError(null);
+    if (d === "local" && typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission();
     empezar(async () => {
       const r = await dondeAgente(agenteId, d);
       if (r.error) { setError(r.error); return; }
       alCambiar(r.donde);
       setEstado(r);
+      // Baja el instalador: al abrirlo, Terminal hace todo; el dueño no escribe nada.
+      if (d === "local" && r.descarga && !r.host) window.location.assign(r.descarga);
     });
   }
 
@@ -64,11 +78,17 @@ export function DondeCorre({ agenteId, nombre, donde, alCambiar }: { agenteId: s
               <p className="flex items-center gap-2 text-[13px] text-tinta"><i aria-hidden="true" className="h-2 w-2 rounded-full bg-tinta-3" />{estado?.host ? `Fuera de línea · ${estado.host}` : "Sin conectar"}</p>
               {estado?.comando && !estado.host ? (
                 <>
-                  <p className="mt-2 text-[12.5px] text-tinta-3">Abra Terminal en su Mac y pegue esto una sola vez:</p>
-                  <div className="mt-1.5 flex items-stretch gap-1.5">
-                    <code className="numeros min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-panel px-2.5 py-2 text-[12px] text-tinta-2">{estado.comando}</code>
-                    <button type="button" onClick={copiar} aria-label="Copiar" className="flex w-9 flex-none items-center justify-center rounded-lg bg-panel text-tinta-2 hover:text-tinta">{copiado ? <Check size={15} /> : <Copy size={15} />}</button>
+                  <p className="mt-2 text-[12.5px] leading-relaxed text-tinta-2">Se descargó <span className="font-medium text-tinta">Instalar-Dimia.command</span>. Ábralo desde Descargas: Terminal instala todo y esta tarjeta cambia a «Conectada» sola. La primera vez macOS pide clic derecho → Abrir.</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
+                    {estado.descarga ? <a href={estado.descarga} className="text-acento hover:underline">Volver a descargar</a> : null}
+                    <button type="button" onClick={() => setVerComando((v) => !v)} className="text-tinta-3 hover:text-tinta">{verComando ? "Ocultar el comando" : "Prefiero pegar un comando en Terminal"}</button>
                   </div>
+                  {verComando ? (
+                    <div className="mt-1.5 flex items-stretch gap-1.5">
+                      <code className="numeros min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-panel px-2.5 py-2 text-[12px] text-tinta-2">{estado.comando}</code>
+                      <button type="button" onClick={copiar} aria-label="Copiar" className="flex w-9 flex-none items-center justify-center rounded-lg bg-panel text-tinta-2 hover:text-tinta">{copiado ? <Check size={15} /> : <Copy size={15} />}</button>
+                    </div>
+                  ) : null}
                   <p className="mt-2 text-[12px] text-tinta-3">Instala Hermes en su Mac y lo deja corriendo al iniciar sesión. macOS le pedirá permiso de Accesibilidad y Grabación de pantalla.</p>
                 </>
               ) : null}
