@@ -4,6 +4,7 @@ orquestador manda por él las mismas llamadas HTTP que le haría al Hermes de Fl
 Un túnel por agente; el resto del orquestador solo ve un httpx.AsyncClient."""
 import asyncio
 import base64
+import contextlib
 import json
 import logging
 import uuid
@@ -51,6 +52,7 @@ class Tunel:
         self.colas: dict[str, asyncio.Queue] = {}
         self.host = ""
         self.transporte = _Transporte(self)
+        self.hd: dict[str, asyncio.Queue] = {}  # id de espectador -> cola de access units H.264
 
     def cliente(self, timeout=10) -> httpx.AsyncClient:
         return httpx.AsyncClient(transport=self.transporte, timeout=timeout)
@@ -88,6 +90,29 @@ class Tunel:
         """Deja los archivos del perfil en la Mac; el demonio (re)arranca Hermes si cambió config."""
         await self.enviar({"tipo": "perfil", "archivos": archivos, "puerto": puerto})
 
+    async def hd_iniciar(self, fps: int = 12) -> tuple[str, asyncio.Queue]:
+        """Pide a la Mac que empiece a capturar su pantalla; los cuadros llegan por `recibir_bin`."""
+        i = uuid.uuid4().hex
+        self.hd[i] = asyncio.Queue(maxsize=30)
+        await self.enviar({"tipo": "hd", "id": i, "fps": fps})
+        return i, self.hd[i]
+
+    async def hd_parar(self, i: str) -> None:
+        self.hd.pop(i, None)
+        with contextlib.suppress(Exception):
+            await self.enviar({"tipo": "hd_fin", "id": i})
+
+    def recibir_bin(self, dato: bytes) -> None:
+        """Un cuadro H.264: 32 bytes de id de espectador + access unit."""
+        i, au = dato[:32].decode(errors="ignore"), dato[32:]
+        cola = self.hd.get(i)
+        if cola is None:
+            return
+        if cola.full():
+            with contextlib.suppress(asyncio.QueueEmpty):
+                cola.get_nowait()  # espectador atrasado: se tira el cuadro más viejo
+        cola.put_nowait(au)
+
     def recibir(self, m: dict) -> None:
         """Un mensaje del demonio: encabezado de respuesta, trozo, fin o resultado de exec."""
         i = m.get("id", "")
@@ -113,8 +138,15 @@ class Tunel:
                 fut.set_result((int(m.get("codigo", 1)), m.get("salida", ""), m.get("error", "")))
         elif t == "latido":
             self.host = m.get("host") or self.host
+        elif t == "hd_error":
+            cola = self.hd.get(i)
+            if cola is not None:
+                cola.put_nowait(b"permiso")  # el puente lo traduce a un cierre con código
 
     def cerrar(self) -> None:
+        for cola in self.hd.values():
+            cola.put_nowait(b"")
+        self.hd.clear()
         for fut in self.pendientes.values():
             if not fut.done():
                 fut.set_exception(httpx.ConnectError("Se desconectó la computadora del agente"))

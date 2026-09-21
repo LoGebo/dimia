@@ -26,7 +26,7 @@ echo "· Demonio"
 PY="$(command -v python3)"
 [ -n "$PY" ] || { echo "Falta python3 (xcode-select --install)."; exit 1; }
 [ -x "$RAIZ/venv/bin/python" ] || "$PY" -m venv "$RAIZ/venv"
-"$RAIZ/venv/bin/pip" install -q --upgrade websockets
+"$RAIZ/venv/bin/pip" install -q --upgrade websockets imageio-ffmpeg
 curl -fsSL "$URL/local/dimia-local.py" -o "$RAIZ/dimia-local.py"
 printf '{"url": "%s", "codigo": "%s", "hermes": "%s"}\n' "$URL" "$CODIGO" "$HERMES" > "$RAIZ/agente.json"
 chmod 600 "$RAIZ/agente.json"

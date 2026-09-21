@@ -11,9 +11,9 @@ type Estado = "apagada" | "conectando" | "en_vivo" | "error";
  * y pintado en un canvas encima (sin eventos: los clics siguen llegando al VNC de abajo).
  * Si el navegador no tiene WebCodecs o algo falla, no pasa nada: se ve el VNC.
  */
-function conectarHD(urlPantalla: string, lienzo: HTMLCanvasElement, alVivo: (si: boolean) => void): () => void {
+function conectarHD(urlPantalla: string, lienzo: HTMLCanvasElement, alVivo: (si: boolean) => void, alError?: (motivo: string) => void): () => void {
   if (typeof VideoDecoder === "undefined" || typeof WebSocket === "undefined") return () => {};
-  const ws = new WebSocket(urlPantalla.replace("/pantalla/", "/hd/"));
+  const ws = new WebSocket(urlPantalla.includes("/hd/") ? urlPantalla : urlPantalla.replace("/pantalla/", "/hd/"));
   ws.binaryType = "arraybuffer";
   const ctx = lienzo.getContext("2d");
   let decoder: VideoDecoder | null = null;
@@ -36,7 +36,7 @@ function conectarHD(urlPantalla: string, lienzo: HTMLCanvasElement, alVivo: (si:
     try { decoder.decode(new EncodedVideoChunk({ type: clave ? "key" : "delta", timestamp: (t += 66_667), data: datos })); } catch { cerrar(); }
   };
   ws.onerror = () => cerrar();
-  ws.onclose = () => { if (vivo) { vivo = false; if (primero) alVivo(false); } };
+  ws.onclose = (ev) => { if (ev.code === 4403) alError?.("permiso"); if (vivo) { vivo = false; if (primero) alVivo(false); } };
   return cerrar;
 }
 type RFBInstancia = EventTarget & { disconnect(): void; viewOnly: boolean; scaleViewport: boolean; background: string };
@@ -57,11 +57,12 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
   const [aviso, setAviso] = useState<string | null>(null);
   const lienzoHD = useRef<HTMLCanvasElement>(null);
   const [hd, setHD] = useState(false);
+  const [soloHD, setSoloHD] = useState(url ? url.includes("/hd/") : false); // en la Mac del dueño no hay VNC: solo se ve
 
   // HD encima del VNC en cuanto hay pantalla en vivo.
   useEffect(() => {
     if (estado !== "en_vivo" || !urlActual || !lienzoHD.current) return;
-    return conectarHD(urlActual, lienzoHD.current, setHD);
+    return conectarHD(urlActual, lienzoHD.current, setHD, (motivo) => { if (motivo === "permiso" && soloHD) { setEstado("error"); setAviso("Su Mac no deja grabar la pantalla. En Ajustes del Sistema → Privacidad y seguridad → Grabación de pantalla, active «python» (el demonio de Dimia)."); } });
   }, [estado, urlActual]);
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
       if (!vivo) return;
       if ("error" in r) { setAviso(r.error); setEstado("error"); return; }
       setUrlActual(r.url);
+      if (r.modo === "hd" || r.url.includes("/hd/")) { setSoloHD(true); setEstado("en_vivo"); return; }
       // El paquete npm de noVNC es CommonJS con await de nivel superior y webpack lo rechaza;
       // se carga el módulo ES de la misma versión desde el CDN en tiempo de ejecución.
       const { default: RFB } = (await import(/* webpackIgnore: true */ NOVNC)) as { default: new (t: HTMLElement, u: string, o?: object) => RFBInstancia };
@@ -91,7 +93,7 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
   }, [agenteId, url]);
 
   function alternarControl() {
-    if (!rfb.current) return;
+    if (!rfb.current || soloHD) return;
     rfb.current.viewOnly = control;
     setControl(!control);
   }
@@ -100,9 +102,9 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
     return (
       <div role="dialog" aria-modal="true" aria-label={`Pantalla de ${nombre}`} className="fixed inset-0 z-50 flex flex-col bg-tinta/90 p-4 sm:p-8" onMouseDown={(e) => { if (e.target === e.currentTarget) cerrar?.(); }}>
         <div className="flex items-center justify-between pb-3 text-paper">
-          <p className="text-[15px] font-semibold">Pantalla de {nombre}{estado === "en_vivo" ? (control ? " · usted tiene el control" : " · solo ver") : ""}</p>
+          <p className="text-[15px] font-semibold">Pantalla de {nombre}{estado === "en_vivo" ? (soloHD ? " · su Mac, solo ver" : control ? " · usted tiene el control" : " · solo ver") : ""}</p>
           <div className="flex items-center gap-2">
-            {estado === "en_vivo" ? <button type="button" onClick={alternarControl} className="h-9 rounded-full border border-paper/30 px-4 text-[13px] hover:bg-paper/10">{control ? "Soltar el control" : "Tomar el control"}</button> : null}
+            {estado === "en_vivo" && !soloHD ? <button type="button" onClick={alternarControl} className="h-9 rounded-full border border-paper/30 px-4 text-[13px] hover:bg-paper/10">{control ? "Soltar el control" : "Tomar el control"}</button> : null}
             <button type="button" onClick={cerrar} aria-label="Cerrar" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-paper/10"><X size={18} /></button>
           </div>
         </div>
@@ -137,9 +139,9 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
         ) : null}
       </div>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[13px] text-tinta-3">Pantalla de {nombre}</p>
+        <p className="text-[13px] text-tinta-3">{soloHD ? `La Mac de ${nombre}` : `Pantalla de ${nombre}`}{soloHD && estado === "en_vivo" && !hd ? " · conectando" : ""}</p>
         <div className="flex items-center gap-1.5">
-          {estado === "en_vivo" ? (
+          {estado === "en_vivo" && !soloHD ? (
             <button type="button" onClick={alternarControl} aria-pressed={control} className={`h-7 rounded-full border px-3 text-[12.5px] transition-colors duration-150 ${control ? "border-acento bg-acento text-acento-tinta" : "border-linea text-tinta-2 hover:text-tinta"}`}>{control ? "Soltar el control" : "Tomar el control"}</button>
           ) : null}
           {ocultar ? <button type="button" onClick={ocultar} className="h-7 rounded-full px-2 text-[12.5px] text-tinta-3 hover:text-tinta">Ocultar</button> : null}

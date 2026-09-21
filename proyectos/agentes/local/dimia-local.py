@@ -106,6 +106,65 @@ def atender_http(m: dict, mandar) -> None:
         mandar({"tipo": "http_fin", "id": i})
 
 
+# --- Pantalla en HD hacia el panel: ffmpeg (avfoundation → H.264 por VideoToolbox) ---------
+hd_procesos: dict[str, subprocess.Popen] = {}
+AUD = b"\x00\x00\x00\x01\x09"
+
+
+def _ffmpeg_bin() -> str | None:
+    try:
+        import imageio_ffmpeg  # el instalador lo deja en el venv: trae su propio binario de ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def atender_hd(m: dict, mandar_bin, mandar) -> None:
+    """Captura la pantalla principal mientras el panel mira; cada cuadro sale por el túnel como
+    binario: 32 bytes de id + access unit Annex-B. macOS pide permiso de Grabación de pantalla
+    la primera vez (al proceso python del demonio)."""
+    i = m["id"]
+    exe = _ffmpeg_bin()
+    if not exe:
+        log("hd: sin ffmpeg (imageio-ffmpeg)")
+        return
+    fps = int(m.get("fps") or 12)
+    cmd = [exe, "-hide_banner", "-loglevel", "error", "-nostdin",
+           "-f", "avfoundation", "-capture_cursor", "1", "-framerate", str(fps), "-i", "Capture screen 0:none",
+           "-vf", "scale=1440:-2", "-pix_fmt", "yuv420p",
+           "-c:v", "h264_videotoolbox", "-realtime", "1", "-b:v", "3000k", "-g", str(fps * 2), "-bf", "0",
+           "-bsf:v", "h264_metadata=aud=insert", "-f", "h264", "-"]
+    try:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=(RAIZ / "hd.log").open("a"))
+    except Exception as e:  # noqa: BLE001
+        log("hd:", e)
+        return
+    hd_procesos[i] = p
+    cab = i.encode()[:32].ljust(32, b" ")
+    buf = b""
+    try:
+        while p.poll() is None and i in hd_procesos:
+            trozo = p.stdout.read1(65536) if p.stdout else b""
+            if not trozo:
+                break
+            buf += trozo
+            while True:
+                j = buf.find(AUD, 1)
+                if j < 0:
+                    break
+                au, buf = buf[:j], buf[j:]
+                if au.startswith(AUD):
+                    mandar_bin(cab + au)
+    finally:
+        hd_procesos.pop(i, None)
+        if p.poll() is None:
+            p.terminate()
+        else:
+            # ffmpeg murió solo: casi siempre es que macOS no le dio permiso de Grabación de pantalla.
+            mandar({"tipo": "hd_error", "id": i, "error": "permiso"})
+        log("hd: parado", i[:8])
+
+
 def atender_exec(m: dict, mandar) -> None:
     try:
         r = subprocess.run(f"{HERMES} {m['args']}", shell=True, env=entorno(), capture_output=True, text=True, timeout=m.get("timeout", 90), cwd=HOME)
@@ -123,6 +182,9 @@ async def sesion() -> None:
         def mandar(m: dict) -> None:
             asyncio.run_coroutine_threadsafe(ws.send(json.dumps(m)), loop).result(30)
 
+        def mandar_bin(b: bytes) -> None:
+            asyncio.run_coroutine_threadsafe(ws.send(b), loop).result(30)
+
         async def latidos():
             while True:
                 await ws.send(json.dumps({"tipo": "latido", "host": socket.gethostname().removesuffix(".local"), "hermes": hermes_proc is not None and hermes_proc.poll() is None}))
@@ -139,6 +201,12 @@ async def sesion() -> None:
                     threading.Thread(target=atender_http, args=(m, mandar), daemon=True).start()
                 elif tipo == "exec":
                     threading.Thread(target=atender_exec, args=(m, mandar), daemon=True).start()
+                elif tipo == "hd":
+                    threading.Thread(target=atender_hd, args=(m, mandar_bin, mandar), daemon=True).start()
+                elif tipo == "hd_fin":
+                    p = hd_procesos.pop(m.get("id", ""), None)
+                    if p and p.poll() is None:
+                        p.terminate()
                 elif tipo == "apagar":  # el dueño regresó el agente a Dimia
                     parar_hermes()
                     subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}/mx.dimia.agente"], check=False)

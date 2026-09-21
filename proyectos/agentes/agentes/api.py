@@ -518,17 +518,21 @@ def _verificar(token: str) -> dict | None:
 @app.post("/agentes/{agente_id}/pantalla")
 async def pantalla(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     """Despierta la máquina y devuelve una URL firmada (10 min) para ver la pantalla del agente."""
-    a = await db.uno("select pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    a = await db.uno("select pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
     if not a:
         raise HTTPException(404)
+    ws = config.PUBLICO_URL.replace("https://", "wss://").replace("http://", "ws://")
+    if a["donde"] == "local" and tunel.de(str(agente_id)):
+        # Corre en la Mac del dueño: no hay VNC, solo la pantalla en HD por el túnel (solo ver).
+        token = _firmar({"t": tenant, "a": str(agente_id), "l": 1, "exp": int(time.time()) + 600})
+        return {"url": f"{ws}/hd/{token}", "modo": "hd"}
     try:
         await negocio.asegurar_maquina(tenant)
     except negocio.SinCodex:
         raise HTTPException(409, "Conecte su cuenta de ChatGPT primero")
     a = await db.uno("select pantalla from agente where id = $1", agente_id)
     token = _firmar({"t": tenant, "a": str(agente_id), "n": a["pantalla"], "exp": int(time.time()) + 600})
-    ws = config.PUBLICO_URL.replace("https://", "wss://").replace("http://", "ws://")
-    return {"url": f"{ws}/pantalla/{token}"}
+    return {"url": f"{ws}/pantalla/{token}", "modo": "vnc"}
 
 
 @app.websocket("/pantalla/{token}")
@@ -575,6 +579,39 @@ async def hd_ws(ws: WebSocket, token: str):
     d = _verificar(token)
     if not d:
         await ws.close(code=4401)
+        return
+    if d.get("l"):  # agente en la Mac del dueño: los cuadros vienen por su túnel
+        tu = tunel.de(d["a"])
+        if not tu:
+            await ws.close(code=4404)
+            return
+        await ws.accept()
+        i, cola = await tu.hd_iniciar()
+        try:
+            async def hacia_navegador():
+                while True:
+                    au = await cola.get()
+                    if au == b"permiso":  # la Mac no deja grabar la pantalla: el panel lo explica
+                        await ws.close(code=4403, reason="permiso")
+                        return
+                    if not au:
+                        return
+                    await ws.send_bytes(au)
+
+            async def esperar_cierre():
+                while True:
+                    await ws.receive()
+
+            t1, t2 = asyncio.create_task(hacia_navegador()), asyncio.create_task(esperar_cierre())
+            _, pendientes = await asyncio.wait({t1, t2}, return_when=asyncio.FIRST_COMPLETED)
+            for p in pendientes:
+                p.cancel()
+        except (WebSocketDisconnect, OSError):
+            pass
+        finally:
+            await tu.hd_parar(i)
+            with suppress(Exception):
+                await ws.close()
         return
     m = await negocio.maquina(d["t"])
     if not m:
@@ -691,7 +728,13 @@ async def tunel_ws(ws: WebSocket, codigo: str):
         await negocio.empujar_tokens(tenant)  # si la máquina de Dimia está encendida, apaga el respaldo de este agente
         asyncio.create_task(negocio.reinstalar_skills_local(tenant, aid))
         while True:
-            m = json.loads(await ws.receive_text())
+            paquete = await ws.receive()
+            if paquete.get("type") == "websocket.disconnect":
+                break
+            if paquete.get("bytes") is not None:
+                tu.recibir_bin(paquete["bytes"])
+                continue
+            m = json.loads(paquete.get("text") or "{}")
             tu.recibir(m)
             if m.get("tipo") == "latido":
                 await db.ejecutar("update agente set host_local = $2, visto_local = now() where id = $1", a["id"], m.get("host"))
