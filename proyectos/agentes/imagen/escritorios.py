@@ -60,6 +60,9 @@ def escritorio(agente: str, n: int):
     lanzar((agente, "wm"), ["openbox", "--config-file", "/opt/dimia/openbox-rc.xml"], base)
     lanzar((agente, "chromium"), [
         "chromium", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+        # Memoria: pocos procesos de renderizado y pestañas en reposo descargadas; sin esto
+        # WhatsApp Web + dos pestañas se comen la máquina.
+        "--renderer-process-limit=3", "--disable-background-networking", "--disable-extensions", "--disable-features=BackForwardCache",
         "--lang=es-MX", f"--window-size={ANCHO},{ALTO}", "--window-position=0,0", "--start-maximized",
         "--hide-crash-restore-bubble", "--disable-session-crashed-bubble", "--test-type", "--force-renderer-accessibility",
         f"--remote-debugging-port={9200 + n}", "--remote-allow-origins=*", f"--user-data-dir={perfil_nav}", "about:blank"], base)

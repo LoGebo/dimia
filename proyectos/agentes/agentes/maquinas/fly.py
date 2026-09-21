@@ -37,7 +37,7 @@ class Fly:
         r = await self.http.post(f"/apps/{self.app}/machines", json={
             "name": f"m-{etiqueta}", "region": config.FLY_REGION,
             "config": {
-                "image": imagen, "env": entorno, **({"init": {"cmd": comando}} if comando else {}),
+                "image": imagen, "env": entorno, "swap_size_mb": 1024, **({"init": {"cmd": comando}} if comando else {}),
                 "guest": {"cpu_kind": "shared", "cpus": cpus, "memory_mb": memoria_mb},
                 "mounts": [{"volume": volumen, "path": "/opt/data"}],
                 "restart": {"policy": "on-failure", "max_retries": 3},
@@ -84,6 +84,7 @@ class Fly:
         cfg = r.json()["config"]
         if memoria_mb:
             cfg["guest"]["memory_mb"] = memoria_mb
+            cfg["swap_size_mb"] = 1024  # colchón: sin swap un pico de Chromium tira todo
             if memoria_mb > 2048 and cfg["guest"].get("cpus", 1) < 4:
                 cfg["guest"]["cpus"] = 4  # Fly exige más CPU para más RAM compartida
         if imagen:
@@ -91,7 +92,12 @@ class Fly:
         r = await self.http.post(f"/apps/{self.app}/machines/{referencia}", json={"config": cfg})
         r.raise_for_status()
         # La actualización crea una instancia nueva: esperar a ESA (si no, el exec cae en la vieja).
+        # Si la máquina estaba apagada, la actualización la deja apagada: hay que arrancarla.
         instancia = r.json().get("instance_id")
+        if r.json().get("state") != "started":
+            r2 = await self.http.post(f"/apps/{self.app}/machines/{referencia}/start")
+            if r2.status_code < 400 and r2.json().get("instance_id"):
+                instancia = r2.json()["instance_id"]
         r = await self.http.get(f"/apps/{self.app}/machines/{referencia}/wait", params={"state": "started", "timeout": 60, **({"instance_id": instancia} if instancia else {})}, timeout=70)
         r.raise_for_status()
         await asyncio.sleep(3)  # que init monte el volumen antes del primer exec

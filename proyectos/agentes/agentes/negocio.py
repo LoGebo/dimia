@@ -113,8 +113,10 @@ async def renovar_si_hace_falta(tenant: str, margen=timedelta(minutes=30)) -> di
 # --- Máquina --------------------------------------------------------------
 
 def memoria_para(agentes: int) -> int:
-    """Cada agente trae su Hermes, su Chromium y su escritorio: ~1 GB. Tope 8 GB."""
-    return min(8192, 2048 + 1024 * max(1, agentes))  # LibreOffice + Chromium + Hermes por agente; con 2 GB hubo OOM
+    """Cada agente trae su Hermes, su Chromium y su escritorio: WhatsApp Web solo ya pide
+    ~1 GB, y con dos agentes en 4 GB la máquina se quedó sin memoria (carga 26 en 4 vCPU,
+    snapshots de 8 minutos). 3 GB de base + 1.5 GB por agente; tope 8 GB."""
+    return min(8192, 3072 + 1536 * max(1, agentes))
 
 
 def _host(m) -> str:
