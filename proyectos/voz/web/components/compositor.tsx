@@ -76,7 +76,7 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
   }
 
   const hayImagen = adjuntos.some((a) => a.tipo === "imagen");
-  const puedeEnviar = (texto.trim().length > 0 || adjuntos.length > 0) && !ocupado;
+  const puedeEnviar = texto.trim().length > 0 || adjuntos.length > 0; // ocupado no bloquea: el mensaje guía al agente o se forma
 
   // Jev en vivo: 150 ms después de la última tecla; se ignoran las respuestas viejas.
   useEffect(() => {
@@ -208,7 +208,7 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
           onKeyDown={tecla}
           onPaste={pegar}
           rows={1}
-          placeholder={`Mensaje a ${nombre}`}
+          placeholder={ocupado ? `${nombre} sigue trabajando; lo que escriba se lo pasa` : `Mensaje a ${nombre}`}
           aria-label="Mensaje"
           className="block max-h-[200px] w-full resize-none bg-transparent px-4 pt-3 pb-1 text-[15px] leading-snug text-tinta outline-none placeholder:text-tinta-3"
         />

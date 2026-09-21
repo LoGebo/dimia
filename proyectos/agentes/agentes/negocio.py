@@ -415,6 +415,11 @@ class Trabajo:
         self.eventos: list[dict] = []
         self.terminado = False
         self.cambio = asyncio.Condition()
+        # Para guiar el run en curso desde otro mensaje del dueño (POST /v1/runs/{id}/steer).
+        self.run_id: str | None = None
+        self.http: httpx.AsyncClient | None = None
+        self.url_base: str = ""
+        self.llave: str = ""
 
     async def publicar(self, e: dict) -> None:
         async with self.cambio:
@@ -442,6 +447,7 @@ class Trabajo:
 
 
 _trabajos: dict[str, Trabajo] = {}  # agente_id -> turno en curso
+_colas: dict[str, list[tuple[str, str | None, list[dict] | None]]] = {}  # agente_id -> mensajes que esperan su turno
 
 
 def trabajando(agente_id: str) -> bool:
@@ -471,9 +477,38 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str, ruta: str | Non
             await t.publicar({"evento": "error", "texto": "La máquina del agente no respondió. Intente de nuevo en un momento."})
         finally:
             await t.cerrar()
+            siguiente = _colas.get(agente_id) or []
+            if siguiente:  # lo que el dueño mandó mientras trabajaba: sale como turno nuevo, en orden
+                texto2, ruta2, adj2 = siguiente.pop(0)
+                if not siguiente:
+                    _colas.pop(agente_id, None)
+                await iniciar_turno(tenant, agente_id, texto2, ruta2, adj2)
 
     asyncio.create_task(correr())
     return t
+
+
+async def mensaje_en_curso(tenant: str, agente_id: str, texto: str, ruta: str | None, adjuntos: list[dict] | None) -> str:
+    """El dueño escribió mientras el agente trabaja. Como en Hermes: si el run acepta guía
+    (`/steer`), el texto entra como mensaje fuera de banda en su siguiente paso; si no (ya
+    está cerrando, trae adjuntos), se forma y sale como turno nuevo cuando termine.
+    Devuelve 'guiado' o 'en_cola'."""
+    t = _trabajos.get(agente_id)
+    if t and not t.terminado and t.run_id and t.http and not adjuntos:
+        try:
+            r = await t.http.post(f"{t.url_base}/v1/runs/{t.run_id}/steer", headers={"Authorization": f"Bearer {t.llave}"}, json={"input": texto}, timeout=15)
+            if r.status_code < 300:
+                await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente_id, texto)
+                await t.publicar({"evento": "guiado", "texto": texto})
+                return "guiado"
+        except httpx.HTTPError as e:
+            log.info("steer %s: %s", agente_id, e)
+    _colas.setdefault(agente_id, []).append((texto, ruta, adjuntos))
+    nombres = [f"[{ad.get('tipo')}: {ad.get('nombre', '')}]" for ad in adjuntos or []]
+    await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente_id, texto + ("\n" + " ".join(nombres) if nombres else ""))
+    if t and not t.terminado:
+        await t.publicar({"evento": "en_cola", "texto": texto})
+    return "en_cola"
 
 
 def modelo_de(cerebro: str, nivel: str) -> str:
@@ -551,7 +586,10 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
     pasos = 0
     ok = False
     nombres = [f"[{ad.get('tipo')}: {ad.get('nombre', '')}]" for ad in adjuntos or []]
-    await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], (texto + ("\n" + " ".join(nombres) if nombres else "")))
+    texto_guardado = texto + ("\n" + " ".join(nombres) if nombres else "")
+    ultimo = await db.uno("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 1", agente["id"])
+    if not (ultimo and ultimo["de"] == "yo" and ultimo["texto"] == texto_guardado):  # ya se guardó al formarse en la cola
+        await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], texto_guardado)
     llave = vault.descifrar(agente["llave"] or (await db.uno("select llave from agente where id = $1", agente["id"]))["llave"])
     respuesta: list[str] = []
     traza: list[dict] = []  # herramientas del turno, para enseñar después «lo que hizo»
@@ -572,6 +610,9 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
             yield {"evento": "error", "texto": f"El agente no aceptó el mensaje ({r0.status_code})."}
             return
         run_id = r0.json().get("run_id")
+        tr = _trabajos.get(agente_id)
+        if tr:  # para poder guiar este run desde otro mensaje del dueño
+            tr.run_id, tr.http, tr.url_base, tr.llave = run_id, http, _url(m, agente["pantalla"], ""), llave
         async with http.stream("GET", _url(m, agente["pantalla"], f"/v1/runs/{run_id}/events"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}) as r:
             evento = None
             async for linea in r.aiter_lines():
@@ -625,6 +666,8 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                             yield {"evento": "error", "texto": "El agente no pudo terminar este turno."}
                             log.warning("run.failed %s/%s: %s", tenant, agente_id, msg[:500])
                     elif evento in ("run.completed", "done"):
+                        if d.get("pending_steer"):  # guía que llegó cuando ya cerraba: sale como turno nuevo
+                            _colas.setdefault(agente_id, []).insert(0, (str(d["pending_steer"]), None, None))
                         if not respuesta:
                             t = (d.get("output") or d.get("text") or d.get("final_text") or "")
                             if isinstance(t, str) and t:

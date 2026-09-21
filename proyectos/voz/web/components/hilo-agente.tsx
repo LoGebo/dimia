@@ -15,6 +15,7 @@ type Mensaje = {
   id: number;
   de: "agente" | "yo";
   texto: string;
+  nota?: string; // «se lo pasé mientras trabaja» / «sale cuando termine»
   adjuntos?: { tipo: "imagen" | "texto"; nombre: string; datos?: string }[];
   opciones?: Opcion[];
   elegida?: string;
@@ -153,6 +154,10 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
             setHaciendo(null);
           }
           else if (e.evento === "pensando") setPensamiento(e.texto);
+          else if (e.evento === "guiado" || e.evento === "en_cola") {
+            const nota = e.evento === "guiado" ? "Se lo pasé mientras trabaja" : "Sale en cuanto termine";
+            setMensajes((m) => { const u = [...m].reverse().find((x) => x.de === "yo"); return u && u.texto === e.texto ? m : [...m, { id: Date.now() + 3, de: "yo", texto: e.texto, nota }]; });
+          }
           else if (e.evento === "aprobacion") {
             const a = e as unknown as { texto: string; detalle?: string; run_id: string; request_id: string | null };
             setHaciendo(null);
@@ -184,6 +189,23 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     if (h.length) setMensajes(h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto, pasos: m.pasos ?? undefined })));
   }
 
+  /** El agente sigue trabajando: el mensaje guía el run (Hermes /steer) o se forma como turno siguiente. */
+  async function mensajeEnCurso(t: string, extra?: { ruta?: Nivel; adjuntos?: Adjunto[] }) {
+    const adj = (extra?.adjuntos ?? []).map((a) => ({ tipo: a.tipo, nombre: a.nombre, datos: a.datos }));
+    const id = Date.now();
+    setMensajes((m) => [...m, { id, de: "yo", texto: t, adjuntos: adj.length ? adj : undefined }]);
+    const adjuntos = (extra?.adjuntos ?? []).map((a) => (a.tipo === "imagen" ? { tipo: "imagen", nombre: a.nombre, datos: a.datos } : { tipo: "texto", nombre: a.nombre, contenido: a.contenido }));
+    try {
+      const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t, ruta: extra?.ruta, adjuntos: adjuntos.length ? adjuntos : undefined }) });
+      const d = (r.headers.get("content-type") ?? "").includes("json") ? ((await r.json()) as { modo?: string }) : {};
+      const nota = d.modo === "guiado" ? "Se lo pasé mientras trabaja" : d.modo === "en_cola" ? "Sale en cuanto termine" : undefined;
+      if (nota) setMensajes((m) => m.map((x) => (x.id === id ? { ...x, nota } : x)));
+      else if (r.ok && r.body) { setEscribiendo(true); try { const fin = await leerEventos(r); if (!fin) await reengancharse(); } finally { setEscribiendo(false); } }
+    } catch {
+      setMensajes((m) => m.map((x) => (x.id === id ? { ...x, nota: "No se pudo mandar; intente de nuevo" } : x)));
+    }
+  }
+
   async function turnoCerebro(t: string, extra?: { ruta?: Nivel; adjuntos?: Adjunto[] }) {
     const adjuntos = (extra?.adjuntos ?? []).map((a) => (a.tipo === "imagen" ? { tipo: "imagen", nombre: a.nombre, datos: a.datos } : { tipo: "texto", nombre: a.nombre, contenido: a.contenido }));
     let r: Response;
@@ -195,6 +217,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     }
     const termino = await leerEventos(r);
     if (!termino) await reengancharse();
+    else if (await agenteTrabajando(agente.id)) await seguirTurno(); // había mensajes formados: ya arrancó el siguiente
   }
 
   async function seguirTurno() {
@@ -226,7 +249,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
 
   async function preguntar(pregunta: string, extra?: { ruta?: Nivel; adjuntos?: Adjunto[] }) {
     const t = pregunta.trim();
-    if ((!t && !extra?.adjuntos?.length) || escribiendo) return;
+    if (!t && !extra?.adjuntos?.length) return;
+    if (escribiendo && conCerebro) { void mensajeEnCurso(t, extra); return; }
     const adj = (extra?.adjuntos ?? []).map((a) => ({ tipo: a.tipo, nombre: a.nombre, datos: a.datos }));
     const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t, adjuntos: adj.length ? adj : undefined }];
     setMensajes(propios);
@@ -314,6 +338,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
                 {m.de === "yo" ? m.texto : <Formato texto={m.texto} />}
               </div>
             ) : null}
+            {m.nota ? <p className="pr-1 text-[11.5px] text-tinta-3">{m.nota}</p> : null}
             {m.opciones ? (
               <div className="w-full max-w-[640px] rounded-2xl border border-linea bg-panel p-2">
                 {m.opciones.map((o) => (

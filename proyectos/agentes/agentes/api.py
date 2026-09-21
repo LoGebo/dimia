@@ -223,6 +223,10 @@ async def turno(agente_id: uuid.UUID, cuerpo: Turno, tenant: str = Depends(negoc
     if not texto:
         texto = "Vea lo adjunto." if any(a.get("tipo") == "imagen" for a in adjuntos) else "Lea lo adjunto."
 
+    if negocio.trabajando(str(agente_id)):
+        # Mientras trabaja: guía al run (Hermes /steer) o se forma para el siguiente turno.
+        modo = await negocio.mensaje_en_curso(tenant, str(agente_id), texto, cuerpo.ruta, adjuntos or None)
+        return {"modo": modo}
     t = await negocio.iniciar_turno(tenant, str(agente_id), texto, cuerpo.ruta, adjuntos or None)
     if t is None:
         raise HTTPException(409, "El agente todavía está con el mensaje anterior.")
