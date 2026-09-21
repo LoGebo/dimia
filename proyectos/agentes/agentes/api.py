@@ -17,7 +17,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket,
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from agentes import catalogo, codex, config, cuotas, db, negocio
+from agentes import catalogo, claude, codex, config, cuotas, db, negocio
 
 log = logging.getLogger("agentes")
 config.guardia()
@@ -104,9 +104,59 @@ async def codex_estado(tenant: str = Depends(negocio_id)):
         _pendientes.pop(tenant, None)
         await negocio.guardar_tokens(tenant, t["acceso"], t["refresco"])
     f = await db.uno("select cuenta, expira from codex_oauth where tenant_id = $1", tenant)
-    if not f:
+    c = await db.uno("select expira from claude_oauth where tenant_id = $1", tenant)
+    cer = (await db.uno("select cerebro from tenant where id = $1", tenant))["cerebro"]
+    if not f and not c:
         return {"estado": "sin_conectar"}
-    return {"estado": "conectado", "cuenta": f["cuenta"], "expira": f["expira"].isoformat()}
+    return {"estado": "conectado", "cuenta": f["cuenta"] if f else None, "expira": (f or c)["expira"].isoformat(),
+            "codex": bool(f), "claude": bool(c), "cerebro": cer if (cer == "claude" and c) or (cer == "codex" and f) else ("codex" if f else "claude")}
+
+
+_pendientes_claude: dict[str, dict] = {}
+
+
+@app.post("/claude/iniciar")
+async def claude_iniciar(tenant: str = Depends(negocio_id)):
+    p = claude.iniciar()
+    _pendientes_claude[tenant] = p
+    return {"url": p["url"]}
+
+
+class CodigoClaude(BaseModel):
+    codigo: str
+
+
+@app.post("/claude/completar")
+async def claude_completar(cuerpo: CodigoClaude, tenant: str = Depends(negocio_id)):
+    p = _pendientes_claude.get(tenant)
+    if not p:
+        raise HTTPException(400, "Vuelva a pulsar Conectar Claude.")
+    try:
+        t = await claude.canjear(p, cuerpo.codigo)
+    except claude.ClaudeError as e:
+        raise HTTPException(400, str(e))
+    _pendientes_claude.pop(tenant, None)
+    await negocio.guardar_claude(tenant, t)
+    return {"ok": True}
+
+
+@app.delete("/claude")
+async def claude_quitar(tenant: str = Depends(negocio_id)):
+    _pendientes_claude.pop(tenant, None)
+    await negocio.desconectar_claude(tenant)
+    return {"ok": True}
+
+
+class Cerebro(BaseModel):
+    cerebro: str
+
+
+@app.post("/cerebro")
+async def elegir_cerebro(cuerpo: Cerebro, tenant: str = Depends(negocio_id)):
+    if cuerpo.cerebro not in ("codex", "claude"):
+        raise HTTPException(400)
+    await db.ejecutar("update tenant set cerebro = $2 where id = $1", tenant, cuerpo.cerebro)
+    return {"ok": True}
 
 
 @app.delete("/codex")

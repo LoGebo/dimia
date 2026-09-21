@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Monitor, PanelRightOpen, Plus } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { actualizarAgente, agenteTrabajando, conectarCodex, ejecutarPropuesta, estadoCodex, hiloNuevoAgente, mensajesAgente, preguntarCopiloto } from "@/lib/acciones";
+import { actualizarAgente, agenteTrabajando, ejecutarPropuesta, estadoCodex, hiloNuevoAgente, mensajesAgente, preguntarCopiloto } from "@/lib/acciones";
 import { Formato } from "@/components/formato";
+import { ConectarCerebro } from "@/components/conectar-cerebro";
 import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
 
 type Opcion = { letra: string; titulo: string; detalle: string; trabajo?: string; nombre?: string };
@@ -49,7 +50,6 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const conectado = agente.id === "recepcion";
   const sinTrabajo = !conectado && !agente.trabajo;
   const conCerebro = !conectado && !sinTrabajo; // agente con trabajo: vive en su Hermes
-  const [codex, setCodex] = useState<{ codigo: string; url: string } | null>(null);
   const [pideCodex, setPideCodex] = useState(false);
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
@@ -66,7 +66,6 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         : { id: 1, de: "agente", texto: `Soy ${agente.nombre}. ${agente.trabajo}` };
 
   useEffect(() => {
-    setCodex(null);
     setPideCodex(false);
     if (conCerebro) {
       // Primero lo último que se vio (instantáneo); el historial real llega del orquestador detrás.
@@ -97,26 +96,6 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40))); } catch {}
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
   }, [mensajes, negocio, agente.id]);
-
-  // Mientras el dueño teclea el código en ChatGPT, preguntamos cada 4 s si ya quedó.
-  useEffect(() => {
-    if (!codex) return;
-    const t = setInterval(async () => {
-      const e = await estadoCodex();
-      if (e.estado === "conectado") {
-        setCodex(null);
-        setPideCodex(false);
-        setMensajes((m) => [...m, { id: Date.now(), de: "agente", texto: "Cuenta de ChatGPT conectada. Ya puedo trabajar." }]);
-      }
-    }, 4000);
-    return () => clearInterval(t);
-  }, [codex]);
-
-  async function pedirCodigo() {
-    const r = await conectarCodex();
-    if ("error" in r) { setMensajes((m) => [...m, { id: Date.now(), de: "agente", texto: r.error }]); return; }
-    setCodex(r);
-  }
 
   function hiloNuevo() {
     if (conCerebro) void hiloNuevoAgente(agente.id);
@@ -327,19 +306,9 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         ))}
         {pideCodex ? (
           <div className="w-full max-w-[520px] rounded-2xl border border-acento/40 bg-acento-suave/50 p-4">
-            <p className="text-[12px] font-medium text-tinta-3">Cuenta de ChatGPT</p>
-            {codex ? (
-              <>
-                <p className="mt-1 text-[15px] leading-snug text-tinta">Abra <a href={codex.url} target="_blank" rel="noreferrer" className="underline">{codex.url.replace("https://", "")}</a> e ingrese este código:</p>
-                <p className="numeros mt-2 text-[28px] font-semibold tracking-wider text-tinta">{codex.codigo}</p>
-                <p className="mt-1 text-[13px] text-tinta-3">Si ChatGPT le pide «habilitar la autorización con código de dispositivo», actívela en chatgpt.com → Ajustes → Seguridad y vuelva a pulsar Conectar.</p>
-              </>
-            ) : (
-              <>
-                <p className="mt-1 text-[15px] leading-snug text-tinta">Sus agentes piensan con su suscripción de ChatGPT (Plus o Pro). Conéctela una vez y la usan todos.</p>
-                <button type="button" onClick={pedirCodigo} className="mt-3 h-9 rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta transition-[filter] duration-100 hover:brightness-110">Conectar ChatGPT</button>
-              </>
-            )}
+            <p className="text-[12px] font-medium text-tinta-3">Cuenta con la que piensa</p>
+            <p className="mt-1 text-[15px] leading-snug text-tinta">Sus agentes piensan con su ChatGPT (Plus o Pro) o su Claude Max. Conéctela una vez y la usan todos.</p>
+            <ConectarCerebro compacto alConectar={() => { setPideCodex(false); setMensajes((m) => [...m, { id: Date.now(), de: "agente", texto: "Cuenta conectada. Ya puedo trabajar." }]); }} />
           </div>
         ) : null}
         {escribiendo ? (

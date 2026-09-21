@@ -24,6 +24,8 @@ HERMES_IMAGEN = os.environ.get("HERMES_IMAGEN", "registry.fly.io/dimia-cerebros:
 MODELO_CODEX = os.environ.get("MODELO_CODEX", "gpt-5.5")            # el fuerte
 MODELO_CODEX_RAPIDO = os.environ.get("MODELO_CODEX_RAPIDO", "gpt-5.6-sol")  # el rápido: misma suscripción, menos cupo (la cuenta no tiene gpt-5.4-mini)
 TYPESAFE_API_KEY = os.environ.get("TYPESAFE_API_KEY", "")  # Jev, la puerta; la única llave de plataforma en el camino caliente
+MODELO_CLAUDE = os.environ.get("MODELO_CLAUDE", "claude-sonnet-4-6")            # fuerte con Claude Max
+MODELO_CLAUDE_RAPIDO = os.environ.get("MODELO_CLAUDE_RAPIDO", "claude-haiku-4-5")  # rápido con Claude Max
 MODELO_TEXTO_CHICO = os.environ.get("MODELO_TEXTO_CHICO", "google/gemini-2.5-flash-lite")  # escribe texto en formularios para navegar_rapido
 VERCEL_AI_GATEWAY_KEY = os.environ.get("VERCEL_AI_GATEWAY_KEY", "")  # Jev por Vercel AI Gateway (mismo modelo, otra puerta)
 # SOLO PRUEBA (no producto): token OAuth de Claude Code del dueño de Dimia para

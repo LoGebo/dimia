@@ -22,8 +22,12 @@ def puerto(pantalla: int) -> int:
     return 8700 + pantalla
 
 
-def config_yaml(llave: str, pantalla: int, mcp: dict | None = None) -> str:
+def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex") -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
+    rutas = {"fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"}, "rapido": {"model": config.MODELO_CODEX_RAPIDO, "provider": "openai-codex"}}
+    if cerebro == "claude":  # Claude Max por el OAuth de Claude Code (archivo .anthropic_oauth.json del perfil)
+        modelo = {"default": config.MODELO_CLAUDE, "provider": "anthropic"}
+        rutas = {"fuerte": {"model": config.MODELO_CLAUDE, "provider": "anthropic"}, "rapido": {"model": config.MODELO_CLAUDE_RAPIDO, "provider": "anthropic"}}
     if config.PRUEBA_ANTHROPIC_TOKEN:
         modelo = {"default": config.PRUEBA_ANTHROPIC_MODELO, "provider": "anthropic"}
     c = {
@@ -33,9 +37,7 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None) -> str:
         "platform_toolsets": {"api_server": TOOLSETS},
         "gateway": {"api_server": {"enabled": True, "host": "::", "port": puerto(pantalla), "key": llave, "max_concurrent_runs": 4}, "multiplex_profiles": False},
         # Dos alias que el orquestador elige por turno según Jev.
-        "platforms": {"api_server": {"extra": {"model_routes": {
-            "fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"},
-            "rapido": {"model": config.MODELO_CODEX_RAPIDO, "provider": "openai-codex"}}}}},
+        "platforms": {"api_server": {"extra": {"model_routes": rutas}}},
         "auth": {"adopt_external_logins": False},
         # Todas las herramientas a la vista: sin esto Hermes esconde el navegador
         # detrás de tool_search y el modelo no lo encuentra.
@@ -73,9 +75,12 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
     return "\n".join(partes) + "\n"
 
 
-def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None) -> dict[str, str]:
+def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None) -> dict[str, str]:
     p = f"{HOME}/profiles/{agente_id}"
-    return {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    if claude_json:
+        a[f"{p}/.anthropic_oauth.json"] = claude_json
+    return a
 
 
 def escritorios_json(mapa: dict[str, int]) -> str:
@@ -115,7 +120,7 @@ def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[s
     pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/profiles/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
-        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml")) else "644"  # config lleva llaves de MCP
+        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json")) else "644"  # config lleva llaves de MCP
         pasos.append(f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && printf %s {b64} | base64 -d > {shlex.quote(ruta)}.tmp && chmod {modo} {shlex.quote(ruta)}.tmp && mv {shlex.quote(ruta)}.tmp {shlex.quote(ruta)}")
     pasos.append(f"chown -R {UID}:{UID} {HOME}")
     return ["sh", "-c", " && ".join(pasos)]

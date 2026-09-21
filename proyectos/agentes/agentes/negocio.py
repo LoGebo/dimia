@@ -9,7 +9,7 @@ import httpx
 import asyncio
 import time
 
-from agentes import catalogo, codex, config, cuotas, db, hermes, jev, vault
+from agentes import catalogo, claude, codex, config, cuotas, db, hermes, jev, vault
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -40,6 +40,57 @@ async def tokens(tenant: str) -> dict:
 
 async def desconectar_codex(tenant: str) -> None:
     await db.ejecutar("delete from codex_oauth where tenant_id = $1", tenant)
+
+
+# --- Claude Max ---
+
+async def guardar_claude(tenant: str, t: dict) -> None:
+    await db.ejecutar(
+        """insert into claude_oauth (tenant_id, acceso, refresco, expira) values ($1, $2, $3, $4)
+           on conflict (tenant_id) do update set acceso = excluded.acceso, refresco = excluded.refresco, expira = excluded.expira,
+             version = claude_oauth.version + 1, actualizado = now()""",
+        tenant, vault.cifrar(t["acceso"]), vault.cifrar(t["refresco"]), t["expira"])
+    await db.ejecutar("update tenant set cerebro = 'claude' where id = $1", tenant)  # el último conectado manda
+
+
+async def tokens_claude(tenant: str) -> dict | None:
+    f = await db.uno("select acceso, refresco, expira, version from claude_oauth where tenant_id = $1", tenant)
+    if not f:
+        return None
+    return {"acceso": vault.descifrar(f["acceso"]), "refresco": vault.descifrar(f["refresco"]), "expira": f["expira"], "version": f["version"]}
+
+
+async def desconectar_claude(tenant: str) -> None:
+    await db.ejecutar("delete from claude_oauth where tenant_id = $1", tenant)
+    await db.ejecutar("update tenant set cerebro = 'codex' where id = $1", tenant)
+
+
+async def renovar_claude_si_hace_falta(tenant: str, margen=timedelta(minutes=30)) -> dict | None:
+    t = await tokens_claude(tenant)
+    if not t:
+        return None
+    if t["expira"] - datetime.now(timezone.utc) > margen:
+        return t
+    try:
+        nuevo = await claude.refrescar(t["refresco"])
+    except claude.ClaudeError as e:
+        log.warning("claude %s: %s", tenant, e)
+        await desconectar_claude(tenant)
+        return None
+    await guardar_claude(tenant, nuevo)
+    return await tokens_claude(tenant)
+
+
+async def cerebro(tenant: str) -> str:
+    """'codex' o 'claude': la elección del negocio si esa cuenta está conectada; si no, la que haya."""
+    f = await db.uno("select t.cerebro, (select 1 from codex_oauth c where c.tenant_id = t.id) as codex, (select 1 from claude_oauth c where c.tenant_id = t.id) as claude from tenant t where t.id = $1", tenant)
+    if f["cerebro"] == "claude" and f["claude"]:
+        return "claude"
+    if f["codex"]:
+        return "codex"
+    if f["claude"]:
+        return "claude"
+    raise SinCodex()
 
 
 async def renovar_si_hace_falta(tenant: str, margen=timedelta(minutes=30)) -> dict:
@@ -128,8 +179,16 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     auth.json vigente, skills e integraciones. Cada agente tiene su propio
     Hermes; el supervisor de la máquina lo arranca o reinicia al ver los archivos."""
     prov = proveedor()
+    cual = await cerebro(tenant)
+    claude_json = None
     if config.PRUEBA_ANTHROPIC_TOKEN:  # modo prueba: sin Codex, el token va en el .env del perfil
         t = {"acceso": "", "refresco": "", "version": -1}
+    elif cual == "claude":
+        tc = await renovar_claude_si_hace_falta(tenant)
+        if not tc:
+            raise SinCodex()
+        t = {"acceso": "", "refresco": "", "version": 1000 + tc["version"]}  # versión distinta para que se vuelva a empujar
+        claude_json = claude.archivo_oauth(tc["acceso"], tc["refresco"], tc["expira"])
     else:
         t = await renovar_si_hace_falta(tenant)
     negocio = await _negocio(tenant)
@@ -180,16 +239,18 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             if i["tipo"] == "skill" and i["clave"] in todas_skills:
                 archivos[f"{raiz_skills}/{i['clave']}/SKILL.md"] = todas_skills[i["clave"]]["contenido"]
         if aid not in instalados:
-            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp))
+            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp, cerebro=cual, claude_json=claude_json))
             nuevos.append(aid)
         else:
             archivos[f"{hermes.HOME}/profiles/{aid}/SOUL.md"] = soul  # barato: siempre al día
-            nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp)
+            nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual)
             if nuevo_cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
                 archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = nuevo_cfg
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
-        configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp)
+                if claude_json:
+                    archivos[f"{hermes.HOME}/profiles/{aid}/.anthropic_oauth.json"] = claude_json
+        configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual)
     archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
     archivos[f"{hermes.HOME}/zona_horaria"] = (await db.uno("select zona_horaria from tenant where id = $1", tenant))["zona_horaria"] or "America/Mexico_City"
     codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
@@ -312,7 +373,7 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     try:
         m = await asegurar_maquina(tenant)
     except SinCodex:
-        yield {"evento": "sin_codex", "texto": "Conecte su cuenta de ChatGPT para que este agente pueda trabajar."}
+        yield {"evento": "sin_codex", "texto": "Conecte su cuenta de ChatGPT o de Claude para que este agente pueda trabajar."}
         return
     agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla from agente where id = $1", agente_id)
     await _esperar_hermes(_host(m), agente["pantalla"])
@@ -359,8 +420,12 @@ async def _turno(tenant: str, agente_id: str, texto: str):
                     elif evento == "run.failed":
                         msg = json.dumps(d)
                         if "401" in msg or "unauthorized" in msg.lower() or "credential" in msg.lower():
-                            await desconectar_codex(tenant)
-                            yield {"evento": "sin_codex", "texto": "Su cuenta de ChatGPT dejó de autorizar a Dimia. Reconéctela para continuar."}
+                            if await cerebro(tenant) == "claude":
+                                await desconectar_claude(tenant)
+                                yield {"evento": "sin_codex", "texto": "Su cuenta de Claude dejó de autorizar a Dimia. Reconéctela para continuar."}
+                            else:
+                                await desconectar_codex(tenant)
+                                yield {"evento": "sin_codex", "texto": "Su cuenta de ChatGPT dejó de autorizar a Dimia. Reconéctela para continuar."}
                         else:
                             yield {"evento": "error", "texto": "El agente no pudo terminar este turno."}
                             log.warning("run.failed %s/%s: %s", tenant, agente_id, msg[:500])
@@ -399,10 +464,11 @@ async def dormir_inactivas() -> None:
 
 
 async def renovar_todos() -> None:
-    filas = await db.todos("select tenant_id from codex_oauth where expira < now() + interval '30 minutes'")
+    filas = await db.todos("select tenant_id from codex_oauth where expira < now() + interval '30 minutes' union select tenant_id from claude_oauth where expira < now() + interval '30 minutes'")
     for f in filas:
         try:
-            await renovar_si_hace_falta(str(f["tenant_id"]))
+            await renovar_si_hace_falta(str(f["tenant_id"])) if await db.uno("select 1 from codex_oauth where tenant_id = $1", str(f["tenant_id"])) else None
+            await renovar_claude_si_hace_falta(str(f["tenant_id"]))
             await empujar_tokens(str(f["tenant_id"]))
         except SinCodex:
             pass

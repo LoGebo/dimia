@@ -1752,3 +1752,19 @@ export async function cuentasExternas(): Promise<Record<string, CuentaExterna>> 
 export async function desconectarCuenta(servicio: string): Promise<void> {
   await orquestador(`/conexiones/${servicio}`, { method: "DELETE" });
 }
+
+
+export async function iniciarClaude(): Promise<{ url: string } | { error: string }> {
+  const r = await orquestador("/claude/iniciar", { method: "POST" });
+  return r.ok ? r.json() : { error: "No se pudo iniciar la conexión con Claude." };
+}
+
+export async function completarClaude(codigo: string): Promise<Estado> {
+  const r = await orquestador("/claude/completar", { method: "POST", body: JSON.stringify({ codigo }) });
+  if (!r.ok) return { error: ((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? "Claude no aceptó el código." };
+  return { ok: "Conectada." };
+}
+
+export async function elegirCerebro(cerebro: "codex" | "claude"): Promise<void> {
+  await orquestador("/cerebro", { method: "POST", body: JSON.stringify({ cerebro }) });
+}

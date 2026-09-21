@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
-import { conectarCodex, crearAgenteVacio, estadoCodex } from "@/lib/acciones";
+import { ConectarCerebro } from "@/components/conectar-cerebro";
+import { crearAgenteVacio, estadoCodex } from "@/lib/acciones";
 
 /**
  * Primera vez en Agentes: tres pasos y a trabajar. Cuenta → ChatGPT →
@@ -12,23 +13,9 @@ import { conectarCodex, crearAgenteVacio, estadoCodex } from "@/lib/acciones";
 export function BienvenidaAgentes({ negocio, verRecepcion }: { negocio: string; verRecepcion: () => void }) {
   const router = useRouter();
   const [codex, setCodex] = useState<"cargando" | "sin_conectar" | "pendiente" | "conectado">("cargando");
-  const [codigo, setCodigo] = useState<{ codigo: string; url: string } | null>(null);
   const [pendiente, empezar] = useTransition();
 
   useEffect(() => { void estadoCodex().then((e) => setCodex(e.estado)); }, []);
-  useEffect(() => {
-    if (!codigo) return;
-    const t = setInterval(async () => {
-      const e = await estadoCodex();
-      if (e.estado === "conectado") { setCodex("conectado"); setCodigo(null); }
-    }, 4000);
-    return () => clearInterval(t);
-  }, [codigo]);
-
-  async function conectar() {
-    const r = await conectarCodex();
-    if (!("error" in r)) setCodigo(r);
-  }
 
   function crear() {
     empezar(async () => {
@@ -47,21 +34,10 @@ export function BienvenidaAgentes({ negocio, verRecepcion }: { negocio: string; 
         <ol className="mt-8 space-y-4">
           <li className={`rounded-2xl border p-5 ${listo ? "border-linea" : "border-acento/40 bg-acento-suave/40"}`}>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[16px] font-semibold text-tinta"><span className="mr-2 text-tinta-3">1</span>Conecte su ChatGPT</p>
+              <p className="text-[16px] font-semibold text-tinta"><span className="mr-2 text-tinta-3">1</span>Conecte su ChatGPT o su Claude</p>
               {listo ? <span className="flex h-6 w-6 items-center justify-center rounded-full bg-bueno text-paper"><Check size={14} strokeWidth={3} /></span> : null}
             </div>
-            {listo ? <p className="mt-1 text-[13.5px] text-tinta-3">Conectada. Todos sus agentes la usan.</p> : codigo ? (
-              <div className="mt-3">
-                <p className="text-[14px] text-tinta">Abra <a href={codigo.url} target="_blank" rel="noreferrer" className="underline">{codigo.url.replace("https://", "")}</a> e ingrese este código:</p>
-                <p className="numeros mt-2 text-[28px] font-semibold tracking-wider text-tinta">{codigo.codigo}</p>
-                <p className="mt-1 text-[13px] text-tinta-3">Si ChatGPT pide «habilitar la autorización con código de dispositivo», actívela en chatgpt.com → Ajustes → Seguridad y vuelva a pulsar Conectar.</p>
-              </div>
-            ) : (
-              <>
-                <p className="mt-1 text-[13.5px] leading-relaxed text-tinta-2">Sirve un plan Plus o Pro. Se conecta una vez; sus agentes piensan con ella y Dimia no guarda su contraseña.</p>
-                <button type="button" onClick={conectar} disabled={codex === "cargando"} className="mt-3 h-10 rounded-full bg-acento px-5 text-[14px] font-semibold text-acento-tinta hover:brightness-110 disabled:opacity-60">Conectar ChatGPT</button>
-              </>
-            )}
+            {listo ? <p className="mt-1 text-[13.5px] text-tinta-3">Conectada. Todos sus agentes la usan.</p> : <div className="mt-1"><ConectarCerebro alConectar={() => setCodex("conectado")} /></div>}
           </li>
           <li className={`rounded-2xl border p-5 ${listo ? "border-acento/40 bg-acento-suave/40" : "border-linea opacity-70"}`}>
             <p className="text-[16px] font-semibold text-tinta"><span className="mr-2 text-tinta-3">2</span>Cree su primer agente</p>

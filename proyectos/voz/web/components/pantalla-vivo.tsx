@@ -13,8 +13,9 @@ const NOVNC = "https://cdn.jsdelivr.net/gh/novnc/noVNC@v1.6.0/core/rfb.js";
  * Se ve solamente; con «Tomar el control» el dueño puede usar el mouse y el
  * teclado, como en Grok Bot.
  */
-export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar }: { agenteId: string; nombre: string; grande?: boolean; ocultar?: () => void; cerrar?: () => void }) {
+export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar, url }: { agenteId: string; nombre: string; grande?: boolean; ocultar?: () => void; cerrar?: () => void; url?: string }) {
   const [ampliada, setAmpliada] = useState(false);
+  const [urlActual, setUrlActual] = useState<string | null>(url ?? null);
   const caja = useRef<HTMLDivElement>(null);
   const rfb = useRef<RFBInstancia | null>(null);
   const [estado, setEstado] = useState<Estado>("apagada");
@@ -25,9 +26,11 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
     let vivo = true;
     async function conectar() {
       setEstado("conectando");
-      const r = await urlPantalla(agenteId);
+      // La vista grande recibe la URL de la miniatura: la computadora ya está encendida, solo se conecta.
+      const r = url ? { url } : await urlPantalla(agenteId);
       if (!vivo) return;
       if ("error" in r) { setAviso(r.error); setEstado("error"); return; }
+      setUrlActual(r.url);
       // El paquete npm de noVNC es CommonJS con await de nivel superior y webpack lo rechaza;
       // se carga el módulo ES de la misma versión desde el CDN en tiempo de ejecución.
       const { default: RFB } = (await import(/* webpackIgnore: true */ NOVNC)) as { default: new (t: HTMLElement, u: string, o?: object) => RFBInstancia };
@@ -43,7 +46,7 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
     }
     void conectar();
     return () => { vivo = false; rfb.current?.disconnect(); rfb.current = null; };
-  }, [agenteId]);
+  }, [agenteId, url]);
 
   function alternarControl() {
     if (!rfb.current) return;
@@ -62,7 +65,7 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
           </div>
         </div>
         <div ref={caja} className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-black">
-          {estado !== "en_vivo" ? <div className="absolute inset-0 flex items-center justify-center text-[14px] text-paper/70">{estado === "conectando" ? "Encendiendo la computadora…" : aviso ?? "Computadora apagada."}</div> : null}
+          {estado !== "en_vivo" ? <div className="absolute inset-0 flex items-center justify-center text-[14px] text-paper/70">{estado === "conectando" ? (url ? "Conectando…" : "Encendiendo la computadora…") : aviso ?? "Computadora apagada."}</div> : null}
         </div>
       </div>
     );
@@ -70,7 +73,7 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
 
   return (
     <div className="space-y-2">
-      {ampliada ? <PantallaVivo agenteId={agenteId} nombre={nombre} grande cerrar={() => setAmpliada(false)} /> : null}
+      {ampliada ? <PantallaVivo agenteId={agenteId} nombre={nombre} grande url={urlActual ?? undefined} cerrar={() => setAmpliada(false)} /> : null}
       <div className={`group relative aspect-[16/10] overflow-hidden rounded-2xl border bg-panel-2 ${control ? "border-acento" : "border-linea"}`}>
         <div ref={caja} className="absolute inset-0" />
         {/* noVNC se queda con los clics del canvas; el botón encima abre la vista grande cuando solo se mira. */}

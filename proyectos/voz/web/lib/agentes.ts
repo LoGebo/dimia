@@ -20,5 +20,8 @@ export async function orquestador(ruta: string, init: RequestInit = {}): Promise
   });
 }
 
-export type EstadoCodex = { estado: "conectado"; cuenta: string | null; expira: string } | { estado: "pendiente"; codigo: string; url: string } | { estado: "sin_conectar" };
+export type EstadoCodex =
+  | { estado: "conectado"; cuenta: string | null; expira: string; codex: boolean; claude: boolean; cerebro: "codex" | "claude" }
+  | { estado: "pendiente"; codigo: string; url: string }
+  | { estado: "sin_conectar" };
 export type MensajeAgente = { id: number; de: "yo" | "agente" | "sistema"; texto: string; creado: string };
