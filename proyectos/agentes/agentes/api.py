@@ -637,6 +637,7 @@ async def tunel_ws(ws: WebSocket, codigo: str):
     try:
         await negocio.empujar_local(tenant, aid)
         await negocio.empujar_tokens(tenant)  # si la máquina de Dimia está encendida, apaga el respaldo de este agente
+        asyncio.create_task(negocio.reinstalar_skills_local(tenant, aid))
         while True:
             m = json.loads(await ws.receive_text())
             tu.recibir(m)

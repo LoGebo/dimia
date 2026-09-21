@@ -231,6 +231,18 @@ async def empujar_local(tenant: str, agente_id: str) -> bool:
     return True
 
 
+async def reinstalar_skills_local(tenant: str, agente_id: str) -> None:
+    """Las habilidades del hub se instalan con la CLI donde corra el agente; al conectarse la
+    Mac se ponen las que le falten (idempotente: --force)."""
+    tu = tunel.de(agente_id)
+    if not tu:
+        return
+    for f in await db.todos("select clave from agente_instalacion where agente_id = $1 and tipo = 'skill_hub'", agente_id):
+        codigo, _, err = await tu.ejecutar(f"skills install {json.dumps(f['clave'])} --force 2>&1", 180)
+        if codigo != 0:
+            log.warning("skill %s en la Mac de %s: %s", f["clave"], agente_id, err[-200:])
+
+
 async def maquina(tenant: str):
     return await db.uno("select * from maquina_negocio where tenant_id = $1", tenant)
 
@@ -799,10 +811,8 @@ async def uso_cuenta(tenant: str) -> dict:
 # --- Habilidades del agente (marketplace, Skills Hub de Hermes y las que él mismo crea) ---
 
 async def _hermes_cli(tenant: str, agente_id: str, args: str, timeout: int = 90) -> tuple[int, str, str]:
-    if (await db.uno("select donde from agente where id = $1", agente_id))["donde"] == "local":
-        tu = tunel.de(agente_id)
-        if not tu:
-            return 1, "", "La computadora del agente no está conectada."
+    tu = tunel.de(agente_id)
+    if tu:  # corre en la Mac del dueño y está conectada; si no, va a su respaldo en Dimia
         return await tu.ejecutar(args, timeout)
     m = await asegurar_maquina(tenant)
     home = f"{hermes.HOME}/profiles/{agente_id}"
