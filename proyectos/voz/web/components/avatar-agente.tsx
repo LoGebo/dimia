@@ -41,6 +41,16 @@ function aclarar(hex: string, cuanto: number): string {
 }
 
 export function AvatarAgente({ nombre, avatar, tamano = 40, activo }: { nombre: string; avatar?: string | null; tamano?: number; activo?: boolean }) {
+  // Imagen propia del dueño: `img:<data url>`; se guarda chica (128 px) en la misma columna.
+  if (avatar?.startsWith("img:")) {
+    return (
+      <span data-avatar="" className="relative inline-flex flex-none" style={{ width: tamano, height: tamano }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avatar.slice(4)} alt="" width={tamano} height={tamano} className="h-full w-full rounded-full object-cover" />
+        {activo !== undefined ? <i aria-hidden="true" className={`absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full border-2 border-panel-2 ${activo ? "bg-bueno" : "bg-tinta-3"}`} /> : null}
+      </span>
+    );
+  }
   const { forma, color } = rasgos(nombre, avatar);
   const [cx, cy] = OJOS[forma];
   // Cada agente respira y parpadea a destiempo de los demás.

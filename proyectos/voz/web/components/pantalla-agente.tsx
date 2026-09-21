@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Check, Circle, Monitor, Settings2, Trash2 } from "lucide-react";
+import { CalendarClock, Check, Circle, ImagePlus, Monitor, Settings2, Trash2 } from "lucide-react";
 import { PantallaVivo } from "@/components/pantalla-vivo";
 import { UsoPlan } from "@/components/uso-plan";
 import { Rutinas } from "@/components/rutinas";
+import { AjustesFinos } from "@/components/ajustes-finos";
 import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
-import { actualizarAgente, borrarAgente } from "@/lib/acciones";
+import { actualizarAgente, borrarAgente, type AjustesAgente } from "@/lib/acciones";
 import type { AgenteHilo } from "@/components/hilo-agente";
 import { HiloAgente } from "@/components/hilo-agente";
 
@@ -30,7 +31,7 @@ const CLAVE_ACCIONES = "agentes_acciones";
  * grabar una tarea y sus rutinas. Cuáles se muestran lo decide el dueño;
  * queda guardado en este navegador.
  */
-export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHilo; negocio: string; permisos: string[] }) {
+export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: AgenteHilo; negocio: string; permisos: string[]; finos?: { personalidad: string | null; reglas: string | null; ajustes: AjustesAgente } }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(true);
   const [visibles, setVisibles] = useState<Set<string>>(new Set(ACCIONES.map((a) => a.clave)));
@@ -51,7 +52,24 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
     }
     await actualizarAgente(agente.id, cambios);
     setGuardando(false);
+    router.refresh();  // la lista y el hilo toman la cara y el nombre nuevos
     router.refresh();
+  }
+
+  /** La imagen se reduce a 128 px en el navegador y se guarda como texto; nada de archivos que cuidar. */
+  async function subirImagen(archivo: File) {
+    const url = URL.createObjectURL(archivo);
+    const img = new Image();
+    await new Promise<void>((ok, no) => { img.onload = () => ok(); img.onerror = () => no(new Error("imagen")); img.src = url; });
+    const lienzo = document.createElement("canvas");
+    lienzo.width = lienzo.height = 128;
+    const ctx = lienzo.getContext("2d")!;
+    const lado = Math.min(img.width, img.height);
+    ctx.drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 128, 128);
+    URL.revokeObjectURL(url);
+    const dato = `img:${lienzo.toDataURL("image/jpeg", 0.85)}`;
+    setAvatar(dato);
+    void guardarIdentidad({ avatar: dato });
   }
 
   function elegirForma(forma: string) {
@@ -118,7 +136,12 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
                   </>
                 ) : (
                   <>
-                    <div className="flex gap-1.5" role="group" aria-label="Forma">
+                    <div className="flex items-center gap-1.5" role="group" aria-label="Forma">
+                      <label className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl transition-colors duration-150 hover:bg-linea/60" title="Subir una imagen">
+                        <ImagePlus size={18} className="text-tinta-2" />
+                        <span className="sr-only">Subir una imagen</span>
+                        <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void subirImagen(f); e.target.value = ""; }} />
+                      </label>
                       {FORMAS.map((f) => (
                         <button key={f} type="button" onClick={() => elegirForma(f)} aria-pressed={actual.forma === f} aria-label={f} className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-150 ${actual.forma === f ? "bg-linea" : "hover:bg-linea/60"}`}>
                           <AvatarAgente nombre={agente.nombre} avatar={`${f}:${actual.color}`} tamano={26} />
@@ -183,9 +206,10 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
                       })}
                     </div>
                   </div>
-                  <button type="button" onClick={() => borrarAgente(agente.id)} className="flex items-center gap-2 text-[13px] text-critico hover:underline"><Trash2 size={14} />Borrar este agente</button>
                 </>
               ) : null}
+              <AjustesFinos key={agente.id} agenteId={agente.id} personalidad={finos?.personalidad ?? null} reglas={finos?.reglas ?? null} ajustes={finos?.ajustes ?? {}} alGuardar={() => router.refresh()} />
+              {!recepcion ? <button type="button" onClick={() => borrarAgente(agente.id)} className="flex items-center gap-2 text-[13px] text-critico hover:underline"><Trash2 size={14} />Borrar este agente</button> : null}
             </div>
           ) : (
             <>

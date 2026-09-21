@@ -138,7 +138,7 @@ async def _negocio(tenant: str):
 
 
 async def _agentes(tenant: str):
-    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token, rol from agente where tenant_id = $1 order by (rol = 'recepcion') desc, creado", tenant)
+    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token, rol, personalidad, ajustes from agente where tenant_id = $1 order by (rol = 'recepcion') desc, creado", tenant)
 
 
 async def maquina(tenant: str):
@@ -216,7 +216,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             usadas.add(pantalla)
             await db.ejecutar("update agente set pantalla = $2 where id = $1", a["id"], pantalla)
         pantallas[aid] = pantalla
-        soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"], rol=a["rol"])
+        aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
+        soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"], rol=a["rol"], personalidad=a["personalidad"], ajustes=aj)
         # Instalaciones de este agente: integración Dimia (MCP con su token) y skills.
         inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
         mcp: dict | None = None
@@ -242,18 +243,18 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             if i["tipo"] == "skill" and i["clave"] in todas_skills:
                 archivos[f"{raiz_skills}/{i['clave']}/SKILL.md"] = todas_skills[i["clave"]]["contenido"]
         if aid not in instalados:
-            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp, cerebro=cual, claude_json=claude_json))
+            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp, cerebro=cual, claude_json=claude_json, ajustes=aj))
             nuevos.append(aid)
         else:
             archivos[f"{hermes.HOME}/profiles/{aid}/SOUL.md"] = soul  # barato: siempre al día
-            nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual)
+            nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)
             if nuevo_cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
                 archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = nuevo_cfg
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
                 if claude_json:
                     archivos[f"{hermes.HOME}/profiles/{aid}/.anthropic_oauth.json"] = claude_json
-        configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual)
+        configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)
     archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
     archivos[f"{hermes.HOME}/zona_horaria"] = (await db.uno("select zona_horaria from tenant where id = $1", tenant))["zona_horaria"] or "America/Mexico_City"
     codigo, salida, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
@@ -383,8 +384,12 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     await _esperar_hermes(_host(m), agente["pantalla"])
     previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
-    trabajo = (await db.uno("select trabajo from agente where id = $1", agente["id"]))["trabajo"]
-    nivel, decision = await jev.decidir(trabajo, historial, texto)
+    fa = await db.uno("select trabajo, ajustes from agente where id = $1", agente["id"])
+    aj = fa["ajustes"] if isinstance(fa["ajustes"], dict) else json.loads(fa["ajustes"] or "{}")
+    if aj.get("modelo") in ("rapido", "fuerte"):  # el dueño fijó el modelo: Jev no decide
+        nivel, decision = aj["modelo"], None
+    else:
+        nivel, decision = await jev.decidir(fa["trabajo"], historial, texto)
     inicio = time.perf_counter()
     pasos = 0
     ok = False
@@ -573,3 +578,33 @@ async def aprobar(tenant: str, agente_id: str, run_id: str, request_id: str | No
     if r.status_code >= 400:
         return f"No se pudo registrar la decisión ({r.status_code})."
     return None
+
+
+async def uso_cuenta(tenant: str) -> dict:
+    """Cupo de la suscripción con la que piensan los agentes (Codex: ventana de 5 h y semana)."""
+    cual = await cerebro(tenant)
+    if cual != "codex":
+        return {"proveedor": "claude", "ventanas": [], "nota": "Claude no publica el cupo por API; véalo en claude.ai."}
+    t = await renovar_si_hace_falta(tenant)
+    d = codex.datos_jwt(t["acceso"])
+    cab = {"Authorization": f"Bearer {t['acceso']}", "originator": "hermes-agent", "User-Agent": "HermesAgent/0.21"}
+    if d.get("cuenta"):
+        cab["ChatGPT-Account-ID"] = d["cuenta"]
+    async with httpx.AsyncClient(timeout=15) as http:
+        r = await http.get("https://chatgpt.com/backend-api/wham/usage", headers=cab)
+    if r.status_code != 200:
+        return {"proveedor": "codex", "ventanas": [], "nota": f"ChatGPT no entregó el uso ({r.status_code})."}
+    p = r.json()
+    rl = p.get("rate_limit") or {}
+    nombres = {18000: "Sesión (5 h)", 604800: "Semana"}
+    ventanas = []
+    for clave, fallback in (("primary_window", "Sesión (5 h)"), ("secondary_window", "Semana")):
+        w = rl.get(clave) or {}
+        if not w:
+            continue
+        seg = w.get("limit_window_seconds")
+        ventanas.append({"nombre": nombres.get(int(seg), fallback) if isinstance(seg, (int, float)) else fallback,
+                         "usado_pct": float(w.get("used_percent") or 0), "reinicia": w.get("reset_at")})
+    cred = p.get("credits") or {}
+    return {"proveedor": "codex", "plan": p.get("plan_type"), "ventanas": ventanas,
+            "creditos": cred.get("balance") if cred.get("has_credits") else None}

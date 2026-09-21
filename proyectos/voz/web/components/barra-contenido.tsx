@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CircleHelp } from "lucide-react";
 import { HerramientasGlobales } from "@/components/herramientas-globales";
 import { EstadoLinea } from "@/components/kit/lateral";
+import { MenuPerfil } from "@/components/menu-perfil";
 import { BotonTema } from "@/components/tema";
 import type { Herramienta } from "@/lib/tipos";
 
@@ -48,13 +49,7 @@ export function BarraContenido({
         <CircleHelp size={18} strokeWidth={1.75} aria-hidden="true" />
       </Link>
       <BotonTema />
-      <span
-        title={email}
-        aria-label={email}
-        className="flex h-9 w-9 items-center justify-center rounded-lg bg-linea text-[13px] font-bold text-tinta uppercase"
-      >
-        {email.slice(0, 1)}
-      </span>
+      <MenuPerfil email={email} />
     </div>
   );
 }

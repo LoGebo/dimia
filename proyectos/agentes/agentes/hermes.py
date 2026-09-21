@@ -22,7 +22,7 @@ def puerto(pantalla: int) -> int:
     return 8700 + pantalla
 
 
-def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex") -> str:
+def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
     rutas = {"fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"}, "rapido": {"model": config.MODELO_CODEX_RAPIDO, "provider": "openai-codex"}}
     if cerebro == "claude":  # Claude Max por el OAuth de Claude Code (archivo .anthropic_oauth.json del perfil)
@@ -58,12 +58,13 @@ def env(llave: str, pantalla: int) -> str:
     return base
 
 
-def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol: str = "general") -> str:
+def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol: str = "general", personalidad: str | None = None, ajustes: dict | None = None) -> str:
     if rol == "recepcion":
-        return soul_recepcion(negocio, reglas)
+        return soul_recepcion(negocio, reglas, personalidad, ajustes)
+    trato = "le habla de tú, con cercanía pero sin confianzas" if (ajustes or {}).get("trato") == "tu" else "le habla de usted"
     partes = [
         f"# {nombre}",
-        f"Usted es {nombre}, agente de {negocio}. Trabaja para el dueño del negocio y le habla de usted.",
+        f"Usted es {nombre}, agente de {negocio}. Trabaja para el dueño del negocio y {trato}.",
         "Escribe en español de México. Frases cortas. Primero el resultado, después el método.",
         "Sin superlativos, sin signos de admiración, sin anglicismos donde exista palabra en español.",
         "Nunca inventa cifras, clientes ni resultados; si falta un dato, lo pide.",
@@ -72,29 +73,34 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol
     ]
     if trabajo:
         partes.append(f"\n## Su trabajo\n{trabajo}")
+    if personalidad:
+        partes.append(f"\n## Cómo es\n{personalidad}")
     if reglas:
         partes.append(f"\n## Reglas del negocio\n{reglas}")
     return "\n".join(partes) + "\n"
 
 
-def soul_recepcion(negocio: str, reglas: str | None) -> str:
+def soul_recepcion(negocio: str, reglas: str | None, personalidad: str | None = None, ajustes: dict | None = None) -> str:
+    trato = "Le habla de tú." if (ajustes or {}).get("trato") == "tu" else "Le habla de usted."
     partes = [
         "# Recepción",
-        f"Usted es Recepción, de {negocio}: la persona de confianza del dueño para la agenda, los clientes y los cobros. Le habla de usted.",
+        f"Usted es Recepción, de {negocio}: la persona de confianza del dueño para la agenda, los clientes y los cobros. {trato}",
         "Escribe en español de México. Frases cortas. Primero el resultado, después el detalle. Sin superlativos ni signos de admiración.",
         "Nunca inventa cifras, clientes ni citas: consulta las herramientas de Dimia (citas, disponibilidad, buscar_cliente, cobros, servicios) antes de contestar.",
         "Para agendar: primero `disponibilidad`, luego `agendar_cita` con el inicio exacto. Para cancelar: `buscar_cita` y luego `cancelar_cita`. Cada acción que escribe (agendar, cancelar, anotar recado, registrar pago, enviar WhatsApp) pide la aprobación del dueño; antes de llamarla, diga en una frase qué va a hacer y con qué datos.",
         "Si el dueño pregunta cómo va el día, responda en cuatro líneas: citas de hoy, confirmadas, cobrado, pendientes.",
         "Las llamadas, WhatsApp e Instagram con clientes las contesta el sistema de Dimia; usted trabaja para el dueño y puede dejarle instrucciones a ese sistema por medio de recados.",
     ]
+    if personalidad:
+        partes.append(f"\n## Cómo es\n{personalidad}")
     if reglas:
         partes.append(f"\n## Reglas del negocio\n{reglas}")
     return "\n".join(partes) + "\n"
 
 
-def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None) -> dict[str, str]:
+def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None, ajustes: dict | None = None) -> dict[str, str]:
     p = f"{HOME}/profiles/{agente_id}"
-    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro, ajustes=ajustes), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
     if claude_json:
         a[f"{p}/.anthropic_oauth.json"] = claude_json
     return a

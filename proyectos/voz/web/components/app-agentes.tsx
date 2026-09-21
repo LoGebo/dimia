@@ -7,7 +7,7 @@ import { BienvenidaAgentes } from "@/components/bienvenida-agentes";
 import { PantallaAgente } from "@/components/pantalla-agente";
 import { RosterAgentes, type AgenteRoster, type GrupoRoster } from "@/components/roster-agentes";
 
-export type AgenteCompleto = AgenteRoster & { permisos: string[] };
+export type AgenteCompleto = AgenteRoster & { permisos: string[]; reglas?: string | null; personalidad?: string | null; ajustes?: { trato?: "usted" | "tu"; modelo?: "auto" | "rapido" | "fuerte"; razonamiento?: "bajo" | "medio" | "alto" } };
 
 /**
  * La app de Agentes vive en el cliente: cambiar de agente no pide nada al
@@ -30,7 +30,7 @@ export function AppAgentes({ agentes, grupos, negocio, children }: { agentes: Ag
         {esAgente && primeraVez && id === "recepcion" ? (
           <BienvenidaAgentes negocio={negocio} verRecepcion={() => setSaltar(true)} />
         ) : esAgente ? (
-          agente ? <PantallaAgente key={agente.id} agente={agente} negocio={negocio} permisos={agente.permisos} /> : <p className="p-8 text-[14px] text-tinta-3">Ese agente ya no existe.</p>
+          agente ? <PantallaAgente key={agente.id} agente={agente} negocio={negocio} permisos={agente.permisos} finos={{ personalidad: agente.personalidad ?? null, reglas: agente.reglas ?? null, ajustes: agente.ajustes ?? {} }} /> : <p className="p-8 text-[14px] text-tinta-3">Ese agente ya no existe.</p>
         ) : children}
       </div>
     </>

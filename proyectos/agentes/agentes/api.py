@@ -311,6 +311,14 @@ async def google_callback(state: str = "", code: str = "", error: str = ""):
     return HTMLResponse(f"<!doctype html><html lang='es'><meta charset='utf-8'><title>Dimia</title><body style='font-family:system-ui;max-width:32rem;margin:4rem auto;font-size:17px'>{cuerpo}<script>setTimeout(()=>window.close(),{2500 if not msg else 8000})</script></body></html>")
 
 
+@app.get("/uso-cuenta")
+async def ver_uso_cuenta(tenant: str = Depends(negocio_id)):
+    try:
+        return await negocio.uso_cuenta(tenant)
+    except negocio.SinCodex:
+        return {"proveedor": None, "ventanas": [], "nota": "Sin cuenta conectada."}
+
+
 @app.get("/cuotas")
 async def ver_cuotas(tenant: str = Depends(negocio_id)):
     return await cuotas.uso(tenant)

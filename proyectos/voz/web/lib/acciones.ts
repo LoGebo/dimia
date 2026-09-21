@@ -1575,21 +1575,29 @@ export async function crearAgenteVacio(): Promise<Estado & { id?: string }> {
   return estado.error ? estado : { id };
 }
 
+export type AjustesAgente = { trato?: "usted" | "tu"; modelo?: "auto" | "rapido" | "fuerte"; razonamiento?: "bajo" | "medio" | "alto" };
+
 export async function actualizarAgente(
   agenteId: string,
-  cambios: { nombre?: string; trabajo?: string; reglas?: string; avatar?: string; permisos?: string[]; estado?: "activo" | "en_pausa" },
+  cambios: { nombre?: string; trabajo?: string; reglas?: string; avatar?: string; permisos?: string[]; estado?: "activo" | "en_pausa"; personalidad?: string; ajustes?: AjustesAgente },
 ): Promise<Estado> {
   const permisos = cambios.permisos?.filter((p) => (PERMISOS_AGENTE as readonly string[]).includes(p));
+  const ajustes = cambios.ajustes ? {
+    ...(cambios.ajustes.trato && ["usted", "tu"].includes(cambios.ajustes.trato) ? { trato: cambios.ajustes.trato } : {}),
+    ...(cambios.ajustes.modelo && ["auto", "rapido", "fuerte"].includes(cambios.ajustes.modelo) ? { modelo: cambios.ajustes.modelo } : {}),
+    ...(cambios.ajustes.razonamiento && ["bajo", "medio", "alto"].includes(cambios.ajustes.razonamiento) ? { razonamiento: cambios.ajustes.razonamiento } : {}),
+  } : null;
   return intentar(() =>
     datos(async (q, negocioId) => {
       await q(
         `update agente set
            nombre = coalesce($3, nombre), trabajo = coalesce($4, trabajo), reglas = coalesce($5, reglas),
            avatar = coalesce($6, avatar), permisos = coalesce($7, permisos), estado = coalesce($8, estado),
+           personalidad = coalesce($9, personalidad), ajustes = coalesce(ajustes, '{}'::jsonb) || coalesce($10::jsonb, '{}'::jsonb),
            actualizado = now()
          where tenant_id = $1 and id = $2`,
         [negocioId, agenteId, cambios.nombre?.trim() || null, cambios.trabajo?.trim() || null, cambios.reglas ?? null,
-         cambios.avatar ?? null, permisos ?? null, cambios.estado ?? null],
+         cambios.avatar ?? null, permisos ?? null, cambios.estado ?? null, cambios.personalidad ?? null, ajustes ? JSON.stringify(ajustes) : null],
       );
       return { ok: "Guardado." };
     }),
@@ -1774,4 +1782,10 @@ export async function aprobarAccion(agenteId: string, runId: string, requestId: 
   const r = await orquestador(`/agentes/${agenteId}/aprobacion`, { method: "POST", body: JSON.stringify({ run_id: runId, request_id: requestId, decision }) });
   if (!r.ok) return { error: "No se pudo registrar la decisión." };
   return { ok: "Listo." };
+}
+
+export type UsoCuenta = { proveedor: "codex" | "claude" | null; plan?: string | null; ventanas: { nombre: string; usado_pct: number; reinicia: number | string | null }[]; creditos?: number | null; nota?: string };
+export async function usoCuenta(): Promise<UsoCuenta> {
+  const r = await orquestador("/uso-cuenta");
+  return r.ok ? r.json() : { proveedor: null, ventanas: [], nota: "Sin conexión con el orquestador." };
 }
