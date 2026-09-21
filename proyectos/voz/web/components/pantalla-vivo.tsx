@@ -101,3 +101,4 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
     </div>
   );
 }
+
