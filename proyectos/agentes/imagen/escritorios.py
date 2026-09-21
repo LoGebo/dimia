@@ -1,7 +1,7 @@
 """Un escritorio y un Hermes por agente. Lee /opt/data/escritorios.json
 ({agente_id: n}) cada 5 s y mantiene, por agente n:
   Xvfb :n · dbus de sesión (AT-SPI para computer use) · openbox · x11vnc 5900+n ·
-  websockify 6080+n · Chromium con CDP 9200+n · `hermes gateway run` con
+  websockify 6080+n · HD H.264 7000+n · Chromium con CDP 9200+n · `hermes gateway run` con
   HERMES_HOME=/opt/data/agentes/<agente>, DISPLAY=:n y API en 8700+n.
 Lo que muera se relanza en la siguiente vuelta."""
 import json
@@ -68,6 +68,8 @@ def escritorio(agente: str, n: int):
         f"--remote-debugging-port={9200 + n}", "--remote-allow-origins=*", f"--user-data-dir={perfil_nav}", "about:blank"], base)
     lanzar((agente, "vnc"), ["x11vnc", "-display", disp, "-rfbport", str(5900 + n), "-localhost", "-forever", "-shared", "-nopw", "-quiet", "-noxdamage"], base)
     lanzar((agente, "novnc"), ["websockify", "--web", "/usr/share/novnc", f"[::]:{6080 + n}", f"localhost:{5900 + n}"])
+    # Pantalla en HD (H.264 por WebSocket) en 7000+n; solo captura mientras alguien mira.
+    lanzar((agente, "hd"), ["/opt/hermes/.venv/bin/python", "/opt/dimia/hd.py", disp, str(7000 + n), str(ANCHO), str(ALTO)], base)
     pestaña_viva(n)
     # El cerebro: un Hermes por agente, con su pantalla y su puerto. Si el
     # orquestador reescribió su config (una integración nueva), se reinicia solo.

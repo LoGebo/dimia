@@ -568,6 +568,42 @@ async def pantalla_ws(ws: WebSocket, token: str):
             pass
 
 
+@app.websocket("/hd/{token}")
+async def hd_ws(ws: WebSocket, token: str):
+    """Pantalla en HD: reenvía el H.264 del escritorio del agente (hd.py en la máquina) al
+    navegador. Mismo pase firmado que la pantalla VNC."""
+    d = _verificar(token)
+    if not d:
+        await ws.close(code=4401)
+        return
+    m = await negocio.maquina(d["t"])
+    if not m:
+        await ws.close(code=4404)
+        return
+    host = m["direccion"].rsplit(":", 1)[0]
+    await ws.accept()
+    try:
+        async with websockets.connect(f"ws://{host}:{7000 + int(d['n'])}/", max_size=None) as maquina_ws:
+            async def hacia_maquina():  # el navegador no manda nada; esto detecta su cierre
+                while True:
+                    await ws.receive()
+
+            async def hacia_navegador():
+                async for dato in maquina_ws:
+                    if isinstance(dato, bytes):
+                        await ws.send_bytes(dato)
+
+            t1, t2 = asyncio.create_task(hacia_maquina()), asyncio.create_task(hacia_navegador())
+            _, pendientes = await asyncio.wait({t1, t2}, return_when=asyncio.FIRST_COMPLETED)
+            for p in pendientes:
+                p.cancel()
+    except (WebSocketDisconnect, OSError, websockets.exceptions.WebSocketException):
+        pass
+    finally:
+        with suppress(Exception):
+            await ws.close()
+
+
 # --- Agentes en la computadora del dueño (túnel saliente) ---------------------
 
 from pathlib import Path as _Path  # noqa: E402

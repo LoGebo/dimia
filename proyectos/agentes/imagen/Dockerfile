@@ -8,7 +8,7 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xvfb x11vnc openbox novnc websockify xdotool \
       at-spi2-core dbus-x11 \
-      chromium xterm pcmanfm mousepad evince \
+      chromium ffmpeg xterm pcmanfm mousepad evince \
       libreoffice-calc libreoffice-writer libreoffice-impress libreoffice-gtk3 \
       fonts-liberation fonts-noto-color-emoji fonts-dejavu \
       curl ca-certificates git python3-venv \
@@ -50,6 +50,7 @@ print("dimia_jev enganchado")
 PY
 COPY navegar_rapido.py /opt/dimia/navegar_rapido.py
 COPY escritorios.py /opt/dimia/escritorios.py
+COPY hd.py /opt/dimia/hd.py
 COPY arranque.sh /opt/dimia/arranque.sh
 COPY openbox-rc.xml /opt/dimia/openbox-rc.xml
 COPY openbox-menu.xml /opt/dimia/openbox-menu.xml
