@@ -609,3 +609,71 @@ async def uso_cuenta(tenant: str) -> dict:
     cred = p.get("credits") or {}
     return {"proveedor": "codex", "plan": p.get("plan_type"), "ventanas": ventanas,
             "creditos": cred.get("balance") if cred.get("has_credits") else None}
+
+
+# --- Habilidades del agente (marketplace, Skills Hub de Hermes y las que él mismo crea) ---
+
+async def _hermes_cli(tenant: str, agente_id: str, args: str, timeout: int = 90) -> tuple[int, str, str]:
+    m = await asegurar_maquina(tenant)
+    home = f"{hermes.HOME}/profiles/{agente_id}"
+    cmd = ["su", "-s", "/bin/sh", "hermes", "-c", f"cd /opt/hermes && HERMES_HOME={home} /opt/hermes/.venv/bin/hermes {args}"]
+    return await proveedor().ejecutar(m["referencia"], cmd, timeout=timeout)
+
+
+async def skills_del_agente(tenant: str, agente_id: str) -> dict:
+    """Las del marketplace (nuestras), las del hub y las que el agente creó en su carpeta."""
+    nuestras = await db.todos("select clave from agente_instalacion where agente_id = $1 and tipo = 'skill'", agente_id)
+    hub = await db.todos("select clave from agente_instalacion where agente_id = $1 and tipo = 'skill_hub'", agente_id)
+    cat = catalogo.skills()
+    lista = [{"clave": r["clave"], "nombre": cat.get(r["clave"], {}).get("nombre", r["clave"]), "detalle": cat.get(r["clave"], {}).get("detalle", ""), "origen": "dimia"} for r in nuestras]
+    lista += [{"clave": r["clave"], "nombre": r["clave"].rsplit("/", 1)[-1], "detalle": "", "origen": "hub"} for r in hub]
+    m = await maquina(tenant)
+    if m and (await proveedor().obtener(m["referencia"])).encendida:
+        home = f"{hermes.HOME}/profiles/{agente_id}/skills"
+        # Las que el agente escribió él mismo: están en su carpeta y no vienen con Hermes (/opt/hermes/skills).
+        codigo, salida, _ = await proveedor().ejecutar(m["referencia"], ["sh", "-c",
+            f"cd {home} 2>/dev/null && find . -mindepth 2 -maxdepth 3 -name SKILL.md -not -path './dimia/*' -not -path './.hub/*' | sed 's|^./||; s|/SKILL.md$||' | while read r; do [ -e /opt/hermes/skills/$r/SKILL.md ] || echo $r; done"], timeout=20)
+        if codigo == 0:
+            ya = {x["clave"].rsplit("/", 1)[-1] for x in lista}
+            for ruta in salida.split():
+                nombre = ruta.rsplit("/", 1)[-1]
+                if nombre not in ya:
+                    lista.append({"clave": ruta, "nombre": nombre, "detalle": "", "origen": "propia"})
+    return {"skills": lista, "incluidas": 58}
+
+
+async def buscar_skills(tenant: str, agente_id: str, q: str) -> list[dict]:
+    codigo, salida, err = await _hermes_cli(tenant, agente_id, f"skills search {json.dumps(q)} --limit 8 --json 2>/dev/null")
+    try:
+        d = json.loads(salida[salida.index("["):])
+    except (ValueError, json.JSONDecodeError):
+        return []
+    return [{"identificador": x.get("identifier"), "nombre": x.get("name"), "fuente": x.get("source"), "confianza": x.get("trust_level"), "detalle": (x.get("description") or "")[:200]} for x in d if x.get("identifier")]
+
+
+async def instalar_skill_hub(tenant: str, agente_id: str, identificador: str, fuente: str | None) -> str | None:
+    """`hermes skills install` en el perfil del agente (con el escaneo de seguridad de Hermes)."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9/_.:-]{1,160}", identificador):
+        return "Identificador inválido."
+    spec = identificador if "/" in identificador or ":" in identificador or not fuente else f"{fuente}/{identificador}"
+    codigo, salida, err = await _hermes_cli(tenant, agente_id, f"skills install {json.dumps(spec)} --force 2>&1", timeout=180)
+    if codigo != 0 or "dangerous" in (salida + err).lower():
+        return f"Hermes no instaló esa habilidad: {(salida or err)[-300:]}"
+    await db.ejecutar("insert into agente_instalacion (agente_id, tenant_id, tipo, clave) values ($1, $2, 'skill_hub', $3) on conflict do nothing", agente_id, tenant, spec)
+    return None
+
+
+async def quitar_skill(tenant: str, agente_id: str, clave: str, origen: str) -> str | None:
+    if origen == "dimia":
+        return await instalar(tenant, agente_id, "skill", clave, False)
+    nombre = clave.rsplit("/", 1)[-1]
+    if origen == "hub":
+        await _hermes_cli(tenant, agente_id, f"skills uninstall {json.dumps(nombre)} 2>&1", timeout=60)
+        await db.ejecutar("delete from agente_instalacion where agente_id = $1 and tipo = 'skill_hub' and clave = $2", agente_id, clave)
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9_./-]{1,120}", clave) or ".." in clave:
+        return "Nombre inválido."
+    m = await maquina(tenant)
+    if m:
+        await proveedor().ejecutar(m["referencia"], hermes.comando_escribir({}, borrar=[f"{hermes.HOME}/profiles/{agente_id}/skills/{clave}"]), timeout=30)
+    return None

@@ -1789,3 +1789,24 @@ export async function usoCuenta(): Promise<UsoCuenta> {
   const r = await orquestador("/uso-cuenta");
   return r.ok ? r.json() : { proveedor: null, ventanas: [], nota: "Sin conexión con el orquestador." };
 }
+
+
+export type SkillAgente = { clave: string; nombre: string; detalle: string; origen: "dimia" | "hub" | "propia" };
+export async function skillsAgente(agenteId: string): Promise<{ skills: SkillAgente[]; incluidas: number }> {
+  const r = await orquestador(`/agentes/${agenteId}/skills`);
+  return r.ok ? r.json() : { skills: [], incluidas: 0 };
+}
+export type SkillHub = { identificador: string; nombre: string; fuente: string; confianza: string; detalle: string };
+export async function buscarSkills(agenteId: string, q: string): Promise<SkillHub[]> {
+  const r = await orquestador(`/agentes/${agenteId}/skills/buscar?q=${encodeURIComponent(q)}`);
+  return r.ok ? ((await r.json()) as { resultados: SkillHub[] }).resultados : [];
+}
+export async function ponerSkillHub(agenteId: string, identificador: string): Promise<Estado> {
+  const r = await orquestador(`/agentes/${agenteId}/skills`, { method: "POST", body: JSON.stringify({ identificador }) });
+  if (!r.ok) return { error: ((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? "No se pudo instalar." };
+  return { ok: "Puesta." };
+}
+export async function quitarSkill(agenteId: string, clave: string, origen: string): Promise<Estado> {
+  const r = await orquestador(`/agentes/${agenteId}/skills`, { method: "DELETE", body: JSON.stringify({ clave, origen }) });
+  return r.ok ? { ok: "Quitada." } : { error: "No se pudo quitar." };
+}

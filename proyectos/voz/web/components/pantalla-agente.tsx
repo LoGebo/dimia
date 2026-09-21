@@ -7,6 +7,7 @@ import { PantallaVivo } from "@/components/pantalla-vivo";
 import { UsoPlan } from "@/components/uso-plan";
 import { Rutinas } from "@/components/rutinas";
 import { AjustesFinos } from "@/components/ajustes-finos";
+import { HabilidadesAgente } from "@/components/habilidades-agente";
 import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
 import { actualizarAgente, borrarAgente, type AjustesAgente } from "@/lib/acciones";
 import type { AgenteHilo } from "@/components/hilo-agente";
@@ -208,6 +209,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
                   </div>
                 </>
               ) : null}
+              {agente.trabajo ? <HabilidadesAgente key={`h-${agente.id}`} agenteId={agente.id} /> : null}
               <AjustesFinos key={agente.id} agenteId={agente.id} personalidad={finos?.personalidad ?? null} reglas={finos?.reglas ?? null} ajustes={finos?.ajustes ?? {}} alGuardar={() => router.refresh()} />
               {!recepcion ? <button type="button" onClick={() => borrarAgente(agente.id)} className="flex items-center gap-2 text-[13px] text-critico hover:underline"><Trash2 size={14} />Borrar este agente</button> : null}
             </div>

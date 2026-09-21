@@ -16,7 +16,7 @@ const AGENTES = [
 
 const LOGOS: Record<string, string> = {
   gmail: "/integraciones/gmail.svg", "google-calendar": "/integraciones/google-calendar.svg", "google-drive": "/integraciones/google-drive.svg",
-  whatsapp: "/integraciones/whatsapp.svg", granola: "/integraciones/granola.svg", adobe: "/integraciones/adobe.svg", notion: "/integraciones/notion.png", slack: "/integraciones/slack.svg",
+  whatsapp: "/integraciones/whatsapp.svg", granola: "/integraciones/granola.svg", adobe: "/integraciones/adobe.svg", notion: "/integraciones/notion.png", slack: "/integraciones/slack.svg", higgsfield: "/integraciones/higgsfield.png",
 };
 type AgenteMini = { id: string; nombre: string; avatar: string | null };
 
@@ -153,10 +153,10 @@ export function Marketplace({ catalogo, agentes: mios }: { catalogo: Catalogo; a
             {integraciones.map((i) => (
               <li key={i.clave} className="flex items-start gap-3.5 py-3">
                 <span aria-hidden="true" className="flex h-12 w-12 flex-none items-center justify-center rounded-[14px] border border-linea bg-white p-2.5">
-                  {i.clave === "dimia" ? <IconoDimia tamano={26} /> : (
+                  {i.clave === "dimia" ? <IconoDimia tamano={26} /> : LOGOS[i.clave] ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={LOGOS[i.clave]} alt="" className="h-full w-full object-contain" />
-                  )}
+                  ) : <span className="text-[16px] font-bold text-tinta">{i.nombre.slice(0, 1)}</span>}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col pt-1">
                   <span className="text-[15px] font-semibold text-tinta">{i.nombre}</span>

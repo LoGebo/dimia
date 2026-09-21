@@ -359,6 +359,50 @@ async def ver_cuotas(tenant: str = Depends(negocio_id)):
     return await cuotas.uso(tenant)
 
 
+@app.get("/agentes/{agente_id}/skills")
+async def ver_skills(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        raise HTTPException(404)
+    return await negocio.skills_del_agente(tenant, str(agente_id))
+
+
+@app.get("/agentes/{agente_id}/skills/buscar")
+async def buscar_skills(agente_id: uuid.UUID, q: str, tenant: str = Depends(negocio_id)):
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant) or not q.strip():
+        raise HTTPException(400)
+    return {"resultados": await negocio.buscar_skills(tenant, str(agente_id), q.strip()[:80])}
+
+
+class SkillHub(BaseModel):
+    identificador: str
+    fuente: str | None = None
+
+
+@app.post("/agentes/{agente_id}/skills")
+async def poner_skill(agente_id: uuid.UUID, cuerpo: SkillHub, tenant: str = Depends(negocio_id)):
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        raise HTTPException(404)
+    error = await negocio.instalar_skill_hub(tenant, str(agente_id), cuerpo.identificador, cuerpo.fuente)
+    if error:
+        raise HTTPException(400, error)
+    return {"ok": True}
+
+
+class SkillQuitar(BaseModel):
+    clave: str
+    origen: str
+
+
+@app.delete("/agentes/{agente_id}/skills")
+async def quitar_skill(agente_id: uuid.UUID, cuerpo: SkillQuitar, tenant: str = Depends(negocio_id)):
+    if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
+        raise HTTPException(404)
+    error = await negocio.quitar_skill(tenant, str(agente_id), cuerpo.clave, cuerpo.origen)
+    if error:
+        raise HTTPException(400, error)
+    return {"ok": True}
+
+
 @app.get("/agentes/{agente_id}/rutinas")
 async def ver_rutinas(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     return await negocio.rutinas(tenant, str(agente_id))
