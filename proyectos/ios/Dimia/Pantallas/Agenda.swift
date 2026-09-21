@@ -21,11 +21,11 @@ struct AgendaPantalla: View {
                     }
                     ForEach(visibles) { FilaCita(cita: $0, zona: zona) }
                 } header: {
-                    Text(visibles.isEmpty ? "" : visibles.count == 1 ? "Una cita" : "\(visibles.count) citas")
+                    Text(Formato.fecha(dia, zona: zona, larga: true).capitalizedFirst + (visibles.isEmpty ? "" : visibles.count == 1 ? ", una cita" : ", \(visibles.count) citas"))
                 }
             }
             .listaDimia()
-            .navigationTitle(Formato.fecha(dia, zona: zona, larga: true).capitalizedFirst)
+            .navigationTitle(Formato.fecha(dia, zona: zona).replacingOccurrences(of: ".", with: "").capitalizedFirst)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {

@@ -255,7 +255,7 @@ nonisolated enum Formato {
         let f = DateFormatter()
         f.locale = Locale(identifier: "es_MX")
         f.timeZone = TimeZone(identifier: zona)
-        f.dateFormat = larga ? "EEEE d 'de' MMMM" : "d MMM"
+        f.dateFormat = larga ? "EEEE d 'de' MMMM" : "EEE d MMM"
         return f.string(from: fecha)
     }
 
