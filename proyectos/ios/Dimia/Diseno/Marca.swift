@@ -81,3 +81,41 @@ extension View {
         self.listStyle(.insetGrouped).scrollContentBackground(.hidden).background(Color.fondo)
     }
 }
+
+// MARK: Tipografía editorial
+
+import CoreText
+
+/// Newsreader 300 (la serif de la marca) para titulares y cifras grandes; el resto es SF del sistema.
+/// La fuente es variable: el peso y el tamaño óptico se piden por eje.
+extension Font {
+    static func editorial(_ tamano: CGFloat, peso: CGFloat = 300) -> Font {
+        let base = UIFont(name: "Newsreader16pt-Regular", size: tamano) ?? UIFont(name: "Newsreader", size: tamano)
+        guard let base else { return .system(size: tamano, weight: .light, design: .serif) }
+        let variaciones: [Int: CGFloat] = [0x77676874: peso, 0x6F70737A: min(72, max(6, tamano))]  // wght, opsz
+        let descriptor = base.fontDescriptor.addingAttributes([UIFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String): variaciones])
+        return Font(UIFont(descriptor: descriptor, size: tamano))
+    }
+}
+
+/// Los títulos grandes de navegación, en la serif de la marca.
+enum Apariencia {
+    static func aplicar() {
+        let nav = UINavigationBar.appearance()
+        if let f = UIFont(name: "Newsreader16pt-Regular", size: 34) {
+            let d = f.fontDescriptor.addingAttributes([UIFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String): [0x77676874: 300, 0x6F70737A: 34]])
+            nav.largeTitleTextAttributes = [.font: UIFont(descriptor: d, size: 34), .kern: -0.4]
+        }
+    }
+}
+
+/// La superficie de tinta: el único bloque de marca fuerte de cada pantalla.
+struct Tinta<Contenido: View>: View {
+    @ViewBuilder var contenido: Contenido
+    var body: some View {
+        contenido
+            .foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(UIColor(hex: 0x0b0f17)), in: .rect(cornerRadius: 22))
+    }
+}

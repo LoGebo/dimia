@@ -35,6 +35,7 @@ targets:
         LSApplicationCategoryType: public.app-category.business
         NSAppTransportSecurity: { NSAllowsArbitraryLoads: false }
         CFBundleDevelopmentRegion: es-MX
+        UIAppFonts: [Newsreader.ttf]
         CFBundleLocalizations: [es-MX]
     settings:
       base:

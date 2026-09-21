@@ -4,6 +4,8 @@ import SwiftUI
 struct DimiaApp: App {
     @State private var sesion = Sesion()
 
+    init() { Apariencia.aplicar() }
+
     var body: some Scene {
         WindowGroup {
             Group {

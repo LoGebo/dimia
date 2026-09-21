@@ -11,8 +11,8 @@ struct HoyPantalla: View {
             List {
                 if let error { Section { FilaError(texto: error) { Task { await cargar() } } } }
                 if let hoy {
+                    Section { portada(hoy) }.listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
                     avisos(hoy)
-                    cifras(hoy)
                     proximas(hoy)
                     entradas(hoy)
                 } else if error == nil {
@@ -20,8 +20,7 @@ struct HoyPantalla: View {
                 }
             }
             .listaDimia()
-            .navigationTitle("Hoy")
-            .navigationSubtitle(sesion.negocio?.nombre ?? "")
+            .navigationTitle(sesion.negocio?.nombre ?? "Hoy")
             .toolbar { BotonAjustes() }
             .refreshable { await cargar() }
             .task(id: sesion.negocio?.id) { await cargar() }
@@ -30,7 +29,7 @@ struct HoyPantalla: View {
     }
 
     private func cargar() async {
-        do { hoy = try await API.obtener(sesion.ruta + "/hoy"); error = nil }
+        do { let h: Hoy = try await API.obtener(sesion.ruta + "/hoy"); withAnimation(.snappy) { hoy = h }; error = nil }
         catch { self.error = error.localizedDescription }
     }
 
@@ -57,23 +56,32 @@ struct HoyPantalla: View {
         }
     }
 
-    private func cifras(_ h: Hoy) -> some View {
+    /// La portada del día: saludo en la serif de la marca y las tres cifras que importan, sobre tinta.
+    private func portada(_ h: Hoy) -> some View {
         let agenda = sesion.negocio?.agenda ?? true
         let citas = h.citas.filter { $0.estado != "cancelada" }.count
-        return Section {
-            HStack(alignment: .top, spacing: 0) {
-                if agenda { cifra("\(citas)", citas == 1 ? "cita hoy" : "citas hoy") }
-                cifra(Formato.moneda(h.cobros.cobrado), "cobrado hoy")
-                cifra("\(h.avisos.mensajes_sin_leer)", "sin leer")
+        let hora = Calendar.current.component(.hour, from: .now)
+        let saludo = hora < 12 ? "Buenos días." : hora < 19 ? "Buenas tardes." : "Buenas noches."
+        return Tinta {
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(saludo).font(.editorial(34))
+                    Text(Formato.fecha(.now, zona: h.zona_horaria, larga: true).capitalizedFirst).font(.subheadline).opacity(0.72)
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    if agenda { cifra("\(citas)", citas == 1 ? "cita hoy" : "citas hoy") }
+                    cifra(Formato.moneda(h.cobros.cobrado), "cobrado hoy")
+                    cifra("\(h.avisos.mensajes_sin_leer)", "sin leer")
+                }
             }
-            .padding(.vertical, 6)
+            .padding(22)
         }
     }
 
     private func cifra(_ valor: String, _ etiqueta: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(valor).font(.cifra(.title2, peso: .semibold)).foregroundStyle(Color.tinta)
-            Text(etiqueta).font(.subheadline).foregroundStyle(Color.tinta3)
+            Text(valor).font(.editorial(30)).monospacedDigit().contentTransition(.numericText())
+            Text(etiqueta).font(.footnote).opacity(0.72)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -9,6 +9,7 @@ struct AgentesPantalla: View {
     @State private var creando = false
     @State private var ruta: [Agente] = []
     @State private var cerebro: EstadoCerebro?
+    @Namespace private var zoom
 
     var body: some View {
         NavigationStack(path: $ruta) {
@@ -29,21 +30,21 @@ struct AgentesPantalla: View {
                 let visibles = busqueda.isEmpty ? agentes : agentes.filter { "\($0.nombre) \($0.trabajo ?? "")".localizedCaseInsensitiveContains(busqueda) }
                 Section { ForEach(visibles) { a in
                     NavigationLink(value: a) {
-                        HStack(spacing: 12) {
-                            AvatarAgente(nombre: a.nombre, avatar: a.avatar, tamano: 46, activo: a.activo)
-                            VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 14) {
+                            AvatarAgente(nombre: a.nombre, avatar: a.avatar, tamano: 54, activo: a.activo)
+                            VStack(alignment: .leading, spacing: 3) {
                                 Text(a.nombre).font(.body.weight(.semibold)).foregroundStyle(Color.tinta)
-                                Text(a.trabajo ?? "Todavía no le dice para qué lo quiere").font(.subheadline).foregroundStyle(Color.tinta3).lineLimit(1)
+                                Text(a.trabajo ?? "Todavía no le dice para qué lo quiere").font(.subheadline).foregroundStyle(Color.tinta3).lineLimit(2)
                             }
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 6)
                     }
+                    .matchedTransitionSource(id: a.id, in: zoom)
                 } }
             }
             .listaDimia()
             .searchable(text: $busqueda, prompt: "Buscar")
             .navigationTitle("Agentes")
-            .navigationSubtitle(sesion.negocio?.nombre ?? "")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { Task { await crear() } } label: { Image(systemName: "plus") }
@@ -58,6 +59,7 @@ struct AgentesPantalla: View {
                     agentes.removeAll { $0.id == a.id }
                     ruta.removeAll()
                 }
+                .navigationTransition(.zoom(sourceID: a.id, in: zoom))
             }
             .refreshable { await cargar() }
             .task(id: sesion.negocio?.id) { await cargar() }

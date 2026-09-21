@@ -47,6 +47,8 @@ struct HiloAgente: View {
     @State private var esperaTrabajo = false   // eligió «Otra cosa»: la siguiente frase es su trabajo
     @State private var ficha = false
     @State private var tareaStream: Task<Void, Never>?
+    @State private var enviados = 0       // dispara el háptico al enviar
+    @State private var respondidos = 0    // y al terminar la respuesta
 
     private var base: String { sesion.ruta + "/agentes/\(agente.id.uuidString.lowercased())" }
 
@@ -54,6 +56,7 @@ struct HiloAgente: View {
         ScrollViewReader { lector in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
+                    if mensajes.count <= 1 { portada }
                     ForEach(mensajes) { m in
                         fila(m)
                     }
@@ -64,24 +67,31 @@ struct HiloAgente: View {
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.interactively)
-            .onChange(of: mensajes) { withAnimation { lector.scrollTo("fin", anchor: .bottom) } }
+            .onChange(of: mensajes) { withAnimation(.snappy) { lector.scrollTo("fin", anchor: .bottom) } }
+            .animation(.snappy, value: mensajes.count)
             .onChange(of: pasosVivos) { lector.scrollTo("fin", anchor: .bottom) }
         }
         .background(Color.fondo)
+        .sensoryFeedback(.impact(weight: .light), trigger: enviados)
+        .sensoryFeedback(.success, trigger: respondidos)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 8) {
-                if mensajes.count <= 1 && agente.conCerebro && !escribiendo {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(SUGERENCIAS, id: \.self) { s in
-                                Button(s) { Task { await enviar(s) } }
-                                    .font(.footnote).buttonStyle(.bordered).buttonBorderShape(.capsule)
+            GlassEffectContainer(spacing: 10) {
+                VStack(spacing: 10) {
+                    if mensajes.count <= 1 && agente.conCerebro && !escribiendo {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(SUGERENCIAS, id: \.self) { s in
+                                    Button(s) { Task { await enviar(s) } }
+                                        .font(.subheadline).foregroundStyle(Color.tinta)
+                                        .padding(.horizontal, 14).padding(.vertical, 9)
+                                        .glassEffect(.regular.interactive())
+                                }
                             }
+                            .padding(.horizontal, 14)
                         }
-                        .padding(.horizontal, 14)
                     }
+                    Compositor(nombre: agente.nombre, ocupado: escribiendo) { texto, ruta in Task { await enviar(texto, ruta: ruta) } }
                 }
-                Compositor(nombre: agente.nombre, ocupado: escribiendo) { texto, ruta in Task { await enviar(texto, ruta: ruta) } }
             }
             .padding(.bottom, 6)
         }
@@ -114,6 +124,19 @@ struct HiloAgente: View {
         .task(id: agente.id) { await cargar() }
         .onChange(of: fase) { if fase == .active && !escribiendo { Task { await reengancharse() } } }
         .onDisappear { tareaStream?.cancel() }
+    }
+
+    /// La portada del agente cuando el hilo empieza: quién es y para qué está, como una ficha de contacto.
+    private var portada: some View {
+        VStack(spacing: 10) {
+            AvatarAgente(nombre: agente.nombre, avatar: agente.avatar, tamano: 92, trabajando: escribiendo)
+            Text(agente.nombre).font(.editorial(30)).foregroundStyle(Color.tinta)
+            if let t = agente.trabajo {
+                Text(t).font(.subheadline).foregroundStyle(Color.tinta2).multilineTextAlignment(.center).frame(maxWidth: 300)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 28).padding(.bottom, 12)
     }
 
     // MARK: filas
@@ -271,6 +294,7 @@ struct HiloAgente: View {
             return
         }
         mensajes.append(.init(id: id, de: "yo", texto: t))
+        enviados += 1
         var cuerpo: [String: String] = ["texto": t]
         if let ruta { cuerpo["ruta"] = ruta }
         leer(API.stream("POST", base + "/turno", cuerpo: cuerpo), idMio: id)
@@ -324,6 +348,7 @@ struct HiloAgente: View {
             if !pasosVivos.isEmpty, let i = mensajes.firstIndex(where: { $0.id == idAgente }) { mensajes[i].pasos = pasosVivos }
             pasosVivos = []
             escribiendo = false
+            if creada { respondidos += 1 }
             if Task.isCancelled { return }
             if !termino { await reengancharse() }
             else if await trabajando() { seguir() }  // había mensajes formados: ya arrancó el siguiente
@@ -445,17 +470,20 @@ struct Compositor: View {
                     .lineLimit(1...6).font(.body).focused($foco)
                     .padding(.leading, 14).padding(.vertical, 10)
                     .submitLabel(.send)
+                let vacio = texto.trimmingCharacters(in: .whitespaces).isEmpty
                 Button {
                     let t = texto; texto = ""; enviar(t, nivel); nivel = nil
                 } label: {
-                    Image(systemName: "arrow.up").font(.body.weight(.bold)).frame(width: 32, height: 32)
-                        .background(texto.trimmingCharacters(in: .whitespaces).isEmpty ? Color.tinta3 : Color.acento).foregroundStyle(.white).clipShape(.circle)
+                    Image(systemName: "arrow.up").font(.body.weight(.bold)).frame(width: 34, height: 34)
+                        .foregroundStyle(vacio ? Color.tinta3 : .white)
+                        .background(vacio ? Color.clear : Color.acento, in: .circle)
                 }
-                .disabled(texto.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(vacio)
+                .animation(.snappy, value: vacio)
                 .padding(4)
                 .accessibilityLabel("Enviar")
             }
-            .glassEffect(.regular, in: .rect(cornerRadius: 22))
+            .glassEffect(.regular, in: .rect(cornerRadius: 24))
         }
         .padding(.horizontal, 10)
     }
