@@ -55,7 +55,9 @@ nonisolated final class API: Sendable {
     static func llamar(_ metodo: String, _ ruta: String, cuerpo: (some Encodable)? = Optional<String>.none, conToken: Bool = true) async throws -> Data {
         let (datos, resp) = try await URLSession.shared.data(for: peticion(metodo, ruta, cuerpo: cuerpo, conToken: conToken))
         let codigo = (resp as? HTTPURLResponse)?.statusCode ?? 0
-        if codigo == 401, conToken, await refrescar() {
+        if codigo == 401, conToken {
+            // El access expiró: se refresca una vez y se reintenta. Si el refresh no sirve, la sesión terminó.
+            guard await refrescar() else { tokens = nil; throw Fallo.sinSesion }
             let (d2, r2) = try await URLSession.shared.data(for: peticion(metodo, ruta, cuerpo: cuerpo, conToken: conToken))
             return try revisar(d2, (r2 as? HTTPURLResponse)?.statusCode ?? 0)
         }
@@ -65,7 +67,6 @@ nonisolated final class API: Sendable {
     static func revisar(_ datos: Data, _ codigo: Int) throws -> Data {
         guard (200..<300).contains(codigo) else {
             let e = try? decodificador.decode(ErrorApi.self, from: datos)
-            if codigo == 401 { tokens = nil; throw Fallo.sinSesion }
             throw Fallo.http(codigo, e?.detalle ?? "")
         }
         return datos

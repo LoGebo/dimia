@@ -50,14 +50,30 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dimia
+  DimiaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: DimiaUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+    dependencies:
+      - target: Dimia
 schemes:
   Dimia:
     build:
       targets:
         Dimia: all
         DimiaTests: [test]
+        DimiaUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
-      targets: [DimiaTests]
+      targets: [DimiaTests, DimiaUITests]
+      environmentVariables:
+        CORREO: $(CORREO)
+        CLAVE: $(CLAVE)
+        CAPTURAS: $(CAPTURAS)

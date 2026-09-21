@@ -40,10 +40,10 @@ nonisolated struct Cita: Codable, Sendable, Identifiable, Hashable {
     var confirmado_por_cliente: Date?
     var confirmacion_enviada: Bool
     var cliente_id: UUID?
-    var precio: Decimal?
+    var precio: Monto?
     var servicio: String
     var recurso: String
-    var cobrado: Decimal?
+    var cobrado: Monto?
 
     /// Cómo va la confirmación del día anterior: confirmó, sin confirmar, o no se le preguntó.
     var confirmacion: String? {
@@ -53,20 +53,31 @@ nonisolated struct Cita: Codable, Sendable, Identifiable, Hashable {
     }
 }
 
+/// Dinero: la API lo manda como texto ("1250.00") para no perder centavos; aquí es Decimal.
+nonisolated struct Monto: Codable, Sendable, Hashable {
+    var valor: Decimal
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let s = try? c.decode(String.self), let d = Decimal(string: s) { valor = d }
+        else { valor = try c.decode(Decimal.self) }
+    }
+    func encode(to encoder: Encoder) throws { var c = encoder.singleValueContainer(); try c.encode("\(valor)") }
+}
+
 nonisolated struct Avisos: Codable, Sendable {
     var retrasadas: Int
     var escaladas: Int
     var recados: Int
     var cobros_pendientes: Int
-    var cobros_monto: Decimal
+    var cobros_monto: Monto
     var por_cobrar_atendidas: Int
     var mensajes_sin_leer: Int
 }
 
 nonisolated struct Cobros: Codable, Sendable {
-    var cobrado: Decimal
+    var cobrado: Monto
     var operaciones: Int
-    var pendiente: Decimal
+    var pendiente: Monto
 }
 
 nonisolated struct Conversacion: Codable, Sendable, Identifiable, Hashable {
@@ -223,6 +234,7 @@ nonisolated enum Formato {
         return "\(n[i..<n.index(i, offsetBy: 3)]) \(n[n.index(i, offsetBy: 3)..<n.index(i, offsetBy: 6)]) \(n[n.index(i, offsetBy: 6)...])"
     }
 
+    static func moneda(_ m: Monto) -> String { moneda(m.valor) }
     static func moneda(_ d: Decimal) -> String {
         let f = NumberFormatter()
         f.numberStyle = .currency

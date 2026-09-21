@@ -112,17 +112,19 @@ private struct Ojos: View {
                 v.offset(x: fase * w * 0.12)
             }, animation: { _ in .easeInOut(duration: 0.9) })
         }
+        .task {
+            // Un solo reloj para los dos ojos; si la vista se va a media pestañeada, los ojos quedan abiertos.
+            defer { parpadeo = false }
+            while !Task.isCancelled {
+                guard (try? await Task.sleep(for: .seconds(Double.random(in: 2.5...6)))) != nil else { return }
+                withAnimation(.easeInOut(duration: 0.08)) { parpadeo = true }
+                guard (try? await Task.sleep(for: .milliseconds(120))) != nil else { return }
+                withAnimation(.easeInOut(duration: 0.1)) { parpadeo = false }
+            }
+        }
     }
     private func ojo(_ w: CGFloat, _ h: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: w * 0.12).fill(Color(UIColor(hex: 0x0b0f17)))
             .frame(width: w * 0.24, height: parpadeo ? h * 0.15 : h)
-            .task {
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(Double.random(in: 2.5...6)))
-                    withAnimation(.easeInOut(duration: 0.08)) { parpadeo = true }
-                    try? await Task.sleep(for: .milliseconds(120))
-                    withAnimation(.easeInOut(duration: 0.1)) { parpadeo = false }
-                }
-            }
     }
 }

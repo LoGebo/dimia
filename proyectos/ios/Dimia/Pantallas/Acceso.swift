@@ -49,6 +49,14 @@ struct Acceso: View {
         .background(Color.fondo)
         .scrollDismissesKeyboard(.interactively)
         .onSubmit { if foco == .email { foco = .password } else { Task { await entrar() } } }
+        .task {
+            #if DEBUG
+            // Para probar en el simulador: `simctl launch booted mx.dimia.app -correo x -clave y`.
+            if let c = UserDefaults.standard.string(forKey: "correo"), let k = UserDefaults.standard.string(forKey: "clave"), email.isEmpty {
+                email = c; password = k; await entrar()
+            }
+            #endif
+        }
     }
 
     private func campo(_ titulo: String, texto: Binding<String>, contenido: UITextContentType? = nil, seguro: Bool = false, foco f: Campo) -> some View {

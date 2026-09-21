@@ -34,7 +34,8 @@ final class Sesion {
 
     func entrar(email: String, password: String) async throws {
         try await API.entrar(email: email.lowercased().trimmingCharacters(in: .whitespaces), password: password)
-        await cargar()
+        // En una tarea propia: al guardarse el token la pantalla de acceso se desmonta y cancelaría esta.
+        await Task { await cargar() }.value
     }
 
     func elegir(_ n: Negocio) {

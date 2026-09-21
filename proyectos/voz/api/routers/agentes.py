@@ -82,6 +82,9 @@ async def _reenviar(tenant_id: uuid.UUID, metodo: str, ruta: str, json: Any = No
     """Una petición corta al orquestador; la respuesta se devuelve tal cual (JSON y estado)."""
     async with _orquestador(tenant_id) as c:
         r = await c.request(metodo, ruta, json=json)
+    if r.status_code in (401, 403):
+        # Es la llave entre servicios, no la sesión del dueño: nunca se devuelve como 401.
+        raise ErrorApi(CodigoError.INTERNO, "el orquestador rechazó la llave de la API")
     return Response(content=r.content, status_code=r.status_code, media_type=r.headers.get("content-type", "application/json"))
 
 
