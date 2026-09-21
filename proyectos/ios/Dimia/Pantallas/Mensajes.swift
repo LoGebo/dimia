@@ -5,18 +5,67 @@ struct MensajesPantalla: View {
     @State private var lista: [Conversacion] = []
     @State private var error: String?
     @State private var busqueda = ""
+    @State private var filtro: Filtro = .todos
+
+    enum Filtro: String, CaseIterable, Identifiable {
+        case todos = "Todos", sinLeer = "Sin leer", pidenPersona = "Piden persona", whatsapp = "WhatsApp", llamadas = "Llamadas", redes = "Redes"
+        var id: String { rawValue }
+        func pasa(_ c: Conversacion) -> Bool {
+            switch self {
+            case .todos: true
+            case .sinLeer: c.mensajes_sin_leer > 0
+            case .pidenPersona: c.estado == "escalada"
+            case .whatsapp: c.canal == "whatsapp"
+            case .llamadas: c.canal == "llamada"
+            case .redes: c.canal == "instagram" || c.canal == "messenger"
+            }
+        }
+    }
+
+    private var visibles: [Conversacion] {
+        lista.filter(filtro.pasa).filter { busqueda.isEmpty || $0.nombre.localizedCaseInsensitiveContains(busqueda) || ($0.ultimo_mensaje ?? "").localizedCaseInsensitiveContains(busqueda) }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                if let error { Section { FilaError(texto: error) { Task { await cargar() } } } }
-                let visibles = busqueda.isEmpty ? lista : lista.filter { $0.nombre.localizedCaseInsensitiveContains(busqueda) || ($0.ultimo_mensaje ?? "").localizedCaseInsensitiveContains(busqueda) }
-                Section {
-                    if visibles.isEmpty && error == nil { Vacio(titulo: "Todavía nadie escribe.", detalle: "Lo que llegue por WhatsApp, teléfono y redes aparece aquí.") }
-                    ForEach(visibles) { c in NavigationLink(value: c) { FilaConversacion(c: c) } }
+                if let error { FilaError(texto: error) { Task { await cargar() } }.listRowBackground(Color.fondo).listRowSeparator(.hidden) }
+                if visibles.isEmpty && error == nil {
+                    Vacio(titulo: filtro == .todos ? "Todavía nadie escribe." : "Nada con este filtro.", detalle: filtro == .todos ? "Lo que llegue por WhatsApp, teléfono y redes aparece aquí." : nil)
+                        .listRowBackground(Color.fondo).listRowSeparator(.hidden).padding(.horizontal, 4)
+                }
+                ForEach(visibles) { c in
+                    NavigationLink(value: c) { FilaConversacion(c: c) }
+                        .listRowBackground(Color.fondo)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
                 }
             }
-            .listaDimia()
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.fondo)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                // Filtros como en Mensajes de iOS: fichas de vidrio, una activa.
+                ScrollView(.horizontal, showsIndicators: false) {
+                    GlassEffectContainer(spacing: 8) {
+                        HStack(spacing: 8) {
+                            ForEach(Filtro.allCases) { f in
+                                let n = f == .todos ? 0 : lista.filter(f.pasa).count
+                                Button { withAnimation(.snappy) { filtro = f } } label: {
+                                    HStack(spacing: 6) {
+                                        Text(f.rawValue).font(.subheadline.weight(.medium))
+                                        if n > 0 { Text("\(n)").font(.caption.monospacedDigit()).opacity(0.7) }
+                                    }
+                                    .padding(.horizontal, 14).padding(.vertical, 8)
+                                    .foregroundStyle(filtro == f ? Color(UIColor(hex: 0xeef1f7)) : Color.tinta)
+                                }
+                                .glassEffect(filtro == f ? .regular.tint(Color(UIColor(hex: 0x0b0f17))).interactive() : .regular.interactive(), in: .capsule)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                    }
+                }
+            }
             .searchable(text: $busqueda, prompt: "Buscar")
             .navigationTitle("Mensajes")
             .toolbar { BotonAjustes() }
@@ -34,21 +83,32 @@ struct MensajesPantalla: View {
 
 struct FilaConversacion: View {
     var c: Conversacion
+    private var glifo: String {
+        ["whatsapp": "message.fill", "llamada": "phone.fill", "instagram": "camera.fill", "messenger": "bubble.left.fill", "sms": "text.bubble.fill"][c.canal] ?? "bubble.left.fill"
+    }
     var body: some View {
-        let pendiente = c.estado == "escalada" || c.mensajes_sin_leer > 0
-        HStack(alignment: .top, spacing: 10) {
-            Cuadrado(color: c.estado == "escalada" ? .alerta : .acento).padding(.top, 7).opacity(pendiente ? 1 : 0)
+        let nuevo = c.mensajes_sin_leer > 0
+        HStack(alignment: .top, spacing: 14) {
+            ZStack(alignment: .bottomTrailing) {
+                Image(systemName: glifo).font(.title3).foregroundStyle(Color.tinta2)
+                    .frame(width: 48, height: 48).background(Color.panel2, in: .circle)
+                if nuevo || c.estado == "escalada" {
+                    Cuadrado(color: c.estado == "escalada" ? .alerta : .acento, lado: 12).overlay(Rectangle().stroke(Color.fondo, lineWidth: 2))
+                }
+            }
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(c.nombre).font(.body.weight(c.mensajes_sin_leer > 0 ? .semibold : .medium)).foregroundStyle(Color.tinta).lineLimit(1)
+                    Text(c.nombre).font(.body.weight(.semibold)).foregroundStyle(Color.tinta).lineLimit(1)
                     Spacer()
-                    Text(Formato.relativo(c.ultimo_mensaje_en)).font(.subheadline).foregroundStyle(Color.tinta3)
+                    Text(Formato.cuando(c.ultimo_mensaje_en)).font(.subheadline).foregroundStyle(nuevo ? Color.acento : Color.tinta3)
                 }
-                Text(c.ultimo_mensaje ?? c.resumen ?? "").font(.subheadline).foregroundStyle(c.mensajes_sin_leer > 0 ? Color.tinta : Color.tinta2).lineLimit(2)
-                Text(c.estado == "escalada" ? "Pidió una persona por \(c.canalNombre)" : c.canalNombre).font(.footnote).foregroundStyle(c.estado == "escalada" ? Color.alerta : Color.tinta3)
+                Text(c.ultimo_mensaje ?? c.resumen ?? "").font(.subheadline).foregroundStyle(nuevo ? Color.tinta : Color.tinta2).lineLimit(2)
+                if c.estado == "escalada" {
+                    Text("Pidió una persona").font(.footnote.weight(.medium)).foregroundStyle(Color.alerta)
+                }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
 
@@ -75,6 +135,7 @@ struct HiloConversacion: View {
         }
         .defaultScrollAnchor(.bottom)
         .background(Color.fondo)
+        .toolbar(.hidden, for: .tabBar)
         .navigationTitle(conversacion.nombre)
         .navigationSubtitle(conversacion.contacto.hasPrefix("+") ? Formato.telefono(conversacion.contacto) : conversacion.canalNombre)
         .navigationBarTitleDisplayMode(.inline)

@@ -10,6 +10,7 @@ struct AgentesPantalla: View {
     @State private var ruta: [Agente] = []
     @State private var cerebro: EstadoCerebro?
     @Namespace private var zoom
+    @State private var ultimos: [UUID: UltimoMensaje] = [:]
 
     var body: some View {
         NavigationStack(path: $ruta) {
@@ -28,21 +29,30 @@ struct AgentesPantalla: View {
                     } }
                 }
                 let visibles = busqueda.isEmpty ? agentes : agentes.filter { "\($0.nombre) \($0.trabajo ?? "")".localizedCaseInsensitiveContains(busqueda) }
-                Section { ForEach(visibles) { a in
+                ForEach(visibles) { a in
                     NavigationLink(value: a) {
-                        HStack(spacing: 14) {
-                            AvatarAgente(nombre: a.nombre, avatar: a.avatar, tamano: 54, activo: a.activo)
+                        HStack(alignment: .center, spacing: 14) {
+                            AvatarAgente(nombre: a.nombre, avatar: a.avatar, tamano: 54)
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(a.nombre).font(.body.weight(.semibold)).foregroundStyle(Color.tinta)
-                                Text(a.trabajo ?? "Todavía no le dice para qué lo quiere").font(.subheadline).foregroundStyle(Color.tinta3).lineLimit(2)
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(a.nombre).font(.body.weight(.semibold)).foregroundStyle(Color.tinta)
+                                    Spacer()
+                                    if let u = ultimos[a.id] { Text(Formato.cuando(u.creado)).font(.subheadline).foregroundStyle(Color.tinta3) }
+                                }
+                                Text(vistaPrevia(a)).font(.subheadline).foregroundStyle(Color.tinta2).lineLimit(2)
                             }
                         }
                         .padding(.vertical, 6)
                     }
                     .matchedTransitionSource(id: a.id, in: zoom)
-                } }
+                    .listRowBackground(Color.fondo)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                }
             }
-            .listaDimia()
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.fondo)
             .searchable(text: $busqueda, prompt: "Buscar")
             .navigationTitle("Agentes")
             .toolbar {
@@ -66,9 +76,21 @@ struct AgentesPantalla: View {
         }
     }
 
+    /// Lo último que pasó con el agente, como la vista previa de una app de mensajes.
+    private func vistaPrevia(_ a: Agente) -> String {
+        if let u = ultimos[a.id] {
+            let t = u.texto.replacingOccurrences(of: "\n", with: " ")
+            return u.de == "yo" ? "Usted: " + t : t
+        }
+        return a.trabajo ?? "Todavía no le dice para qué lo quiere"
+    }
+
     private func cargar() async {
         do {
             agentes = try await API.obtener(sesion.ruta + "/agentes"); error = nil
+            if let lista: [UltimoMensaje] = try? await API.obtener(sesion.ruta + "/agentes/ultimos") {
+                ultimos = Dictionary(uniqueKeysWithValues: lista.map { ($0.agente_id, $0) })
+            }
             try? await API.enviar("POST", sesion.ruta + "/agentes-negocio/despertar")  // enciende la máquina mientras el dueño mira la lista
             cerebro = try? await API.obtener(sesion.ruta + "/agentes-negocio/cerebro")
         } catch { self.error = error.localizedDescription }

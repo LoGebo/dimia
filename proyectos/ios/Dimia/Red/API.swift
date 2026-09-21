@@ -136,6 +136,14 @@ nonisolated final class API: Sendable {
     }
 }
 
+extension JSONDecoder.DateDecodingStrategy {
+    /// Parsea una fecha ISO suelta (con o sin fracciones) con el mismo criterio que el decodificador.
+    nonisolated func fecha(_ s: String) -> Date? {
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return iso.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+    }
+}
+
 nonisolated enum SSE {
     /// Separa un cuerpo SSE en sus eventos; lo usa la prueba unitaria (el stream real va línea por línea).
     static func eventos(_ texto: String) -> [Evento] {

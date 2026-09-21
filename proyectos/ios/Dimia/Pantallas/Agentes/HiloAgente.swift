@@ -14,6 +14,7 @@ struct MensajeHilo: Identifiable, Equatable {
     var pasos: [Paso]? = nil
     var propuesta: Propuesta? = nil
     var resuelta: String? = nil
+    var creado: Date = .now
 }
 
 private let ROLES: [MensajeHilo.Opcion] = [
@@ -57,19 +58,24 @@ struct HiloAgente: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     if mensajes.count <= 1 { portada }
-                    ForEach(mensajes) { m in
+                    ForEach(Array(mensajes.enumerated()), id: \.element.id) { i, m in
+                        if i == 0 || m.creado.timeIntervalSince(mensajes[i - 1].creado) > 3600 {
+                            Text(Formato.momento(m.creado)).font(.caption).foregroundStyle(Color.tinta3).frame(maxWidth: .infinity).padding(.vertical, 6)
+                        }
                         fila(m)
                     }
-                    if escribiendo { actividad }
+                    if escribiendo { ActividadViva(pasos: pasosVivos, haciendo: haciendo ?? pensamiento) }
                     Color.clear.frame(height: 1).id("fin")
                 }
                 .padding(.horizontal, 14).padding(.top, 10).padding(.bottom, 6)
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.interactively)
-            .onChange(of: mensajes) { withAnimation(.snappy) { lector.scrollTo("fin", anchor: .bottom) } }
-            .animation(.snappy, value: mensajes.count)
+            // Un mensaje nuevo baja con animación; el texto que va llegando en stream, sin ella (si no, se pelean).
+            .onChange(of: mensajes.count) { withAnimation(.snappy) { lector.scrollTo("fin", anchor: .bottom) } }
+            .onChange(of: mensajes) { if escribiendo { lector.scrollTo("fin", anchor: .bottom) } }
             .onChange(of: pasosVivos) { lector.scrollTo("fin", anchor: .bottom) }
+            .onChange(of: escribiendo) { lector.scrollTo("fin", anchor: .bottom) }
         }
         .background(Color.fondo)
         .sensoryFeedback(.impact(weight: .light), trigger: enviados)
@@ -97,16 +103,18 @@ struct HiloAgente: View {
         }
         .navigationTitle(agente.nombre)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)  // dentro de un hilo no hay pestañas, como en Mensajes de iOS
         .toolbar {
             ToolbarItem(placement: .principal) {
+                // La píldora con avatar y nombre, como la cabecera de Grok Bot; tocarla abre la ficha.
                 Button { ficha = true } label: {
                     HStack(spacing: 8) {
-                        AvatarAgente(nombre: agente.nombre, avatar: agente.avatar, tamano: 28, trabajando: escribiendo)
-                        VStack(spacing: 0) {
-                            Text(agente.nombre).font(.subheadline.weight(.semibold)).foregroundStyle(Color.tinta)
-                            Text(escribiendo ? (haciendo ?? "trabajando") : agente.activo ? "activo" : "en pausa").font(.caption).foregroundStyle(Color.tinta3).lineLimit(1)
-                        }
+                        AvatarAgente(nombre: agente.nombre, avatar: agente.avatar, tamano: 26, trabajando: escribiendo)
+                        Text(agente.nombre).font(.subheadline.weight(.semibold)).foregroundStyle(Color.tinta)
+                        if escribiendo { ProgressView().controlSize(.mini) }
                     }
+                    .padding(.leading, 6).padding(.trailing, 12).frame(height: 40)
+                    .glassEffect(.regular.interactive(), in: .capsule)
                 }
                 .accessibilityLabel("Ajustes de \(agente.nombre)")
             }
@@ -143,72 +151,75 @@ struct HiloAgente: View {
 
     @ViewBuilder private func fila(_ m: MensajeHilo) -> some View {
         if m.de == "yo" {
+            // El dueño: burbuja de tinta a la derecha, como en Grok Bot.
             VStack(alignment: .trailing, spacing: 3) {
-                Text(m.texto).font(.body).foregroundStyle(.white)
+                Text(m.texto).font(.body).foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
                     .padding(.horizontal, 14).padding(.vertical, 9)
-                    .background(Color.acento).clipShape(.rect(cornerRadius: 18))
-                if let nota = m.nota { Text(nota).font(.caption2).foregroundStyle(Color.tinta3) }
+                    .background(Color(UIColor(hex: 0x0b0f17)), in: .rect(cornerRadius: 18))
+                if let nota = m.nota { Text(nota).font(.caption).foregroundStyle(Color.tinta3) }
             }
-            .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, 48)
+            .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, 56)
         } else if let p = m.propuesta {
+            // Una acción que pide visto bueno: burbuja gris con tarjeta blanca dentro, como el «New email» de Grok Bot.
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) { Cuadrado(color: .alerta); Text(p.resumen).font(.body.weight(.medium)).foregroundStyle(Color.tinta) }
-                if let d = p.detalle { Text(d).font(.subheadline).foregroundStyle(Color.tinta2) }
+                Text("Pide su visto bueno").font(.footnote.weight(.medium)).foregroundStyle(Color.tinta2)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(p.resumen).font(.body).foregroundStyle(Color.tinta)
+                    if let d = p.detalle { Text(d).font(.subheadline).foregroundStyle(Color.tinta2) }
+                }
+                .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.panel, in: .rect(cornerRadius: 12))
                 if let r = m.resuelta {
-                    Estampa(texto: r == "aprobada" ? "Aprobado" : "Rechazado", tono: r == "aprobada" ? .bueno : .tinta3)
+                    Text(r == "aprobada" ? "Aprobado" : "Rechazado").font(.footnote.weight(.medium)).foregroundStyle(Color.tinta2)
                 } else {
                     HStack(spacing: 8) {
-                        Button("Aprobar") { Task { await decidir(m, "aprobar") } }.buttonStyle(.borderedProminent)
-                        Button("Rechazar") { Task { await decidir(m, "rechazar") } }.buttonStyle(.bordered)
+                        Button { Task { await decidir(m, "aprobar") } } label: { Text("Aprobar").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40) }
+                            .buttonStyle(.borderedProminent).tint(Color(UIColor(hex: 0x0b0f17)))
+                        Button { Task { await decidir(m, "rechazar") } } label: { Text("Rechazar").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40) }
+                            .buttonStyle(.bordered).tint(Color.tinta)
                     }
                 }
             }
-            .padding(14)
-            .background(Color.panel, in: .rect(cornerRadius: 16))
-            .padding(.trailing, 24)
+            .padding(12)
+            .background(Color.panel2, in: .rect(cornerRadius: 18))
+            .padding(.trailing, 40)
         } else {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 if let pasos = m.pasos, !pasos.isEmpty { PasosHechos(pasos: pasos) }
-                if !m.texto.isEmpty {
-                    // El agente habla en texto plano, como en Grok Bot; la burbuja es solo del dueño.
-                    Text(LocalizedStringKey(m.texto)).font(.body).foregroundStyle(Color.tinta).textSelection(.enabled)
-                        .padding(.vertical, 4)
+                // El agente: una burbuja gris por párrafo, como en Grok Bot.
+                ForEach(Array(parrafos(m.texto).enumerated()), id: \.offset) { _, t in
+                    Text(LocalizedStringKey(t)).font(.body).foregroundStyle(Color.tinta).textSelection(.enabled)
+                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .background(Color.panel2, in: .rect(cornerRadius: 18))
                 }
                 if let ops = m.opciones {
                     VStack(spacing: 6) {
                         ForEach(ops, id: \.letra) { o in
                             Button { Task { await elegir(m, o) } } label: {
                                 HStack(spacing: 12) {
-                                    Text(o.letra).font(.cifra(.subheadline)).foregroundStyle(m.elegida == o.letra ? .white : Color.acento).frame(width: 22)
+                                    Text(o.letra).font(.cifra(.subheadline)).frame(width: 22)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(o.titulo).font(.subheadline.weight(.semibold))
-                                        Text(o.detalle).font(.caption).foregroundStyle(m.elegida == o.letra ? .white.opacity(0.8) : Color.tinta3)
+                                        Text(o.detalle).font(.caption).opacity(0.7)
                                     }
                                     Spacer()
                                 }
                                 .padding(12)
-                                .background(m.elegida == o.letra ? Color.acento : Color.panel, in: .rect(cornerRadius: 12))
-                                .foregroundStyle(m.elegida == o.letra ? .white : Color.tinta)
+                                .background(m.elegida == o.letra ? Color(UIColor(hex: 0x0b0f17)) : Color.panel2, in: .rect(cornerRadius: 14))
+                                .foregroundStyle(m.elegida == o.letra ? Color(UIColor(hex: 0xeef1f7)) : Color.tinta)
                             }
                             .disabled(m.elegida != nil)
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 24)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 40)
         }
     }
 
-    /// Lo que está haciendo ahora, con sus pasos: quieto y discreto, como Grok Bot.
-    private var actividad: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(pasosVivos) { p in FilaPaso(paso: p) }
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text(haciendo ?? pensamiento ?? "Pensando…").font(.footnote).foregroundStyle(Color.tinta3).lineLimit(2)
-            }
-        }
-        .padding(.vertical, 4)
+    private func parrafos(_ t: String) -> [String] {
+        let partes = t.components(separatedBy: "\n\n").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        return partes.isEmpty ? (t.isEmpty ? [] : [t]) : partes
     }
 
     // MARK: datos
@@ -228,7 +239,7 @@ struct HiloAgente: View {
 
     private func historial() async {
         guard let h: [MensajeAgente] = try? await API.obtener(base + "/mensajes"), !h.isEmpty else { return }
-        mensajes = h.map { .init(id: $0.id, de: $0.de == "yo" ? "yo" : "agente", texto: $0.texto, pasos: $0.pasos) }
+        mensajes = h.map { .init(id: $0.id, de: $0.de == "yo" ? "yo" : "agente", texto: $0.texto, pasos: $0.pasos, creado: API.decodificador.dateDecodingStrategy.fecha($0.creado) ?? .now) }
     }
 
     private func trabajando() async -> Bool {
@@ -356,7 +367,7 @@ struct HiloAgente: View {
     }
 }
 
-/// Los pasos que dio, plegados; como el «Ran full suite · 212 passed» de Grok Bot.
+/// Los pasos que dio, en una sola línea plegada; abierta, agrupa las herramientas repetidas.
 struct PasosHechos: View {
     var pasos: [Paso]
     @State private var abierto = false
@@ -364,38 +375,94 @@ struct PasosHechos: View {
         VStack(alignment: .leading, spacing: 6) {
             Button { withAnimation(.snappy) { abierto.toggle() } } label: {
                 HStack(spacing: 6) {
-                    Text(resumen).font(.caption).foregroundStyle(Color.tinta3)
-                    Image(systemName: "chevron.down").font(.caption2).rotationEffect(.degrees(abierto ? 180 : 0)).foregroundStyle(Color.tinta3)
+                    Text(Pasos.resumen(pasos)).font(.footnote).foregroundStyle(Color.tinta3)
+                    Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).rotationEffect(.degrees(abierto ? 180 : 0)).foregroundStyle(Color.tinta3)
                 }
             }
-            if abierto { ForEach(pasos) { FilaPaso(paso: $0) } }
+            if abierto {
+                ForEach(Pasos.agrupar(pasos)) { g in
+                    HStack(spacing: 8) {
+                        Cuadrado(color: g.fallos > 0 ? .critico : .bueno, lado: 5)
+                        Text(g.veces > 1 ? "\(g.titulo) ×\(g.veces)" : g.titulo).font(.footnote).foregroundStyle(Color.tinta2)
+                        if let d = g.detalle { Text(d).font(.footnote).foregroundStyle(Color.tinta3).lineLimit(1) }
+                        Spacer(minLength: 4)
+                        Text(Formato.duracion(g.ms)).font(.footnote.monospacedDigit()).foregroundStyle(Color.tinta3)
+                    }
+                }
+                .padding(.leading, 2)
+            }
         }
-    }
-    private var resumen: String {
-        let grupos = Array(NSOrderedSet(array: pasos.map { Herramientas.describir($0.herramienta).hizo })) as? [String] ?? []
-        let ms = pasos.compactMap(\.ms).reduce(0, +)
-        return grupos.prefix(3).joined(separator: " · ") + (grupos.count > 3 ? " · +\(grupos.count - 3)" : "") + (ms > 0 ? " · \(Formato.duracion(ms))" : "")
     }
 }
 
-struct FilaPaso: View {
-    var paso: Paso
+/// Lo que hace ahora mismo: una sola línea quieta con el paso en curso y cuántos lleva.
+struct ActividadViva: View {
+    var pasos: [Paso]
+    var haciendo: String?
+    @State private var abierto = false
     var body: some View {
-        HStack(spacing: 8) {
-            Cuadrado(color: paso.ms == nil ? .acento : (paso.ok ?? true) ? .bueno : .critico, lado: 5)
-            Text(paso.ms == nil ? Herramientas.describir(paso.herramienta).haciendo.capitalizedFirst : Herramientas.describir(paso.herramienta).hizo).font(.caption).foregroundStyle(Color.tinta2)
-            if let d = paso.detalle, !d.isEmpty { Text(d).font(.caption).foregroundStyle(Color.tinta3).lineLimit(1) }
-            Spacer(minLength: 4)
-            if let ms = paso.ms { Text(Formato.duracion(ms)).font(.caption.monospacedDigit()).foregroundStyle(Color.tinta3) }
+        VStack(alignment: .leading, spacing: 6) {
+            Button { withAnimation(.snappy) { abierto.toggle() } } label: {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text((haciendo ?? "Pensando").capitalizedFirst).font(.footnote).foregroundStyle(Color.tinta2).lineLimit(1)
+                    if pasos.count > 1 {
+                        Text("· \(pasos.count) pasos").font(.footnote).foregroundStyle(Color.tinta3)
+                        Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).rotationEffect(.degrees(abierto ? 180 : 0)).foregroundStyle(Color.tinta3)
+                    }
+                }
+            }
+            .disabled(pasos.count <= 1)
+            if abierto {
+                ForEach(Pasos.agrupar(pasos)) { g in
+                    HStack(spacing: 8) {
+                        Cuadrado(color: g.fallos > 0 ? .critico : .bueno, lado: 5)
+                        Text(g.veces > 1 ? "\(g.titulo) ×\(g.veces)" : g.titulo).font(.footnote).foregroundStyle(Color.tinta2)
+                        Spacer(minLength: 4)
+                        Text(Formato.duracion(g.ms)).font(.footnote.monospacedDigit()).foregroundStyle(Color.tinta3)
+                    }
+                }
+                .padding(.leading, 2)
+            }
         }
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-extension String {
+nonisolated enum Pasos {
+    struct Grupo: Identifiable { var id: Int; var titulo: String; var detalle: String?; var veces: Int; var ms: Int; var fallos: Int }
+
+    /// Pasos consecutivos con la misma herramienta se cuentan una vez: «Usó el navegador ×12 · 4.2 min».
+    static func agrupar(_ pasos: [Paso]) -> [Grupo] {
+        var salida: [Grupo] = []
+        for p in pasos {
+            let titulo = Herramientas.describir(p.herramienta).hizo
+            if var u = salida.last, u.titulo == titulo {
+                u.veces += 1; u.ms += p.ms ?? 0; u.fallos += (p.ok == false ? 1 : 0); u.detalle = nil
+                salida[salida.count - 1] = u
+            } else {
+                salida.append(Grupo(id: salida.count, titulo: titulo, detalle: (p.detalle?.isEmpty ?? true) ? nil : p.detalle, veces: 1, ms: p.ms ?? 0, fallos: p.ok == false ? 1 : 0))
+            }
+        }
+        return salida
+    }
+
+    static func resumen(_ pasos: [Paso]) -> String {
+        let grupos = agrupar(pasos)
+        let ms = pasos.compactMap(\.ms).reduce(0, +)
+        if grupos.count == 1, let g = grupos.first {
+            return (g.veces > 1 ? "\(g.titulo) ×\(g.veces)" : g.titulo) + (ms > 0 ? " · \(Formato.duracion(ms))" : "")
+        }
+        return "\(pasos.count) pasos" + (ms > 0 ? " en \(Formato.duracion(ms))" : "")
+    }
+}
+
+nonisolated extension String {
     var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }
 
-extension Formato {
+nonisolated extension Formato {
     static func duracion(_ ms: Int) -> String { ms < 1000 ? "\(ms) ms" : ms < 60_000 ? String(format: "%.1f s", Double(ms) / 1000) : "\(ms / 60_000) min" }
 }
 
@@ -440,7 +507,8 @@ nonisolated enum Herramientas {
     }
 }
 
-/// El compositor: campo redondo, botón de enviar y el nivel del modelo para ese mensaje.
+/// El compositor, como en Grok Bot: «+» a la izquierda (nivel del modelo; adjuntos después), campo en píldora,
+/// flecha solo cuando hay algo que enviar.
 struct Compositor: View {
     var nombre: String
     var ocupado: Bool
@@ -457,30 +525,38 @@ struct Compositor: View {
     ]
 
     var body: some View {
+        let vacio = texto.trimmingCharacters(in: .whitespaces).isEmpty
         HStack(alignment: .bottom, spacing: 8) {
             Menu {
-                Button("Automático") { nivel = nil }
-                ForEach(Self.niveles, id: \.0) { n in Button { nivel = n.0 } label: { Text(n.1); Text(n.2) } }
+                Section("Nivel para este mensaje") {
+                    Button { nivel = nil } label: { Label("Automático", systemImage: nivel == nil ? "checkmark" : "") }
+                    ForEach(Self.niveles, id: \.0) { n in Button { nivel = n.0 } label: { Label { Text(n.1); Text(n.2) } icon: { Image(systemName: nivel == n.0 ? "checkmark" : "") } } }
+                }
             } label: {
-                Text(Self.niveles.first { $0.0 == nivel }?.1 ?? "Auto").font(.subheadline.weight(.medium)).frame(height: 40).padding(.horizontal, 4)
+                Image(systemName: "plus").font(.body.weight(.medium)).foregroundStyle(Color.tinta).frame(width: 44, height: 44)
+                    .glassEffect(.regular.interactive(), in: .circle)
             }
-            .accessibilityLabel("Nivel del modelo")
-            HStack(alignment: .bottom, spacing: 6) {
+            .accessibilityLabel("Opciones del mensaje")
+            HStack(alignment: .bottom, spacing: 4) {
                 TextField("Mensaje a \(nombre)", text: $texto, axis: .vertical)
                     .lineLimit(1...6).font(.body).focused($foco)
-                    .padding(.leading, 14).padding(.vertical, 10)
+                    .padding(.leading, 16).padding(.vertical, 12)
                     .submitLabel(.send)
-                let vacio = texto.trimmingCharacters(in: .whitespaces).isEmpty
+                if nivel != nil {
+                    Text(Self.niveles.first { $0.0 == nivel }?.1 ?? "").font(.caption.weight(.medium)).foregroundStyle(Color.tinta2).padding(.bottom, 14)
+                }
                 Button {
                     let t = texto; texto = ""; enviar(t, nivel); nivel = nil
                 } label: {
                     Image(systemName: "arrow.up").font(.body.weight(.bold)).frame(width: 34, height: 34)
-                        .foregroundStyle(vacio ? Color.tinta3 : .white)
-                        .background(vacio ? Color.clear : Color.acento, in: .circle)
+                        .foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
+                        .background(Color(UIColor(hex: 0x0b0f17)), in: .circle)
                 }
                 .disabled(vacio)
+                .opacity(vacio ? 0 : 1)
+                .scaleEffect(vacio ? 0.6 : 1)
                 .animation(.snappy, value: vacio)
-                .padding(4)
+                .padding(5)
                 .accessibilityLabel("Enviar")
             }
             .glassEffect(.regular, in: .rect(cornerRadius: 24))

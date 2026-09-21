@@ -164,6 +164,13 @@ nonisolated struct MensajeAgente: Codable, Sendable {
     var pasos: [Paso]?
 }
 
+nonisolated struct UltimoMensaje: Codable, Sendable {
+    var agente_id: UUID
+    var de: String
+    var texto: String
+    var creado: Date
+}
+
 nonisolated struct Rutina: Codable, Sendable, Identifiable {
     var id: String
     var nombre: String
@@ -261,6 +268,26 @@ nonisolated enum Formato {
 
     static func minutos(_ m: Int) -> String {
         m >= 60 ? "\(m / 60) h \(m % 60 == 0 ? "" : "\(m % 60) min")".trimmingCharacters(in: .whitespaces) : "\(m) min"
+    }
+
+    /// «Hoy 8:00», «Ayer 17:30», «Lun 21 sep 9:15»: el separador de hora del hilo.
+    static func momento(_ fecha: Date) -> String {
+        let f = DateFormatter(); f.locale = Locale(identifier: "es_MX"); f.dateFormat = "HH:mm"
+        let c = Calendar.current
+        if c.isDateInToday(fecha) { return "Hoy " + f.string(from: fecha) }
+        if c.isDateInYesterday(fecha) { return "Ayer " + f.string(from: fecha) }
+        let d = DateFormatter(); d.locale = Locale(identifier: "es_MX"); d.dateFormat = "EEE d MMM HH:mm"
+        return d.string(from: fecha).replacingOccurrences(of: ".", with: "").capitalizedFirst
+    }
+
+    /// Hora si fue hoy, «Ayer», el día de la semana si fue esta semana, la fecha si no: como en Mensajes.
+    static func cuando(_ fecha: Date) -> String {
+        let c = Calendar.current
+        let f = DateFormatter(); f.locale = Locale(identifier: "es_MX")
+        if c.isDateInToday(fecha) { f.dateFormat = "HH:mm"; return f.string(from: fecha) }
+        if c.isDateInYesterday(fecha) { return "Ayer" }
+        if let semana = c.date(byAdding: .day, value: -6, to: .now), fecha > semana { f.dateFormat = "EEEE"; return f.string(from: fecha).capitalizedFirst }
+        f.dateFormat = "d MMM"; return f.string(from: fecha).replacingOccurrences(of: ".", with: "")
     }
 
     static func relativo(_ fecha: Date) -> String {

@@ -127,6 +127,23 @@ async def listar(tenant_id: uuid.UUID, membresia: MiembroDelTenant) -> list[Agen
     return [Agente(**dict(f)) for f in filas]
 
 
+class UltimoMensaje(Modelo):
+    agente_id: uuid.UUID
+    de: str
+    texto: str
+    creado: datetime
+
+
+@router.get("/ultimos", response_model=list[UltimoMensaje])
+async def ultimos(tenant_id: uuid.UUID, membresia: MiembroDelTenant) -> list[UltimoMensaje]:
+    """El último mensaje de cada agente, para la lista (como la vista previa de una app de mensajes)."""
+    filas = await base.fetch(
+        "select distinct on (agente_id) agente_id, de, texto, creado from agente_mensaje where tenant_id = $1 order by agente_id, id desc",
+        tenant_id,
+    )
+    return [UltimoMensaje(**dict(f)) for f in filas]
+
+
 @router.post("", response_model=Agente, status_code=201)
 async def crear(tenant_id: uuid.UUID, membresia: MiembroDelTenant) -> Agente:
     n = await base.fetchval("select count(*) from agente where tenant_id = $1", tenant_id)
