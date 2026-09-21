@@ -604,19 +604,28 @@ async def aprobar(tenant: str, agente_id: str, run_id: str, request_id: str | No
 
 
 async def uso_cuenta(tenant: str) -> dict:
-    """Cupo de la suscripción con la que piensan los agentes (Codex: ventana de 5 h y semana)."""
+    """Cupo de la suscripción con la que piensan los agentes (Codex: ventana de 5 h y semana),
+    la cuenta que está conectada y cuánto de ese cupo se lo llevaron los agentes."""
     cual = await cerebro(tenant)
+    consumo = await db.todos("""select a.nombre, count(*) filter (where t.creado > now() - interval '7 days') as semana,
+                                       count(*) filter (where t.creado > now() - interval '5 hours') as sesion
+                                from agente_turno t join agente a on a.id = t.agente_id
+                                where t.tenant_id = $1 and t.creado > now() - interval '7 days'
+                                group by a.nombre order by semana desc""", tenant)
+    agentes = [{"nombre": c["nombre"], "semana": c["semana"], "sesion": c["sesion"]} for c in consumo]
     if cual != "codex":
-        return {"proveedor": "claude", "ventanas": [], "nota": "Claude no publica el cupo por API; véalo en claude.ai."}
+        return {"proveedor": "claude", "ventanas": [], "agentes": agentes, "nota": "Claude no publica el cupo por API; véalo en claude.ai."}
     t = await renovar_si_hace_falta(tenant)
+    fila = await db.uno("select actualizado, expira from codex_oauth where tenant_id = $1", tenant)
     d = codex.datos_jwt(t["acceso"])
     cab = {"Authorization": f"Bearer {t['acceso']}", "originator": "hermes-agent", "User-Agent": "HermesAgent/0.21"}
     if d.get("cuenta"):
         cab["ChatGPT-Account-ID"] = d["cuenta"]
+    sesion = {"renovada": fila["actualizado"].isoformat() if fila else None, "expira": fila["expira"].isoformat() if fila else None}
     async with httpx.AsyncClient(timeout=15) as http:
         r = await http.get("https://chatgpt.com/backend-api/wham/usage", headers=cab)
     if r.status_code != 200:
-        return {"proveedor": "codex", "ventanas": [], "nota": f"ChatGPT no entregó el uso ({r.status_code})."}
+        return {"proveedor": "codex", "ventanas": [], "agentes": agentes, "sesion": sesion, "nota": f"ChatGPT no entregó el uso ({r.status_code})."}
     p = r.json()
     rl = p.get("rate_limit") or {}
     nombres = {18000: "Sesión (5 h)", 604800: "Semana"}
@@ -629,7 +638,8 @@ async def uso_cuenta(tenant: str) -> dict:
         ventanas.append({"nombre": nombres.get(int(seg), fallback) if isinstance(seg, (int, float)) else fallback,
                          "usado_pct": float(w.get("used_percent") or 0), "reinicia": w.get("reset_at")})
     cred = p.get("credits") or {}
-    return {"proveedor": "codex", "plan": p.get("plan_type"), "ventanas": ventanas,
+    return {"proveedor": "codex", "plan": p.get("plan_type"), "correo": p.get("email"), "ventanas": ventanas, "agentes": agentes, "sesion": sesion,
+            "tope": bool(rl.get("limit_reached")), "modelos": [m for m, v in (p.get("model_usage") or {}).items() if v.get("available")],
             "creditos": cred.get("balance") if cred.get("has_credits") else None}
 
 

@@ -16,7 +16,7 @@ const AGENTES = [
 
 const LOGOS: Record<string, string> = {
   gmail: "/integraciones/gmail.svg", "google-calendar": "/integraciones/google-calendar.svg", "google-drive": "/integraciones/google-drive.svg",
-  whatsapp: "/integraciones/whatsapp.svg", granola: "/integraciones/granola.svg", adobe: "/integraciones/adobe.svg", notion: "/integraciones/notion.png", slack: "/integraciones/slack.svg", higgsfield: "/integraciones/higgsfield.png", github: "/integraciones/github.svg",
+  whatsapp: "/integraciones/whatsapp.svg", granola: "/integraciones/granola.svg", adobe: "/integraciones/adobe.svg", notion: "/integraciones/notion.png", slack: "/integraciones/slack.svg", higgsfield: "/integraciones/higgsfield.png", github: "/integraciones/github.png",
 };
 type AgenteMini = { id: string; nombre: string; avatar: string | null };
 

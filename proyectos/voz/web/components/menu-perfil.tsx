@@ -41,6 +41,8 @@ export function MenuPerfil({ email }: { email: string }) {
               <p className="text-[14px] font-semibold text-tinta">{uso?.proveedor === "codex" ? "ChatGPT" : uso?.proveedor === "claude" ? "Claude" : "Cuenta"}</p>
               {uso?.plan ? <p className="text-[12px] text-tinta-3">Plan {uso.plan}</p> : null}
             </div>
+            {uso?.correo ? <p className="truncate text-[12px] text-tinta-3">{uso.correo}</p> : null}
+            {uso?.tope ? <p className="mt-2 rounded-lg bg-critico/10 px-2.5 py-1.5 text-[12.5px] text-critico">Cupo agotado: los agentes esperan a que se reinicie.</p> : null}
             {!uso ? <p className="mt-2 text-[13px] text-tinta-3">Consultando…</p> : uso.ventanas.length ? (
               <ul className="mt-2 space-y-2.5">
                 {uso.ventanas.map((v) => {
@@ -56,6 +58,17 @@ export function MenuPerfil({ email }: { email: string }) {
               </ul>
             ) : <p className="mt-2 text-[13px] text-tinta-3">{uso.nota ?? "Sin datos de uso."}</p>}
             {uso?.creditos != null ? <p className="mt-2 text-[12.5px] text-tinta-3">Créditos extra: ${uso.creditos}</p> : null}
+            {uso?.sesion?.expira ? <p className="mt-2 text-[11.5px] text-tinta-3">Sesión de la cuenta: vence {cuando(uso.sesion.expira)}; se renueva sola.</p> : null}
+            {uso?.agentes?.length ? (
+              <div className="mt-3 border-t border-linea pt-3">
+                <div className="flex justify-between text-[12px] text-tinta-3"><span>Turnos por agente</span><span className="numeros">5 h · semana</span></div>
+                <ul className="mt-1 space-y-0.5">
+                  {uso.agentes.map((a) => (
+                    <li key={a.nombre} className="flex justify-between text-[12.5px]"><span className="truncate text-tinta-2">{a.nombre}</span><span className="numeros text-tinta-3">{a.sesion} · {a.semana}</span></li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}

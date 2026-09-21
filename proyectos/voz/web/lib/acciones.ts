@@ -1784,7 +1784,13 @@ export async function aprobarAccion(agenteId: string, runId: string, requestId: 
   return { ok: "Listo." };
 }
 
-export type UsoCuenta = { proveedor: "codex" | "claude" | null; plan?: string | null; ventanas: { nombre: string; usado_pct: number; reinicia: number | string | null }[]; creditos?: number | null; nota?: string };
+export type UsoCuenta = {
+  proveedor: "codex" | "claude" | null; plan?: string | null; correo?: string | null; tope?: boolean; modelos?: string[];
+  ventanas: { nombre: string; usado_pct: number; reinicia: number | string | null }[];
+  agentes?: { nombre: string; semana: number; sesion: number }[];
+  sesion?: { renovada: string | null; expira: string | null };
+  creditos?: number | null; nota?: string;
+};
 export async function usoCuenta(): Promise<UsoCuenta> {
   const r = await orquestador("/uso-cuenta");
   return r.ok ? r.json() : { proveedor: null, ventanas: [], nota: "Sin conexión con el orquestador." };
