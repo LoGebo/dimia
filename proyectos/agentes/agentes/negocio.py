@@ -554,6 +554,7 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
     await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], (texto + ("\n" + " ".join(nombres) if nombres else "")))
     llave = vault.descifrar(agente["llave"] or (await db.uno("select llave from agente where id = $1", agente["id"]))["llave"])
     respuesta: list[str] = []
+    traza: list[dict] = []  # herramientas del turno, para enseñar después «lo que hizo»
     async with http:
         sid = await _sesion(tenant, agente, m, llave, http)
         # Runs API (no el chat de sesión): es la única superficie donde las aprobaciones
@@ -596,7 +597,21 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                                "run_id": d.get("run_id") or run_id, "request_id": d.get("request_id")}
                     elif evento == "tool.started":
                         pasos += 1
-                        yield {"evento": "herramienta", "texto": d.get("name") or d.get("tool") or d.get("tool_name") or ""}
+                        nombre = d.get("name") or d.get("tool") or d.get("tool_name") or ""
+                        traza.append({"herramienta": nombre, "detalle": str(d.get("preview") or "")[:160]})
+                        yield {"evento": "herramienta", "texto": nombre, "detalle": traza[-1]["detalle"]}
+                    elif evento == "tool.completed":
+                        nombre = d.get("tool") or ""
+                        for paso in traza:  # el primero de ese nombre que siga abierto (llamadas en paralelo)
+                            if paso["herramienta"] == nombre and "ms" not in paso:
+                                paso["ms"] = int(float(d.get("duration") or 0) * 1000)
+                                paso["ok"] = not d.get("error", False)
+                                break
+                        yield {"evento": "herramienta_fin", "texto": nombre, "ok": not d.get("error", False), "ms": int(float(d.get("duration") or 0) * 1000)}
+                    elif evento == "reasoning.available":
+                        t = str(d.get("text") or "").strip()
+                        if t:
+                            yield {"evento": "pensando", "texto": t[:200]}
                     elif evento == "run.failed":
                         msg = json.dumps(d)
                         if "401" in msg or "unauthorized" in msg.lower() or "credential" in msg.lower():
@@ -622,7 +637,7 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
         tenant, agente["id"], nivel, modelo_de(await cerebro(tenant), nivel),
         json.dumps(decision) if decision else None, pasos, int((time.perf_counter() - inicio) * 1000), ok)
     if respuesta:
-        await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'agente', $3)", tenant, agente["id"], "".join(respuesta))
+        await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto, pasos) values ($1, $2, 'agente', $3, $4::jsonb)", tenant, agente["id"], "".join(respuesta), json.dumps(traza) if traza else None)
 
 
 async def hilo_nuevo(tenant: str, agente_id: str) -> None:

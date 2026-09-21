@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Monitor, PanelRightOpen, Plus } from "lucide-react";
 import { Compositor, type Adjunto, type Envio, type Nivel } from "@/components/compositor";
+import { ActividadEnVivo, ActividadHecha, describir, type Paso } from "@/components/actividad-agente";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { actualizarAgente, agenteTrabajando, aprobarAccion, estadoCodex, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
 import { Formato } from "@/components/formato";
@@ -17,7 +18,7 @@ type Mensaje = {
   adjuntos?: { tipo: "imagen" | "texto"; nombre: string; datos?: string }[];
   opciones?: Opcion[];
   elegida?: string;
-  pasos?: { herramienta: string; detalle: string }[];
+  pasos?: Paso[];
   propuesta?: { run_id: string; request_id: string | null; resumen: string; detalle?: string };
   resuelta?: "aprobada" | "rechazada";
   resultado?: string;
@@ -32,12 +33,6 @@ const ROLES: Opcion[] = [
   { letra: "D", titulo: "Otra cosa", detalle: "Dígamelo con sus palabras" },
 ];
 
-const NOMBRE_HERRAMIENTA: Record<string, string> = {
-  browser_navigate: "abriendo una página", browser_snapshot: "leyendo la página", browser_click: "haciendo clic", browser_type: "escribiendo en la página",
-  browser_scroll: "recorriendo la página", browser_vision: "mirando la pantalla", web_search: "buscando en la web", web_extract: "leyendo un sitio",
-  skill_view: "consultando sus instrucciones", memory: "recordando", mcp__dimia__citas: "revisando las citas", mcp__dimia__cobros: "revisando los cobros",
-  mcp__dimia__buscar_cliente: "buscando al cliente", mcp__dimia__clientes_sin_volver: "buscando clientes", mcp__dimia__servicios: "consultando los servicios",
-};
 const ACCION: Record<string, string> = {
   agendar_cita: "agendar una cita", cancelar_cita: "cancelar una cita", anotar_recado: "dejarle un recado", registrar_pago: "registrar un pago",
   enviar_whatsapp: "mandar un WhatsApp", gmail_enviar: "enviar un correo", calendar_crear: "crear un evento en su calendario", notion_agregar: "escribir en Notion", slack_publicar: "publicar en Slack", github_crear_issue: "abrir un issue en GitHub", github_crear_pr: "abrir un pull request en GitHub",
@@ -58,6 +53,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const [pideCodex, setPideCodex] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
   const [haciendo, setHaciendo] = useState<string | null>(null);
+  const [pasosVivos, setPasosVivos] = useState<Paso[]>([]);
+  const [pensamiento, setPensamiento] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
 
@@ -77,7 +74,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         setMensajes(guardado ? (JSON.parse(guardado) as Mensaje[]) : []);
       } catch { setMensajes([]); }
       void mensajesAgente(agente.id).then((h) => {
-        const lista = h.length ? h.map((m) => ({ id: m.id, de: m.de === "yo" ? ("yo" as const) : ("agente" as const), texto: m.texto })) : [saludo()];
+        const lista = h.length ? h.map((m) => ({ id: m.id, de: m.de === "yo" ? ("yo" as const) : ("agente" as const), texto: m.texto, pasos: m.pasos ?? undefined })) : [saludo()];
         setMensajes(lista);
         try { sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(lista.slice(-40))); } catch {}
         // Si se fue a media respuesta, el agente siguió trabajando: engancharse (después del
@@ -100,6 +97,10 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40).map((m) => (m.adjuntos ? { ...m, adjuntos: m.adjuntos.map((a) => ({ tipo: a.tipo, nombre: a.nombre })) } : m)))); } catch {}
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
   }, [mensajes, negocio, agente.id]);
+
+  useEffect(() => {
+    lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
+  }, [pasosVivos, pensamiento, escribiendo]);
 
   function hiloNuevo() {
     if (conCerebro) void hiloNuevoAgente(agente.id);
@@ -129,9 +130,18 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         for (const p of partes) {
           const linea = p.split("\n").find((l) => l.startsWith("data:"));
           if (!linea) continue;
-          const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string };
-          if (e.evento === "texto") { setHaciendo(null); pegar(e.texto); }
-          else if (e.evento === "herramienta") setHaciendo(NOMBRE_HERRAMIENTA[e.texto] ?? e.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " "));
+          const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string; detalle?: string; ok?: boolean; ms?: number };
+          if (e.evento === "texto") { setHaciendo(null); setPensamiento(null); pegar(e.texto); }
+          else if (e.evento === "herramienta") {
+            setPensamiento(null);
+            setHaciendo(describir(e.texto).haciendo);
+            setPasosVivos((l) => [...l, { herramienta: e.texto, detalle: e.detalle }]);
+          }
+          else if (e.evento === "herramienta_fin") {
+            setPasosVivos((l) => { const i = l.findIndex((p) => p.herramienta === e.texto && p.ms == null); if (i < 0) return l; const c = [...l]; c[i] = { ...c[i]!, ms: e.ms ?? 0, ok: e.ok !== false }; return c; });
+            setHaciendo(null);
+          }
+          else if (e.evento === "pensando") setPensamiento(e.texto);
           else if (e.evento === "aprobacion") {
             const a = e as unknown as { texto: string; detalle?: string; run_id: string; request_id: string | null };
             setHaciendo(null);
@@ -146,6 +156,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
       poner("Se cortó la conexión con mi máquina. Intente de nuevo.");
     } finally {
       setHaciendo(null);
+      setPensamiento(null);
+      setPasosVivos((l) => { if (l.length) setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, pasos: l } : x))); return []; });
     }
   }
 
@@ -162,7 +174,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
       if (r.status === 204) return;
       await leerEventos(r);
       const h = await mensajesAgente(agente.id);
-      if (h.length) setMensajes(h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto })));
+      if (h.length) setMensajes(h.map((m) => ({ id: m.id, de: m.de === "yo" ? "yo" : "agente", texto: m.texto, pasos: m.pasos ?? undefined })));
     } finally {
       setEscribiendo(false);
     }
@@ -290,16 +302,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
                 ))}
               </div>
             ) : null}
-            {m.pasos?.length ? (
-              <ul className="flex flex-wrap gap-1.5 pl-1">
-                {m.pasos.map((p, i) => (
-                  <li key={i} title={p.detalle} className="inline-flex h-6 items-center gap-1.5 rounded-md bg-linea/70 px-2 text-[12px] text-tinta-2">
-                    <i aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${p.detalle.startsWith("falló") ? "bg-critico" : "bg-bueno"}`} />
-                    {p.herramienta.replace("proponer_", "propuso ").replaceAll("_", " ")}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            {m.pasos?.length && m.de === "agente" ? <ActividadHecha pasos={m.pasos} /> : null}
             {m.propuesta ? (
               <div className={`w-full max-w-[520px] rounded-2xl border p-4 ${m.resuelta ? "border-linea bg-panel" : "border-acento/40 bg-acento-suave/50"}`}>
                 <p className="text-[12px] font-medium text-tinta-3">Necesita su visto bueno</p>
@@ -324,8 +327,9 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
             <ConectarCerebro compacto alConectar={() => { setPideCodex(false); setMensajes((m) => [...m, { id: Date.now(), de: "agente", texto: "Cuenta conectada. Ya puedo trabajar." }]); }} />
           </div>
         ) : null}
+        {escribiendo && pasosVivos.length ? <ActividadEnVivo pasos={pasosVivos} /> : null}
         {escribiendo ? (
-          <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} /><span className="inline-flex gap-0.5"><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:0ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:150ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:300ms]" /></span>{haciendo ? `${agente.nombre} está ${haciendo}` : `${agente.nombre} está ${conCerebro ? "pensando" : "consultando"}`}</div>
+          <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} /><span className="inline-flex gap-0.5"><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:0ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:150ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:300ms]" /></span><span className="min-w-0 truncate">{haciendo ? `${agente.nombre} está ${haciendo}` : `${agente.nombre} está ${conCerebro ? "pensando" : "consultando"}`}{pensamiento && !haciendo ? <span className="text-tinta-3"> · {pensamiento}</span> : null}</span></div>
         ) : null}
         {recepcion && mensajes.length <= 1 && !escribiendo ? (
           <div className="flex flex-wrap gap-2 pt-1">

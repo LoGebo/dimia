@@ -153,6 +153,7 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
     if (!puedeEnviar) return;
     const elegida = manual ?? (ruta?.ruta && NIVELES.includes(ruta.ruta) ? ruta.ruta : undefined);
     enviar({ texto: texto.trim(), ruta: elegida, adjuntos });
+    version.current += 1; // una clasificación en vuelo ya no aplica
     setTexto("");
     setAdjuntos([]);
     setManual(null);

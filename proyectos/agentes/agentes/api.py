@@ -276,8 +276,8 @@ async def hilo_nuevo(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
 
 @app.get("/agentes/{agente_id}/mensajes")
 async def mensajes(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
-    filas = await db.todos("select id, de, texto, creado from agente_mensaje where agente_id = $1 and tenant_id = $2 order by id desc limit 60", agente_id, tenant)
-    return [dict(f) | {"creado": f["creado"].isoformat()} for f in reversed(filas)]
+    filas = await db.todos("select id, de, texto, creado, pasos from agente_mensaje where agente_id = $1 and tenant_id = $2 order by id desc limit 60", agente_id, tenant)
+    return [dict(f) | {"creado": f["creado"].isoformat(), "pasos": (json.loads(f["pasos"]) if isinstance(f["pasos"], str) else f["pasos"]) or None} for f in reversed(filas)]
 
 
 @app.get("/catalogo")

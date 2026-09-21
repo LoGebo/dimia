@@ -24,4 +24,4 @@ export type EstadoCodex =
   | { estado: "conectado"; cuenta: string | null; expira: string; codex: boolean; claude: boolean; cerebro: "codex" | "claude" }
   | { estado: "pendiente"; codigo: string; url: string }
   | { estado: "sin_conectar" };
-export type MensajeAgente = { id: number; de: "yo" | "agente" | "sistema"; texto: string; creado: string };
+export type MensajeAgente = { id: number; de: "yo" | "agente" | "sistema"; texto: string; creado: string; pasos?: { herramienta: string; detalle?: string; ms?: number; ok?: boolean }[] | null };

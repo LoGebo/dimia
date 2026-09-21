@@ -219,12 +219,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
           ) : (
             <>
               {visibles.has("pantalla") ? (
-                donde === "local" ? (
-                  <div className="space-y-2">
-                    <div className="flex aspect-[16/10] items-center justify-center rounded-2xl border border-linea bg-panel-2 text-tinta-3"><Monitor size={22} strokeWidth={1.5} /></div>
-                    <p className="text-center text-[13px] text-tinta-3">{agente.nombre} trabaja en su computadora: la pantalla es la suya.</p>
-                  </div>
-                ) : agente.trabajo ? (
+                agente.trabajo ? (
                   <PantallaVivo agenteId={agente.id} nombre={agente.nombre} ocultar={() => alternarAccion("pantalla")} />
                 ) : (
                   <div className="space-y-2">
