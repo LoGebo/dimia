@@ -14,8 +14,10 @@ from channels.whatsapp.agente import AgenteWhatsApp
 from channels.whatsapp.cliente import WhatsAppCliente
 from channels.whatsapp.config import whatsapp_settings
 from channels.whatsapp.parser import (
+    EstadoEntrega,
     MensajeEntrante,
     firma_valida,
+    parse_estados,
     parse_webhook,
     verificar_suscripcion,
 )
@@ -98,7 +100,19 @@ async def recibir(
     entrantes = parse_webhook(cuerpo)
     for entrante in entrantes:
         tareas.add_task(procesar, request.app, entrante)
+    for estado in parse_estados(cuerpo):
+        # Lo que Meta dice del mensaje ya aceptado: llegó, se leyó o falló (y por qué).
+        if estado.estado == "failed":
+            log.warning("mensaje %s a %s falló: %s", estado.mensaje_id, estado.destinatario, estado.error)
+        tareas.add_task(registrar_entrega, request.app, estado)
     return {"recibidos": len(entrantes)}
+
+
+async def registrar_entrega(app: FastAPI, estado: EstadoEntrega) -> None:
+    try:
+        await agenda.outbox_entrega(estado.mensaje_id, estado.estado, estado.error or None)
+    except Exception:
+        log.exception("no se pudo registrar la entrega de %s", estado.mensaje_id)
 
 
 @app.get("/salud")

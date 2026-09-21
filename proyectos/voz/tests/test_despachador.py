@@ -41,7 +41,7 @@ class AgendaFalsa:
         tomadas, self.filas = self.filas[:limite], self.filas[limite:]
         return tomadas
 
-    async def outbox_marcar_enviado(self, outbox_id: uuid.UUID) -> None:
+    async def outbox_marcar_enviado(self, outbox_id: uuid.UUID, externo_id: str | None = None) -> None:
         self.enviados.append(outbox_id)
 
     async def outbox_marcar_error(self, outbox_id: uuid.UUID, error: str) -> None:
@@ -257,7 +257,7 @@ class AgendaReal:
             salida.append(d)
         return salida
 
-    async def outbox_marcar_enviado(self, outbox_id) -> None:
+    async def outbox_marcar_enviado(self, outbox_id, externo_id=None) -> None:
         await self.pool.execute("select outbox_marcar_enviado($1)", outbox_id)
 
     async def outbox_marcar_error(self, outbox_id, error: str) -> None:

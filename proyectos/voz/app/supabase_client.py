@@ -207,8 +207,18 @@ class Agenda:
             salida.append(d)
         return salida
 
-    async def outbox_marcar_enviado(self, outbox_id: uuid.UUID) -> None:
+    async def outbox_marcar_enviado(self, outbox_id: uuid.UUID, externo_id: str | None = None) -> None:
         await self.pool.execute("select outbox_marcar_enviado($1)", outbox_id)
+        if externo_id:
+            await self.pool.execute("update outbox set externo_id = $2 where id = $1", outbox_id, externo_id)
+
+    async def outbox_entrega(self, externo_id: str, estado: str, error: str | None) -> None:
+        """Estado de entrega que reporta Meta (sent → delivered → read, o failed)."""
+        await self.pool.execute(
+            "update outbox set entrega = $2, entrega_error = $3, entrega_en = now() where externo_id = $1"
+            " and (entrega is distinct from 'read' or $2 = 'failed')",
+            externo_id, estado, error,
+        )
 
     async def outbox_marcar_error(self, outbox_id: uuid.UUID, error: str) -> None:
         await self.pool.execute("select outbox_marcar_error($1,$2)", outbox_id, error)

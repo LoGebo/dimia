@@ -42,6 +42,7 @@ class EstadoEntrega:
     mensaje_id: str
     estado: str
     destinatario: str
+    error: str = ""  # en `failed`: código y título que da Meta
 
 
 def verificar_suscripcion(
@@ -132,6 +133,10 @@ def parse_estados(cuerpo: dict[str, Any]) -> list[EstadoEntrega]:
             mensaje_id=estado.get("id", ""),
             estado=estado.get("status", ""),
             destinatario=normalizar_telefono(estado.get("recipient_id")),
+            error="; ".join(
+                f"{e.get('code', '')} {e.get('title', '')} {((e.get('error_data') or {}).get('details') or '')}".strip()
+                for e in (estado.get("errors") or [])
+            ),
         )
         for valor in _cambios(cuerpo)
         for estado in valor.get("statuses", []) or []

@@ -346,13 +346,13 @@ class Despachador:
                     raise ValueError(f"canal no soportado: {fila['canal']}")
                 meta = plantilla_meta(fila)
                 if meta is not None:
-                    await self.mensajero.enviar_plantilla(
+                    externo = await self.mensajero.enviar_plantilla(
                         fila["destino"], meta.nombre, meta.parametros, meta.botones
                     )
                 else:
                     texto = redactar(fila["plantilla"], fila["payload"])
-                    await self.mensajero.enviar_texto(fila["destino"], texto)
-                await self.agenda.outbox_marcar_enviado(fila["id"])
+                    externo = await self.mensajero.enviar_texto(fila["destino"], texto)
+                await self.agenda.outbox_marcar_enviado(fila["id"], externo if isinstance(externo, str) else None)
                 if fila.get("campana_contacto_id"):
                     await self.agenda.campana_contacto_resultado(
                         fila["campana_contacto_id"], "enviado", None, None
