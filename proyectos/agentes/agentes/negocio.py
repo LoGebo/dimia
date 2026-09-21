@@ -207,6 +207,7 @@ async def perfil_local(tenant: str, agente_id: str) -> tuple[dict[str, str], int
     }
     if claude_json:
         archivos[".anthropic_oauth.json"] = claude_json
+    archivos["dimia.json"] = hermes.dimia_json((await db.uno("select mcp_token from agente where id = $1", a["id"]))["mcp_token"], cual)
     todas = catalogo.skills()
     for i in inst:
         if i["tipo"] == "skill" and i["clave"] in todas:
@@ -253,6 +254,8 @@ async def asegurar_maquina(tenant: str) -> dict:
             await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
         if actual.memoria_mb < memoria_para(n_agentes):
             await prov.redimensionar(m["referencia"], memoria_para(n_agentes))
+        if actual.imagen and actual.imagen != config.HERMES_IMAGEN:  # imagen nueva de Hermes: se actualiza conservando el disco
+            await prov.actualizar_imagen(m["referencia"], config.HERMES_IMAGEN)
         viva = await prov.arrancar(m["referencia"])
         if viva.direccion != m["direccion"]:
             await db.ejecutar("update maquina_negocio set direccion = $2 where tenant_id = $1", tenant, viva.direccion)
@@ -274,6 +277,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     archivos: dict[str, str] = {}
     instalados = set(m["perfiles"])
     nuevos: list[str] = []
+    reiniciados: list[str] = []  # config cambiada: el supervisor los reinicia; hay que esperar a que vuelvan
     pantallas: dict[str, int] = {}
     usadas = {f["pantalla"] for f in await db.todos("select pantalla from agente where tenant_id = $1 and pantalla is not null", tenant)}  # también los locales: la pantalla es única
     borrar: list[str] = []
@@ -298,6 +302,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         mcp, cuentas, inst = await _mcp_de(tenant, a)
         gh = await conexiones.leer(tenant, "github") if "github" in cuentas else None
         archivos.update(hermes.archivos_git(aid, gh["token"] if gh else None))
+        archivos[f"{hermes.HOME}/profiles/{aid}/dimia.json"] = hermes.dimia_json(a["mcp_token"] or (await db.uno("select mcp_token from agente where id = $1", a["id"]))["mcp_token"], cual)
         raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
         borrar.append(raiz_skills)
         for i in inst:
@@ -311,6 +316,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)
             if nuevo_cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
                 archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = nuevo_cfg
+                reiniciados.append(aid)
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
                 if claude_json:
@@ -324,8 +330,10 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")
     await db.ejecutar("update maquina_negocio set perfiles = $2, version_token = $3, configs = $4::jsonb where tenant_id = $1", tenant, list(instalados | set(nuevos)), t["version"], json.dumps(configs_nuevos))
     # Ningún reinicio de máquina: el supervisor levanta o reinicia el Hermes de cada agente al ver sus archivos.
+    if reiniciados:
+        await asyncio.sleep(7)  # el supervisor revisa cada 5 s y mata el Hermes viejo; si no se espera, el turno cae en el reinicio
     for aid, n in pantallas.items():
-        if aid in nuevos or reiniciar:
+        if aid in nuevos or aid in reiniciados or reiniciar:
             await _esperar_hermes(_host(m), n)
     for a in await db.todos("select id from agente where tenant_id = $1 and donde = 'local'", tenant):
         await empujar_local(tenant, str(a["id"]))

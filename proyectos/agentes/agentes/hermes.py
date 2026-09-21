@@ -143,6 +143,15 @@ def mcp_servicio(nombre: str, token: str, puente: bool = False) -> dict:
     return {nombre: {"url": f"{config.PUBLICO_URL}{ruta}", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
+def dimia_json(token: str | None, cerebro: str = "codex") -> str:
+    """Lo que lee el parche dimia_jev del Hermes: a quién preguntar por el siguiente paso y
+    qué modelo corresponde a cada nivel. Sin token (agente sin MCP) queda vacío y no rutea."""
+    if not token:
+        return "{}"
+    modelos = config.MODELOS_CLAUDE if cerebro == "claude" else config.MODELOS_CODEX
+    return json.dumps({"url": f"{config.PUBLICO_URL}/jev/paso", "token": token, "modelos": modelos, "rutas": {m: n for n, m in modelos.items()}})
+
+
 def archivos_git(agente_id: str, token: str | None) -> dict[str, str]:
     """git autenticado en la terminal del agente: HOME es su perfil, así que .gitconfig y
     .git-credentials viven ahí. Hermes limpia GH_TOKEN/GITHUB_TOKEN del entorno; el archivo no."""
@@ -163,7 +172,7 @@ def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[s
     pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/profiles/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
-        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials")) else "644"  # config lleva llaves de MCP
+        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials", "dimia.json")) else "644"  # config lleva llaves de MCP
         pasos.append(f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && printf %s {b64} | base64 -d > {shlex.quote(ruta)}.tmp && chmod {modo} {shlex.quote(ruta)}.tmp && mv {shlex.quote(ruta)}.tmp {shlex.quote(ruta)}")
     pasos.append(f"chown -R {UID}:{UID} {HOME}")
     return ["sh", "-c", " && ".join(pasos)]

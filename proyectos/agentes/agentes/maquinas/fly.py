@@ -27,7 +27,8 @@ class Fly:
         return Maquina(
             referencia=m["id"], disco=mounts[0]["volume"] if mounts else None,
             direccion=f"[{m.get('private_ip')}]:{PUERTO_HERMES}", encendida=m.get("state") == "started",
-            memoria_mb=int(m.get("config", {}).get("guest", {}).get("memory_mb") or 0))
+            memoria_mb=int(m.get("config", {}).get("guest", {}).get("memory_mb") or 0),
+            imagen=str(m.get("config", {}).get("image") or ""))
 
     async def crear(self, etiqueta, imagen, comando, entorno, cpus, memoria_mb, disco_gb):
         r = await self.http.post(f"/apps/{self.app}/volumes", json={"name": f"d_{etiqueta}", "region": config.FLY_REGION, "size_gb": disco_gb})
@@ -71,12 +72,22 @@ class Fly:
 
     async def redimensionar(self, referencia, memoria_mb):
         """Cambia la RAM (la máquina se reinicia si estaba encendida)."""
+        await self._actualizar(referencia, memoria_mb=memoria_mb)
+
+    async def actualizar_imagen(self, referencia, imagen):
+        """Nueva imagen de Hermes; el volumen (perfiles) se conserva."""
+        await self._actualizar(referencia, imagen=imagen)
+
+    async def _actualizar(self, referencia, memoria_mb=None, imagen=None):
         r = await self.http.get(f"/apps/{self.app}/machines/{referencia}")
         r.raise_for_status()
         cfg = r.json()["config"]
-        cfg["guest"]["memory_mb"] = memoria_mb
-        if memoria_mb > 2048 and cfg["guest"].get("cpus", 1) < 4:
-            cfg["guest"]["cpus"] = 4  # Fly exige más CPU para más RAM compartida
+        if memoria_mb:
+            cfg["guest"]["memory_mb"] = memoria_mb
+            if memoria_mb > 2048 and cfg["guest"].get("cpus", 1) < 4:
+                cfg["guest"]["cpus"] = 4  # Fly exige más CPU para más RAM compartida
+        if imagen:
+            cfg["image"] = imagen
         r = await self.http.post(f"/apps/{self.app}/machines/{referencia}", json={"config": cfg})
         r.raise_for_status()
         # La actualización crea una instancia nueva: esperar a ESA (si no, el exec cae en la vieja).

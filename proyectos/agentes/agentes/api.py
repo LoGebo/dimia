@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket,
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from agentes import catalogo, claude, codex, config, cuotas, db, negocio
+from agentes import catalogo, claude, codex, config, cuotas, db, jev, negocio
 
 log = logging.getLogger("agentes")
 config.guardia()
@@ -623,3 +623,27 @@ async def tunel_ws(ws: WebSocket, codigo: str):
         log.warning("túnel %s: %s", aid, e)
     finally:
         tunel.quitar(aid, tu)
+
+
+# --- Jev dentro del arnés: cada Hermes pregunta por el siguiente paso -------------------
+
+class Paso(BaseModel):
+    objetivo: str = ""
+    contexto: str = ""
+    nivel_turno: str = "fuerte"
+    paso: int = 0
+
+
+@app.post("/jev/paso")
+async def jev_paso(cuerpo: Paso, authorization: str = Header("")):
+    """El Hermes del agente (parche dimia_jev) pide el modelo para su siguiente paso. Se
+    identifica con su token de MCP; la llave de Jev nunca sale del orquestador."""
+    token = authorization.removeprefix("Bearer ").strip()
+    a = await db.uno("select id, tenant_id from agente where mcp_token = $1 and mcp_token is not null", token) if token else None
+    if not a:
+        raise HTTPException(401)
+    nivel, clase, conf, d = await jev.decidir_paso(cuerpo.objetivo[:1500], cuerpo.contexto[:4000], cuerpo.nivel_turno if cuerpo.nivel_turno in config.NIVELES else "fuerte")
+    modelo = negocio.modelo_de(await negocio.cerebro(str(a["tenant_id"])), nivel)
+    await db.ejecutar("insert into agente_paso (tenant_id, agente_id, paso, nivel_turno, clase, confianza, nivel, ms) values ($1, $2, $3, $4, $5, $6, $7, $8)",
+                      a["tenant_id"], a["id"], cuerpo.paso, cuerpo.nivel_turno, clase, conf, nivel, (d or {}).get("_ms"))
+    return {"nivel": nivel, "modelo": modelo, "clase": clase, "confianza": conf}

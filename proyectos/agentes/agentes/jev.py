@@ -43,3 +43,50 @@ async def decidir(trabajo: str | None, historial: list[str], texto: str) -> tupl
     probs = d.get("answers", {}).get("nivel", {}).get("probabilities", {}) or {}
     nivel = max(probs, key=probs.get) if probs else "fuerte"
     return (nivel if nivel in CRITERIOS and probs[nivel] >= UMBRAL else "fuerte"), d
+
+
+# --- Dentro del turno: ¿el siguiente paso del agente es mecánico o pide pensar? ---------
+
+CRITERIOS_PASO = {
+    "mecanico": "seguir con lo ya decidido: la siguiente llamada a herramienta es obvia, pasar o formatear resultados, leer lo que se pidió, un ajuste chico",
+    "razonar": "decidir qué hacer ahora, interpretar un resultado ambiguo o un error y replantear, redactar texto de fondo, o dar la respuesta final de una tarea de varios pasos",
+    "profundo": "análisis o síntesis de muchos datos, planeación o estrategia, código complejo, o una decisión de alto impacto donde equivocarse cuesta",
+}
+ORDEN = ("ligero", "rapido", "fuerte", "profundo")
+
+
+async def decidir_paso(objetivo: str, contexto: str, nivel_turno: str) -> tuple[str, str, float | None, dict | None]:
+    """Devuelve (nivel_para_este_paso, clase, confianza, respuesta_de_jev). Mecánico baja a
+    rápido (nunca por debajo de lo que la tarea necesita para llamar herramientas), razonar
+    se queda en el nivel del turno (mínimo fuerte), profundo sube a profundo."""
+    if config.VERCEL_AI_GATEWAY_KEY:
+        url, llave, modelo = URL_VERCEL, config.VERCEL_AI_GATEWAY_KEY, "typesafe-ai/jev"
+    elif config.TYPESAFE_API_KEY:
+        url, llave, modelo = URL, config.TYPESAFE_API_KEY, "jev-latest"
+    else:
+        return nivel_turno, "sin_jev", None, None
+    estado = f"Encargo del dueño: {objetivo}\nLo último que hizo el agente:\n{contexto or '(nada aún)'}"
+    cuerpo = {"state": estado, "model": modelo, "questions": {
+        "paso": {"type": "choice", "instructions": "¿Qué le pide al modelo el siguiente paso del agente?", "criteria": CRITERIOS_PASO}}}
+    t = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=3.5) as c:
+            r = await c.post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"})
+        r.raise_for_status()
+        d = r.json()
+    except (httpx.HTTPError, ValueError):
+        return nivel_turno, "fallo", None, None
+    d["_ms"] = round((time.perf_counter() - t) * 1000)
+    probs = d.get("answers", {}).get("paso", {}).get("probabilities", {}) or {}
+    clase = max(probs, key=probs.get) if probs else "razonar"
+    conf = float(probs.get(clase, 0))
+    if conf < 0.6:
+        return nivel_turno, clase, conf, d
+    i = ORDEN.index(nivel_turno) if nivel_turno in ORDEN else 2
+    if clase == "mecanico":
+        nivel = ORDEN[min(i, 1)]  # rápido, o ligero si el turno entero era ligero
+    elif clase == "profundo":
+        nivel = "profundo"
+    else:
+        nivel = ORDEN[max(i, 2)]  # el del turno, mínimo fuerte
+    return nivel, clase, conf, d
