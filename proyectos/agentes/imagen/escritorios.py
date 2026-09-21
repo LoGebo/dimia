@@ -20,6 +20,14 @@ procesos: dict[tuple[str, str], subprocess.Popen] = {}
 marcas: dict[str, float] = {}  # mtime del config.yaml que corre cada Hermes
 
 
+def zona():
+    """La zona horaria del negocio (la escribe el orquestador); las rutinas se programan en su hora."""
+    try:
+        return open(f"{DATOS}/zona_horaria").read().strip() or "America/Mexico_City"
+    except OSError:
+        return "America/Mexico_City"
+
+
 def vivo(clave):
     p = procesos.get(clave)
     return p is not None and p.poll() is None
@@ -28,7 +36,7 @@ def vivo(clave):
 def lanzar(clave, cmd, env=None, cwd=None):
     if vivo(clave):
         return False
-    e = {"PATH": "/usr/local/bin:/usr/bin:/bin:/opt/hermes/.venv/bin", "HOME": f"{DATOS}", "LANG": "es_MX.UTF-8", **(env or {})}
+    e = {"PATH": "/usr/local/bin:/usr/bin:/bin:/opt/hermes/.venv/bin", "HOME": f"{DATOS}", "LANG": "es_MX.UTF-8", "TZ": zona(), **(env or {})}
     procesos[clave] = subprocess.Popen(cmd, env=e, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, user=UID, group=UID)
     return True
 

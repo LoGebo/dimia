@@ -1603,6 +1603,7 @@ export async function borrarAgente(agenteId: string): Promise<Estado> {
     }),
   );
   if (estado.error) return estado;
+  await orquestador(`/agentes/${agenteId}`, { method: "DELETE" }).catch(() => null);  // limpia su escritorio y perfil
   redirect("/agentes");
 }
 
@@ -1714,4 +1715,16 @@ export async function instalarEnAgente(agenteId: string, tipo: "skill" | "integr
 export async function agenteTrabajando(agenteId: string): Promise<boolean> {
   const r = await orquestador(`/agentes/${agenteId}/estado`);
   return r.ok ? ((await r.json()) as { trabajando: boolean }).trabajando : false;
+}
+
+
+export type Rutina = { id: string; nombre: string; horario: string; activa: boolean; ultima: string | null; proxima: string | null };
+export async function rutinasAgente(agenteId: string): Promise<{ estado: string; rutinas: Rutina[] }> {
+  const r = await orquestador(`/agentes/${agenteId}/rutinas`);
+  return r.ok ? r.json() : { estado: "sin_respuesta", rutinas: [] };
+}
+
+/** Enciende la computadora del negocio en cuanto el dueño entra a Agentes; no espera respuesta. */
+export async function despertarMaquina(): Promise<void> {
+  await orquestador("/maquina/despertar", { method: "POST" }).catch(() => null);
 }

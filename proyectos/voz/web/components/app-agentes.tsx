@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { despertarMaquina } from "@/lib/acciones";
 import { PantallaAgente } from "@/components/pantalla-agente";
 import { RECEPCION, RosterAgentes, type AgenteRoster, type GrupoRoster } from "@/components/roster-agentes";
 
@@ -12,6 +14,8 @@ export type AgenteCompleto = AgenteRoster & { permisos: string[] };
  */
 export function AppAgentes({ agentes, grupos, negocio, children }: { agentes: AgenteCompleto[]; grupos: GrupoRoster[]; negocio: string; children: React.ReactNode }) {
   const ruta = usePathname();
+  // Que la computadora ya esté encendida cuando el dueño mande el primer mensaje.
+  useEffect(() => { if (agentes.some((a) => a.trabajo)) void despertarMaquina(); }, [agentes]);
   const id = /^\/agentes\/([^/]+)$/.exec(ruta)?.[1];
   const esAgente = !!id && id !== "marketplace";
   const agente = id === "recepcion" ? { ...RECEPCION, trabajo: "Contesta teléfono, WhatsApp e Instagram. Agenda, cambia y cancela citas.", permisos: [] as string[] } : agentes.find((a) => a.id === id);

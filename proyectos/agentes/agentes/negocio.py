@@ -62,7 +62,7 @@ async def renovar_si_hace_falta(tenant: str, margen=timedelta(minutes=30)) -> di
 
 def memoria_para(agentes: int) -> int:
     """Cada agente trae su Hermes, su Chromium y su escritorio: ~1 GB. Tope 8 GB."""
-    return min(8192, 1024 + 1024 * max(1, agentes))
+    return min(8192, 2048 + 1024 * max(1, agentes))  # LibreOffice + Chromium + Hermes por agente; con 2 GB hubo OOM
 
 
 def _host(m) -> str:
@@ -188,6 +188,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
                 archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
         configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp)
     archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
+    archivos[f"{hermes.HOME}/zona_horaria"] = (await db.uno("select zona_horaria from tenant where id = $1", tenant))["zona_horaria"] or "America/Mexico_City"
     codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
     if codigo != 0:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")
@@ -429,3 +430,42 @@ async def instalar(tenant: str, agente_id: str, tipo: str, clave: str, poner: bo
         else:
             await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)  # al despertar se reescribe todo
     return None
+
+
+async def rutinas(tenant: str, agente_id: str) -> dict:
+    """Las tareas programadas del agente (cron de Hermes). Si la máquina duerme, no la despierta."""
+    agente = await db.uno("select id, llave, pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    m = await maquina(tenant)
+    if not agente or not m or not agente["pantalla"]:
+        return {"estado": "sin_maquina", "rutinas": []}
+    if not (await proveedor().obtener(m["referencia"])).encendida:
+        return {"estado": "dormida", "rutinas": []}
+    llave = vault.descifrar(agente["llave"])
+    try:
+        async with httpx.AsyncClient(timeout=10) as http:
+            r = await http.get(_url(m, agente["pantalla"], "/api/jobs"), headers={"Authorization": f"Bearer {llave}"})
+        r.raise_for_status()
+        d = r.json()
+        lista = d if isinstance(d, list) else d.get("jobs") or d.get("data") or []
+    except (httpx.HTTPError, ValueError):
+        return {"estado": "sin_respuesta", "rutinas": []}
+    return {"estado": "ok", "rutinas": [{
+        "id": j.get("id") or j.get("job_id"), "nombre": j.get("name") or j.get("prompt", "")[:60],
+        "horario": (j["schedule"].get("display") or j["schedule"].get("expr") if isinstance(j.get("schedule"), dict) else j.get("schedule")) or "",
+        "activa": not j.get("paused", False) and j.get("enabled", True),
+        "ultima": (j.get("last_run") or {}).get("finished_at") if isinstance(j.get("last_run"), dict) else j.get("last_run_at"),
+        "proxima": j.get("next_run_at") or j.get("next_run"),
+    } for j in lista]}
+
+
+async def borrar_agente(tenant: str, agente_id: str) -> None:
+    """Cierra su escritorio y borra su perfil en la máquina (si está encendida)."""
+    m = await maquina(tenant)
+    if not m:
+        return
+    prov = proveedor()
+    if (await prov.obtener(m["referencia"])).encendida:
+        quedan = {str(a["id"]): a["pantalla"] for a in await _agentes(tenant) if str(a["id"]) != agente_id and a["pantalla"]}
+        archivos = {f"{hermes.HOME}/escritorios.json": hermes.escritorios_json(quedan)}
+        await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar=[f"{hermes.HOME}/profiles/{agente_id}"]), timeout=60)
+    await db.ejecutar("update maquina_negocio set perfiles = array_remove(perfiles, $2), configs = configs - $2 where tenant_id = $1", tenant, agente_id)

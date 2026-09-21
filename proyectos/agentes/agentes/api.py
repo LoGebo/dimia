@@ -198,6 +198,28 @@ async def ver_cuotas(tenant: str = Depends(negocio_id)):
     return await cuotas.uso(tenant)
 
 
+@app.get("/agentes/{agente_id}/rutinas")
+async def ver_rutinas(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    return await negocio.rutinas(tenant, str(agente_id))
+
+
+@app.delete("/agentes/{agente_id}")
+async def quitar_agente(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    """El panel ya borró la fila; aquí se limpia la máquina."""
+    await negocio.borrar_agente(tenant, str(agente_id))
+    return {"ok": True}
+
+
+@app.post("/maquina/despertar")
+async def despertar(tenant: str = Depends(negocio_id)):
+    """Enciende la máquina sin esperar a un mensaje (el dueño entró a Agentes)."""
+    try:
+        asyncio.create_task(negocio.asegurar_maquina(tenant))
+    except Exception:  # noqa: BLE001
+        pass
+    return {"ok": True}
+
+
 @app.get("/maquina")
 async def estado_maquina(tenant: str = Depends(negocio_id)):
     m = await negocio.maquina(tenant)

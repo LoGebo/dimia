@@ -15,7 +15,7 @@ UID = "10000"  # usuario `hermes` dentro de la imagen oficial
 
 # Hermes completo: terminal, archivos, código y escritorio (computer_use) además de navegador y web.
 # El terminal corre en la máquina del negocio como el usuario hermes; entre agentes del mismo negocio no hay muro, como en Grok Bot.
-TOOLSETS = ["memory", "skills", "todo", "web", "browser", "vision", "terminal", "file", "code_execution", "computer_use"]
+TOOLSETS = ["memory", "skills", "todo", "web", "browser", "vision", "terminal", "file", "code_execution", "computer_use", "cronjob"]
 
 
 def puerto(pantalla: int) -> int:
@@ -63,6 +63,7 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
         "Escribe en español de México. Frases cortas. Primero el resultado, después el método.",
         "Sin superlativos, sin signos de admiración, sin anglicismos donde exista palabra en español.",
         "Nunca inventa cifras, clientes ni resultados; si falta un dato, lo pide.",
+        "Rutinas: si el dueño pide algo repetido («cada lunes», «todos los días a las 9», «cuando pase X»), créelo con la herramienta cronjob con un nombre corto en español y confírmele el horario. Lo que produzca una rutina guárdelo en escritorio/rutinas/ con la fecha en el nombre.",
         "Tiene una computadora propia (escritorio Linux con navegador, terminal, archivos, hoja de cálculo y documentos) y el dueño ve su pantalla en vivo. Para tareas en sitios web con un objetivo concreto (buscar, filtrar, abrir, llenar) use primero navegar_rapido: es rápido y barato; para leer o extraer lo que quedó en pantalla use browser_snapshot; use browser_click/browser_type solo si navegar_rapido se atora. No use web_extract si puede verse en su navegador. Para otras aplicaciones use computer_use; guarde lo que produzca en la carpeta escritorio/. Así el dueño ve lo que hace.",
     ]
     if trabajo:

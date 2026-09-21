@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Circle, Monitor, Settings2, Trash2 } from "lucide-react";
 import { PantallaVivo } from "@/components/pantalla-vivo";
 import { UsoPlan } from "@/components/uso-plan";
+import { Rutinas } from "@/components/rutinas";
 import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
 import { actualizarAgente, borrarAgente } from "@/lib/acciones";
 import type { AgenteHilo } from "@/components/hilo-agente";
@@ -209,12 +210,7 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
                   </div>
                 </div>
               ) : null}
-              {visibles.has("rutinas") ? (
-                <div className="space-y-2">
-                  <p className="text-[14px] font-semibold text-tinta">Rutinas</p>
-                  <p className="text-[13px] leading-relaxed text-tinta-3">Tareas que {agente.nombre} repite solo, cada día o cuando pasa algo. Pídaselo en el chat.</p>
-                </div>
-              ) : null}
+              {visibles.has("rutinas") ? <Rutinas agenteId={agente.id} nombre={agente.nombre} conCerebro={!recepcion && !!agente.trabajo} /> : null}
               {!recepcion ? <UsoPlan /> : null}
             </>
           )}
