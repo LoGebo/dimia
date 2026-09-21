@@ -9,12 +9,12 @@ RAIZ_SKILLS = Path(__file__).resolve().parent.parent / "skills"
 
 INTEGRACIONES = {
     "dimia": {"nombre": "Dimia", "detalle": "Citas, clientes, cobros y servicios del negocio", "lista": True},
-    "gmail": {"nombre": "Gmail", "detalle": "Leer y mandar correo", "lista": False},
-    "google-calendar": {"nombre": "Google Calendar", "detalle": "Ver y mover citas", "lista": False},
-    "google-drive": {"nombre": "Google Drive", "detalle": "Archivos y documentos", "lista": False},
+    "gmail": {"nombre": "Gmail", "detalle": "Leer y mandar correo", "lista": True, "cuenta": "google"},
+    "google-calendar": {"nombre": "Google Calendar", "detalle": "Ver y crear eventos", "lista": True, "cuenta": "google"},
+    "google-drive": {"nombre": "Google Drive", "detalle": "Buscar y leer archivos", "lista": True, "cuenta": "google"},
     "whatsapp": {"nombre": "WhatsApp", "detalle": "Escribir a clientes desde la línea del negocio", "lista": True},
-    "notion": {"nombre": "Notion", "detalle": "Documentos y tablas", "lista": False},
-    "slack": {"nombre": "Slack", "detalle": "Avisos al equipo", "lista": False},
+    "notion": {"nombre": "Notion", "detalle": "Páginas y bases de datos", "lista": True, "cuenta": "notion"},
+    "slack": {"nombre": "Slack", "detalle": "Leer y publicar en canales", "lista": True, "cuenta": "slack"},
 }
 
 

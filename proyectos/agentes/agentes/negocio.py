@@ -161,7 +161,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
         mcp: dict | None = None
         integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
-        if integraciones & {"dimia", "whatsapp"}:
+        cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
+        if integraciones & {"dimia", "whatsapp"} or cuentas:
             token = a["mcp_token"]
             if not token:
                 token = vault.llave_nueva()
@@ -171,6 +172,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
                 mcp.update(hermes.mcp_dimia(token))
             if "whatsapp" in integraciones:
                 mcp.update(hermes.mcp_whatsapp(token))
+            for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack
+                mcp.update(hermes.mcp_servicio(cuenta, token))
         raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
         borrar.append(raiz_skills)
         for i in inst:
@@ -413,6 +416,9 @@ async def instalar(tenant: str, agente_id: str, tipo: str, clave: str, poner: bo
         return "Esa skill no existe."
     if tipo == "integracion" and not catalogo.INTEGRACIONES.get(clave, {}).get("lista"):
         return "Esa integración todavía no está lista."
+    cuenta = catalogo.INTEGRACIONES.get(clave, {}).get("cuenta") if tipo == "integracion" else None
+    if poner and cuenta and not await db.uno("select 1 from conexion_servicio where tenant_id = $1 and servicio = $2", tenant, cuenta):
+        return f"Primero conecte su cuenta de {catalogo.INTEGRACIONES[clave]['nombre'].split()[0]}."
     if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):
         return "Ese agente no existe."
     if poner:

@@ -35,17 +35,22 @@ async def _ciclo():
         await asyncio.sleep(300)
 
 
-from agentes import mcp_dimia  # noqa: E402
+from agentes import conexiones, mcp_dimia, mcp_servicios  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
 
 app_mcp = mcp_dimia.app()
 app_mcp_wa = mcp_dimia.app_whatsapp()
+apps_servicio = {"google": mcp_servicios.app_google(), "notion": mcp_servicios.app_notion(), "slack": mcp_servicios.app_slack()}
 
 
 @asynccontextmanager
 async def vida(_: FastAPI):
     tarea = asyncio.create_task(_ciclo())
     # El transporte MCP montado necesita su propio ciclo de vida (Starlette no lo arranca solo).
-    async with app_mcp.router.lifespan_context(app_mcp), app_mcp_wa.router.lifespan_context(app_mcp_wa):
+    from contextlib import AsyncExitStack
+    async with AsyncExitStack() as pila:
+        for a in (app_mcp, app_mcp_wa, *apps_servicio.values()):
+            await pila.enter_async_context(a.router.lifespan_context(a))
         yield
     tarea.cancel()
 
@@ -53,6 +58,8 @@ async def vida(_: FastAPI):
 app = FastAPI(title="Dimia agentes", lifespan=vida)
 app.mount("/mcp", app_mcp)
 app.mount("/mcp-whatsapp", app_mcp_wa)
+for _nombre, _a in apps_servicio.items():
+    app.mount(f"/mcp-{_nombre}", _a)
 
 
 async def negocio_id(authorization: str = Header(""), x_negocio: str = Header("")) -> str:
@@ -173,7 +180,8 @@ async def ver_catalogo(tenant: str = Depends(negocio_id)):
         instalado.setdefault(f"{f['tipo']}:{f['clave']}", []).append(str(f["agente_id"]))
     return {
         "skills": [{"clave": k, "nombre": v["nombre"], "detalle": v["detalle"], "agentes": instalado.get(f"skill:{k}", [])} for k, v in catalogo.skills().items()],
-        "integraciones": [{"clave": k, **{x: v[x] for x in ("nombre", "detalle", "lista")}, "agentes": instalado.get(f"integracion:{k}", [])} for k, v in catalogo.INTEGRACIONES.items()],
+        "integraciones": [{"clave": k, **{x: v[x] for x in ("nombre", "detalle", "lista")}, "cuenta": v.get("cuenta"), "agentes": instalado.get(f"integracion:{k}", [])} for k, v in catalogo.INTEGRACIONES.items()],
+        "cuentas": await conexiones.estado(tenant),
     }
 
 
@@ -191,6 +199,52 @@ async def instalaciones(agente_id: uuid.UUID, cuerpo: Instalacion, tenant: str =
     if error:
         raise HTTPException(400, error)
     return {"ok": True}
+
+
+# --- Cuentas externas (Google, Notion, Slack) ---
+
+@app.get("/conexiones")
+async def ver_conexiones(tenant: str = Depends(negocio_id)):
+    return await conexiones.estado(tenant)
+
+
+@app.post("/conexiones/{servicio}/iniciar")
+async def iniciar_conexion(servicio: str, tenant: str = Depends(negocio_id)):
+    """Google: devuelve la URL a la que mandar al dueño. Notion/Slack: cómo pegar el token."""
+    s = conexiones.SERVICIOS.get(servicio)
+    if not s:
+        raise HTTPException(404)
+    if s["modo"] == "oauth":
+        if not config.GOOGLE_CLIENT_ID:
+            raise HTTPException(503, "Google todavía no está disponible.")
+        return {"modo": "oauth", "url": conexiones.google_url(tenant)}
+    return {"modo": "token", "ayuda": s["ayuda"]}
+
+
+class TokenServicio(BaseModel):
+    token: str
+
+
+@app.post("/conexiones/{servicio}/token")
+async def conectar_por_token(servicio: str, cuerpo: TokenServicio, tenant: str = Depends(negocio_id)):
+    error = await conexiones.conectar_token(tenant, servicio, cuerpo.token)
+    if error:
+        raise HTTPException(400, error)
+    return {"ok": True}
+
+
+@app.delete("/conexiones/{servicio}")
+async def quitar_conexion(servicio: str, tenant: str = Depends(negocio_id)):
+    await db.ejecutar("delete from conexion_servicio where tenant_id = $1 and servicio = $2", tenant, servicio)
+    return {"ok": True}
+
+
+@app.get("/oauth/google/callback")
+async def google_callback(state: str = "", code: str = "", error: str = ""):
+    """Aquí vuelve Google con el permiso del dueño; sin sesión del panel: el state va firmado."""
+    msg = error and f"Google no dio permiso ({error})." or await conexiones.google_callback(state, code)
+    cuerpo = f"<p>{msg}</p>" if msg else "<p>Cuenta de Google conectada. Ya puede cerrar esta ventana y volver al panel.</p>"
+    return HTMLResponse(f"<!doctype html><html lang='es'><meta charset='utf-8'><title>Dimia</title><body style='font-family:system-ui;max-width:32rem;margin:4rem auto;font-size:17px'>{cuerpo}<script>setTimeout(()=>window.close(),{2500 if not msg else 8000})</script></body></html>")
 
 
 @app.get("/cuotas")

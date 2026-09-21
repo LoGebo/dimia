@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Search } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { IconoDimia } from "@/components/marca";
-import { actualizarAgente, crearAgenteVacio, instalarEnAgente, type Catalogo } from "@/lib/acciones";
+import { actualizarAgente, conectarConToken, crearAgenteVacio, cuentasExternas, desconectarCuenta, iniciarConexion, instalarEnAgente, type Catalogo, type CuentaExterna } from "@/lib/acciones";
 
 const AGENTES = [
   { nombre: "Cotizador", detalle: "Busca proveedores y compara precios", trabajo: "Busca proveedores, pide precios y los anota en Clientes." },
@@ -34,7 +34,39 @@ export function Marketplace({ catalogo, agentes: mios }: { catalogo: Catalogo; a
     return m;
   });
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [cuentas, setCuentas] = useState<Record<string, CuentaExterna>>(catalogo.cuentas);
+  const [conectando, setConectando] = useState<{ servicio: string; clave: string; ayuda?: string; token: string; error?: string } | null>(null);
   const [pendiente, empezar] = useTransition();
+
+  /** «Agregar» en una integración con cuenta: si no está conectada, conecta primero (OAuth o token), como en Grok Bot. */
+  async function agregarIntegracion(clave: string, cuenta: string | null) {
+    const k = `integracion:${clave}`;
+    if (!cuenta || cuentas[cuenta]?.conectada) { setAbierto(abierto === k ? null : k); return; }
+    const r = await iniciarConexion(cuenta);
+    if ("error" in r) { setConectando({ servicio: cuenta, clave, token: "", error: r.error }); return; }
+    if (r.modo === "oauth") {
+      const ventana = window.open(r.url, "dimia-conectar", "width=520,height=680");
+      const t = setInterval(async () => {
+        const c = await cuentasExternas();
+        if (c[cuenta]?.conectada || ventana?.closed) {
+          clearInterval(t);
+          setCuentas(c);
+          if (c[cuenta]?.conectada) setAbierto(k);
+        }
+      }, 2000);
+      return;
+    }
+    setConectando({ servicio: cuenta, clave, ayuda: r.ayuda, token: "" });
+  }
+
+  async function guardarToken() {
+    if (!conectando) return;
+    const r = await conectarConToken(conectando.servicio, conectando.token);
+    if (r.error) { setConectando({ ...conectando, error: r.error }); return; }
+    setCuentas(await cuentasExternas());
+    setAbierto(`integracion:${conectando.clave}`);
+    setConectando(null);
+  }
   const t = q.trim().toLowerCase();
   const agentes = AGENTES.filter((a) => !t || `${a.nombre} ${a.detalle}`.toLowerCase().includes(t));
   const integraciones = catalogo.integraciones.filter((i) => !t || `${i.nombre} ${i.detalle}`.toLowerCase().includes(t));
@@ -48,15 +80,18 @@ export function Marketplace({ catalogo, agentes: mios }: { catalogo: Catalogo; a
   }
 
   /** Quién lo tiene, y el selector de agentes cuando está abierto. */
-  function selector(tipo: "skill" | "integracion", clave: string, lista = true) {
+  function selector(tipo: "skill" | "integracion", clave: string, lista = true, cuenta: string | null = null) {
     const k = `${tipo}:${clave}`;
     const en = puesto[k] ?? [];
     const es = abierto === k;
+    const c = cuenta ? cuentas[cuenta] : null;
+    const disponible = lista && (!c || c.disponible);
     return (
       <div className="flex flex-none flex-col items-end gap-2">
-        <button type="button" disabled={!lista} onClick={() => setAbierto(es ? null : k)} aria-expanded={es} className={`h-9 rounded-full px-4 text-[14px] font-semibold transition-colors duration-150 disabled:cursor-default ${!lista ? "bg-linea/60 text-tinta-3" : en.length ? "bg-linea text-tinta-2 hover:text-tinta" : "bg-tinta text-paper hover:brightness-110"}`}>
-          {!lista ? "Próximamente" : en.length ? `En ${en.length} agente${en.length === 1 ? "" : "s"}` : "Agregar"}
+        <button type="button" disabled={!disponible} onClick={() => (tipo === "integracion" ? void agregarIntegracion(clave, cuenta) : setAbierto(es ? null : k))} aria-expanded={es} className={`h-9 rounded-full px-4 text-[14px] font-semibold transition-colors duration-150 disabled:cursor-default ${!disponible ? "bg-linea/60 text-tinta-3" : en.length ? "bg-linea text-tinta-2 hover:text-tinta" : "bg-tinta text-paper hover:brightness-110"}`}>
+          {!disponible ? "Próximamente" : en.length ? `En ${en.length} agente${en.length === 1 ? "" : "s"}` : c && !c.conectada ? "Conectar" : "Agregar"}
         </button>
+        {c?.conectada && es ? <button type="button" onClick={async () => { await desconectarCuenta(cuenta!); setCuentas(await cuentasExternas()); setAbierto(null); }} className="text-[12px] text-tinta-3 hover:text-tinta">{c.cuenta ? `${c.cuenta} · ` : ""}desconectar</button> : null}
         {es ? (
           <ul className="flex flex-wrap justify-end gap-1.5">
             {mios.length ? mios.map((a) => {
@@ -127,7 +162,7 @@ export function Marketplace({ catalogo, agentes: mios }: { catalogo: Catalogo; a
                   <span className="text-[15px] font-semibold text-tinta">{i.nombre}</span>
                   <span className="text-[13px] text-tinta-3">{i.detalle}</span>
                 </span>
-                {selector("integracion", i.clave, i.lista)}
+                {selector("integracion", i.clave, i.lista, i.cuenta)}
               </li>
             ))}
           </ul>
@@ -151,6 +186,23 @@ export function Marketplace({ catalogo, agentes: mios }: { catalogo: Catalogo; a
         </section>
       ) : null}
       {!agentes.length && !integraciones.length && !skills.length ? <p className="mt-10 text-center text-[14px] text-tinta-3">Nada con ese nombre.</p> : null}
+
+      {conectando ? (
+        <div role="dialog" aria-modal="true" aria-label={`Conectar ${conectando.servicio}`} className="fixed inset-0 z-40 flex items-center justify-center bg-tinta/30 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) setConectando(null); }}>
+          <div className="w-full max-w-[460px] rounded-3xl border border-linea bg-panel p-5">
+            <h2 className="text-[18px] font-semibold text-tinta">Conectar {cuentas[conectando.servicio]?.nombre ?? conectando.servicio}</h2>
+            {conectando.ayuda ? <p className="mt-2 text-[13.5px] leading-relaxed text-tinta-2">{conectando.ayuda}</p> : null}
+            {conectando.ayuda ? (
+              <input value={conectando.token} onChange={(e) => setConectando({ ...conectando, token: e.target.value, error: undefined })} placeholder="Pegue aquí el token" spellCheck={false} className="numeros mt-4 h-11 w-full rounded-xl bg-linea/60 px-3.5 text-[14px] text-tinta outline-none focus:bg-linea" />
+            ) : null}
+            {conectando.error ? <p className="mt-3 text-[13px] text-critico">{conectando.error}</p> : null}
+            <div className="mt-4 flex items-center justify-end gap-4">
+              <button type="button" onClick={() => setConectando(null)} className="text-[14px] text-tinta-3 hover:text-tinta">Cancelar</button>
+              {conectando.ayuda ? <button type="button" onClick={guardarToken} disabled={!conectando.token.trim()} className="h-10 rounded-full bg-acento px-5 text-[14px] font-semibold text-acento-tinta hover:brightness-110 disabled:bg-linea disabled:text-tinta-3">Conectar</button> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -31,6 +31,9 @@ VERCEL_AI_GATEWAY_KEY = os.environ.get("VERCEL_AI_GATEWAY_KEY", "")  # Jev por V
 # estos tokens para terceros; se quita cuando entre el Codex real.
 PRUEBA_ANTHROPIC_TOKEN = os.environ.get("PRUEBA_ANTHROPIC_TOKEN", "")
 PRUEBA_ANTHROPIC_MODELO = os.environ.get("PRUEBA_ANTHROPIC_MODELO", "claude-sonnet-4-6")
+# Integraciones externas: la app OAuth de Google a nombre de Dimia (Gmail, Calendar, Drive).
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 PUBLICO_URL = os.environ.get("PUBLICO_URL", "https://dimia-agentes.fly.dev")  # para armar las URL de pantalla
 MINUTOS_SIN_USO = int(os.environ.get("MINUTOS_SIN_USO", "20"))
 

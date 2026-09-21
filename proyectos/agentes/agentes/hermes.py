@@ -100,6 +100,11 @@ def mcp_dimia(token: str) -> dict:
     return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
+def mcp_servicio(nombre: str, token: str) -> dict:
+    """google | notion | slack: el MCP del orquestador para ese servicio."""
+    return {nombre: {"url": f"{config.PUBLICO_URL}/mcp-{nombre}/", "headers": {"Authorization": f"Bearer {token}"}}}
+
+
 def mcp_whatsapp(token: str) -> dict:
     return {"whatsapp": {"url": f"{config.PUBLICO_URL}/mcp-whatsapp/", "headers": {"Authorization": f"Bearer {token}"}}}
 

@@ -1697,13 +1697,15 @@ export async function cuotasNegocio(): Promise<Cuotas | null> {
   return r.ok ? r.json() : null;
 }
 
+export type CuentaExterna = { nombre: string; modo: "oauth" | "token"; ayuda: string | null; cuenta: string | null; conectada: boolean; disponible: boolean };
 export type Catalogo = {
   skills: { clave: string; nombre: string; detalle: string; agentes: string[] }[];
-  integraciones: { clave: string; nombre: string; detalle: string; lista: boolean; agentes: string[] }[];
+  integraciones: { clave: string; nombre: string; detalle: string; lista: boolean; cuenta: string | null; agentes: string[] }[];
+  cuentas: Record<string, CuentaExterna>;
 };
 export async function catalogoAgentes(): Promise<Catalogo> {
   const r = await orquestador("/catalogo");
-  return r.ok ? r.json() : { skills: [], integraciones: [] };
+  return r.ok ? r.json() : { skills: [], integraciones: [], cuentas: {} };
 }
 
 export async function instalarEnAgente(agenteId: string, tipo: "skill" | "integracion", clave: string, instalar: boolean): Promise<Estado> {
@@ -1727,4 +1729,26 @@ export async function rutinasAgente(agenteId: string): Promise<{ estado: string;
 /** Enciende la computadora del negocio en cuanto el dueño entra a Agentes; no espera respuesta. */
 export async function despertarMaquina(): Promise<void> {
   await orquestador("/maquina/despertar", { method: "POST" }).catch(() => null);
+}
+
+
+export async function iniciarConexion(servicio: string): Promise<{ modo: "oauth"; url: string } | { modo: "token"; ayuda: string } | { error: string }> {
+  const r = await orquestador(`/conexiones/${servicio}/iniciar`, { method: "POST" });
+  if (!r.ok) return { error: r.status === 503 ? "Esta integración todavía no está disponible." : "No se pudo iniciar la conexión." };
+  return r.json();
+}
+
+export async function conectarConToken(servicio: string, token: string): Promise<Estado> {
+  const r = await orquestador(`/conexiones/${servicio}/token`, { method: "POST", body: JSON.stringify({ token }) });
+  if (!r.ok) return { error: ((await r.json().catch(() => ({}))) as { detail?: string }).detail ?? "No se pudo conectar." };
+  return { ok: "Conectada." };
+}
+
+export async function cuentasExternas(): Promise<Record<string, CuentaExterna>> {
+  const r = await orquestador("/conexiones");
+  return r.ok ? r.json() : {};
+}
+
+export async function desconectarCuenta(servicio: string): Promise<void> {
+  await orquestador(`/conexiones/${servicio}`, { method: "DELETE" });
 }
