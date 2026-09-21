@@ -214,7 +214,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
           ) : (
             <>
               {visibles.has("pantalla") ? (
-                !recepcion && agente.trabajo ? (
+                agente.trabajo ? (
                   <PantallaVivo agenteId={agente.id} nombre={agente.nombre} ocultar={() => alternarAccion("pantalla")} />
                 ) : (
                   <div className="space-y-2">
@@ -235,7 +235,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
                 </div>
               ) : null}
               {visibles.has("rutinas") ? <Rutinas agenteId={agente.id} nombre={agente.nombre} conCerebro={!recepcion && !!agente.trabajo} /> : null}
-              {!recepcion ? <UsoPlan /> : null}
+              <UsoPlan />
             </>
           )}
         </div>
