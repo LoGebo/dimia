@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Monitor, PanelRightOpen, Plus } from "lucide-react";
-import { Compositor, type Adjunto, type Envio } from "@/components/compositor";
+import { Compositor, type Adjunto, type Envio, type Nivel } from "@/components/compositor";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { actualizarAgente, agenteTrabajando, aprobarAccion, estadoCodex, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
 import { Formato } from "@/components/formato";
@@ -149,7 +149,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     }
   }
 
-  async function turnoCerebro(t: string, extra?: { ruta?: "rapido" | "fuerte"; adjuntos?: Adjunto[] }) {
+  async function turnoCerebro(t: string, extra?: { ruta?: Nivel; adjuntos?: Adjunto[] }) {
     const adjuntos = (extra?.adjuntos ?? []).map((a) => (a.tipo === "imagen" ? { tipo: "imagen", nombre: a.nombre, datos: a.datos } : { tipo: "texto", nombre: a.nombre, contenido: a.contenido }));
     const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t, ruta: extra?.ruta, adjuntos: adjuntos.length ? adjuntos : undefined }) });
     await leerEventos(r);
@@ -181,7 +181,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     router.refresh();
   }
 
-  async function preguntar(pregunta: string, extra?: { ruta?: "rapido" | "fuerte"; adjuntos?: Adjunto[] }) {
+  async function preguntar(pregunta: string, extra?: { ruta?: Nivel; adjuntos?: Adjunto[] }) {
     const t = pregunta.trim();
     if ((!t && !extra?.adjuntos?.length) || escribiendo) return;
     const adj = (extra?.adjuntos ?? []).map((a) => ({ tipo: a.tipo, nombre: a.nombre, datos: a.datos }));

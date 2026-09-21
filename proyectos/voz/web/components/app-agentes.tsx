@@ -7,7 +7,7 @@ import { BienvenidaAgentes } from "@/components/bienvenida-agentes";
 import { PantallaAgente } from "@/components/pantalla-agente";
 import { RosterAgentes, type AgenteRoster, type GrupoRoster } from "@/components/roster-agentes";
 
-export type AgenteCompleto = AgenteRoster & { permisos: string[]; reglas?: string | null; personalidad?: string | null; ajustes?: { trato?: "usted" | "tu"; modelo?: "auto" | "rapido" | "fuerte"; razonamiento?: "bajo" | "medio" | "alto" } };
+export type AgenteCompleto = AgenteRoster & { permisos: string[]; reglas?: string | null; personalidad?: string | null; ajustes?: { trato?: "usted" | "tu"; modelo?: "auto" | "ligero" | "rapido" | "fuerte" | "profundo"; razonamiento?: "bajo" | "medio" | "alto" } };
 
 /**
  * La app de Agentes vive en el cliente: cambiar de agente no pide nada al

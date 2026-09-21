@@ -24,10 +24,10 @@ def puerto(pantalla: int) -> int:
 
 def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None, local: bool = False) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
-    rutas = {"fuerte": {"model": config.MODELO_CODEX, "provider": "openai-codex"}, "rapido": {"model": config.MODELO_CODEX_RAPIDO, "provider": "openai-codex"}}
+    rutas = {n: {"model": m, "provider": "openai-codex"} for n, m in config.MODELOS_CODEX.items()}
     if cerebro == "claude":  # Claude Max por el OAuth de Claude Code (archivo .anthropic_oauth.json del perfil)
         modelo = {"default": config.MODELO_CLAUDE, "provider": "anthropic"}
-        rutas = {"fuerte": {"model": config.MODELO_CLAUDE, "provider": "anthropic"}, "rapido": {"model": config.MODELO_CLAUDE_RAPIDO, "provider": "anthropic"}}
+        rutas = {n: {"model": m, "provider": "anthropic"} for n, m in config.MODELOS_CLAUDE.items()}
     if config.PRUEBA_ANTHROPIC_TOKEN:
         modelo = {"default": config.PRUEBA_ANTHROPIC_MODELO, "provider": "anthropic"}
     c = {
@@ -36,7 +36,7 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
         "terminal": {"backend": "local"},
         "platform_toolsets": {"api_server": TOOLSETS},
         "gateway": {"api_server": {"enabled": True, "host": "::", "port": puerto(pantalla), "key": llave, "max_concurrent_runs": 4}, "multiplex_profiles": False},
-        # Dos alias que el orquestador elige por turno según Jev.
+        # Cuatro alias (ligero, rapido, fuerte, profundo) que el orquestador elige por turno según Jev.
         "platforms": {"api_server": {"extra": {"model_routes": rutas}}},
         "auth": {"adopt_external_logins": False},
         # Todas las herramientas a la vista: sin esto Hermes esconde el navegador

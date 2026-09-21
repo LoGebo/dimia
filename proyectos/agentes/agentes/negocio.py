@@ -449,9 +449,8 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str, ruta: str | Non
 
 
 def modelo_de(cerebro: str, nivel: str) -> str:
-    if cerebro == "claude":
-        return config.MODELO_CLAUDE_RAPIDO if nivel == "rapido" else config.MODELO_CLAUDE
-    return config.MODELO_CODEX_RAPIDO if nivel == "rapido" else config.MODELO_CODEX
+    tabla = config.MODELOS_CLAUDE if cerebro == "claude" else config.MODELOS_CODEX
+    return tabla.get(nivel, tabla["fuerte"])
 
 
 async def ruta_en_vivo(tenant: str, agente_id: str, texto: str, con_imagen: bool = False) -> dict:
@@ -462,7 +461,7 @@ async def ruta_en_vivo(tenant: str, agente_id: str, texto: str, con_imagen: bool
         return {"ruta": None}
     cual = await cerebro(tenant)
     aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
-    if aj.get("modelo") in ("rapido", "fuerte"):
+    if aj.get("modelo") in config.NIVELES:
         return {"ruta": aj["modelo"], "modelo": modelo_de(cual, aj["modelo"]), "confianza": None, "fijo": True}
     previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente_id)
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
@@ -513,9 +512,9 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
     fa = await db.uno("select trabajo, ajustes from agente where id = $1", agente["id"])
     aj = fa["ajustes"] if isinstance(fa["ajustes"], dict) else json.loads(fa["ajustes"] or "{}")
-    if aj.get("modelo") in ("rapido", "fuerte"):  # el dueño fijó el modelo: Jev no decide
+    if aj.get("modelo") in config.NIVELES:  # el dueño fijó el modelo: Jev no decide
         nivel, decision = aj["modelo"], None
-    elif ruta in ("rapido", "fuerte"):  # lo que el compositor ya decidió (Jev en vivo o a mano)
+    elif ruta in config.NIVELES:  # lo que el compositor ya decidió (Jev en vivo o a mano)
         nivel, decision = ruta, {"origen": "compositor"}
     else:
         nivel, decision = await jev.decidir(fa["trabajo"], historial, texto)

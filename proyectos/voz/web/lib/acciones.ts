@@ -1575,7 +1575,7 @@ export async function crearAgenteVacio(): Promise<Estado & { id?: string }> {
   return estado.error ? estado : { id };
 }
 
-export type AjustesAgente = { trato?: "usted" | "tu"; modelo?: "auto" | "rapido" | "fuerte"; razonamiento?: "bajo" | "medio" | "alto" };
+export type AjustesAgente = { trato?: "usted" | "tu"; modelo?: "auto" | "ligero" | "rapido" | "fuerte" | "profundo"; razonamiento?: "bajo" | "medio" | "alto" };
 
 export async function actualizarAgente(
   agenteId: string,
@@ -1584,7 +1584,7 @@ export async function actualizarAgente(
   const permisos = cambios.permisos?.filter((p) => (PERMISOS_AGENTE as readonly string[]).includes(p));
   const ajustes = cambios.ajustes ? {
     ...(cambios.ajustes.trato && ["usted", "tu"].includes(cambios.ajustes.trato) ? { trato: cambios.ajustes.trato } : {}),
-    ...(cambios.ajustes.modelo && ["auto", "rapido", "fuerte"].includes(cambios.ajustes.modelo) ? { modelo: cambios.ajustes.modelo } : {}),
+    ...(cambios.ajustes.modelo && ["auto", "ligero", "rapido", "fuerte", "profundo"].includes(cambios.ajustes.modelo) ? { modelo: cambios.ajustes.modelo } : {}),
     ...(cambios.ajustes.razonamiento && ["bajo", "medio", "alto"].includes(cambios.ajustes.razonamiento) ? { razonamiento: cambios.ajustes.razonamiento } : {}),
   } : null;
   return intentar(() =>
@@ -1830,7 +1830,7 @@ export async function dondeAgente(agenteId: string, donde: "dimia" | "local"): P
 }
 
 // --- Compositor: Jev en vivo ---
-export type RutaBorrador = { ruta: "rapido" | "fuerte" | null; modelo?: string; confianza?: number | null; fijo?: boolean; ms?: number };
+export type RutaBorrador = { ruta: "ligero" | "rapido" | "fuerte" | "profundo" | null; modelo?: string; confianza?: number | null; fijo?: boolean; ms?: number };
 export async function rutaBorrador(agenteId: string, texto: string, conImagen: boolean): Promise<RutaBorrador> {
   try {
     const r = await orquestador(`/agentes/${agenteId}/ruta`, { method: "POST", body: JSON.stringify({ texto, con_imagen: conImagen }) });

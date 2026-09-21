@@ -4,13 +4,17 @@ import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type 
 import { ArrowUp, FileText, Paperclip, X } from "lucide-react";
 import { rutaBorrador, type RutaBorrador } from "@/lib/acciones";
 
+export type Nivel = "ligero" | "rapido" | "fuerte" | "profundo";
 export type Adjunto = { id: number; tipo: "imagen" | "texto"; nombre: string; tamano: number; datos?: string; contenido?: string };
-export type Envio = { texto: string; ruta?: "rapido" | "fuerte"; adjuntos: Adjunto[] };
+export type Envio = { texto: string; ruta?: Nivel; adjuntos: Adjunto[] };
 
-const RUTAS: Record<"rapido" | "fuerte", { nombre: string; detalle: string }> = {
-  rapido: { nombre: "Rápido", detalle: "Contesta al momento; para preguntas cortas y datos directos." },
-  fuerte: { nombre: "A fondo", detalle: "Razona y trabaja en varios pasos; tarda más." },
+export const RUTAS: Record<Nivel, { nombre: string; detalle: string }> = {
+  ligero: { nombre: "Ligero", detalle: "Saludos y respuestas que no requieren consultar nada. Casi no gasta cupo." },
+  rapido: { nombre: "Rápido", detalle: "Preguntas cortas con una consulta: citas, cobros, un cliente." },
+  fuerte: { nombre: "A fondo", detalle: "Tareas de varios pasos: navegar, redactar, cotizar, enviar." },
+  profundo: { nombre: "Profundo", detalle: "Investigación, análisis y planeación. El más capaz; tarda y gasta más." },
 };
+const NIVELES = Object.keys(RUTAS) as Nivel[];
 const MAX_ADJUNTOS = 6;
 const MAX_IMAGEN = 12 * 1024 * 1024;
 const MAX_TEXTO = 200 * 1024;
@@ -38,7 +42,7 @@ async function comprimirImagen(archivo: File): Promise<string> {
 export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agenteId: string; nombre: string; ocupado: boolean; conJev: boolean; enviar: (e: Envio) => void }) {
   const [texto, setTexto] = useState("");
   const [adjuntos, setAdjuntos] = useState<Adjunto[]>([]);
-  const [manual, setManual] = useState<"rapido" | "fuerte" | null>(null);
+  const [manual, setManual] = useState<Nivel | null>(null);
   const [ruta, setRuta] = useState<RutaBorrador | null>(null);
   const [clasificando, setClasificando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -126,7 +130,7 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
 
   function mandar() {
     if (!puedeEnviar) return;
-    const elegida = manual ?? (ruta?.ruta === "rapido" || ruta?.ruta === "fuerte" ? ruta.ruta : undefined);
+    const elegida = manual ?? (ruta?.ruta && NIVELES.includes(ruta.ruta) ? ruta.ruta : undefined);
     enviar({ texto: texto.trim(), ruta: elegida, adjuntos });
     setTexto("");
     setAdjuntos([]);
@@ -139,8 +143,8 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
   // La ficha: qué va a correr y por qué.
   const efectiva = manual ?? ruta?.ruta ?? null;
   const modelo = manual ? (ruta?.modelo && ruta.ruta === manual ? ruta.modelo : null) : ruta?.modelo ?? null;
-  const bajaConfianza = !manual && ruta?.confianza != null && ruta.confianza < 0.7;
-  const etiqueta = manual ? RUTAS[manual].nombre : ruta?.fijo ? `${RUTAS[ruta.ruta as "rapido" | "fuerte"].nombre} · fijo` : efectiva ? (bajaConfianza ? "Automático" : RUTAS[efectiva as "rapido" | "fuerte"].nombre) : clasificando ? "Leyendo…" : "Automático";
+  const bajaConfianza = !manual && ruta?.confianza != null && ruta.confianza < 0.5;
+  const etiqueta = manual ? RUTAS[manual].nombre : ruta?.fijo ? `${RUTAS[ruta.ruta as Nivel].nombre} · fijo` : efectiva ? (bajaConfianza ? "Automático" : RUTAS[efectiva as Nivel].nombre) : clasificando ? "Leyendo…" : "Automático";
   const titulo = manual
     ? `Elegido a mano para este mensaje. ${nombre} correrá ${modelo ?? RUTAS[manual].nombre}.`
     : ruta?.fijo ? `El modelo está fijo en Ajustes. ${nombre} correrá ${ruta.modelo}.`
@@ -201,10 +205,10 @@ export function Compositor({ agenteId, nombre, ocupado, conJev, enviar }: { agen
               {menu ? (
                 <div role="menu" className="absolute bottom-10 left-0 z-20 w-72 rounded-2xl border border-linea bg-panel p-1.5 shadow-[0_8px_24px_rgba(11,15,23,0.12)]">
                   <p className="px-3 pt-1.5 pb-2 text-[12px] leading-snug text-tinta-3">{titulo}</p>
-                  {([["auto", "Automático", "Jev decide por mensaje."], ["rapido", RUTAS.rapido.nombre, RUTAS.rapido.detalle], ["fuerte", RUTAS.fuerte.nombre, RUTAS.fuerte.detalle]] as const).map(([clave, n, d]) => {
+                  {([["auto", "Automático", "Jev decide por mensaje."], ...NIVELES.map((n) => [n, RUTAS[n].nombre, RUTAS[n].detalle] as const)] as readonly (readonly [string, string, string])[]).map(([clave, n, d]) => {
                     const activa = clave === "auto" ? manual === null : manual === clave;
                     return (
-                      <button key={clave} type="button" role="menuitemradio" aria-checked={activa} onClick={() => { setManual(clave === "auto" ? null : clave); setMenu(false); }} className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition-colors duration-100 ${activa ? "bg-linea" : "hover:bg-linea/60"}`}>
+                      <button key={clave} type="button" role="menuitemradio" aria-checked={activa} onClick={() => { setManual(clave === "auto" ? null : (clave as Nivel)); setMenu(false); }} className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition-colors duration-100 ${activa ? "bg-linea" : "hover:bg-linea/60"}`}>
                         <span className="text-[13.5px] font-medium text-tinta">{n}</span>
                         <span className="text-[12px] text-tinta-3">{d}</span>
                       </button>

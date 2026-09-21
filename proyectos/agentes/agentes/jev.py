@@ -1,5 +1,5 @@
-"""La puerta: Jev (TypeSafe) decide, sobre texto, si el turno merece el modelo
-fuerte o basta el rápido. Llave de plataforma (la única permitida en el camino
+"""La puerta: Jev (TypeSafe) decide, sobre texto, qué tanto modelo merece el turno
+(ligero, rápido, fuerte o profundo). Llave de plataforma (la única permitida en el camino
 caliente). Si Jev falla, se va por el fuerte."""
 import time
 
@@ -9,16 +9,18 @@ from agentes import config
 
 URL = "https://api.typesafe.ai/v1/systemone"
 URL_VERCEL = "https://ai-gateway.vercel.sh/v1/evaluate"  # mismo Jev, misma forma de respuesta
-UMBRAL_RAPIDO = 0.7  # menos seguridad que esto y el turno va al fuerte
+UMBRAL = 0.5  # menos seguridad que esto y el turno va al fuerte (el de siempre)
 
 CRITERIOS = {
-    "rapido": "saludo, agradecimiento, dato directo o pregunta corta que se contesta con lo que ya se dijo o con las reglas del negocio",
-    "fuerte": "tarea de varios pasos, navegar o usar sitios, redactar textos, armar cotizaciones o documentos, ambigüedad, o algo que requiere razonar",
+    "ligero": "saludo, cortesía, agradecimiento, sí/no, o algo que se contesta con lo que ya se dijo en la conversación sin consultar nada",
+    "rapido": "pregunta corta que se resuelve con una o dos consultas directas (citas de hoy, cuánto se cobró, un cliente, un dato del negocio)",
+    "fuerte": "tarea de varios pasos: navegar o usar sitios y programas, redactar textos, armar cotizaciones, documentos o campañas, enviar cosas, crear rutinas",
+    "profundo": "investigación amplia, análisis con muchos datos, planeación o estrategia, código complejo, o una petición ambigua y de alto impacto donde equivocarse cuesta",
 }
 
 
 async def decidir(trabajo: str | None, historial: list[str], texto: str) -> tuple[str, dict | None]:
-    """Devuelve ('rapido'|'fuerte', respuesta_de_jev)."""
+    """Devuelve (nivel, respuesta_de_jev); nivel ∈ ligero, rapido, fuerte, profundo."""
     if config.VERCEL_AI_GATEWAY_KEY:
         url, llave, modelo = URL_VERCEL, config.VERCEL_AI_GATEWAY_KEY, "typesafe-ai/jev"
     elif config.TYPESAFE_API_KEY:
@@ -38,5 +40,6 @@ async def decidir(trabajo: str | None, historial: list[str], texto: str) -> tupl
     except (httpx.HTTPError, ValueError):
         return "fuerte", None
     d["_ms"] = round((time.perf_counter() - t) * 1000)
-    prob = d.get("answers", {}).get("nivel", {}).get("probabilities", {}).get("rapido", 0)
-    return ("rapido" if prob >= UMBRAL_RAPIDO else "fuerte"), d
+    probs = d.get("answers", {}).get("nivel", {}).get("probabilities", {}) or {}
+    nivel = max(probs, key=probs.get) if probs else "fuerte"
+    return (nivel if nivel in CRITERIOS and probs[nivel] >= UMBRAL else "fuerte"), d

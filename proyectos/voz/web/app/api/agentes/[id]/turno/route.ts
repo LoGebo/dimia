@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const texto = cuerpo?.texto?.trim() ?? "";
   const adjuntos = Array.isArray(cuerpo?.adjuntos) ? cuerpo!.adjuntos.slice(0, 6) : undefined;
   if (!texto && !adjuntos?.length) return new Response("falta texto", { status: 400 });
-  const ruta = cuerpo?.ruta === "rapido" || cuerpo?.ruta === "fuerte" ? cuerpo.ruta : undefined;
+  const ruta = ["ligero", "rapido", "fuerte", "profundo"].includes(cuerpo?.ruta ?? "") ? cuerpo!.ruta : undefined;
   const r = await orquestador(`/agentes/${id}/turno`, { method: "POST", body: JSON.stringify({ texto, ruta, adjuntos }), signal: req.signal });
   return new Response(r.body, { status: r.status, headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
 }

@@ -58,7 +58,7 @@ export function AjustesFinos({ agenteId, personalidad, reglas, ajustes, alGuarda
           </div>
           <div>
             <p className="mb-1.5 text-[13px] font-medium text-tinta-2">Con qué piensa</p>
-            <Opciones valor={a.modelo!} opciones={[["auto", "Decide solo"], ["rapido", "Rápido"], ["fuerte", "Fuerte"]]} elegir={(v) => ajustar({ modelo: v })} />
+            <Opciones valor={a.modelo!} opciones={[["auto", "Decide solo"], ["ligero", "Ligero"], ["rapido", "Rápido"], ["fuerte", "A fondo"], ["profundo", "Profundo"]]} elegir={(v) => ajustar({ modelo: v })} />
             <p className="mt-1 text-[12px] text-tinta-3">«Decide solo» usa el rápido para lo sencillo y el fuerte para lo que lo necesita; gasta menos de su cupo.</p>
           </div>
           <div>
