@@ -1840,3 +1840,7 @@ export async function rutaBorrador(agenteId: string, texto: string, conImagen: b
 export async function fichaRuta(agenteId: string): Promise<{ url: string } | null> {
   try { const r = await orquestador(`/agentes/${agenteId}/ficha-ruta`); return r.ok ? r.json() : null; } catch { return null; }
 }
+
+export async function tareasAgente(agenteId: string): Promise<{ id: string; texto: string; estado: string; padre?: string | null }[]> {
+  try { const r = await orquestador(`/agentes/${agenteId}/tareas`); return r.ok ? (await r.json()).tareas ?? [] : []; } catch { return []; }
+}

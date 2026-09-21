@@ -261,6 +261,18 @@ async def estado_agente(agente_id: uuid.UUID, tenant: str = Depends(negocio_id))
     return {"trabajando": negocio.trabajando(str(agente_id))}
 
 
+@app.get("/agentes/{agente_id}/tareas")
+async def tareas_agente(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    """La lista de tareas del agente: en vivo si su Hermes contesta, si no la última guardada."""
+    a = await db.uno("select tareas from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        raise HTTPException(404)
+    lista = await negocio.tareas_de(tenant, str(agente_id))
+    if lista is None:
+        lista = (json.loads(a["tareas"]) if isinstance(a["tareas"], str) else a["tareas"]) or []
+    return {"tareas": lista}
+
+
 @app.get("/agentes/{agente_id}/turno/seguir")
 async def seguir_turno(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     """Se engancha al turno en curso (repite lo que ya salió y sigue). 204 si no hay."""

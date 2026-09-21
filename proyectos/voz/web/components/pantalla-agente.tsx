@@ -98,6 +98,18 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
   function alternarPanel() {
     setAbierto((v) => { try { localStorage.setItem(CLAVE_PANEL, v ? "0" : "1"); } catch {} return !v; });
   }
+  // Como en Grok Bot: en cuanto el agente empieza a usar su computadora, la pantalla se abre sola
+  // (una vez por turno; si el dueño la cierra a mano, no se le vuelve a abrir en ese turno).
+  useEffect(() => {
+    function usar(e: Event) {
+      if ((e as CustomEvent<string>).detail !== agente.id) return;
+      setAbierto(true);
+      setAjustes(false);
+      setVisibles((prev) => { if (prev.has("pantalla")) return prev; const nx = new Set(prev); nx.add("pantalla"); return nx; });
+    }
+    window.addEventListener("agente-usa-computadora", usar);
+    return () => window.removeEventListener("agente-usa-computadora", usar);
+  }, [agente.id]);
   function alternarAccion(clave: string) {
     setVisibles((prev) => {
       const nx = new Set(prev);

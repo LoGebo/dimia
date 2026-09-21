@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Monitor, PanelRightOpen, Plus } from "lucide-react";
 import { Compositor, type Adjunto, type Envio, type Nivel } from "@/components/compositor";
 import { ActividadEnVivo, ActividadHecha, describir, type Paso } from "@/components/actividad-agente";
+import { TareasAgente, type Tarea } from "@/components/tareas-agente";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { actualizarAgente, agenteTrabajando, aprobarAccion, estadoCodex, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
+import { actualizarAgente, agenteTrabajando, aprobarAccion, estadoCodex, hiloNuevoAgente, mensajesAgente, tareasAgente } from "@/lib/acciones";
 import { Formato } from "@/components/formato";
 import { ConectarCerebro } from "@/components/conectar-cerebro";
 
@@ -58,6 +59,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const pegado = useRef(true); // ¿el dueño está viendo el final del hilo?
   const alFondo = () => { const el = lista.current; if (el) el.scrollTop = el.scrollHeight; };
   const [pensamiento, setPensamiento] = useState<string | null>(null);
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const abrioPantalla = useRef(false); // una vez por turno
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
 
@@ -85,6 +88,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         void agenteTrabajando(agente.id).then((si) => { if (si) void seguirTurno(); });
       });
       void estadoCodex().then((e) => setPideCodex(e.estado === "sin_conectar"));
+      setTareas([]);
+      void tareasAgente(agente.id).then(setTareas);
       return;
     }
     try {
@@ -129,6 +134,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   }, [agente.id, escribiendo, conCerebro]);
 
   function hiloNuevo() {
+    setTareas([]);
     if (conCerebro) void hiloNuevoAgente(agente.id);
     try { sessionStorage.removeItem(clave(negocio, agente.id)); } catch {}
     setMensajes([saludo()]);
@@ -138,6 +144,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   async function leerEventos(r: Response): Promise<boolean> {
     const idAgente = Date.now() + 1;
     let creada = false;
+    abrioPantalla.current = false;
     let termino = false; // llegó «fin» (o un error definitivo): si no, el navegador cortó el stream
     const pegar = (texto: string) => {
       if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); return; }
@@ -163,7 +170,12 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
             setPensamiento(null);
             setHaciendo(describir(e.texto).haciendo);
             setPasosVivos((l) => [...l, { herramienta: e.texto, detalle: e.detalle }]);
+            if (!abrioPantalla.current && /^(computer_use|browser_|mcp__navegador_rapido__)/.test(e.texto)) {
+              abrioPantalla.current = true;
+              window.dispatchEvent(new CustomEvent("agente-usa-computadora", { detail: agente.id }));
+            }
           }
+          else if (e.evento === "tareas") setTareas(((e as unknown) as { tareas: Tarea[] }).tareas ?? []);
           else if (e.evento === "herramienta_fin") {
             setPasosVivos((l) => { const i = l.findIndex((p) => p.herramienta === e.texto && p.ms == null); if (i < 0) return l; const c = [...l]; c[i] = { ...c[i]!, ms: e.ms ?? 0, ok: e.ok !== false }; return c; });
             setHaciendo(null);
@@ -192,6 +204,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
       setPensamiento(null);
       setPasosVivos((l) => { if (l.length) setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, pasos: l } : x))); return []; });
     }
+    void tareasAgente(agente.id).then(setTareas);
     return termino;
   }
 
@@ -411,6 +424,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         ) : null}
       </div>
 
+      {conCerebro ? <TareasAgente tareas={tareas} trabajando={escribiendo} /> : null}
       <Compositor agenteId={agente.id} nombre={agente.nombre} ocupado={escribiendo} conJev={conCerebro} enviar={(e: Envio) => { void preguntar(e.texto, { ruta: e.ruta, adjuntos: e.adjuntos }); }} />
     </section>
   );

@@ -684,6 +684,10 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                                 paso["ok"] = not d.get("error", False)
                                 break
                         yield {"evento": "herramienta_fin", "texto": nombre, "ok": not d.get("error", False), "ms": int(float(d.get("duration") or 0) * 1000)}
+                        if nombre.startswith("todo"):
+                            lista = await tareas_de(tenant, agente_id, http=http, m=m, sid=sid, llave=llave)
+                            if lista is not None:
+                                yield {"evento": "tareas", "tareas": lista}
                     elif evento == "reasoning.available":
                         t = str(d.get("text") or "").strip()
                         if t:
@@ -718,8 +722,53 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
         await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto, pasos) values ($1, $2, 'agente', $3, $4::jsonb)", tenant, agente["id"], "".join(respuesta), json.dumps(traza) if traza else None)
 
 
+async def tareas_de(tenant: str, agente_id: str, http: httpx.AsyncClient | None = None, m=None, sid: str | None = None, llave: str | None = None) -> list[dict] | None:
+    """La lista de tareas del agente: el último resultado de su herramienta `todo` en la sesión
+    de Hermes (Hermes la guarda solo en memoria y en el historial). None si no se pudo leer."""
+    propio = http is None
+    if propio:
+        agente = await db.uno("select id, llave, pantalla, donde, sesion_hermes, sesion_local from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+        if not agente or not agente["llave"]:
+            return None
+        try:
+            http, m = await _cliente(tenant, agente, 15, despertar=False)
+        except SinComputadora:
+            return None
+        if m and not (await proveedor().obtener(m["referencia"])).encendida:
+            return None
+        sid = agente[_columna_sesion(m)]
+        llave = vault.descifrar(agente["llave"])
+        agente_pantalla = agente["pantalla"]
+    else:
+        agente_pantalla = (await db.uno("select pantalla from agente where id = $1", agente_id))["pantalla"]
+    if not sid:
+        return []
+    try:
+        r = await http.get(_url(m, agente_pantalla, f"/api/sessions/{sid}/messages"), headers={"Authorization": f"Bearer {llave}"}, params={"limit": 500})
+        if r.status_code == 404:
+            return []
+        r.raise_for_status()
+        d = r.json()
+    except (httpx.HTTPError, ValueError):
+        return None
+    finally:
+        if propio and http:
+            await http.aclose()
+    msgs = d.get("data") if isinstance(d, dict) else d
+    for x in reversed(msgs or []):
+        if x.get("role") == "tool" and str(x.get("tool_name") or "").startswith("todo"):
+            try:
+                todos = json.loads(x.get("content") or "{}").get("todos") or []
+            except (ValueError, AttributeError):
+                continue
+            lista = [{"id": str(t.get("id", "")), "texto": str(t.get("content", ""))[:200], "estado": t.get("status", "pending"), "padre": t.get("parent")} for t in todos if isinstance(t, dict)]
+            await db.ejecutar("update agente set tareas = $2::jsonb where id = $1", agente_id, json.dumps(lista))
+            return lista
+    return []
+
+
 async def hilo_nuevo(tenant: str, agente_id: str) -> None:
-    await db.ejecutar("update agente set sesion_hermes = null, sesion_local = null where id = $1 and tenant_id = $2", agente_id, tenant)
+    await db.ejecutar("update agente set sesion_hermes = null, sesion_local = null, tareas = null where id = $1 and tenant_id = $2", agente_id, tenant)
 
 
 async def despertar_para_rutinas() -> None:
