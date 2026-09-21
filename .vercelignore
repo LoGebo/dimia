@@ -1,0 +1,12 @@
+# Solo el panel (proyectos/voz/web) se despliega; lo demás no sube.
+/docs
+/marca
+/negocio
+/sitio
+/proyectos/agentes
+/proyectos/voz/.venv*
+/proyectos/voz/motor
+/proyectos/voz/web/node_modules
+/proyectos/voz/web/.next
+.venv*
+node_modules
