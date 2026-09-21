@@ -42,7 +42,7 @@ from fastapi.responses import HTMLResponse  # noqa: E402
 
 app_mcp = mcp_dimia.app()
 app_mcp_wa = mcp_dimia.app_whatsapp()
-apps_servicio = {"google": mcp_servicios.app_google(), "notion": mcp_servicios.app_notion(), "slack": mcp_servicios.app_slack()}
+apps_servicio = {"google": mcp_servicios.app_google(), "notion": mcp_servicios.app_notion(), "slack": mcp_servicios.app_slack(), "github": mcp_servicios.app_github()}
 
 
 @asynccontextmanager

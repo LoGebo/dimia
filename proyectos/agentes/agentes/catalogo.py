@@ -14,6 +14,7 @@ INTEGRACIONES = {
     "google-drive": {"nombre": "Google Drive", "detalle": "Buscar y leer archivos", "lista": True, "cuenta": "google"},
     "whatsapp": {"nombre": "WhatsApp", "detalle": "Escribir a clientes desde la línea del negocio", "lista": True},
     "notion": {"nombre": "Notion", "detalle": "Páginas y bases de datos", "lista": True, "cuenta": "notion"},
+    "github": {"nombre": "GitHub", "detalle": "Leer repositorios, escribir código, abrir issues y pull requests", "lista": True, "cuenta": "github"},
     "slack": {"nombre": "Slack", "detalle": "Leer y publicar en canales", "lista": True, "cuenta": "slack"},
     "higgsfield": {"nombre": "Higgsfield", "detalle": "Imágenes y video con IA (Sora, Veo, Kling, Nano Banana)", "lista": True, "cuenta": "higgsfield", "mcp": True},
 }

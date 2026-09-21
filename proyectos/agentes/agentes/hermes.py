@@ -136,6 +136,16 @@ def mcp_servicio(nombre: str, token: str, puente: bool = False) -> dict:
     return {nombre: {"url": f"{config.PUBLICO_URL}{ruta}", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
+def archivos_git(agente_id: str, token: str | None) -> dict[str, str]:
+    """git autenticado en la terminal del agente: HOME es su perfil, así que .gitconfig y
+    .git-credentials viven ahí. Hermes limpia GH_TOKEN/GITHUB_TOKEN del entorno; el archivo no."""
+    p = f"{HOME}/profiles/{agente_id}"
+    if not token:
+        return {f"{p}/.gitconfig": "", f"{p}/.git-credentials": ""}
+    return {f"{p}/.gitconfig": "[credential]\n\thelper = store\n[user]\n\tname = Agente Dimia\n\temail = agentes@dimia.mx\n[init]\n\tdefaultBranch = main\n",
+            f"{p}/.git-credentials": f"https://x-access-token:{token}@github.com\n"}
+
+
 def mcp_whatsapp(token: str) -> dict:
     return {"whatsapp": {"url": f"{config.PUBLICO_URL}/mcp-whatsapp/", "headers": {"Authorization": f"Bearer {token}"}}}
 
@@ -146,7 +156,7 @@ def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[s
     pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/profiles/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
-        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json")) else "644"  # config lleva llaves de MCP
+        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials")) else "644"  # config lleva llaves de MCP
         pasos.append(f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && printf %s {b64} | base64 -d > {shlex.quote(ruta)}.tmp && chmod {modo} {shlex.quote(ruta)}.tmp && mv {shlex.quote(ruta)}.tmp {shlex.quote(ruta)}")
     pasos.append(f"chown -R {UID}:{UID} {HOME}")
     return ["sh", "-c", " && ".join(pasos)]

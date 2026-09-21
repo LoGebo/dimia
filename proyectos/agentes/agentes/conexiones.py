@@ -17,6 +17,7 @@ SERVICIOS = {
     # MCP alojados con OAuth estándar (registro dinámico + PKCE): el orquestador autoriza y hace de puente.
     "higgsfield": {"modo": "mcp_oauth", "nombre": "Higgsfield", "mcp_url": "https://mcp.higgsfield.ai/mcp", "alcances": "openid email offline_access"},
     "notion": {"modo": "token", "nombre": "Notion", "ayuda": "En notion.so/my-integrations cree una integración interna, copie el «Internal Integration Secret» y comparta con ella las páginas que el agente puede ver."},
+    "github": {"modo": "token", "nombre": "GitHub", "ayuda": "En github.com/settings/tokens cree un token (clásico o de grano fino) con permiso repo sobre los repositorios que el agente puede leer y escribir, y péguelo aquí."},
     "slack": {"modo": "token", "nombre": "Slack", "ayuda": "En api.slack.com/apps cree una app, agregue los permisos chat:write, channels:read y channels:history, instálela en su espacio y copie el «Bot User OAuth Token» (empieza con xoxb-)."},
 }
 ALCANCES_GOOGLE = "openid email https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive"
@@ -114,6 +115,11 @@ async def conectar_token(tenant: str, servicio: str, token: str) -> str | None:
             if r.status_code != 200:
                 return "Notion no reconoce ese token."
             cuenta = r.json().get("name") or (r.json().get("bot") or {}).get("workspace_name")
+        elif servicio == "github":
+            r = await c.get("https://api.github.com/user", headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"})
+            if r.status_code != 200:
+                return "GitHub no reconoce ese token."
+            cuenta = r.json().get("login")
         elif servicio == "slack":
             r = await c.post("https://slack.com/api/auth.test", headers={"Authorization": f"Bearer {token}"})
             if not r.json().get("ok"):

@@ -10,7 +10,7 @@ import asyncio
 import re
 import time
 
-from agentes import catalogo, claude, codex, config, cuotas, db, hermes, jev, vault
+from agentes import catalogo, claude, codex, conexiones, config, cuotas, db, hermes, jev, vault
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -239,6 +239,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack, higgsfield
                 puente = any(v.get("cuenta") == cuenta and v.get("mcp") for v in catalogo.INTEGRACIONES.values())
                 mcp.update(hermes.mcp_servicio(cuenta, token, puente=puente))
+        gh = await conexiones.leer(tenant, "github") if "github" in cuentas else None
+        archivos.update(hermes.archivos_git(aid, gh["token"] if gh else None))
         raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
         borrar.append(raiz_skills)
         for i in inst:
@@ -436,6 +438,7 @@ async def _turno(tenant: str, agente_id: str, texto: str):
                     elif evento == "approval.request":
                         m_tool = re.search(r"MCP tool '([^']+)'", json.dumps(d))
                         yield {"evento": "aprobacion", "texto": m_tool.group(1) if m_tool else (d.get("tool") or "una acción"),
+                               "detalle": "" if m_tool else str(d.get("command") or d.get("description") or "")[:600],
                                "run_id": d.get("run_id") or run_id, "request_id": d.get("request_id")}
                     elif evento == "tool.started":
                         pasos += 1

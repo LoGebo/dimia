@@ -16,7 +16,7 @@ type Mensaje = {
   opciones?: Opcion[];
   elegida?: string;
   pasos?: { herramienta: string; detalle: string }[];
-  propuesta?: { run_id: string; request_id: string | null; resumen: string };
+  propuesta?: { run_id: string; request_id: string | null; resumen: string; detalle?: string };
   resuelta?: "aprobada" | "rechazada";
   resultado?: string;
 };
@@ -38,7 +38,7 @@ const NOMBRE_HERRAMIENTA: Record<string, string> = {
 };
 const ACCION: Record<string, string> = {
   agendar_cita: "agendar una cita", cancelar_cita: "cancelar una cita", anotar_recado: "dejarle un recado", registrar_pago: "registrar un pago",
-  enviar_whatsapp: "mandar un WhatsApp", gmail_enviar: "enviar un correo", calendar_crear: "crear un evento en su calendario", notion_agregar: "escribir en Notion", slack_publicar: "publicar en Slack",
+  enviar_whatsapp: "mandar un WhatsApp", gmail_enviar: "enviar un correo", calendar_crear: "crear un evento en su calendario", notion_agregar: "escribir en Notion", slack_publicar: "publicar en Slack", github_crear_issue: "abrir un issue en GitHub", github_crear_pr: "abrir un pull request en GitHub",
 };
 const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
 const clave = (negocio: string, agente: string) => `hilo_agente:${negocio}:${agente}`;
@@ -80,10 +80,11 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         const lista = h.length ? h.map((m) => ({ id: m.id, de: m.de === "yo" ? ("yo" as const) : ("agente" as const), texto: m.texto })) : [saludo()];
         setMensajes(lista);
         try { sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(lista.slice(-40))); } catch {}
+        // Si se fue a media respuesta, el agente siguió trabajando: engancharse (después del
+        // historial, o la lista lo pisaría y se perdería la tarjeta de aprobación).
+        void agenteTrabajando(agente.id).then((si) => { if (si) void seguirTurno(); });
       });
       void estadoCodex().then((e) => setPideCodex(e.estado === "sin_conectar"));
-      // Si se fue a media respuesta, el agente siguió trabajando: engancharse.
-      void agenteTrabajando(agente.id).then((si) => { if (si) void seguirTurno(); });
       return;
     }
     try {
@@ -132,9 +133,10 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
           if (e.evento === "texto") { setHaciendo(null); pegar(e.texto); }
           else if (e.evento === "herramienta") setHaciendo(NOMBRE_HERRAMIENTA[e.texto] ?? e.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " "));
           else if (e.evento === "aprobacion") {
-            const a = e as unknown as { texto: string; run_id: string; request_id: string | null };
+            const a = e as unknown as { texto: string; detalle?: string; run_id: string; request_id: string | null };
             setHaciendo(null);
-            setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: a.run_id, request_id: a.request_id, resumen: `${agente.nombre} quiere ${ACCION[a.texto] ?? a.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " ")}. Lo que va a hacer está arriba en el hilo.` } }]);
+            const que = ACCION[a.texto] ?? a.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " ");
+            setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: a.run_id, request_id: a.request_id, resumen: `${agente.nombre} quiere ${que}.`, detalle: a.detalle || undefined } }]);
           }
           else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); }
           else if (e.evento === "error" || e.evento === "cuota") poner(e.texto);
@@ -296,6 +298,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
               <div className={`w-full max-w-[520px] rounded-2xl border p-4 ${m.resuelta ? "border-linea bg-panel" : "border-acento/40 bg-acento-suave/50"}`}>
                 <p className="text-[12px] font-medium text-tinta-3">Necesita su visto bueno</p>
                 <p className="mt-1 text-[15px] leading-snug text-tinta">{m.propuesta.resumen}</p>
+                {m.propuesta.detalle ? <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl bg-linea/60 px-3 py-2 font-mono text-[12.5px] leading-relaxed text-tinta-2">{m.propuesta.detalle}</pre> : null}
                 {m.resuelta ? (
                   <p className={`mt-2 text-[13px] font-medium ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>{m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}</p>
                 ) : (

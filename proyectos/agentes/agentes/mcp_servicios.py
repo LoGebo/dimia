@@ -8,10 +8,13 @@ from email.message import EmailMessage
 
 import httpx
 from mcp.server.mcpserver import Context, MCPServer
+from mcp.types import ToolAnnotations
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 
 from agentes import conexiones, db
+
+SOLO_LECTURA = ToolAnnotations(readOnlyHint=True)
 
 
 async def _tenant(ctx: Context) -> str:
@@ -199,6 +202,67 @@ async def slack_leer(ctx: Context, canal: str, maximo: int = 20) -> str:
 async def slack_publicar(ctx: Context, canal: str, texto: str) -> str:
     await _s(ctx, "chat.postMessage", json={"channel": canal, "text": texto})
     return f"Publicado en {canal}."
+
+
+# --- GitHub ------------------------------------------------------------------
+# Para escribir código el agente clona con git en su terminal (las credenciales van en su
+# perfil); estas herramientas son para leer contexto y para issues/PRs sin clonar.
+
+github = MCPServer("github", instructions="Repositorios de GitHub del negocio. Para trabajar en el código: `git clone https://github.com/<dueño>/<repo>` en la terminal (ya está autenticado), edite, haga commit y push. Abra issues y pull requests solo con permiso del dueño.")
+
+
+async def _gh(ctx: Context, metodo: str, ruta: str, **kw) -> dict | list:
+    c = await conexiones.leer(await _tenant(ctx), "github")
+    if not c:
+        raise MCPError("GitHub no está conectado.")
+    async with httpx.AsyncClient(timeout=30) as http:
+        r = await http.request(metodo, f"https://api.github.com{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Accept": "application/vnd.github+json"}, **kw)
+    if r.status_code >= 400:
+        raise MCPError(f"GitHub respondió {r.status_code}: {r.text[:200]}")
+    return r.json() if r.content else {}
+
+
+@github.tool(annotations=SOLO_LECTURA, name="github_repos", description="Repositorios a los que tiene acceso el token, con su rama principal.")
+async def github_repos(ctx: Context) -> str:
+    d = await _gh(ctx, "GET", "/user/repos", params={"per_page": 50, "sort": "pushed"})
+    return "\n".join(f"{r['full_name']} · {r.get('default_branch')} · {(r.get('description') or '')[:80]}" for r in d) or "Sin repositorios."
+
+
+@github.tool(annotations=SOLO_LECTURA, name="github_leer", description="Lee un archivo del repositorio. repo: dueño/nombre. ruta: path dentro del repo. rama opcional.")
+async def github_leer(ctx: Context, repo: str, ruta: str, rama: str = "") -> str:
+    d = await _gh(ctx, "GET", f"/repos/{repo}/contents/{ruta.lstrip('/')}", params={"ref": rama} if rama else None)
+    if isinstance(d, list):
+        return "\n".join(f"{x['type']} {x['path']}" for x in d)
+    return base64.b64decode(d.get("content", "")).decode(errors="replace")[:12000]
+
+
+@github.tool(annotations=SOLO_LECTURA, name="github_buscar", description="Busca código por texto. repo opcional (dueño/nombre) para acotar.")
+async def github_buscar(ctx: Context, texto: str, repo: str = "") -> str:
+    q = f"{texto} repo:{repo}" if repo else texto
+    d = await _gh(ctx, "GET", "/search/code", params={"q": q, "per_page": 20})
+    return "\n".join(f"{i['repository']['full_name']}: {i['path']}" for i in d.get("items", [])) or "Nada con ese texto."
+
+
+@github.tool(annotations=SOLO_LECTURA, name="github_issues", description="Issues y pull requests abiertos de un repositorio (dueño/nombre).")
+async def github_issues(ctx: Context, repo: str) -> str:
+    d = await _gh(ctx, "GET", f"/repos/{repo}/issues", params={"state": "open", "per_page": 30})
+    return "\n".join(f"#{i['number']} · {'PR' if i.get('pull_request') else 'issue'} · {i['title'][:90]}" for i in d) or "Sin issues abiertos."
+
+
+@github.tool(name="github_crear_issue", description="Abre un issue. Solo con permiso del dueño.")
+async def github_crear_issue(ctx: Context, repo: str, titulo: str, texto: str = "") -> str:
+    d = await _gh(ctx, "POST", f"/repos/{repo}/issues", json={"title": titulo, "body": texto})
+    return f"Issue #{d['number']}: {d['html_url']}"
+
+
+@github.tool(name="github_crear_pr", description="Abre un pull request de una rama ya subida hacia la rama base. Solo con permiso del dueño.")
+async def github_crear_pr(ctx: Context, repo: str, titulo: str, rama: str, base: str = "main", texto: str = "") -> str:
+    d = await _gh(ctx, "POST", f"/repos/{repo}/pulls", json={"title": titulo, "head": rama, "base": base, "body": texto})
+    return f"PR #{d['number']}: {d['html_url']}"
+
+
+def app_github():
+    return _app(github)
 
 
 def app_google():
