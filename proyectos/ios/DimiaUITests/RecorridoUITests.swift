@@ -6,7 +6,7 @@ final class RecorridoUITests: XCTestCase {
     func testRecorrido() throws {
         let app = XCUIApplication()
         let env = ProcessInfo.processInfo.environment
-        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? ""]
+        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? ""] + (env["NEGOCIO"].map { ["-negocio", $0] } ?? [])
         app.launch()
         let dir = env["CAPTURAS"] ?? NSTemporaryDirectory()
         func captura(_ nombre: String) {

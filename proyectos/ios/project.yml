@@ -77,3 +77,4 @@ schemes:
         CORREO: $(CORREO)
         CLAVE: $(CLAVE)
         CAPTURAS: $(CAPTURAS)
+        NEGOCIO: $(NEGOCIO)
