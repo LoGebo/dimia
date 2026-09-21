@@ -14,9 +14,12 @@ from api.config import api_settings
 from api.db import base, traducir_error_postgres
 from api.errores import CodigoError, ErrorApi, ErrorRespuesta, manejar_error_api
 from api.routers import (
+    acceso,
+    agentes,
     conocimiento,
     horarios,
     metricas,
+    movil,
     negocios,
     recados,
     recursos,
@@ -99,9 +102,13 @@ def crear_app() -> FastAPI:
         reservas,
         recados,
         metricas,
+        acceso,
+        movil,
+        agentes,
     ):
         app.include_router(modulo.router)
     app.include_router(negocios.verticales_router)
+    app.include_router(agentes.negocio_router)
 
     @app.get("/salud", tags=["salud"])
     async def salud() -> dict[str, str]:

@@ -34,6 +34,7 @@ WORKDIR /srv
 COPY --chown=agente:agente app ./app
 COPY --chown=agente:agente agent ./agent
 COPY --chown=agente:agente channels ./channels
+COPY --chown=agente:agente api ./api
 
 USER agente
 

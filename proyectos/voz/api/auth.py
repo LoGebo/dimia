@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
 
 import jwt
@@ -35,8 +36,40 @@ class Membresia:
         return self.rol == "owner"
 
 
-def decodificar_token(token: str) -> dict[str, Any]:
+EMISOR_PROPIO = "dimia-api"
+
+
+def emitir_token(user_id: uuid.UUID, email: str, tipo: Literal["access", "refresh"]) -> str:
+    """Token propio de la app: el access dura minutos, el refresh días; el tipo va en el claim."""
     ajustes = api_settings()
+    ahora = datetime.now(UTC)
+    vida = timedelta(minutes=ajustes.api_access_min) if tipo == "access" else timedelta(days=ajustes.api_refresh_dias)
+    return jwt.encode(
+        {"sub": str(user_id), "email": email, "tipo": tipo, "iss": EMISOR_PROPIO, "iat": ahora, "exp": ahora + vida},
+        ajustes.api_jwt_secret,
+        algorithm="HS256",
+    )
+
+
+def decodificar_token(token: str, tipo: str = "access") -> dict[str, Any]:
+    ajustes = api_settings()
+    try:
+        # Sin verificar: solo para saber quién lo emitió y elegir la llave.
+        emisor = jwt.decode(token, options={"verify_signature": False}).get("iss")
+    except jwt.InvalidTokenError as exc:
+        raise ErrorApi(CodigoError.TOKEN_INVALIDO, "token invalido") from exc
+    if emisor == EMISOR_PROPIO:
+        if not ajustes.api_jwt_secret:
+            raise ErrorApi(CodigoError.INTERNO, "API_JWT_SECRET no configurado")
+        try:
+            claims = jwt.decode(token, ajustes.api_jwt_secret, algorithms=["HS256"], issuer=EMISOR_PROPIO, options={"require": ["sub", "exp", "tipo"]})
+        except jwt.ExpiredSignatureError as exc:
+            raise ErrorApi(CodigoError.TOKEN_INVALIDO, "el token expiro") from exc
+        except jwt.InvalidTokenError as exc:
+            raise ErrorApi(CodigoError.TOKEN_INVALIDO, "token invalido") from exc
+        if claims.get("tipo") != tipo:
+            raise ErrorApi(CodigoError.TOKEN_INVALIDO, "tipo de token incorrecto")
+        return claims
     if not ajustes.supabase_jwt_secret:
         raise ErrorApi(CodigoError.INTERNO, "SUPABASE_JWT_SECRET no configurado")
     try:

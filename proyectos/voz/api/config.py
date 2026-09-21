@@ -18,6 +18,15 @@ class ApiSettings(BaseSettings):
     supabase_jwt_audience: str = "authenticated"
     supabase_jwt_issuer: str | None = None
 
+    # Tokens propios de la app (HS256). Si falta, solo entran tokens de Supabase.
+    api_jwt_secret: str = ""
+    api_access_min: int = 15
+    api_refresh_dias: int = 30
+
+    # El orquestador de agentes (proyectos/agentes) y el secreto con el que el panel le habla.
+    agentes_url: str = ""
+    agentes_secreto: str = ""
+
     api_titulo: str = "Panel de administracion"
     api_version: str = "1.0.0"
     cors_origenes: tuple[str, ...] = ()
