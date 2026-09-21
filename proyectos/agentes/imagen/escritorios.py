@@ -95,11 +95,26 @@ def pestaña_viva(n: int):
         pass
 
 
+def apagar(agente: str):
+    """El agente ya no existe: se cierran su Hermes y su escritorio para liberar la pantalla y el puerto."""
+    for clave in [k for k in procesos if k[0] == agente]:
+        p = procesos.pop(clave)
+        if p.poll() is None:
+            p.terminate()
+            try:
+                p.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                p.kill()
+    marcas.pop(agente, None)
+
+
 def main():
     while True:
         try:
             with open(ARCHIVO) as f:
                 mapa = json.load(f)
+            for agente in {k[0] for k in procesos} - set(mapa):
+                apagar(agente)
             for agente, n in mapa.items():
                 escritorio(agente, int(n))
         except FileNotFoundError:

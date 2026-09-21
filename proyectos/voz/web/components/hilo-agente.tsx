@@ -208,6 +208,14 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
       router.refresh();
       return;
     }
+    // Si acaba de preguntar el nombre, una o dos palabras son el nombre.
+    if (mensajes.at(-1)?.texto.includes("¿Cómo me quiere llamar?") && /^[\p{L}\p{N} .-]{2,30}$/u.test(t) && t.split(/\s+/).length <= 2) {
+      const nombre = t.replace(/[.!]+$/, "").trim();
+      await actualizarAgente(agente.id, { nombre });
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Hecho, ahora soy ${nombre}. Cuando quiera, pídame algo.` }]);
+      router.refresh();
+      return;
+    }
     if (sinTrabajo || mensajes.at(-1)?.texto.startsWith("Va. Dígamelo")) {
       await actualizarAgente(agente.id, { trabajo: t.slice(0, 200), estado: "activo" });
       setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Entendido, de eso me encargo: ${t}\n¿Cómo me quiere llamar? Escriba «llámate …».` }]);

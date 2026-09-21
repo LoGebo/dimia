@@ -163,6 +163,7 @@ async def asegurar_maquina(tenant: str) -> dict:
     else:
         actual = await prov.obtener(m["referencia"])
         if not actual.encendida:
+            await db.ejecutar("update maquina_uso set fin = coalesce(fin, now()) where tenant_id = $1 and fin is null", tenant)  # cierra lo que quedó abierto
             await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
         if actual.memoria_mb < memoria_para(n_agentes):
             await prov.redimensionar(m["referencia"], memoria_para(n_agentes))

@@ -5,9 +5,10 @@ from agentes import db
 
 # ponytail: techos en código; a tabla cuando alguien los quiera editar sin deploy.
 TECHOS = {
-    "basico":  {"agentes": 2,  "turnos": 600,  "pasos": 3000,  "minutos": 600},
-    "negocio": {"agentes": 5,  "turnos": 1500, "pasos": 8000,  "minutos": 1500},
-    "empresa": {"agentes": 15, "turnos": 4000, "pasos": 20000, "minutos": 4000},
+    # minutos = computadora encendida (se apaga sola a los 20 min sin uso): 3,000 ≈ 100 min/día.
+    "basico":  {"agentes": 2,  "turnos": 600,  "pasos": 3000,  "minutos": 3000},
+    "negocio": {"agentes": 5,  "turnos": 1500, "pasos": 8000,  "minutos": 8000},
+    "empresa": {"agentes": 15, "turnos": 4000, "pasos": 20000, "minutos": 20000},
 }
 NOMBRES = {"basico": "Básico", "negocio": "Negocio", "empresa": "Empresa"}
 
