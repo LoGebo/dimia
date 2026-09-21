@@ -94,7 +94,7 @@ struct HiloAgente: View {
                         AvatarAgente(nombre: agente.nombre, avatar: agente.avatar, tamano: 28, trabajando: escribiendo)
                         VStack(spacing: 0) {
                             Text(agente.nombre).font(.subheadline.weight(.semibold)).foregroundStyle(Color.tinta)
-                            Text(escribiendo ? (haciendo ?? "trabajando…") : agente.activo ? "activo" : "en pausa").font(.caption2).foregroundStyle(Color.tinta3).lineLimit(1)
+                            Text(escribiendo ? (haciendo ?? "trabajando") : agente.activo ? "activo" : "en pausa").font(.caption).foregroundStyle(Color.tinta3).lineLimit(1)
                         }
                     }
                 }
@@ -128,30 +128,28 @@ struct HiloAgente: View {
             }
             .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, 48)
         } else if let p = m.propuesta {
-            Tarjeta {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) { Cuadrado(color: .alerta); Text("Pide su visto bueno").font(.caption.weight(.semibold)).foregroundStyle(Color.tinta3) }
-                    Text(p.resumen).font(.subheadline.weight(.semibold)).foregroundStyle(Color.tinta)
-                    if let d = p.detalle { Text(d).font(.footnote).foregroundStyle(Color.tinta2) }
-                    if let r = m.resuelta {
-                        Estampa(texto: r == "aprobada" ? "Aprobado" : "Rechazado", tono: r == "aprobada" ? .bueno : .tinta3)
-                    } else {
-                        HStack(spacing: 8) {
-                            Button("Aprobar") { Task { await decidir(m, "aprobar") } }.buttonStyle(.borderedProminent).buttonBorderShape(.roundedRectangle(radius: 0))
-                            Button("Rechazar") { Task { await decidir(m, "rechazar") } }.buttonStyle(.bordered).buttonBorderShape(.roundedRectangle(radius: 0))
-                        }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) { Cuadrado(color: .alerta); Text(p.resumen).font(.body.weight(.medium)).foregroundStyle(Color.tinta) }
+                if let d = p.detalle { Text(d).font(.subheadline).foregroundStyle(Color.tinta2) }
+                if let r = m.resuelta {
+                    Estampa(texto: r == "aprobada" ? "Aprobado" : "Rechazado", tono: r == "aprobada" ? .bueno : .tinta3)
+                } else {
+                    HStack(spacing: 8) {
+                        Button("Aprobar") { Task { await decidir(m, "aprobar") } }.buttonStyle(.borderedProminent)
+                        Button("Rechazar") { Task { await decidir(m, "rechazar") } }.buttonStyle(.bordered)
                     }
                 }
-                .padding(14)
             }
+            .padding(14)
+            .background(Color.panel, in: .rect(cornerRadius: 16))
             .padding(.trailing, 24)
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 if let pasos = m.pasos, !pasos.isEmpty { PasosHechos(pasos: pasos) }
                 if !m.texto.isEmpty {
+                    // El agente habla en texto plano, como en Grok Bot; la burbuja es solo del dueño.
                     Text(LocalizedStringKey(m.texto)).font(.body).foregroundStyle(Color.tinta).textSelection(.enabled)
-                        .padding(.horizontal, 14).padding(.vertical, 9)
-                        .background(Color.panel2).clipShape(.rect(cornerRadius: 18))
+                        .padding(.vertical, 4)
                 }
                 if let ops = m.opciones {
                     VStack(spacing: 6) {
@@ -166,16 +164,15 @@ struct HiloAgente: View {
                                     Spacer()
                                 }
                                 .padding(12)
-                                .background(m.elegida == o.letra ? Color.acento : Color.panel)
+                                .background(m.elegida == o.letra ? Color.acento : Color.panel, in: .rect(cornerRadius: 12))
                                 .foregroundStyle(m.elegida == o.letra ? .white : Color.tinta)
-                                .overlay(Rectangle().stroke(Color.linea, lineWidth: m.elegida == o.letra ? 0 : 1))
                             }
                             .disabled(m.elegida != nil)
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 32)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.trailing, 24)
         }
     }
 
@@ -440,7 +437,7 @@ struct Compositor: View {
                 Button("Automático") { nivel = nil }
                 ForEach(Self.niveles, id: \.0) { n in Button { nivel = n.0 } label: { Text(n.1); Text(n.2) } }
             } label: {
-                Image(systemName: nivel == nil ? "sparkles" : "gauge.with.needle").font(.body).frame(width: 40, height: 40)
+                Text(Self.niveles.first { $0.0 == nivel }?.1 ?? "Auto").font(.subheadline.weight(.medium)).frame(height: 40).padding(.horizontal, 4)
             }
             .accessibilityLabel("Nivel del modelo")
             HStack(alignment: .bottom, spacing: 6) {

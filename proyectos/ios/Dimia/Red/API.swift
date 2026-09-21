@@ -40,7 +40,14 @@ nonisolated final class API: Sendable {
     }
 
     static func peticion(_ metodo: String, _ ruta: String, cuerpo: (some Encodable)? = Optional<String>.none, conToken: Bool = true) throws -> URLRequest {
-        var r = URLRequest(url: base.appending(path: ruta))
+        // `appending(path:)` codificaría el «?»: la consulta se separa a mano.
+        let partes = ruta.split(separator: "?", maxSplits: 1).map(String.init)
+        var url = base.appending(path: partes[0])
+        if partes.count == 2 { url.append(queryItems: partes[1].split(separator: "&").map { par in
+            let kv = par.split(separator: "=", maxSplits: 1).map(String.init)
+            return URLQueryItem(name: kv[0], value: kv.count == 2 ? kv[1] : nil)
+        }) }
+        var r = URLRequest(url: url)
         r.httpMethod = metodo
         r.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if conToken {

@@ -9,18 +9,14 @@ struct MensajesPantalla: View {
     var body: some View {
         NavigationStack {
             List {
-                if let error { FilaError(texto: error) { Task { await cargar() } }.listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
+                if let error { Section { FilaError(texto: error) { Task { await cargar() } } } }
                 let visibles = busqueda.isEmpty ? lista : lista.filter { $0.nombre.localizedCaseInsensitiveContains(busqueda) || ($0.ultimo_mensaje ?? "").localizedCaseInsensitiveContains(busqueda) }
-                if visibles.isEmpty && error == nil { Vacio(titulo: "Todavía nadie escribe", detalle: "Aquí aparece lo que entra por WhatsApp, teléfono y redes.").listRowBackground(Color.clear) }
-                ForEach(visibles) { c in
-                    NavigationLink(value: c) { FilaConversacion(c: c) }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 12))
-                        .listRowBackground(Color.panel)
+                Section {
+                    if visibles.isEmpty && error == nil { Vacio(titulo: "Todavía nadie escribe.", detalle: "Lo que llegue por WhatsApp, teléfono y redes aparece aquí.") }
+                    ForEach(visibles) { c in NavigationLink(value: c) { FilaConversacion(c: c) } }
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(Color.fondo)
+            .listaDimia()
             .searchable(text: $busqueda, prompt: "Buscar")
             .navigationTitle("Mensajes")
             .toolbar { BotonAjustes() }
@@ -39,22 +35,20 @@ struct MensajesPantalla: View {
 struct FilaConversacion: View {
     var c: Conversacion
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Cuadrado(color: c.estado == "escalada" ? .alerta : c.mensajes_sin_leer > 0 ? .acento : .clear, lado: 7).padding(.top, 7)
+        let pendiente = c.estado == "escalada" || c.mensajes_sin_leer > 0
+        HStack(alignment: .top, spacing: 10) {
+            Cuadrado(color: c.estado == "escalada" ? .alerta : .acento).padding(.top, 7).opacity(pendiente ? 1 : 0)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(c.nombre).font(.subheadline.weight(c.mensajes_sin_leer > 0 ? .bold : .semibold)).foregroundStyle(Color.tinta).lineLimit(1)
+                    Text(c.nombre).font(.body.weight(c.mensajes_sin_leer > 0 ? .semibold : .medium)).foregroundStyle(Color.tinta).lineLimit(1)
                     Spacer()
-                    Text(Formato.relativo(c.ultimo_mensaje_en)).font(.caption).foregroundStyle(Color.tinta3)
+                    Text(Formato.relativo(c.ultimo_mensaje_en)).font(.subheadline).foregroundStyle(Color.tinta3)
                 }
-                Text(c.ultimo_mensaje ?? c.resumen ?? "").font(.footnote).foregroundStyle(c.mensajes_sin_leer > 0 ? Color.tinta : Color.tinta2).lineLimit(2)
-                HStack(spacing: 6) {
-                    Text(c.canalNombre).font(.caption2).foregroundStyle(Color.tinta3)
-                    if c.estado == "escalada" { Text("· pidió una persona").font(.caption2.weight(.semibold)).foregroundStyle(Color.alerta) }
-                }
+                Text(c.ultimo_mensaje ?? c.resumen ?? "").font(.subheadline).foregroundStyle(c.mensajes_sin_leer > 0 ? Color.tinta : Color.tinta2).lineLimit(2)
+                Text(c.estado == "escalada" ? "Pidió una persona por \(c.canalNombre)" : c.canalNombre).font(.footnote).foregroundStyle(c.estado == "escalada" ? Color.alerta : Color.tinta3)
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.vertical, 2)
     }
 }
 
@@ -82,7 +76,7 @@ struct HiloConversacion: View {
         .defaultScrollAnchor(.bottom)
         .background(Color.fondo)
         .navigationTitle(conversacion.nombre)
-        .navigationSubtitle(conversacion.canalNombre + (conversacion.contacto.hasPrefix("+") ? " · " + Formato.telefono(conversacion.contacto) : ""))
+        .navigationSubtitle(conversacion.contacto.hasPrefix("+") ? Formato.telefono(conversacion.contacto) : conversacion.canalNombre)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if conversacion.contacto.hasPrefix("+"), let url = URL(string: "tel:\(conversacion.contacto)") {
@@ -117,7 +111,7 @@ struct Burbuja: View {
                     .background(sistema ? Color.clear : m.autor == "agente" ? Color.acento : m.autor == "equipo" ? Color.bueno.opacity(0.18) : Color.panel2)
                     .clipShape(.rect(cornerRadius: 16))
                 if !sistema {
-                    Text((m.autor == "equipo" ? "Equipo · " : m.autor == "agente" ? "Agente · " : "") + Formato.hora(m.creado, zona: zona)).font(.caption2).foregroundStyle(Color.tinta3)
+                    Text((m.autor == "equipo" ? "Usted, " : m.autor == "agente" ? "El agente, " : "") + Formato.hora(m.creado, zona: zona)).font(.caption).foregroundStyle(Color.tinta3)
                 }
             }
             .frame(maxWidth: sistema ? .infinity : nil, alignment: sistema ? .center : cliente ? .leading : .trailing)

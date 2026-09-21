@@ -13,39 +13,34 @@ struct AgentesPantalla: View {
     var body: some View {
         NavigationStack(path: $ruta) {
             List {
-                if let error { FilaError(texto: error) { Task { await cargar() } }.listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
+                if let error { Section { FilaError(texto: error) { Task { await cargar() } } } }
                 if let cerebro, cerebro.estado != "conectado" {
-                    Link(destination: URL(string: "https://panel.dimia.mx/agentes")!) {
+                    Section { Link(destination: URL(string: "https://panel.dimia.mx/agentes")!) {
                         HStack(spacing: 10) {
                             Cuadrado(color: .alerta)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Sus agentes no tienen cerebro todavía").font(.subheadline.weight(.semibold)).foregroundStyle(Color.tinta)
-                                Text("Conecte su cuenta de ChatGPT o de Claude desde el panel web; toma un minuto.").font(.caption).foregroundStyle(Color.tinta2)
+                                Text("Sus agentes todavía no piensan").font(.body.weight(.medium)).foregroundStyle(Color.tinta)
+                                Text("Conecte su cuenta de ChatGPT o de Claude en el panel web. Toma un minuto.").font(.subheadline).foregroundStyle(Color.tinta2)
                             }
                             Spacer()
-                            Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(Color.tinta3)
                         }
-                    }
-                    .listRowBackground(Color.panel)
+                    } }
                 }
                 let visibles = busqueda.isEmpty ? agentes : agentes.filter { "\($0.nombre) \($0.trabajo ?? "")".localizedCaseInsensitiveContains(busqueda) }
-                ForEach(visibles) { a in
+                Section { ForEach(visibles) { a in
                     NavigationLink(value: a) {
                         HStack(spacing: 12) {
                             AvatarAgente(nombre: a.nombre, avatar: a.avatar, tamano: 46, activo: a.activo)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(a.nombre).font(.body.weight(.semibold)).foregroundStyle(Color.tinta)
-                                Text(a.trabajo ?? "Todavía no le dice para qué lo quiere").font(.footnote).foregroundStyle(Color.tinta3).lineLimit(1)
+                                Text(a.trabajo ?? "Todavía no le dice para qué lo quiere").font(.subheadline).foregroundStyle(Color.tinta3).lineLimit(1)
                             }
                         }
                         .padding(.vertical, 4)
                     }
-                    .listRowBackground(Color.panel)
-                }
+                } }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(Color.fondo)
+            .listaDimia()
             .searchable(text: $busqueda, prompt: "Buscar")
             .navigationTitle("Agentes")
             .navigationSubtitle(sesion.negocio?.nombre ?? "")

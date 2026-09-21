@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// El día en una lista: primero lo que necesita atención, luego tres cifras, luego lo que viene y lo que entró.
 struct HoyPantalla: View {
     @Environment(Sesion.self) private var sesion
     @State private var hoy: Hoy?
@@ -7,26 +8,24 @@ struct HoyPantalla: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    if let error { FilaError(texto: error) { Task { await cargar() } } }
-                    if let hoy {
-                        avisos(hoy)
-                        cifras(hoy)
-                        proximas(hoy)
-                        entradas(hoy)
-                    } else if error == nil {
-                        ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
-                    }
+            List {
+                if let error { Section { FilaError(texto: error) { Task { await cargar() } } } }
+                if let hoy {
+                    avisos(hoy)
+                    cifras(hoy)
+                    proximas(hoy)
+                    entradas(hoy)
+                } else if error == nil {
+                    Section { ProgressView().frame(maxWidth: .infinity) }.listRowBackground(Color.clear)
                 }
-                .padding(16)
             }
-            .background(Color.fondo)
+            .listaDimia()
             .navigationTitle("Hoy")
             .navigationSubtitle(sesion.negocio?.nombre ?? "")
             .toolbar { BotonAjustes() }
             .refreshable { await cargar() }
             .task(id: sesion.negocio?.id) { await cargar() }
+            .navigationDestination(for: Conversacion.self) { HiloConversacion(conversacion: $0) }
         }
     }
 
@@ -38,25 +37,20 @@ struct HoyPantalla: View {
     @ViewBuilder private func avisos(_ h: Hoy) -> some View {
         let a = h.avisos
         let lista: [(String, String, Color)] = [
-            a.retrasadas > 0 ? ("\(a.retrasadas == 1 ? "Una persona lleva" : "\(a.retrasadas) personas llevan") más de 15 minutos de retraso", "\(a.retrasadas)", .critico) : nil,
-            a.escaladas > 0 ? ("\(a.escaladas == 1 ? "Una conversación pidió" : "\(a.escaladas) conversaciones pidieron") una persona", "\(a.escaladas)", .alerta) : nil,
-            a.recados > 0 ? ("\(a.recados == 1 ? "Un recado espera" : "\(a.recados) recados esperan") que le marque", "\(a.recados)", .alerta) : nil,
-            a.por_cobrar_atendidas > 0 ? ("\(a.por_cobrar_atendidas == 1 ? "Una cita atendida hoy" : "\(a.por_cobrar_atendidas) citas atendidas hoy") sin cobro registrado", "\(a.por_cobrar_atendidas)", .alerta) : nil,
-            a.cobros_pendientes > 0 ? ("Por cobrar en \(a.cobros_pendientes == 1 ? "un pago pendiente" : "\(a.cobros_pendientes) pagos pendientes")", Formato.moneda(a.cobros_monto), .alerta) : nil,
+            a.retrasadas > 0 ? (a.retrasadas == 1 ? "Una persona lleva más de 15 minutos de retraso" : "\(a.retrasadas) personas llevan más de 15 minutos de retraso", "\(a.retrasadas)", .critico) : nil,
+            a.escaladas > 0 ? (a.escaladas == 1 ? "Una conversación pidió una persona" : "\(a.escaladas) conversaciones pidieron una persona", "\(a.escaladas)", .alerta) : nil,
+            a.recados > 0 ? (a.recados == 1 ? "Un recado espera que le marque" : "\(a.recados) recados esperan que le marque", "\(a.recados)", .alerta) : nil,
+            a.por_cobrar_atendidas > 0 ? (a.por_cobrar_atendidas == 1 ? "Una cita atendida hoy sin cobro registrado" : "\(a.por_cobrar_atendidas) citas atendidas hoy sin cobro registrado", "\(a.por_cobrar_atendidas)", .alerta) : nil,
+            a.cobros_pendientes > 0 ? (a.cobros_pendientes == 1 ? "Un pago pendiente por cobrar" : "\(a.cobros_pendientes) pagos pendientes por cobrar", Formato.moneda(a.cobros_monto), .alerta) : nil,
         ].compactMap { $0 }
         if !lista.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Rotulo(texto: "Necesita atención")
-                Tarjeta {
-                    ForEach(Array(lista.enumerated()), id: \.offset) { i, fila in
-                        HStack(spacing: 12) {
-                            Cuadrado(color: fila.2)
-                            Text(fila.0).font(.subheadline).foregroundStyle(Color.tinta).lineLimit(2)
-                            Spacer(minLength: 8)
-                            Text(fila.1).font(.cifra(.subheadline)).foregroundStyle(Color.tinta)
-                        }
-                        .padding(.horizontal, 14).frame(minHeight: 44)
-                        if i < lista.count - 1 { Divider().overlay(Color.linea) }
+            Section("Necesita atención") {
+                ForEach(Array(lista.enumerated()), id: \.offset) { _, fila in
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Cuadrado(color: fila.2).padding(.top, 5)
+                        Text(fila.0).font(.body).foregroundStyle(Color.tinta)
+                        Spacer(minLength: 8)
+                        Text(fila.1).font(.cifra(.body)).foregroundStyle(Color.tinta2)
                     }
                 }
             }
@@ -65,63 +59,46 @@ struct HoyPantalla: View {
 
     private func cifras(_ h: Hoy) -> some View {
         let agenda = sesion.negocio?.agenda ?? true
-        let atendidas = h.citas.filter { $0.estado == "completada" || $0.llegada != nil }.count
-        return VStack(alignment: .leading, spacing: 8) {
-            Rotulo(texto: "Indicadores")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                if agenda { kpi("Citas de hoy", "\(h.citas.filter { $0.estado != "cancelada" }.count)", "\(atendidas) atendidas") }
-                kpi("Cobrado hoy", Formato.moneda(h.cobros.cobrado), "\(h.cobros.operaciones) \(h.cobros.operaciones == 1 ? "cobro" : "cobros")")
-                kpi("Sin leer", "\(h.avisos.mensajes_sin_leer)", h.avisos.escaladas > 0 ? "\(h.avisos.escaladas) piden persona" : "al día")
-                kpi("Por cobrar", Formato.moneda(h.cobros.pendiente), "\(h.avisos.cobros_pendientes) pendientes")
+        let citas = h.citas.filter { $0.estado != "cancelada" }.count
+        return Section {
+            HStack(alignment: .top, spacing: 0) {
+                if agenda { cifra("\(citas)", citas == 1 ? "cita hoy" : "citas hoy") }
+                cifra(Formato.moneda(h.cobros.cobrado), "cobrado hoy")
+                cifra("\(h.avisos.mensajes_sin_leer)", "sin leer")
             }
+            .padding(.vertical, 6)
         }
     }
 
-    private func kpi(_ etiqueta: String, _ valor: String, _ unidad: String) -> some View {
-        Tarjeta {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(etiqueta).font(.caption).foregroundStyle(Color.tinta3)
-                Text(valor).font(.cifra(.title2, peso: .bold)).foregroundStyle(Color.tinta)
-                Text(unidad).font(.caption).foregroundStyle(Color.tinta2)
-            }
-            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+    private func cifra(_ valor: String, _ etiqueta: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(valor).font(.cifra(.title2, peso: .semibold)).foregroundStyle(Color.tinta)
+            Text(etiqueta).font(.subheadline).foregroundStyle(Color.tinta3)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder private func proximas(_ h: Hoy) -> some View {
         if sesion.negocio?.agenda ?? true {
-            let porLlegar = h.citas.filter { $0.estado == "confirmada" && $0.llegada == nil }.prefix(7)
-            VStack(alignment: .leading, spacing: 8) {
-                Rotulo(texto: "Lo que viene")
-                Tarjeta {
-                    if porLlegar.isEmpty {
-                        Vacio(titulo: h.citas.isEmpty ? "Día libre" : "Todas atendidas", detalle: h.citas.isEmpty ? "El agente agenda por teléfono; aquí aparecen solas." : nil)
-                    } else {
-                        ForEach(Array(porLlegar.enumerated()), id: \.element.id) { i, c in
-                            FilaCita(cita: c, zona: h.zona_horaria)
-                            if i < porLlegar.count - 1 { Divider().overlay(Color.linea) }
-                        }
-                    }
+            let porLlegar = Array(h.citas.filter { $0.estado == "confirmada" && $0.llegada == nil }.prefix(7))
+            Section("Lo que viene") {
+                if porLlegar.isEmpty {
+                    Vacio(titulo: h.citas.isEmpty ? "Hoy no hay citas." : "Ya atendió a todos.", detalle: h.citas.isEmpty ? "Las que agende el agente por teléfono aparecen aquí solas." : nil)
+                } else {
+                    ForEach(porLlegar) { FilaCita(cita: $0, zona: h.zona_horaria) }
                 }
             }
         }
     }
 
     private func entradas(_ h: Hoy) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Rotulo(texto: "Lo último que entró")
-            Tarjeta {
-                if h.conversaciones.isEmpty {
-                    Vacio(titulo: "Todavía nadie escribe")
-                } else {
-                    ForEach(Array(h.conversaciones.enumerated()), id: \.element.id) { i, c in
-                        NavigationLink(value: c) { FilaConversacion(c: c) }.buttonStyle(.plain)
-                        if i < h.conversaciones.count - 1 { Divider().overlay(Color.linea) }
-                    }
-                }
+        Section("Lo último que entró") {
+            if h.conversaciones.isEmpty {
+                Vacio(titulo: "Todavía nadie escribe.", detalle: "Lo que llegue por WhatsApp, teléfono y redes aparece aquí.")
+            } else {
+                ForEach(h.conversaciones) { c in NavigationLink(value: c) { FilaConversacion(c: c) } }
             }
         }
-        .navigationDestination(for: Conversacion.self) { HiloConversacion(conversacion: $0) }
     }
 }
 
@@ -130,32 +107,24 @@ struct FilaCita: View {
     var zona: String
     var body: some View {
         let faltan = Int(cita.inicio.timeIntervalSince(.now) / 60)
-        HStack(spacing: 12) {
-            Text(Formato.hora(cita.inicio, zona: zona)).font(.cifra(.subheadline)).foregroundStyle(Color.tinta).frame(width: 46, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(cita.cliente_nombre).font(.subheadline.weight(.semibold)).foregroundStyle(Color.tinta).lineLimit(1)
-                Text("\(cita.servicio) · \(cita.recurso)").font(.caption).foregroundStyle(Color.tinta3).lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 3) {
-                if let c = cita.confirmacion { Estampa(texto: c, tono: c == "Confirmó" ? .bueno : .alerta) }
-                if cita.estado == "confirmada" && cita.llegada == nil {
-                    Estampa(texto: faltan < 0 ? "+\(Formato.minutos(-faltan))" : "en \(Formato.minutos(max(0, faltan)))", tono: faltan < -15 ? .critico : faltan < 0 ? .alerta : .tinta3)
-                } else if cita.llegada != nil || cita.estado == "completada" {
-                    Estampa(texto: cita.estado == "completada" ? "Atendida" : "Llegó", tono: .bueno)
-                } else if cita.estado == "cancelada" {
-                    Estampa(texto: "Cancelada", tono: .tinta3)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(Formato.hora(cita.inicio, zona: zona)).font(.cifra(.body, peso: .regular)).foregroundStyle(Color.tinta2).frame(width: 48, alignment: .leading)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(cita.cliente_nombre).font(.body.weight(.medium)).foregroundStyle(Color.tinta).lineLimit(1)
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(cita.servicio + " con " + cita.recurso).font(.subheadline).foregroundStyle(Color.tinta3).lineLimit(1)
+                    Spacer(minLength: 4)
+                    if let c = cita.confirmacion { Estampa(texto: c, tono: c == "Confirmó" ? .bueno : .alerta).fixedSize() }
+                    if cita.estado == "confirmada" && cita.llegada == nil {
+                        Estampa(texto: faltan < 0 ? "lleva \(Formato.minutos(-faltan))" : "en \(Formato.minutos(max(0, faltan)))", tono: faltan < -15 ? .critico : faltan < 0 ? .alerta : .tinta3).fixedSize()
+                    } else if cita.llegada != nil || cita.estado == "completada" {
+                        Estampa(texto: cita.estado == "completada" ? "Atendida" : "Llegó", tono: .bueno).fixedSize()
+                    } else if cita.estado == "cancelada" {
+                        Estampa(texto: "Cancelada", tono: .tinta3).fixedSize()
+                    }
                 }
             }
         }
-        .padding(.horizontal, 14).frame(minHeight: 56)
-    }
-}
-
-struct Estampa: View {
-    var texto: String
-    var tono: Color
-    var body: some View {
-        HStack(spacing: 5) { Cuadrado(color: tono, lado: 5); Text(texto).font(.caption2.weight(.semibold).monospacedDigit()).foregroundStyle(tono) }
+        .padding(.vertical, 2)
     }
 }

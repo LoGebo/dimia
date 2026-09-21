@@ -148,15 +148,15 @@ private struct SelectorCara: View {
                     Button { elegir("\(f):\(actual.color)") } label: {
                         AvatarAgente(nombre: nombre, avatar: "\(f):\(actual.color)", tamano: 40)
                             .padding(4)
-                            .overlay(Rectangle().stroke(actual.forma == f ? Color.acento : Color.clear, lineWidth: 2))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(actual.forma == f ? Color.acento : Color.clear, lineWidth: 2))
                     }
                 }
                 Divider().frame(height: 30)
                 ForEach(Rasgos.colores, id: \.self) { c in
                     Button { elegir("\(actual.forma):\(c)") } label: {
-                        Rectangle().fill(Color(hex: c)).frame(width: 28, height: 28)
-                            .padding(3)
-                            .overlay(Rectangle().stroke(actual.color == c ? Color.tinta : Color.clear, lineWidth: 2))
+                        Rectangle().fill(Color(hex: c)).frame(width: 26, height: 26)
+                            .padding(4)
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(actual.color == c ? Color.tinta : Color.clear, lineWidth: 2))
                     }
                 }
             }

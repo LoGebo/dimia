@@ -11,37 +11,32 @@ struct Acceso: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .lastTextBaseline, spacing: 6) {
-                        Text("Dimia").font(.system(size: 34, weight: .light, design: .serif)).foregroundStyle(Color.tinta)
-                        Cuadrado(color: .acento, lado: 8)
-                    }
-                    Text("Entre con el correo y la contraseña de su panel.")
-                        .font(.subheadline).foregroundStyle(Color.tinta2)
-                }
-                .padding(.top, 60)
+            VStack(alignment: .leading, spacing: 32) {
+                Image("Logotipo").resizable().scaledToFit().frame(width: 150).foregroundStyle(Color.tinta)
+                    .padding(.top, 72)
+                    .accessibilityLabel("Dimia")
 
-                VStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Entre con el correo y la contraseña de su panel.")
+                        .font(.body).foregroundStyle(Color.tinta2)
                     campo("Correo", texto: $email, contenido: .emailAddress, foco: .email)
                     campo("Contraseña", texto: $password, seguro: true, foco: .password)
                 }
 
                 if let error {
-                    HStack(spacing: 8) { Cuadrado(color: .critico); Text(error).font(.footnote).foregroundStyle(Color.critico) }
+                    HStack(alignment: .firstTextBaseline, spacing: 8) { Cuadrado(color: .critico); Text(error).font(.subheadline).foregroundStyle(Color.critico) }
                 }
 
                 Button {
                     Task { await entrar() }
                 } label: {
                     Group { if enviando { ProgressView().tint(.white) } else { Text("Entrar").font(.body.weight(.semibold)) } }
-                        .frame(maxWidth: .infinity).frame(height: 48)
+                        .frame(maxWidth: .infinity).frame(height: 50)
                 }
                 .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 0))
                 .disabled(enviando || email.isEmpty || password.isEmpty)
 
-                Text("Su cuenta se crea desde dimia.mx. Aquí solo entra.")
+                Text("La cuenta se crea en dimia.mx; aquí solo entra.")
                     .font(.footnote).foregroundStyle(Color.tinta3)
             }
             .padding(.horizontal, 24)
@@ -61,15 +56,15 @@ struct Acceso: View {
 
     private func campo(_ titulo: String, texto: Binding<String>, contenido: UITextContentType? = nil, seguro: Bool = false, foco f: Campo) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(titulo).font(.caption.weight(.semibold)).foregroundStyle(Color.tinta3)
+            Text(titulo).font(.subheadline).foregroundStyle(Color.tinta2)
             Group {
                 if seguro { SecureField("", text: texto).textContentType(.password) }
                 else { TextField("", text: texto).textContentType(contenido).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled() }
             }
             .font(.body)
-            .padding(.horizontal, 14).frame(height: 48)
-            .background(Color.panel)
-            .overlay(Rectangle().stroke(foco == f ? Color.acento : Color.linea, lineWidth: 1))
+            .padding(.horizontal, 14).frame(height: 50)
+            .background(Color.panel, in: .rect(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(foco == f ? Color.acento : Color.clear, lineWidth: 1.5))
             .focused($foco, equals: f)
         }
     }

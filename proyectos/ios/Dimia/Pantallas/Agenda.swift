@@ -13,21 +13,19 @@ struct AgendaPantalla: View {
     var body: some View {
         NavigationStack {
             List {
-                if let error { FilaError(texto: error) { Task { await cargar() } }.listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
+                if let error { Section { FilaError(texto: error) { Task { await cargar() } } } }
                 let visibles = citas.filter { $0.estado != "cancelada" }
-                if visibles.isEmpty && !cargando && error == nil {
-                    Vacio(titulo: "Sin citas este día").listRowBackground(Color.clear)
-                }
-                ForEach(visibles) { c in
-                    FilaCita(cita: c, zona: zona)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.panel)
+                Section {
+                    if visibles.isEmpty && !cargando && error == nil {
+                        Vacio(titulo: "Sin citas este día.", detalle: calendario.isDateInToday(dia) ? "Las que agende el agente aparecen aquí solas." : nil)
+                    }
+                    ForEach(visibles) { FilaCita(cita: $0, zona: zona) }
+                } header: {
+                    Text(visibles.isEmpty ? "" : visibles.count == 1 ? "Una cita" : "\(visibles.count) citas")
                 }
             }
-            .listStyle(.plain)
-            .background(Color.fondo)
-            .scrollContentBackground(.hidden)
-            .navigationTitle(Formato.fecha(dia, zona: zona, larga: true).capitalized)
+            .listaDimia()
+            .navigationTitle(Formato.fecha(dia, zona: zona, larga: true).capitalizedFirst)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
