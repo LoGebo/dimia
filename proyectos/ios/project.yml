@@ -45,6 +45,9 @@ targets:
     platform: iOS
     sources:
       - path: DimiaTests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: Dimia
 schemes:
