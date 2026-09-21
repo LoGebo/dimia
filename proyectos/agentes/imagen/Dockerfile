@@ -26,6 +26,10 @@ RUN ln -sf /opt/cua/bin/cua-driver /usr/local/bin/cua-driver
 # Navegador rápido con Jev (jev-ultrafast de Browser Use) en su propio venv.
 RUN python3 -m venv /opt/jev && /opt/jev/bin/pip install --no-cache-dir -q "mcp==2.2.0" "git+https://github.com/browser-use/jev-ultrafast@main" \
     && /opt/jev/bin/python -c "import jev_ultrafast, browser_harness, mcp; print('jev-ultrafast ok')"
+# Parche a Hermes: con mcp 2.x el campo se llama read_only_hint; sin esto toda herramienta MCP
+# se toma por "escribe" y pide aprobación (hasta las de solo lectura).
+RUN sed -i 's/getattr(annotations, "readOnlyHint", None)/(getattr(annotations, "readOnlyHint", None) or getattr(annotations, "read_only_hint", None))/' /opt/hermes/tools/mcp_tool_registration.py \
+    && grep -c "read_only_hint" /opt/hermes/tools/mcp_tool_registration.py
 COPY navegar_rapido.py /opt/dimia/navegar_rapido.py
 COPY escritorios.py /opt/dimia/escritorios.py
 COPY arranque.sh /opt/dimia/arranque.sh

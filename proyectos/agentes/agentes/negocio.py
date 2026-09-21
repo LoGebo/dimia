@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 import asyncio
+import re
 import time
 
 from agentes import catalogo, claude, codex, config, cuotas, db, hermes, jev, vault
@@ -137,7 +138,7 @@ async def _negocio(tenant: str):
 
 
 async def _agentes(tenant: str):
-    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token from agente where tenant_id = $1 order by creado", tenant)
+    return await db.todos("select id, nombre, trabajo, reglas, llave, soul_version, pantalla, mcp_token, rol from agente where tenant_id = $1 order by (rol = 'recepcion') desc, creado", tenant)
 
 
 async def maquina(tenant: str):
@@ -215,11 +216,13 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             usadas.add(pantalla)
             await db.ejecutar("update agente set pantalla = $2 where id = $1", a["id"], pantalla)
         pantallas[aid] = pantalla
-        soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"])
+        soul = hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"], rol=a["rol"])
         # Instalaciones de este agente: integración Dimia (MCP con su token) y skills.
         inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
         mcp: dict | None = None
         integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
+        if a["rol"] == "recepcion":
+            integraciones |= {"dimia", "whatsapp"}  # Recepción siempre trae la agenda y la línea del negocio
         cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
         if integraciones & {"dimia", "whatsapp"} or cuentas:
             token = a["mcp_token"]
@@ -253,7 +256,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual)
     archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
     archivos[f"{hermes.HOME}/zona_horaria"] = (await db.uno("select zona_horaria from tenant where id = $1", tenant))["zona_horaria"] or "America/Mexico_City"
-    codigo, _, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
+    codigo, salida, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
+    log.info("sincronizar %s: %d archivos, exit %s, err=%s", tenant, len(archivos), codigo, err[-200:])
     if codigo != 0:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")
     await db.ejecutar("update maquina_negocio set perfiles = $2, version_token = $3, configs = $4::jsonb where tenant_id = $1", tenant, list(instalados | set(nuevos)), t["version"], json.dumps(configs_nuevos))
@@ -389,15 +393,22 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     respuesta: list[str] = []
     async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=600)) as http:
         sid = await _sesion(tenant, agente, m, llave, http)
-        async with http.stream("POST", _url(m, agente["pantalla"], f"/api/sessions/{sid}/chat/stream"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}, json={"input": texto, "model": nivel}) as r:
-            if r.status_code == 401:
-                yield {"evento": "error", "texto": "La máquina del agente rechazó la llave; se volverá a sincronizar."}
-                await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)
-                return
-            if r.status_code == 404:  # sesión perdida (disco nuevo, reinicio): abrir otra
-                await db.ejecutar("update agente set sesion_hermes = null where id = $1", agente["id"])
-                yield {"evento": "error", "texto": "Se perdió el hilo anterior; vuelva a enviar el mensaje."}
-                return
+        # Runs API (no el chat de sesión): es la única superficie donde las aprobaciones
+        # (approval.request) llegan al stream y se resuelven por /v1/runs/{id}/approval.
+        r0 = await http.post(_url(m, agente["pantalla"], "/v1/runs"), headers={"Authorization": f"Bearer {llave}"}, json={"input": texto, "session_id": sid, "model": nivel})
+        if r0.status_code == 401:
+            yield {"evento": "error", "texto": "La máquina del agente rechazó la llave; se volverá a sincronizar."}
+            await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)
+            return
+        if r0.status_code == 404:  # sesión perdida (disco nuevo, reinicio): abrir otra
+            await db.ejecutar("update agente set sesion_hermes = null where id = $1", agente["id"])
+            yield {"evento": "error", "texto": "Se perdió el hilo anterior; vuelva a enviar el mensaje."}
+            return
+        if r0.status_code >= 400:
+            yield {"evento": "error", "texto": f"El agente no aceptó el mensaje ({r0.status_code})."}
+            return
+        run_id = r0.json().get("run_id")
+        async with http.stream("GET", _url(m, agente["pantalla"], f"/v1/runs/{run_id}/events"), headers={"Authorization": f"Bearer {llave}", "Accept": "text/event-stream"}) as r:
             evento = None
             async for linea in r.aiter_lines():
                 if linea.startswith("event:"):
@@ -407,13 +418,18 @@ async def _turno(tenant: str, agente_id: str, texto: str):
                         d = json.loads(linea[5:].strip() or "{}")
                     except json.JSONDecodeError:
                         continue
-                    if evento == "assistant.delta":
+                    evento = d.get("event") or evento  # el stream de runs manda el nombre dentro del JSON
+                    if evento in ("assistant.delta", "message.delta"):
                         t = d.get("text") or d.get("delta") or d.get("content") or ""
                         if not respuesta:
                             t = t.lstrip()  # el modelo suele abrir con saltos de línea
                         if t:
                             respuesta.append(t)
                             yield {"evento": "texto", "texto": t}
+                    elif evento == "approval.request":
+                        m_tool = re.search(r"MCP tool '([^']+)'", json.dumps(d))
+                        yield {"evento": "aprobacion", "texto": m_tool.group(1) if m_tool else (d.get("tool") or "una acción"),
+                               "run_id": d.get("run_id") or run_id, "request_id": d.get("request_id")}
                     elif evento == "tool.started":
                         pasos += 1
                         yield {"evento": "herramienta", "texto": d.get("name") or d.get("tool") or d.get("tool_name") or ""}
@@ -429,7 +445,7 @@ async def _turno(tenant: str, agente_id: str, texto: str):
                         else:
                             yield {"evento": "error", "texto": "El agente no pudo terminar este turno."}
                             log.warning("run.failed %s/%s: %s", tenant, agente_id, msg[:500])
-                    elif evento == "run.completed":
+                    elif evento in ("run.completed", "done"):
                         if not respuesta:
                             t = (d.get("output") or d.get("text") or d.get("final_text") or "")
                             if isinstance(t, str) and t:
@@ -541,3 +557,19 @@ async def borrar_agente(tenant: str, agente_id: str) -> None:
         archivos = {f"{hermes.HOME}/escritorios.json": hermes.escritorios_json(quedan)}
         await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar=[f"{hermes.HOME}/profiles/{agente_id}"]), timeout=60)
     await db.ejecutar("update maquina_negocio set perfiles = array_remove(perfiles, $2), configs = configs - $2 where tenant_id = $1", tenant, agente_id)
+
+
+async def aprobar(tenant: str, agente_id: str, run_id: str, request_id: str | None, decision: str) -> str | None:
+    """Resuelve una aprobación pendiente en el Hermes del agente: 'once' ejecuta, 'deny' bloquea."""
+    agente = await db.uno("select llave, pantalla from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    m = await maquina(tenant)
+    if not agente or not m:
+        return "Ese agente no existe."
+    cuerpo = {"choice": "once" if decision == "aprobar" else "deny"}
+    if request_id:
+        cuerpo["request_id"] = request_id
+    async with httpx.AsyncClient(timeout=15) as http:
+        r = await http.post(_url(m, agente["pantalla"], f"/v1/runs/{run_id}/approval"), headers={"Authorization": f"Bearer {vault.descifrar(agente['llave'])}"}, json=cuerpo)
+    if r.status_code >= 400:
+        return f"No se pudo registrar la decisión ({r.status_code})."
+    return None

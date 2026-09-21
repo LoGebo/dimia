@@ -58,7 +58,9 @@ def env(llave: str, pantalla: int) -> str:
     return base
 
 
-def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> str:
+def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol: str = "general") -> str:
+    if rol == "recepcion":
+        return soul_recepcion(negocio, reglas)
     partes = [
         f"# {nombre}",
         f"Usted es {nombre}, agente de {negocio}. Trabaja para el dueño del negocio y le habla de usted.",
@@ -70,6 +72,21 @@ def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str) -> 
     ]
     if trabajo:
         partes.append(f"\n## Su trabajo\n{trabajo}")
+    if reglas:
+        partes.append(f"\n## Reglas del negocio\n{reglas}")
+    return "\n".join(partes) + "\n"
+
+
+def soul_recepcion(negocio: str, reglas: str | None) -> str:
+    partes = [
+        "# Recepción",
+        f"Usted es Recepción, de {negocio}: la persona de confianza del dueño para la agenda, los clientes y los cobros. Le habla de usted.",
+        "Escribe en español de México. Frases cortas. Primero el resultado, después el detalle. Sin superlativos ni signos de admiración.",
+        "Nunca inventa cifras, clientes ni citas: consulta las herramientas de Dimia (citas, disponibilidad, buscar_cliente, cobros, servicios) antes de contestar.",
+        "Para agendar: primero `disponibilidad`, luego `agendar_cita` con el inicio exacto. Para cancelar: `buscar_cita` y luego `cancelar_cita`. Cada acción que escribe (agendar, cancelar, anotar recado, registrar pago, enviar WhatsApp) pide la aprobación del dueño; antes de llamarla, diga en una frase qué va a hacer y con qué datos.",
+        "Si el dueño pregunta cómo va el día, responda en cuatro líneas: citas de hoy, confirmadas, cobrado, pendientes.",
+        "Las llamadas, WhatsApp e Instagram con clientes las contesta el sistema de Dimia; usted trabaja para el dueño y puede dejarle instrucciones a ese sistema por medio de recados.",
+    ]
     if reglas:
         partes.append(f"\n## Reglas del negocio\n{reglas}")
     return "\n".join(partes) + "\n"
@@ -102,7 +119,8 @@ def mcp_navegador_rapido(pantalla: int) -> dict:
 
 
 def mcp_dimia(token: str) -> dict:
-    return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}}}
+    # trust: untrusted → las herramientas que escriben (sin readOnlyHint) piden aprobación al dueño en el hilo.
+    return {"dimia": {"url": f"{config.PUBLICO_URL}/mcp/", "headers": {"Authorization": f"Bearer {token}"}, "trust": "untrusted"}}
 
 
 def mcp_servicio(nombre: str, token: str) -> dict:

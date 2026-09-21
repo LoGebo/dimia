@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { despertarMaquina } from "@/lib/acciones";
 import { BienvenidaAgentes } from "@/components/bienvenida-agentes";
 import { PantallaAgente } from "@/components/pantalla-agente";
-import { RECEPCION, RosterAgentes, type AgenteRoster, type GrupoRoster } from "@/components/roster-agentes";
+import { RosterAgentes, type AgenteRoster, type GrupoRoster } from "@/components/roster-agentes";
 
 export type AgenteCompleto = AgenteRoster & { permisos: string[] };
 
@@ -16,12 +16,13 @@ export type AgenteCompleto = AgenteRoster & { permisos: string[] };
 export function AppAgentes({ agentes, grupos, negocio, children }: { agentes: AgenteCompleto[]; grupos: GrupoRoster[]; negocio: string; children: React.ReactNode }) {
   const ruta = usePathname();
   const [saltarBienvenida, setSaltar] = useState(false);
-  const primeraVez = agentes.length === 0 && !saltarBienvenida;
+  const primeraVez = !agentes.some((a) => a.rol !== "recepcion") && !saltarBienvenida;
   // Que la computadora ya esté encendida cuando el dueño mande el primer mensaje.
-  useEffect(() => { if (agentes.some((a) => a.trabajo)) void despertarMaquina(); }, [agentes]);
+  useEffect(() => { void despertarMaquina(); }, []);
   const id = /^\/agentes\/([^/]+)$/.exec(ruta)?.[1];
   const esAgente = !!id && id !== "marketplace";
-  const agente = id === "recepcion" ? { ...RECEPCION, trabajo: "Contesta teléfono, WhatsApp e Instagram. Agenda, cambia y cancela citas.", permisos: [] as string[] } : agentes.find((a) => a.id === id);
+  // /agentes/recepcion es un alias del agente con rol recepción (existe siempre).
+  const agente = id === "recepcion" ? agentes.find((a) => a.rol === "recepcion") : agentes.find((a) => a.id === id);
   return (
     <>
       <RosterAgentes agentes={agentes} grupos={grupos} />

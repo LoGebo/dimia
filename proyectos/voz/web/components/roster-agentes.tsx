@@ -8,10 +8,8 @@ import { AvatarAgente } from "@/components/avatar-agente";
 import { AvataresGrupo } from "@/components/avatares-grupo";
 import { crearAgenteVacio, crearGrupo } from "@/lib/acciones";
 
-export type AgenteRoster = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean };
+export type AgenteRoster = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean; rol?: "general" | "recepcion" };
 export type GrupoRoster = { id: string; nombre: string; miembros: string[] };
-
-export const RECEPCION: AgenteRoster = { id: "recepcion", nombre: "Recepción", trabajo: "Contesta y agenda", avatar: null, activo: true };
 
 /** La lista de agentes y grupos, como los contactos de una app de mensajes. */
 export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; grupos: GrupoRoster[] }) {
@@ -23,7 +21,7 @@ export function RosterAgentes({ agentes, grupos }: { agentes: AgenteRoster[]; gr
   const [pendiente, empezar] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const todos: AgenteRoster[] = [RECEPCION, ...agentes];
+  const todos: AgenteRoster[] = agentes;
   const porId = new Map(todos.map((a) => [a.id, a]));
   const q = busqueda.trim().toLowerCase();
   const agentesVisibles = q ? todos.filter((a) => `${a.nombre} ${a.trabajo ?? ""}`.toLowerCase().includes(q)) : todos;

@@ -92,7 +92,7 @@ export function PantallaAgente({ agente, negocio, permisos }: { agente: AgenteHi
     await actualizarAgente(agente.id, { permisos: [...nx] });
   }
 
-  const recepcion = agente.id === "recepcion";
+  const recepcion = agente.rol === "recepcion";
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1">

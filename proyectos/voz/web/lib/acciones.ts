@@ -1768,3 +1768,10 @@ export async function completarClaude(codigo: string): Promise<Estado> {
 export async function elegirCerebro(cerebro: "codex" | "claude"): Promise<void> {
   await orquestador("/cerebro", { method: "POST", body: JSON.stringify({ cerebro }) });
 }
+
+
+export async function aprobarAccion(agenteId: string, runId: string, requestId: string | null, decision: "aprobar" | "rechazar"): Promise<Estado> {
+  const r = await orquestador(`/agentes/${agenteId}/aprobacion`, { method: "POST", body: JSON.stringify({ run_id: runId, request_id: requestId, decision }) });
+  if (!r.ok) return { error: "No se pudo registrar la decisión." };
+  return { ok: "Listo." };
+}

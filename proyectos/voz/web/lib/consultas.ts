@@ -91,13 +91,23 @@ export function lineaWhatsApp(): Promise<string | null> {
 export type PermisoAgente = "leer" | "navegar" | "anotar" | "escribir" | "agendar" | "formularios";
 export type Agente = {
   id: string; nombre: string; trabajo: string | null; reglas: string | null; avatar: string | null;
-  permisos: PermisoAgente[]; estado: "activo" | "en_pausa"; creado: string;
+  permisos: PermisoAgente[]; estado: "activo" | "en_pausa"; rol: "general" | "recepcion"; creado: string;
 };
 
-const SELECT_AGENTE = "select id, nombre, trabajo, reglas, avatar, permisos, estado, creado from agente";
+const SELECT_AGENTE = "select id, nombre, trabajo, reglas, avatar, permisos, estado, rol, creado from agente";
 
+/** Los agentes del negocio; Recepción existe siempre (se crea la primera vez) y va primero. */
 export function agentes(): Promise<Agente[]> {
-  return datos((q, id) => q<Agente>(`${SELECT_AGENTE} where tenant_id = $1 order by creado`, [id]));
+  return datos(async (q, id) => {
+    await q(
+      `insert into agente (tenant_id, nombre, trabajo, rol, estado, permisos, avatar)
+       select $1, 'Recepción', 'Agenda, clientes y cobros del negocio; le pide su visto bueno antes de actuar.', 'recepcion', 'activo', '{leer,anotar,agendar}', 'gota:#4f7cf5'
+       where not exists (select 1 from agente where tenant_id = $1 and rol = 'recepcion')
+       on conflict (tenant_id) where rol = 'recepcion' do nothing`,
+      [id],
+    );
+    return q<Agente>(`${SELECT_AGENTE} where tenant_id = $1 order by (rol = 'recepcion') desc, creado`, [id]);
+  });
 }
 
 export function agente(agenteId: string): Promise<Agente | null> {

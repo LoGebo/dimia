@@ -191,6 +191,20 @@ def _sse(eventos):
     return StreamingResponse(cuerpo(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+class Aprobacion(BaseModel):
+    run_id: str
+    request_id: str | None = None
+    decision: str  # aprobar | rechazar
+
+
+@app.post("/agentes/{agente_id}/aprobacion")
+async def aprobacion(agente_id: uuid.UUID, cuerpo: Aprobacion, tenant: str = Depends(negocio_id)):
+    error = await negocio.aprobar(tenant, str(agente_id), cuerpo.run_id, cuerpo.request_id, cuerpo.decision)
+    if error:
+        raise HTTPException(400, error)
+    return {"ok": True}
+
+
 @app.get("/agentes/{agente_id}/estado")
 async def estado_agente(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     if not await db.uno("select 1 from agente where id = $1 and tenant_id = $2", agente_id, tenant):

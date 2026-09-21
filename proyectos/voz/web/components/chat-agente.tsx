@@ -4,20 +4,19 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUp, ChevronDown, Maximize2, Plus, X } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { ejecutarPropuesta, preguntarCopiloto } from "@/lib/acciones";
-import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
+import { aprobarAccion } from "@/lib/acciones";
 
 type Mensaje = {
   id: number;
   de: "agente" | "yo";
   texto: string;
   pasos?: { herramienta: string; detalle: string }[];
-  propuesta?: Propuesta;
+  propuesta?: { run_id: string; request_id: string | null; resumen: string };
   resuelta?: "aprobada" | "rechazada";
   resultado?: string;
 };
 
-export type AgenteChat = { id: string; nombre: string; trabajo: string | null; avatar?: string | null; activo: boolean };
+export type AgenteChat = { id: string; nombre: string; trabajo: string | null; avatar?: string | null; activo: boolean; rol?: "general" | "recepcion" };
 
 const ANCHO_CAJON = 450;
 const CLAVE_ACUERDO = "chat_agente_acuerdo";
@@ -29,15 +28,15 @@ const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?"
  * agente elegido arriba y su hilo abajo. Medidas y ritmo copiados de allá
  * (web/design/cajon-agente.css); formas y colores de Dimia.
  *
- * Solo Recepción tiene cerebro conectado hoy (el copiloto del panel); los
- * agentes creados por el dueño reciben el mensaje y lo dicen claro.
+ * Cada agente contesta desde su Hermes (mismo camino que la pestaña Agentes);
+ * el que aún no tiene trabajo lo dice claro.
  */
 export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: AgenteChat[] }) {
   const router = useRouter();
   const ruta = usePathname();
-  const todos: AgenteChat[] = [{ id: "recepcion", nombre: "Recepción", trabajo: "Contesta y agenda", activo: true }, ...agentes];
+  const todos: AgenteChat[] = agentes;
   const [abierto, setAbierto] = useState(false);
-  const [agenteId, setAgenteId] = useState("recepcion");
+  const [agenteId, setAgenteId] = useState(agentes[0]?.id ?? "");
   const [eligiendo, setEligiendo] = useState(false);
   const [acuerdo, setAcuerdo] = useState(true);
   const [texto, setTexto] = useState("");
@@ -46,12 +45,14 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
   const lista = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
   const agente = todos.find((a) => a.id === agenteId) ?? todos[0]!;
-  const conectado = agente.id === "recepcion";
+  const conectado = !!agente?.trabajo;
 
   const saludo = (a: AgenteChat): Mensaje =>
-    a.id === "recepcion"
-      ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes, cobros o llamadas, o pídame algo y se lo propongo antes de hacerlo.` }
-      : { id: 1, de: "agente", texto: `Soy ${a.nombre}. ${a.trabajo ?? ""} Todavía no tengo computadora: en cuanto la tenga, aquí me pide la tarea y aquí le aviso.` };
+    a.rol === "recepcion"
+      ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes o cobros, o pídame agendar, cancelar o anotar; antes de hacerlo le pido su visto bueno.` }
+      : a.trabajo
+        ? { id: 1, de: "agente", texto: `Soy ${a.nombre}. ${a.trabajo}` }
+        : { id: 1, de: "agente", texto: `Soy ${a.nombre}. Todavía no tengo trabajo: dígamelo en la pestaña Agentes.` };
 
   useEffect(() => {
     try {
@@ -120,29 +121,52 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
     const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t }];
     setMensajes(propios);
     if (!conectado) {
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Anotado. Cuando ${agente.nombre} tenga computadora, esta será su primera tarea.` }]);
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Dígame primero para qué me quiere, en la pestaña Agentes.` }]);
       return;
     }
     setEscribiendo(true);
-    const historial: TurnoCopiloto[] = propios.filter((m) => m.id !== 1).map((m) => ({ rol: m.de === "yo" ? "usuario" : "asistente", texto: m.texto }));
+    const idAgente = Date.now() + 1;
+    let creada = false;
+    const pegar = (texto: string) => {
+      if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); return; }
+      setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto: x.texto + texto } : x)));
+    };
     try {
-      const r = await preguntarCopiloto(historial);
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: r.texto, pasos: r.pasos, propuesta: r.propuesta }]);
+      const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t }) });
+      if (!r.ok || !r.body) { pegar("No pude hablar con mi máquina. Intente de nuevo en un momento."); return; }
+      const lector = r.body.pipeThrough(new TextDecoderStream()).getReader();
+      let resto = "";
+      for (;;) {
+        const { value, done } = await lector.read();
+        if (done) break;
+        resto += value;
+        const partes = resto.split("\n\n");
+        resto = partes.pop() ?? "";
+        for (const p of partes) {
+          const linea = p.split("\n").find((l) => l.startsWith("data:"));
+          if (!linea) continue;
+          const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string; run_id?: string; request_id?: string | null };
+          if (e.evento === "texto") pegar(e.texto);
+          else if (e.evento === "aprobacion") setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: e.run_id!, request_id: e.request_id ?? null, resumen: `${agente.nombre} pide su visto bueno para ${e.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " ")}.` } }]);
+          else if (e.evento === "error" || e.evento === "cuota" || e.evento === "sin_codex") pegar(e.texto);
+        }
+      }
     } catch {
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: "No pude consultar el negocio en este momento. Intente de nuevo." }]);
+      pegar("Se cortó la conexión con mi máquina. Intente de nuevo.");
     } finally {
       setEscribiendo(false);
     }
   }
 
-  async function aprobar(id: number, p: Propuesta) {
+  async function aprobar(id: number, p: { run_id: string; request_id: string | null }) {
     setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resuelta: "aprobada", resultado: "Haciendo…" } : x)));
-    const r = await ejecutarPropuesta(p);
-    setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: r.error ?? r.ok ?? "Listo." } : x)));
-    if (!r.error) router.refresh();
+    const r = await aprobarAccion(agente.id, p.run_id, p.request_id, "aprobar");
+    setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: r.error ?? "Aprobado." } : x)));
   }
 
   function rechazar(id: number) {
+    const p = mensajes.find((x) => x.id === id)?.propuesta;
+    if (p) void aprobarAccion(agente.id, p.run_id, p.request_id, "rechazar");
     setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resuelta: "rechazada" } : x)));
   }
 

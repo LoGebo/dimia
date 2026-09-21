@@ -76,7 +76,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       </div>
       <ChatAgente
         negocio={membresia?.nombre ?? actual.nombre}
-        agentes={listaAgentes.map((a) => ({ id: a.id, nombre: a.nombre, trabajo: a.trabajo, avatar: a.avatar, activo: a.estado === "activo" }))}
+        agentes={listaAgentes.map((a) => ({ id: a.id, nombre: a.nombre, trabajo: a.trabajo, avatar: a.avatar, activo: a.estado === "activo", rol: a.rol }))}
       />
     </ProveedorAvisos>
   );

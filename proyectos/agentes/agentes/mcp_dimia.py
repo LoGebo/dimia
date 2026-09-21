@@ -4,12 +4,14 @@ token y solo ve su negocio. Solo lectura por ahora."""
 from datetime import date, datetime, timedelta
 
 from mcp.server.mcpserver import Context, MCPServer
+from mcp_types import ToolAnnotations
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 
 from agentes import db
 
-servidor = MCPServer("dimia", instructions="Datos reales del negocio del dueño: citas, clientes, cobros y servicios. Úselos antes de suponer.")
+SOLO_LECTURA = ToolAnnotations(readOnlyHint=True)
+servidor = MCPServer("dimia", instructions="Datos reales del negocio del dueño: citas, clientes, cobros y servicios. Úselos antes de suponer. Las herramientas que escriben (agendar, cancelar, anotar, registrar pago) piden la aprobación del dueño: antes de llamarlas, diga en el hilo exactamente qué va a hacer.")
 
 
 async def _tenant(ctx: Context) -> str:
@@ -28,7 +30,7 @@ def _dia(texto: str | None) -> date:
     return date.fromisoformat(texto)
 
 
-@servidor.tool(name="citas", description="Citas del negocio en un día. dia: 'hoy', 'mañana' o AAAA-MM-DD.")
+@servidor.tool(annotations=SOLO_LECTURA, name="citas", description="Citas del negocio en un día. dia: 'hoy', 'mañana' o AAAA-MM-DD.")
 async def citas(ctx: Context, dia: str = "hoy") -> str:
     t = await _tenant(ctx)
     filas = await db.todos(
@@ -41,7 +43,7 @@ async def citas(ctx: Context, dia: str = "hoy") -> str:
     return "\n".join(f"{f['inicio']:%H:%M} · {f['cliente_nombre'] or 'sin nombre'} · {f['servicio'] or ''} · {f['estado']}{' · confirmó' if f['confirmada'] else ''} · {f['telefono'] or ''}" for f in filas)
 
 
-@servidor.tool(name="buscar_cliente", description="Busca clientes por nombre o teléfono; da citas, faltas y lo gastado.")
+@servidor.tool(annotations=SOLO_LECTURA, name="buscar_cliente", description="Busca clientes por nombre o teléfono; da citas, faltas y lo gastado.")
 async def buscar_cliente(ctx: Context, texto: str) -> str:
     t = await _tenant(ctx)
     filas = await db.todos(
@@ -56,7 +58,7 @@ async def buscar_cliente(ctx: Context, texto: str) -> str:
     return "\n".join(f"{f['nombre']} · {f['telefono'] or ''} · {f['citas']} citas · {f['faltas']} faltas · ${f['gastado']:,.0f} · último contacto {f['ultimo_contacto']:%Y-%m-%d}" if f['ultimo_contacto'] else f"{f['nombre']} · {f['telefono'] or ''}" for f in filas)
 
 
-@servidor.tool(name="clientes_sin_volver", description="Clientes que ya vinieron y no han vuelto en N días (default 90).")
+@servidor.tool(annotations=SOLO_LECTURA, name="clientes_sin_volver", description="Clientes que ya vinieron y no han vuelto en N días (default 90).")
 async def clientes_sin_volver(ctx: Context, dias: int = 90) -> str:
     t = await _tenant(ctx)
     filas = await db.todos(
@@ -67,7 +69,7 @@ async def clientes_sin_volver(ctx: Context, dias: int = 90) -> str:
     return "\n".join(f"{f['nombre']} · {f['telefono'] or ''} · {f['ultimo_contacto']:%Y-%m-%d}" for f in filas) or "Nadie lleva tanto sin volver."
 
 
-@servidor.tool(name="cobros", description="Pagos pendientes y lo cobrado en los últimos N días (default 7).")
+@servidor.tool(annotations=SOLO_LECTURA, name="cobros", description="Pagos pendientes y lo cobrado en los últimos N días (default 7).")
 async def cobros(ctx: Context, dias: int = 7) -> str:
     t = await _tenant(ctx)
     pend = await db.todos("select c.nombre, g.concepto, g.monto, g.creado from pago g left join cliente c on c.id = g.cliente_id where g.tenant_id = $1 and g.estado = 'pendiente' order by g.creado desc limit 30", t)
@@ -77,7 +79,7 @@ async def cobros(ctx: Context, dias: int = 7) -> str:
     return "\n".join(lineas)
 
 
-@servidor.tool(name="servicios", description="Servicios activos del negocio con duración y precio.")
+@servidor.tool(annotations=SOLO_LECTURA, name="servicios", description="Servicios activos del negocio con duración y precio.")
 async def servicios(ctx: Context) -> str:
     t = await _tenant(ctx)
     filas = await db.todos("select nombre, duracion_min, precio from service where tenant_id = $1 and activo order by nombre", t)
@@ -89,6 +91,75 @@ def app():
     return servidor.streamable_http_app(
         streamable_http_path="/", stateless_http=True, json_response=True,
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
+
+
+# --- Escritura en la agenda del negocio (mismas funciones que usa el motor de voz;
+# --- la garantía de no traslape vive en la base) -------------------------------
+
+async def _servicio(t: str, nombre: str):
+    f = await db.uno("select id, nombre, duracion_min from service where tenant_id = $1 and activo and (nombre ilike $2 or alias::text ilike '%' || $2 || '%') order by nombre limit 1", t, nombre.strip()) \
+        or await db.uno("select id, nombre, duracion_min from service where tenant_id = $1 and activo and nombre ilike '%' || $2 || '%' order by nombre limit 1", t, nombre.strip())
+    return f
+
+
+@servidor.tool(annotations=SOLO_LECTURA, name="disponibilidad", description="Horarios libres de un servicio en un día (AAAA-MM-DD, 'hoy' o 'mañana'). Devuelve inicio ISO y recurso; úselo antes de agendar.")
+async def disponibilidad(ctx: Context, servicio: str, dia: str = "hoy", personas: int = 1) -> str:
+    t = await _tenant(ctx)
+    s = await _servicio(t, servicio)
+    if not s:
+        return "Ese servicio no existe; consulte `servicios`."
+    filas = await db.todos("select inicio, fin, resource_nombre from slots_libres($1, $2, $3, $4, 40, null, null)", t, s["id"], _dia(dia), personas)
+    z = (await db.uno("select zona_horaria from tenant where id = $1", t))["zona_horaria"]
+    if not filas:
+        return "Sin lugar ese día."
+    from zoneinfo import ZoneInfo
+    return "\n".join(f"{f['inicio'].astimezone(ZoneInfo(z)).isoformat()} · {f['resource_nombre']}" for f in filas)
+
+
+@servidor.tool(name="agendar_cita", description="Agenda una cita: servicio, inicio ISO (de `disponibilidad`), nombre y teléfono del cliente. Pide aprobación del dueño.")
+async def agendar_cita(ctx: Context, servicio: str, inicio: str, cliente_nombre: str, telefono: str, personas: int = 1, notas: str = "") -> str:
+    t = await _tenant(ctx)
+    s = await _servicio(t, servicio)
+    if not s:
+        return "Ese servicio no existe."
+    cuando = datetime.fromisoformat(inicio)
+    slot = await db.uno("select resource_id from slots_libres($1, $2, $3, $4, 200, null, null) where inicio = $5 limit 1", t, s["id"], cuando.date(), personas, cuando)
+    if not slot:
+        return "Ese horario ya no está libre; consulte `disponibilidad` otra vez."
+    r = await db.uno("select reservar($1, $2, $3, $4, $5, $6, $7, $8, null) as r", t, s["id"], slot["resource_id"], cuando, cliente_nombre.strip(), "".join(c for c in telefono if c.isdigit()), personas, notas or None)
+    d = r["r"] if isinstance(r["r"], dict) else __import__("json").loads(r["r"])
+    return f"Cita agendada. Código {d.get('codigo')} · {cliente_nombre} · {s['nombre']} · {cuando:%Y-%m-%d %H:%M}." if d.get("ok", True) and not d.get("error") else f"No se pudo agendar: {d.get('error') or d}"
+
+
+@servidor.tool(annotations=SOLO_LECTURA, name="buscar_cita", description="Busca citas por teléfono, código o nombre del cliente.")
+async def buscar_cita(ctx: Context, telefono: str = "", codigo: str = "", nombre: str = "") -> str:
+    t = await _tenant(ctx)
+    filas = await db.todos("select * from buscar_reserva($1, $2, $3, $4)", t, telefono or None, codigo or None, nombre or None)
+    return "\n".join(f"{f.get('booking_id') or f.get('id')} · {f.get('inicio')} · {f.get('cliente_nombre') or f.get('nombre', '')} · {f.get('servicio') or ''} · {f.get('estado', '')} · código {f.get('codigo', '')}" for f in filas) or "Sin citas con ese dato."
+
+
+@servidor.tool(name="cancelar_cita", description="Cancela una cita por su id (de `buscar_cita` o `citas`). Pide aprobación del dueño.")
+async def cancelar_cita(ctx: Context, booking_id: str) -> str:
+    t = await _tenant(ctx)
+    import uuid as _uuid
+    r = await db.uno("select cancelar_reserva($1, $2) as r", t, _uuid.UUID(booking_id))
+    d = r["r"] if isinstance(r["r"], dict) else __import__("json").loads(r["r"])
+    return "Cita cancelada." if not d.get("error") else f"No se pudo cancelar: {d.get('error')}"
+
+
+@servidor.tool(name="anotar_recado", description="Deja un recado para el dueño (teléfono, asunto, nombre y detalle); aparece en Recados del panel.")
+async def anotar_recado(ctx: Context, telefono: str, asunto: str, nombre: str = "", detalle: str = "") -> str:
+    t = await _tenant(ctx)
+    await db.uno("select registrar_recado($1, $2, $3, $4, $5, '{}'::jsonb, null)", t, "".join(c for c in telefono if c.isdigit()) or telefono, asunto, nombre or None, detalle or None)
+    return "Recado anotado."
+
+
+@servidor.tool(name="registrar_pago", description="Registra un pago recibido (monto en pesos, concepto, método: efectivo, transferencia o tarjeta) a nombre de un cliente por teléfono. Pide aprobación del dueño.")
+async def registrar_pago(ctx: Context, telefono: str, monto: float, concepto: str, metodo: str = "efectivo") -> str:
+    t = await _tenant(ctx)
+    c = await db.uno("select id, nombre from cliente where tenant_id = $1 and telefono like '%' || $2 limit 1", t, "".join(ch for ch in telefono if ch.isdigit())[-10:])
+    await db.ejecutar("insert into pago (tenant_id, cliente_id, concepto, monto, metodo, estado, pagado_en) values ($1, $2, $3, $4, $5, 'pagado', now())", t, c["id"] if c else None, concepto, monto, metodo)
+    return f"Pago de ${monto:,.0f} registrado{(' a ' + c['nombre']) if c else ''}."
 
 
 # --- WhatsApp: escribir a clientes por la línea del negocio ---------------

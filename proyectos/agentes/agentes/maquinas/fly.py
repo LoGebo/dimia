@@ -79,7 +79,11 @@ class Fly:
             cfg["guest"]["cpus"] = 4  # Fly exige más CPU para más RAM compartida
         r = await self.http.post(f"/apps/{self.app}/machines/{referencia}", json={"config": cfg})
         r.raise_for_status()
-        await self._esperar(referencia, "started")
+        # La actualización crea una instancia nueva: esperar a ESA (si no, el exec cae en la vieja).
+        instancia = r.json().get("instance_id")
+        r = await self.http.get(f"/apps/{self.app}/machines/{referencia}/wait", params={"state": "started", "timeout": 60, **({"instance_id": instancia} if instancia else {})}, timeout=70)
+        r.raise_for_status()
+        await asyncio.sleep(3)  # que init monte el volumen antes del primer exec
 
     async def ejecutar(self, referencia, comando, timeout=60):
         r = await self.http.post(f"/apps/{self.app}/machines/{referencia}/exec", json={"command": comando, "timeout": timeout}, timeout=timeout + 15)

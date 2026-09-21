@@ -4,10 +4,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Monitor, PanelRightOpen, Plus } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { actualizarAgente, agenteTrabajando, ejecutarPropuesta, estadoCodex, hiloNuevoAgente, mensajesAgente, preguntarCopiloto } from "@/lib/acciones";
+import { actualizarAgente, agenteTrabajando, aprobarAccion, estadoCodex, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
 import { Formato } from "@/components/formato";
 import { ConectarCerebro } from "@/components/conectar-cerebro";
-import type { Propuesta, TurnoCopiloto } from "@/lib/copiloto";
 
 type Opcion = { letra: string; titulo: string; detalle: string; trabajo?: string; nombre?: string };
 type Mensaje = {
@@ -17,12 +16,12 @@ type Mensaje = {
   opciones?: Opcion[];
   elegida?: string;
   pasos?: { herramienta: string; detalle: string }[];
-  propuesta?: Propuesta;
+  propuesta?: { run_id: string; request_id: string | null; resumen: string };
   resuelta?: "aprobada" | "rechazada";
   resultado?: string;
 };
 
-export type AgenteHilo = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean };
+export type AgenteHilo = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean; rol?: "general" | "recepcion" };
 
 const ROLES: Opcion[] = [
   { letra: "A", titulo: "Cotizar con proveedores", detalle: "Buscar, pedir precios, comparar", nombre: "Cotizador", trabajo: "Busca proveedores, pide precios y los anota en Clientes." },
@@ -37,19 +36,23 @@ const NOMBRE_HERRAMIENTA: Record<string, string> = {
   skill_view: "consultando sus instrucciones", memory: "recordando", mcp__dimia__citas: "revisando las citas", mcp__dimia__cobros: "revisando los cobros",
   mcp__dimia__buscar_cliente: "buscando al cliente", mcp__dimia__clientes_sin_volver: "buscando clientes", mcp__dimia__servicios: "consultando los servicios",
 };
+const ACCION: Record<string, string> = {
+  agendar_cita: "agendar una cita", cancelar_cita: "cancelar una cita", anotar_recado: "dejarle un recado", registrar_pago: "registrar un pago",
+  enviar_whatsapp: "mandar un WhatsApp", gmail_enviar: "enviar un correo", calendar_crear: "crear un evento en su calendario", notion_agregar: "escribir en Notion", slack_publicar: "publicar en Slack",
+};
 const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
 const clave = (negocio: string, agente: string) => `hilo_agente:${negocio}:${agente}`;
 
 /**
- * El hilo con un agente. Recepción tiene cerebro conectado (el copiloto);
- * un agente nuevo se presenta y pregunta para qué lo quieren, como en Grok
- * Bot, y con la respuesta se pone nombre y trabajo.
+ * El hilo con un agente (su Hermes). Un agente nuevo se presenta y pregunta
+ * para qué lo quieren, como en Grok Bot, y con la respuesta se pone nombre y
+ * trabajo. Recepción ya viene con trabajo y con la agenda del negocio.
  */
 export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { agente: AgenteHilo; negocio: string; panelAbierto: boolean; alternarPanel: () => void }) {
   const router = useRouter();
-  const conectado = agente.id === "recepcion";
-  const sinTrabajo = !conectado && !agente.trabajo;
-  const conCerebro = !conectado && !sinTrabajo; // agente con trabajo: vive en su Hermes
+  const recepcion = agente.rol === "recepcion";
+  const sinTrabajo = !agente.trabajo;
+  const conCerebro = !sinTrabajo; // agente con trabajo: vive en su Hermes
   const [pideCodex, setPideCodex] = useState(false);
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
@@ -59,8 +62,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const campo = useRef<HTMLTextAreaElement>(null);
 
   const saludo = (): Mensaje =>
-    conectado
-      ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes, cobros o llamadas, o pídame algo y se lo propongo antes de hacerlo.` }
+    recepcion
+      ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes o cobros, o pídame agendar, cancelar o anotar; antes de hacerlo le pido su visto bueno.` }
       : sinTrabajo
         ? { id: 1, de: "agente", texto: "Hola. Mucho gusto.\n¿Para qué me quiere más?", opciones: ROLES }
         : { id: 1, de: "agente", texto: `Soy ${agente.nombre}. ${agente.trabajo}` };
@@ -127,7 +130,12 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
           if (!linea) continue;
           const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string };
           if (e.evento === "texto") { setHaciendo(null); pegar(e.texto); }
-          else if (e.evento === "herramienta") setHaciendo(NOMBRE_HERRAMIENTA[e.texto] ?? e.texto.replace(/^mcp__dimia__/, "").replaceAll("_", " "));
+          else if (e.evento === "herramienta") setHaciendo(NOMBRE_HERRAMIENTA[e.texto] ?? e.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " "));
+          else if (e.evento === "aprobacion") {
+            const a = e as unknown as { texto: string; run_id: string; request_id: string | null };
+            setHaciendo(null);
+            setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: a.run_id, request_id: a.request_id, resumen: `${agente.nombre} quiere ${ACCION[a.texto] ?? a.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " ")}. Lo que va a hacer está arriba en el hilo.` } }]);
+          }
           else if (e.evento === "sin_codex") { poner(e.texto); setPideCodex(true); }
           else if (e.evento === "error" || e.evento === "cuota") poner(e.texto);
         }
@@ -191,43 +199,29 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
       return;
     }
 
-    if (!conectado) {
-      // Sin cerebro todavía: lo que sí puede hacer es tomar su nombre y su trabajo.
-      const cambio = /^(ll[aá]mate|te llamas|tu nombre es)\s+(.{2,40})$/i.exec(t);
-      if (cambio) {
-        const nombre = cambio[2]!.replace(/[.!]+$/, "").trim();
-        await actualizarAgente(agente.id, { nombre });
-        setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Hecho, ahora soy ${nombre}.` }]);
-        router.refresh();
-        return;
-      }
-      if (sinTrabajo || mensajes.at(-1)?.texto.startsWith("Va. Dígamelo")) {
-        await actualizarAgente(agente.id, { trabajo: t.slice(0, 200), estado: "activo" });
-        setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Entendido, de eso me encargo: ${t}\n¿Cómo me quiere llamar? Escriba «llámate …».` }]);
-        router.refresh();
-        return;
-      }
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Anotado. Cuando tenga computadora, esa será mi primera tarea.` }]);
+    // Sin trabajo todavía: lo que sí puede hacer es tomar su nombre y su trabajo.
+    const cambio = /^(ll[aá]mate|te llamas|tu nombre es)\s+(.{2,40})$/i.exec(t);
+    if (cambio) {
+      const nombre = cambio[2]!.replace(/[.!]+$/, "").trim();
+      await actualizarAgente(agente.id, { nombre });
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Hecho, ahora soy ${nombre}.` }]);
+      router.refresh();
       return;
     }
-
-    setEscribiendo(true);
-    const historial: TurnoCopiloto[] = propios.filter((m) => m.id !== 1).map((m) => ({ rol: m.de === "yo" ? "usuario" : "asistente", texto: m.texto }));
-    try {
-      const r = await preguntarCopiloto(historial);
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: r.texto, pasos: r.pasos, propuesta: r.propuesta }]);
-    } catch {
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: "No pude consultar el negocio ahora. Intente de nuevo." }]);
-    } finally {
-      setEscribiendo(false);
+    if (sinTrabajo || mensajes.at(-1)?.texto.startsWith("Va. Dígamelo")) {
+      await actualizarAgente(agente.id, { trabajo: t.slice(0, 200), estado: "activo" });
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Entendido, de eso me encargo: ${t}\n¿Cómo me quiere llamar? Escriba «llámate …».` }]);
+      router.refresh();
+      return;
     }
   }
 
-  async function aprobar(id: number, p: Propuesta) {
-    setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resuelta: "aprobada", resultado: "Haciendo…" } : x)));
-    const r = await ejecutarPropuesta(p);
-    setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: r.error ?? r.ok ?? "Listo." } : x)));
-    if (!r.error) router.refresh();
+  /** El agente pidió permiso para una acción (agendar, cancelar, enviar…): la decisión va a su Hermes. */
+  async function decidir(id: number, p: { run_id: string; request_id: string | null }, decision: "aprobar" | "rechazar") {
+    setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resuelta: decision === "aprobar" ? "aprobada" : "rechazada", resultado: decision === "aprobar" ? "Haciendo…" : undefined } : x)));
+    const r = await aprobarAccion(agente.id, p.run_id, p.request_id, decision);
+    if (r.error) setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: r.error } : x)));
+    else if (decision === "aprobar") setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: "Aprobado." } : x)));
   }
 
   function enviar(e: FormEvent) {
@@ -256,9 +250,11 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         <p className="text-center text-[12px] text-tinta-3">Hoy {hora}</p>
         {mensajes.map((m) => (
           <article key={m.id} className={`flex flex-col gap-2 ${m.de === "yo" ? "items-end" : "items-start"}`}>
-            <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${m.de === "yo" ? "rounded-br-md bg-acento text-acento-tinta whitespace-pre-wrap" : "rounded-bl-md bg-linea text-tinta"}`}>
-              {m.de === "yo" ? m.texto : <Formato texto={m.texto} />}
-            </div>
+            {m.texto ? (
+              <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${m.de === "yo" ? "rounded-br-md bg-acento text-acento-tinta whitespace-pre-wrap" : "rounded-bl-md bg-linea text-tinta"}`}>
+                {m.de === "yo" ? m.texto : <Formato texto={m.texto} />}
+              </div>
+            ) : null}
             {m.opciones ? (
               <div className="w-full max-w-[640px] rounded-2xl border border-linea bg-panel p-2">
                 {m.opciones.map((o) => (
@@ -296,8 +292,8 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
                   <p className={`mt-2 text-[13px] font-medium ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>{m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}</p>
                 ) : (
                   <div className="mt-3 flex gap-2">
-                    <button type="button" onClick={() => aprobar(m.id, m.propuesta!)} className="h-9 rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta transition-[filter] duration-100 hover:brightness-110">Aprobar</button>
-                    <button type="button" onClick={() => setMensajes((x) => x.map((y) => (y.id === m.id ? { ...y, resuelta: "rechazada" } : y)))} className="h-9 rounded-full border border-linea bg-panel px-4 text-[14px] text-tinta-2 transition-colors duration-100 hover:text-tinta">Ahora no</button>
+                    <button type="button" onClick={() => decidir(m.id, m.propuesta!, "aprobar")} className="h-9 rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta transition-[filter] duration-100 hover:brightness-110">Aprobar</button>
+                    <button type="button" onClick={() => decidir(m.id, m.propuesta!, "rechazar")} className="h-9 rounded-full border border-linea bg-panel px-4 text-[14px] text-tinta-2 transition-colors duration-100 hover:text-tinta">Ahora no</button>
                   </div>
                 )}
               </div>
@@ -314,7 +310,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         {escribiendo ? (
           <div className="flex items-center gap-2 text-[13px] text-tinta-3"><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} /><span className="inline-flex gap-0.5"><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:0ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:150ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3 [animation-delay:300ms]" /></span>{haciendo ? `${agente.nombre} está ${haciendo}` : `${agente.nombre} está ${conCerebro ? "pensando" : "consultando"}`}</div>
         ) : null}
-        {conectado && mensajes.length <= 1 && !escribiendo ? (
+        {recepcion && mensajes.length <= 1 && !escribiendo ? (
           <div className="flex flex-wrap gap-2 pt-1">
             {SUGERENCIAS.map((s) => (
               <button key={s} type="button" onClick={() => preguntar(s)} className="h-9 rounded-full border border-linea bg-panel px-3.5 text-[13.5px] text-tinta-2 transition-colors duration-150 hover:border-linea-fuerte hover:text-tinta">{s}</button>
