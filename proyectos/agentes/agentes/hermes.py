@@ -106,7 +106,7 @@ def soul_recepcion(negocio: str, reglas: str | None, personalidad: str | None = 
 
 
 def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None, ajustes: dict | None = None) -> dict[str, str]:
-    p = f"{HOME}/profiles/{agente_id}"
+    p = f"{HOME}/agentes/{agente_id}"
     a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro, ajustes=ajustes), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
     if claude_json:
         a[f"{p}/.anthropic_oauth.json"] = claude_json
@@ -155,7 +155,7 @@ def dimia_json(token: str | None, cerebro: str = "codex") -> str:
 def archivos_git(agente_id: str, token: str | None) -> dict[str, str]:
     """git autenticado en la terminal del agente: HOME es su perfil, así que .gitconfig y
     .git-credentials viven ahí. Hermes limpia GH_TOKEN/GITHUB_TOKEN del entorno; el archivo no."""
-    p = f"{HOME}/profiles/{agente_id}"
+    p = f"{HOME}/agentes/{agente_id}"
     if not token:
         return {f"{p}/.gitconfig": "", f"{p}/.git-credentials": ""}
     return {f"{p}/.gitconfig": "[credential]\n\thelper = store\n[user]\n\tname = Agente Dimia\n\temail = agentes@dimia.mx\n[init]\n\tdefaultBranch = main\n",
@@ -169,7 +169,7 @@ def mcp_whatsapp(token: str) -> dict:
 def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[str]:
     """Un solo `sh -c` que deja los archivos en su lugar con el dueño correcto.
     ponytail: base64 en la línea de comando; suficiente para archivos de KB."""
-    pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/profiles/")]
+    pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/agentes/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
         modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials", "dimia.json")) else "644"  # config lleva llaves de MCP

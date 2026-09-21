@@ -2,7 +2,7 @@
 ({agente_id: n}) cada 5 s y mantiene, por agente n:
   Xvfb :n · dbus de sesión (AT-SPI para computer use) · openbox · x11vnc 5900+n ·
   websockify 6080+n · Chromium con CDP 9200+n · `hermes gateway run` con
-  HERMES_HOME=/opt/data/profiles/<agente>, DISPLAY=:n y API en 8700+n.
+  HERMES_HOME=/opt/data/agentes/<agente>, DISPLAY=:n y API en 8700+n.
 Lo que muera se relanza en la siguiente vuelta."""
 import json
 import os
@@ -43,7 +43,7 @@ def lanzar(clave, cmd, env=None, cwd=None):
 
 def escritorio(agente: str, n: int):
     disp = f":{n}"
-    home = f"{DATOS}/profiles/{agente}"
+    home = f"{DATOS}/agentes/{agente}"
     perfil_nav = f"{home}/navegador"
     trabajo = f"{home}/escritorio"  # lo que el agente guarda; lo ve el dueño en Archivos
     for d in (perfil_nav, trabajo):

@@ -20,7 +20,7 @@ def test_auth_json_tiene_forma_de_hermes():
 
 
 def test_comando_escribe_y_cambia_dueno():
-    cmd = hermes.comando_escribir({"/opt/data/profiles/x/SOUL.md": "# X\n"})
+    cmd = hermes.comando_escribir({"/opt/data/agentes/x/SOUL.md": "# X\n"})
     assert cmd[:2] == ["sh", "-c"] and "chown -R 10000:10000 /opt/data" in cmd[2] and "SOUL.md" in cmd[2]
 
 
@@ -45,5 +45,5 @@ def test_catalogo_lee_las_skills():
 
 
 def test_comando_borra_solo_dentro_de_perfiles():
-    cmd = hermes.comando_escribir({}, borrar=["/opt/data/profiles/x/skills/dimia", "/etc"])
-    assert "rm -rf /opt/data/profiles/x/skills/dimia" in cmd[2] and "/etc" not in cmd[2]
+    cmd = hermes.comando_escribir({}, borrar=["/opt/data/agentes/x/skills/dimia", "/etc"])
+    assert "rm -rf /opt/data/agentes/x/skills/dimia" in cmd[2] and "/etc" not in cmd[2]

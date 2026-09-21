@@ -219,7 +219,7 @@ async def perfil_local(tenant: str, agente_id: str) -> tuple[dict[str, str], int
         if i["tipo"] == "skill" and i["clave"] in todas:
             archivos[f"skills/dimia/{i['clave']}/SKILL.md"] = todas[i["clave"]]["contenido"]
     gh = await conexiones.leer(tenant, "github") if "github" in cuentas else None
-    raiz = f"{hermes.HOME}/profiles/{agente_id}/"
+    raiz = f"{hermes.HOME}/agentes/{agente_id}/"
     archivos.update({r.removeprefix(raiz): c for r, c in hermes.archivos_git(agente_id, gh["token"] if gh else None).items()})
     return archivos, hermes.puerto(pantalla)
 
@@ -320,8 +320,8 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         mcp, cuentas, inst = await _mcp_de(tenant, a)
         gh = await conexiones.leer(tenant, "github") if "github" in cuentas else None
         archivos.update(hermes.archivos_git(aid, gh["token"] if gh else None))
-        archivos[f"{hermes.HOME}/profiles/{aid}/dimia.json"] = hermes.dimia_json(a["mcp_token"] or (await db.uno("select mcp_token from agente where id = $1", a["id"]))["mcp_token"], cual)
-        raiz_skills = f"{hermes.HOME}/profiles/{aid}/skills/dimia"
+        archivos[f"{hermes.HOME}/agentes/{aid}/dimia.json"] = hermes.dimia_json(a["mcp_token"] or (await db.uno("select mcp_token from agente where id = $1", a["id"]))["mcp_token"], cual)
+        raiz_skills = f"{hermes.HOME}/agentes/{aid}/skills/dimia"
         borrar.append(raiz_skills)
         for i in inst:
             if i["tipo"] == "skill" and i["clave"] in todas_skills:
@@ -330,17 +330,26 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp, cerebro=cual, claude_json=claude_json, ajustes=aj))
             nuevos.append(aid)
         else:
-            archivos[f"{hermes.HOME}/profiles/{aid}/SOUL.md"] = soul  # barato: siempre al día
+            archivos[f"{hermes.HOME}/agentes/{aid}/SOUL.md"] = soul  # barato: siempre al día
             nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)
             if nuevo_cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
-                archivos[f"{hermes.HOME}/profiles/{aid}/config.yaml"] = nuevo_cfg
+                archivos[f"{hermes.HOME}/agentes/{aid}/config.yaml"] = nuevo_cfg
                 reiniciados.append(aid)
             if m["version_token"] != t["version"]:
-                archivos[f"{hermes.HOME}/profiles/{aid}/auth.json"] = auth
+                archivos[f"{hermes.HOME}/agentes/{aid}/auth.json"] = auth
                 if claude_json:
-                    archivos[f"{hermes.HOME}/profiles/{aid}/.anthropic_oauth.json"] = claude_json
+                    archivos[f"{hermes.HOME}/agentes/{aid}/.anthropic_oauth.json"] = claude_json
         configs_nuevos[aid] = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)
     archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
+    # Los perfiles viven en /opt/data/agentes/<id>, NO en /opt/data/profiles/<id>: con esa ruta Hermes
+    # toma /opt/data como raíz y cada gateway corre el cron de TODOS los perfiles (rutinas repetidas).
+    # Perfiles de agentes que ya no existen (borrados con la máquina apagada): fuera.
+    vivos = {str(a["id"]) for a in await db.todos("select id from agente where tenant_id = $1", tenant)}
+    codigo_ls, salida_ls, _ = await prov.ejecutar(m["referencia"], ["ls", f"{hermes.HOME}/agentes"], timeout=15)
+    if codigo_ls == 0:
+        for nombre in salida_ls.split():
+            if re.fullmatch(r"[0-9a-f-]{36}", nombre) and nombre not in vivos:
+                borrar.append(f"{hermes.HOME}/agentes/{nombre}")
     archivos[f"{hermes.HOME}/zona_horaria"] = (await db.uno("select zona_horaria from tenant where id = $1", tenant))["zona_horaria"] or "America/Mexico_City"
     codigo, salida, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
     log.info("sincronizar %s: %d archivos, exit %s, err=%s", tenant, len(archivos), codigo, err[-200:])
@@ -829,7 +838,7 @@ async def borrar_agente(tenant: str, agente_id: str) -> None:
     if (await prov.obtener(m["referencia"])).encendida:
         quedan = {str(a["id"]): a["pantalla"] for a in await _agentes(tenant) if str(a["id"]) != agente_id and a["pantalla"]}
         archivos = {f"{hermes.HOME}/escritorios.json": hermes.escritorios_json(quedan)}
-        await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar=[f"{hermes.HOME}/profiles/{agente_id}"]), timeout=60)
+        await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar=[f"{hermes.HOME}/agentes/{agente_id}"]), timeout=60)
     await db.ejecutar("update maquina_negocio set perfiles = array_remove(perfiles, $2), configs = configs - $2 where tenant_id = $1", tenant, agente_id)
 
 
@@ -899,7 +908,7 @@ async def _hermes_cli(tenant: str, agente_id: str, args: str, timeout: int = 90)
     if tu:  # corre en la Mac del dueño y está conectada; si no, va a su respaldo en Dimia
         return await tu.ejecutar(args, timeout)
     m = await asegurar_maquina(tenant)
-    home = f"{hermes.HOME}/profiles/{agente_id}"
+    home = f"{hermes.HOME}/agentes/{agente_id}"
     cmd = ["su", "-s", "/bin/sh", "hermes", "-c", f"cd /opt/hermes && HERMES_HOME={home} /opt/hermes/.venv/bin/hermes {args}"]
     return await proveedor().ejecutar(m["referencia"], cmd, timeout=timeout)
 
@@ -913,7 +922,7 @@ async def skills_del_agente(tenant: str, agente_id: str) -> dict:
     lista += [{"clave": r["clave"], "nombre": r["clave"].rsplit("/", 1)[-1], "detalle": "", "origen": "hub"} for r in hub]
     m = await maquina(tenant)
     if m and (await proveedor().obtener(m["referencia"])).encendida:
-        home = f"{hermes.HOME}/profiles/{agente_id}/skills"
+        home = f"{hermes.HOME}/agentes/{agente_id}/skills"
         # Las que el agente escribió él mismo: están en su carpeta y no vienen con Hermes (/opt/hermes/skills).
         codigo, salida, _ = await proveedor().ejecutar(m["referencia"], ["sh", "-c",
             f"cd {home} 2>/dev/null && find . -mindepth 2 -maxdepth 3 -name SKILL.md -not -path './dimia/*' -not -path './.hub/*' | sed 's|^./||; s|/SKILL.md$||' | while read r; do [ -e /opt/hermes/skills/$r/SKILL.md ] || echo $r; done"], timeout=20)
@@ -959,5 +968,5 @@ async def quitar_skill(tenant: str, agente_id: str, clave: str, origen: str) -> 
         return "Nombre inválido."
     m = await maquina(tenant)
     if m:
-        await proveedor().ejecutar(m["referencia"], hermes.comando_escribir({}, borrar=[f"{hermes.HOME}/profiles/{agente_id}/skills/{clave}"]), timeout=30)
+        await proveedor().ejecutar(m["referencia"], hermes.comando_escribir({}, borrar=[f"{hermes.HOME}/agentes/{agente_id}/skills/{clave}"]), timeout=30)
     return None

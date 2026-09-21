@@ -20,7 +20,7 @@ PROVEEDOR_MAQUINAS = os.environ.get("PROVEEDOR_MAQUINAS", "fly")
 FLY_API_TOKEN = os.environ.get("FLY_API_TOKEN", "")
 FLY_APP_CEREBROS = os.environ.get("FLY_APP_CEREBROS", "dimia-cerebros")
 FLY_REGION = os.environ.get("FLY_REGION", "dfw")
-HERMES_IMAGEN = os.environ.get("HERMES_IMAGEN", "registry.fly.io/dimia-cerebros:hermes-v11")  # imagen/ : Hermes + pantallas
+HERMES_IMAGEN = os.environ.get("HERMES_IMAGEN", "registry.fly.io/dimia-cerebros:hermes-v12")  # imagen/ : Hermes + pantallas
 # Cuatro niveles; Jev elige uno por mensaje. Ids tal como los publica el catálogo de Codex de la cuenta
 # (luna «fast and affordable», terra «balanced», sol «reliable agentic workhorse», astra «most capable»).
 MODELOS_CODEX = {"ligero": "gpt-5.6-luna", "rapido": "gpt-5.6-terra", "fuerte": "gpt-5.6-sol", "profundo": "gpt-6-astra"}
