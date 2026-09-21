@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 import asyncio
+from contextlib import suppress
 import re
 import time
 
@@ -471,13 +472,29 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str, ruta: str | Non
     _trabajos[agente_id] = t
 
     async def correr():
-        try:
-            async for e in _turno(tenant, agente_id, texto, ruta, adjuntos):
-                await t.publicar(e)
-        except Exception:  # noqa: BLE001
-            log.exception("turno %s/%s", tenant, agente_id)
-            await t.publicar({"evento": "error", "texto": "La máquina del agente no respondió. Intente de nuevo en un momento."})
-        finally:
+        intentos = 0
+        while True:
+            try:
+                async for e in _turno(tenant, agente_id, texto, ruta, adjuntos):
+                    await t.publicar(e)
+                break
+            except (httpx.TransportError, httpx.RemoteProtocolError) as e:
+                # Se cortó la conexión con el Hermes a media respuesta (la máquina se reinició
+                # por una actualización o un cambio de tamaño): se espera a que vuelva y se
+                # reintenta el mismo mensaje una vez, sin que el dueño lo tenga que repetir.
+                intentos += 1
+                if intentos > 1:
+                    log.warning("turno %s/%s: %s (sin más reintentos)", tenant, agente_id, e)
+                    await _fallo(t, "Se cortó la conexión con mi computadora a media respuesta y no logré retomarla. Vuelva a mandar el mensaje.")
+                    break
+                log.info("turno %s/%s se cortó (%s); reintentando", tenant, agente_id, e)
+                await t.publicar({"evento": "herramienta", "texto": "reinicio", "detalle": "mi computadora se reinició; retomo"})
+                await asyncio.sleep(5)
+            except Exception:  # noqa: BLE001
+                log.exception("turno %s/%s", tenant, agente_id)
+                await _fallo(t, "La máquina del agente no respondió. Intente de nuevo en un momento.")
+                break
+        if True:
             await t.cerrar()
             siguiente = _colas.get(agente_id) or []
             if siguiente:  # lo que el dueño mandó mientras trabajaba: sale como turno nuevo, en orden
@@ -485,6 +502,12 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str, ruta: str | Non
                 if not siguiente:
                     _colas.pop(agente_id, None)
                 await iniciar_turno(tenant, agente_id, texto2, ruta2, adj2)
+
+    async def _fallo(t: Trabajo, texto_error: str) -> None:
+        """El fallo queda en el hilo (y en la base) para que se vea aunque el dueño ya no esté mirando."""
+        await t.publicar({"evento": "error", "texto": texto_error})
+        with suppress(Exception):
+            await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'agente', $3)", tenant, agente_id, texto_error)
 
     asyncio.create_task(correr())
     return t
@@ -604,10 +627,11 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
             yield {"evento": "error", "texto": "La máquina del agente rechazó la llave; se volverá a sincronizar."}
             await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)
             return
-        if r0.status_code == 404:  # sesión perdida (disco nuevo, reinicio): abrir otra
+        if r0.status_code == 404:  # sesión perdida (disco nuevo, reinicio): abrir otra y reintentar aquí mismo
             await db.ejecutar(f"update agente set {_columna_sesion(m)} = null where id = $1", agente["id"])
-            yield {"evento": "error", "texto": "Se perdió el hilo anterior; vuelva a enviar el mensaje."}
-            return
+            agente = dict(agente) | {_columna_sesion(m): None}
+            sid = await _sesion(tenant, agente, m, llave, http)
+            r0 = await http.post(_url(m, agente["pantalla"], "/v1/runs"), headers={"Authorization": f"Bearer {llave}"}, json={"input": _entrada(texto, adjuntos), "session_id": sid, "model": nivel})
         if r0.status_code >= 400:
             yield {"evento": "error", "texto": f"El agente no aceptó el mensaje ({r0.status_code})."}
             return

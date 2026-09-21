@@ -42,6 +42,7 @@ const HERRAMIENTAS: [RegExp, { grupo: string; haciendo: string; hizo: string }][
   [/^todo/, { grupo: "Plan", haciendo: "organizando el plan", hizo: "Organizó el plan" }],
   [/^delegate_task/, { grupo: "Ayudantes", haciendo: "delegando tareas", hizo: "Delegó tareas" }],
   [/^vision/, { grupo: "Imagen", haciendo: "mirando una imagen", hizo: "Miró una imagen" }],
+  [/^reinicio$/, { grupo: "Reinicio", haciendo: "retomando tras reiniciar su computadora", hizo: "Se reinició su computadora y retomó" }],
 ];
 
 export function describir(herramienta: string): { grupo: string; haciendo: string; hizo: string } {
