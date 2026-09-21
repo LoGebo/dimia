@@ -275,7 +275,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
     instalados = set(m["perfiles"])
     nuevos: list[str] = []
     pantallas: dict[str, int] = {}
-    usadas = {a["pantalla"] for a in agentes if a["pantalla"]}
+    usadas = {f["pantalla"] for f in await db.todos("select pantalla from agente where tenant_id = $1 and pantalla is not null", tenant)}  # también los locales: la pantalla es única
     borrar: list[str] = []
     configs_nuevos: dict[str, str] = {}
     configs = m["configs"] if isinstance(m["configs"], dict) else json.loads(m["configs"] or "{}")  # asyncpg entrega jsonb como texto
@@ -427,7 +427,7 @@ def seguir(agente_id: str):
     return t.seguir() if t else None
 
 
-async def iniciar_turno(tenant: str, agente_id: str, texto: str) -> Trabajo | None:
+async def iniciar_turno(tenant: str, agente_id: str, texto: str, ruta: str | None = None, adjuntos: list[dict] | None = None) -> Trabajo | None:
     """Arranca el turno en segundo plano; None si ese agente ya está trabajando."""
     if trabajando(agente_id):
         return None
@@ -436,7 +436,7 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str) -> Trabajo | No
 
     async def correr():
         try:
-            async for e in _turno(tenant, agente_id, texto):
+            async for e in _turno(tenant, agente_id, texto, ruta, adjuntos):
                 await t.publicar(e)
         except Exception:  # noqa: BLE001
             log.exception("turno %s/%s", tenant, agente_id)
@@ -448,7 +448,47 @@ async def iniciar_turno(tenant: str, agente_id: str, texto: str) -> Trabajo | No
     return t
 
 
-async def _turno(tenant: str, agente_id: str, texto: str):
+def modelo_de(cerebro: str, nivel: str) -> str:
+    if cerebro == "claude":
+        return config.MODELO_CLAUDE_RAPIDO if nivel == "rapido" else config.MODELO_CLAUDE
+    return config.MODELO_CODEX_RAPIDO if nivel == "rapido" else config.MODELO_CODEX
+
+
+async def ruta_en_vivo(tenant: str, agente_id: str, texto: str, con_imagen: bool = False) -> dict:
+    """Lo que el compositor enseña mientras el dueño escribe: qué modelo correría y con qué
+    seguridad lo dice Jev. Mismo criterio que el turno; si Jev no contesta, «automático»."""
+    a = await db.uno("select trabajo, ajustes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        return {"ruta": None}
+    cual = await cerebro(tenant)
+    aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
+    if aj.get("modelo") in ("rapido", "fuerte"):
+        return {"ruta": aj["modelo"], "modelo": modelo_de(cual, aj["modelo"]), "confianza": None, "fijo": True}
+    previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente_id)
+    historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
+    nivel, d = await jev.decidir(a["trabajo"], historial, texto + (" [trae imagen]" if con_imagen else ""))
+    if not d:
+        return {"ruta": "fuerte", "modelo": modelo_de(cual, "fuerte"), "confianza": None, "fijo": False}
+    probs = d.get("answers", {}).get("nivel", {}).get("probabilities", {})
+    return {"ruta": nivel, "modelo": modelo_de(cual, nivel), "confianza": round(float(probs.get(nivel, 0)), 2), "fijo": False, "ms": d.get("_ms")}
+
+
+def _entrada(texto: str, adjuntos: list[dict] | None):
+    """El input del run: texto plano, o partes texto + imágenes (data URL) cuando hay
+    capturas. Los archivos de texto van pegados al mensaje con su nombre."""
+    texto_final = texto
+    imagenes = []
+    for ad in adjuntos or []:
+        if ad.get("tipo") == "imagen" and str(ad.get("datos", "")).startswith("data:image/"):
+            imagenes.append(ad["datos"])
+        elif ad.get("tipo") == "texto":
+            texto_final += f"\n\n--- archivo {ad.get('nombre', '')} ---\n{str(ad.get('contenido', ''))[:60000]}"
+    if not imagenes:
+        return texto_final
+    return [{"role": "user", "content": [{"type": "text", "text": texto_final}, *({"type": "image_url", "image_url": {"url": u}} for u in imagenes)]}]
+
+
+async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = None, adjuntos: list[dict] | None = None):
     """Genera eventos {evento, texto}. Un solo lugar traduce los fallos a español."""
     agente = await db.uno("select id, nombre, llave, sesion_hermes, pantalla, donde from agente where id = $1 and tenant_id = $2", agente_id, tenant)
     if not agente:
@@ -475,19 +515,22 @@ async def _turno(tenant: str, agente_id: str, texto: str):
     aj = fa["ajustes"] if isinstance(fa["ajustes"], dict) else json.loads(fa["ajustes"] or "{}")
     if aj.get("modelo") in ("rapido", "fuerte"):  # el dueño fijó el modelo: Jev no decide
         nivel, decision = aj["modelo"], None
+    elif ruta in ("rapido", "fuerte"):  # lo que el compositor ya decidió (Jev en vivo o a mano)
+        nivel, decision = ruta, {"origen": "compositor"}
     else:
         nivel, decision = await jev.decidir(fa["trabajo"], historial, texto)
     inicio = time.perf_counter()
     pasos = 0
     ok = False
-    await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], texto)
+    nombres = [f"[{ad.get('tipo')}: {ad.get('nombre', '')}]" for ad in adjuntos or []]
+    await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], (texto + ("\n" + " ".join(nombres) if nombres else "")))
     llave = vault.descifrar(agente["llave"] or (await db.uno("select llave from agente where id = $1", agente["id"]))["llave"])
     respuesta: list[str] = []
     async with http:
         sid = await _sesion(tenant, agente, m, llave, http)
         # Runs API (no el chat de sesión): es la única superficie donde las aprobaciones
         # (approval.request) llegan al stream y se resuelven por /v1/runs/{id}/approval.
-        r0 = await http.post(_url(m, agente["pantalla"], "/v1/runs"), headers={"Authorization": f"Bearer {llave}"}, json={"input": texto, "session_id": sid, "model": nivel})
+        r0 = await http.post(_url(m, agente["pantalla"], "/v1/runs"), headers={"Authorization": f"Bearer {llave}"}, json={"input": _entrada(texto, adjuntos), "session_id": sid, "model": nivel})
         if r0.status_code == 401:
             yield {"evento": "error", "texto": "La máquina del agente rechazó la llave; se volverá a sincronizar."}
             await db.ejecutar("update maquina_negocio set perfiles = '{}' where tenant_id = $1", tenant)
@@ -548,7 +591,7 @@ async def _turno(tenant: str, agente_id: str, texto: str):
                         yield {"evento": "fin", "texto": ""}
     await db.ejecutar(
         "insert into agente_turno (tenant_id, agente_id, nivel, modelo, jev, pasos, ms, ok) values ($1, $2, $3, $4, $5, $6, $7, $8)",
-        tenant, agente["id"], nivel, config.MODELO_CODEX_RAPIDO if nivel == "rapido" else config.MODELO_CODEX,
+        tenant, agente["id"], nivel, modelo_de(await cerebro(tenant), nivel),
         json.dumps(decision) if decision else None, pasos, int((time.perf_counter() - inicio) * 1000), ok)
     if respuesta:
         await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'agente', $3)", tenant, agente["id"], "".join(respuesta))

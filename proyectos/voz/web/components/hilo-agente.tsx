@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Monitor, PanelRightOpen, Plus } from "lucide-react";
+import { Monitor, PanelRightOpen, Plus } from "lucide-react";
+import { Compositor, type Adjunto, type Envio } from "@/components/compositor";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { actualizarAgente, agenteTrabajando, aprobarAccion, estadoCodex, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
 import { Formato } from "@/components/formato";
@@ -13,6 +14,7 @@ type Mensaje = {
   id: number;
   de: "agente" | "yo";
   texto: string;
+  adjuntos?: { tipo: "imagen" | "texto"; nombre: string; datos?: string }[];
   opciones?: Opcion[];
   elegida?: string;
   pasos?: { herramienta: string; detalle: string }[];
@@ -54,12 +56,10 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   const sinTrabajo = !agente.trabajo;
   const conCerebro = !sinTrabajo; // agente con trabajo: vive en su Hermes
   const [pideCodex, setPideCodex] = useState(false);
-  const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
   const [haciendo, setHaciendo] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
-  const campo = useRef<HTMLTextAreaElement>(null);
 
   const saludo = (): Mensaje =>
     recepcion
@@ -97,7 +97,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
   }, [agente.id]);
 
   useEffect(() => {
-    try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40))); } catch {}
+    try { if (mensajes.length) sessionStorage.setItem(clave(negocio, agente.id), JSON.stringify(mensajes.slice(-40).map((m) => (m.adjuntos ? { ...m, adjuntos: m.adjuntos.map((a) => ({ tipo: a.tipo, nombre: a.nombre })) } : m)))); } catch {}
     lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
   }, [mensajes, negocio, agente.id]);
 
@@ -149,8 +149,9 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     }
   }
 
-  async function turnoCerebro(t: string) {
-    const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t }) });
+  async function turnoCerebro(t: string, extra?: { ruta?: "rapido" | "fuerte"; adjuntos?: Adjunto[] }) {
+    const adjuntos = (extra?.adjuntos ?? []).map((a) => (a.tipo === "imagen" ? { tipo: "imagen", nombre: a.nombre, datos: a.datos } : { tipo: "texto", nombre: a.nombre, contenido: a.contenido }));
+    const r = await fetch(`/api/agentes/${agente.id}/turno`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: t, ruta: extra?.ruta, adjuntos: adjuntos.length ? adjuntos : undefined }) });
     await leerEventos(r);
   }
 
@@ -171,7 +172,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     setMensajes((m) => m.map((x) => (x.id === idMensaje ? { ...x, elegida: o.letra } : x)));
     if (!o.trabajo) {
       setMensajes((m) => [...m, { id: Date.now(), de: "yo", texto: o.titulo }, { id: Date.now() + 1, de: "agente", texto: "Va. Dígamelo en una frase: ¿qué quiere que haga?" }]);
-      campo.current?.focus();
+
       return;
     }
     setMensajes((m) => [...m, { id: Date.now(), de: "yo", texto: o.titulo }]);
@@ -180,11 +181,11 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     router.refresh();
   }
 
-  async function preguntar(pregunta: string) {
+  async function preguntar(pregunta: string, extra?: { ruta?: "rapido" | "fuerte"; adjuntos?: Adjunto[] }) {
     const t = pregunta.trim();
-    if (!t || escribiendo) return;
-    setTexto("");
-    const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t }];
+    if ((!t && !extra?.adjuntos?.length) || escribiendo) return;
+    const adj = (extra?.adjuntos ?? []).map((a) => ({ tipo: a.tipo, nombre: a.nombre, datos: a.datos }));
+    const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t, adjuntos: adj.length ? adj : undefined }];
     setMensajes(propios);
 
     if (conCerebro) {
@@ -197,7 +198,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         return;
       }
       setEscribiendo(true);
-      try { await turnoCerebro(t); } finally { setEscribiendo(false); }
+      try { await turnoCerebro(t, extra); } finally { setEscribiendo(false); }
       return;
     }
 
@@ -234,11 +235,6 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     else if (decision === "aprobar") setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: "Aprobado." } : x)));
   }
 
-  function enviar(e: FormEvent) {
-    e.preventDefault();
-    void preguntar(texto);
-  }
-
   const hora = new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date());
 
   return (
@@ -260,6 +256,16 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         <p className="text-center text-[12px] text-tinta-3">Hoy {hora}</p>
         {mensajes.map((m) => (
           <article key={m.id} className={`flex flex-col gap-2 ${m.de === "yo" ? "items-end" : "items-start"}`}>
+            {m.adjuntos?.length ? (
+              <ul className="flex max-w-[72%] flex-wrap justify-end gap-1.5">
+                {m.adjuntos.map((a, i) => a.tipo === "imagen" && a.datos ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <li key={i}><img src={a.datos} alt={a.nombre} className="max-h-40 rounded-xl border border-linea object-cover" /></li>
+                ) : (
+                  <li key={i} className="rounded-lg bg-linea px-2.5 py-1 text-[12.5px] text-tinta-2">{a.nombre}</li>
+                ))}
+              </ul>
+            ) : null}
             {m.texto ? (
               <div className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${m.de === "yo" ? "rounded-br-md bg-acento text-acento-tinta whitespace-pre-wrap" : "rounded-bl-md bg-linea text-tinta"}`}>
                 {m.de === "yo" ? m.texto : <Formato texto={m.texto} />}
@@ -330,24 +336,7 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
         ) : null}
       </div>
 
-      <form onSubmit={enviar} className="flex-none px-6 pt-2 pb-5">
-        <div className="flex items-end gap-2 rounded-[26px] border border-linea bg-panel px-2 py-2 transition-[border-color,box-shadow] duration-150 focus-within:border-acento focus-within:ring-2 focus-within:ring-acento/15">
-          <button type="button" aria-label="Adjuntar" className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-linea text-tinta-2 transition-colors duration-150 hover:text-tinta"><Plus size={20} /></button>
-          <textarea
-            ref={campo}
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void preguntar(texto); } }}
-            rows={1}
-            placeholder={`Mensaje a ${agente.nombre}`}
-            aria-label="Mensaje"
-            className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-snug text-tinta outline-none placeholder:text-tinta-3"
-          />
-          <button type="submit" disabled={!texto.trim() || escribiendo} aria-label="Enviar" className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-acento text-acento-tinta transition-[filter,transform] duration-100 hover:brightness-110 active:scale-95 disabled:bg-linea disabled:text-tinta-3">
-            <ArrowUp size={18} strokeWidth={2.5} />
-          </button>
-        </div>
-      </form>
+      <Compositor agenteId={agente.id} nombre={agente.nombre} ocupado={escribiendo} conJev={conCerebro} enviar={(e: Envio) => { void preguntar(e.texto, { ruta: e.ruta, adjuntos: e.adjuntos }); }} />
     </section>
   );
 }

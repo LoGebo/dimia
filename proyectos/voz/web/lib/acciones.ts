@@ -1828,3 +1828,12 @@ export async function dondeAgente(agenteId: string, donde: "dimia" | "local"): P
   if (!r.ok) { const d = await r.json().catch(() => ({})); return { donde: "dimia", conectada: false, host: null, visto: null, comando: null, error: d.detail ?? "No se pudo cambiar." }; }
   return r.json();
 }
+
+// --- Compositor: Jev en vivo ---
+export type RutaBorrador = { ruta: "rapido" | "fuerte" | null; modelo?: string; confianza?: number | null; fijo?: boolean; ms?: number };
+export async function rutaBorrador(agenteId: string, texto: string, conImagen: boolean): Promise<RutaBorrador> {
+  try {
+    const r = await orquestador(`/agentes/${agenteId}/ruta`, { method: "POST", body: JSON.stringify({ texto, con_imagen: conImagen }) });
+    return r.ok ? r.json() : { ruta: "fuerte", confianza: null };
+  } catch { return { ruta: "fuerte", confianza: null }; }
+}

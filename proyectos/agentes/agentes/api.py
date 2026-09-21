@@ -172,15 +172,33 @@ async def codex_quitar(tenant: str = Depends(negocio_id)):
 
 class Turno(BaseModel):
     texto: str
+    ruta: str | None = None            # rapido | fuerte: lo que el compositor decidió (Jev en vivo o a mano)
+    adjuntos: list[dict] | None = None  # [{tipo: imagen, nombre, datos: data URL} | {tipo: texto, nombre, contenido}]
+
+
+class Borrador(BaseModel):
+    texto: str
+    con_imagen: bool = False
+
+
+@app.post("/agentes/{agente_id}/ruta")
+async def ruta_borrador(agente_id: uuid.UUID, cuerpo: Borrador, tenant: str = Depends(negocio_id)):
+    """Jev en vivo: el modelo que correría este borrador."""
+    return await negocio.ruta_en_vivo(tenant, str(agente_id), cuerpo.texto[:4000], cuerpo.con_imagen)
 
 
 @app.post("/agentes/{agente_id}/turno")
 async def turno(agente_id: uuid.UUID, cuerpo: Turno, tenant: str = Depends(negocio_id)):
     texto = cuerpo.texto.strip()
-    if not texto or len(texto) > 8000:
+    if (not texto and not cuerpo.adjuntos) or len(texto) > 8000:
         raise HTTPException(400, "Mensaje vacío o demasiado largo")
+    adjuntos = (cuerpo.adjuntos or [])[:6]
+    if sum(len(str(a.get("datos") or a.get("contenido") or "")) for a in adjuntos) > 12_000_000:
+        raise HTTPException(413, "Adjuntos demasiado grandes")
+    if not texto:
+        texto = "Vea lo adjunto." if any(a.get("tipo") == "imagen" for a in adjuntos) else "Lea lo adjunto."
 
-    t = await negocio.iniciar_turno(tenant, str(agente_id), texto)
+    t = await negocio.iniciar_turno(tenant, str(agente_id), texto, cuerpo.ruta, adjuntos or None)
     if t is None:
         raise HTTPException(409, "El agente todavía está con el mensaje anterior.")
     return _sse(t.seguir())
