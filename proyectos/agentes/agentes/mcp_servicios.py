@@ -21,7 +21,7 @@ async def _tenant(ctx: Context) -> str:
     token = (ctx.headers or {}).get("authorization", "").removeprefix("Bearer ").strip()
     f = await db.uno("select tenant_id from agente where mcp_token = $1 and mcp_token is not null", token) if token else None
     if not f:
-        raise MCPError("Token de agente inválido")
+        raise MCPError(-32000, "Token de agente inválido")
     return str(f["tenant_id"])
 
 
@@ -38,11 +38,11 @@ google = MCPServer("google", instructions="Gmail, Calendar y Drive de la cuenta 
 async def _g(ctx: Context, metodo: str, url: str, **kw) -> dict:
     t = await conexiones.google_token(await _tenant(ctx))
     if not t:
-        raise MCPError("Google no está conectado; el dueño debe conectarlo en Marketplace.")
+        raise MCPError(-32000, "Google no está conectado; el dueño debe conectarlo en Marketplace.")
     async with httpx.AsyncClient(timeout=30) as c:
         r = await c.request(metodo, url, headers={"Authorization": f"Bearer {t}"}, **kw)
     if r.status_code >= 400:
-        raise MCPError(f"Google respondió {r.status_code}: {r.text[:200]}")
+        raise MCPError(-32000, f"Google respondió {r.status_code}: {r.text[:200]}")
     return r.json() if r.content else {}
 
 
@@ -118,7 +118,7 @@ async def drive_leer(ctx: Context, id: str) -> str:
         else:
             r = await c.get(f"https://www.googleapis.com/drive/v3/files/{id}", params={"alt": "media"}, headers={"Authorization": f"Bearer {t}"})
     if r.status_code >= 400:
-        raise MCPError(f"Drive respondió {r.status_code}")
+        raise MCPError(-32000, f"Drive respondió {r.status_code}")
     return f"{meta.get('name')}\n\n{r.text[:8000]}"
 
 
@@ -130,11 +130,11 @@ notion = MCPServer("notion", instructions="Páginas y bases de datos de Notion q
 async def _n(ctx: Context, metodo: str, ruta: str, **kw) -> dict:
     c = await conexiones.leer(await _tenant(ctx), "notion")
     if not c:
-        raise MCPError("Notion no está conectado.")
+        raise MCPError(-32000, "Notion no está conectado.")
     async with httpx.AsyncClient(timeout=30) as http:
         r = await http.request(metodo, f"https://api.notion.com/v1{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Notion-Version": "2022-06-28"}, **kw)
     if r.status_code >= 400:
-        raise MCPError(f"Notion respondió {r.status_code}: {r.text[:200]}")
+        raise MCPError(-32000, f"Notion respondió {r.status_code}: {r.text[:200]}")
     return r.json()
 
 
@@ -177,12 +177,12 @@ slack = MCPServer("slack", instructions="Canales del Slack del negocio. Publique
 async def _s(ctx: Context, metodo: str, **kw) -> dict:
     c = await conexiones.leer(await _tenant(ctx), "slack")
     if not c:
-        raise MCPError("Slack no está conectado.")
+        raise MCPError(-32000, "Slack no está conectado.")
     async with httpx.AsyncClient(timeout=30) as http:
         r = await http.post(f"https://slack.com/api/{metodo}", headers={"Authorization": f"Bearer {c['token']}"}, **kw)
     d = r.json()
     if not d.get("ok"):
-        raise MCPError(f"Slack: {d.get('error')}")
+        raise MCPError(-32000, f"Slack: {d.get('error')}")
     return d
 
 
@@ -214,11 +214,11 @@ github = MCPServer("github", instructions="Repositorios de GitHub del negocio. P
 async def _gh(ctx: Context, metodo: str, ruta: str, **kw) -> dict | list:
     c = await conexiones.leer(await _tenant(ctx), "github")
     if not c:
-        raise MCPError("GitHub no está conectado.")
+        raise MCPError(-32000, "GitHub no está conectado.")
     async with httpx.AsyncClient(timeout=30) as http:
         r = await http.request(metodo, f"https://api.github.com{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Accept": "application/vnd.github+json"}, **kw)
     if r.status_code >= 400:
-        raise MCPError(f"GitHub respondió {r.status_code}: {r.text[:200]}")
+        raise MCPError(-32000, f"GitHub respondió {r.status_code}: {r.text[:200]}")
     return r.json() if r.content else {}
 
 

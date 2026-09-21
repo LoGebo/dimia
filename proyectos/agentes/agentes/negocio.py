@@ -223,8 +223,9 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         inst = await db.todos("select tipo, clave from agente_instalacion where agente_id = $1", a["id"])
         mcp: dict | None = None
         integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
+        integraciones.add("dimia")  # todo agente conoce su negocio
         if a["rol"] == "recepcion":
-            integraciones |= {"dimia", "whatsapp"}  # Recepción siempre trae la agenda y la línea del negocio
+            integraciones.add("whatsapp")  # Recepción además escribe por la línea del negocio
         cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
         if integraciones & {"dimia", "whatsapp"} or cuentas:
             token = a["mcp_token"]

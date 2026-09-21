@@ -1,7 +1,10 @@
 """Dimia como integración: las herramientas del negocio (citas, clientes,
 cobros, servicios) para los agentes, por MCP. Cada agente entra con su propio
 token y solo ve su negocio. Solo lectura por ahora."""
+import json
+import re
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 from mcp.server.mcpserver import Context, MCPServer
 from mcp_types import ToolAnnotations
@@ -18,7 +21,7 @@ async def _tenant(ctx: Context) -> str:
     token = (ctx.headers or {}).get("authorization", "").removeprefix("Bearer ").strip()
     f = await db.uno("select tenant_id from agente where mcp_token = $1 and mcp_token is not null", token) if token else None
     if not f:
-        raise MCPError("Token de agente inválido")
+        raise MCPError(-32000, "Token de agente inválido")
     return str(f["tenant_id"])
 
 
@@ -84,6 +87,49 @@ async def servicios(ctx: Context) -> str:
     t = await _tenant(ctx)
     filas = await db.todos("select nombre, duracion_min, precio from service where tenant_id = $1 and activo order by nombre", t)
     return "\n".join(f"{f['nombre']} · {f['duracion_min']} min · ${f['precio'] or 0:,.0f}" for f in filas) or "Sin servicios dados de alta."
+
+
+# --- SQL libre de solo lectura sobre el esquema `negocio` (vistas filtradas por tenant) ---
+
+_SQL_PERMITIDO = re.compile(r"^\s*(select|with)\b", re.I)
+
+
+def _celda(v):
+    if isinstance(v, (datetime, date)):
+        return v.isoformat()
+    if isinstance(v, Decimal):
+        return float(v)
+    return v
+
+
+@servidor.tool(annotations=SOLO_LECTURA, name="esquema", description="Tablas y columnas que puede consultar con `consultar` (SQL). Llámela antes de escribir una consulta.")
+async def esquema(ctx: Context) -> str:
+    await _tenant(ctx)
+    filas = await db.todos("""select table_name, string_agg(column_name || ' ' || data_type, ', ' order by ordinal_position) as cols
+                              from information_schema.columns where table_schema = 'negocio' group by table_name order by 1""")
+    return "\n".join(f"{f['table_name']}: {f['cols']}" for f in filas)
+
+
+@servidor.tool(annotations=SOLO_LECTURA, name="consultar", description="Corre una consulta SQL (PostgreSQL) de solo lectura sobre los datos del negocio: clientes, citas, servicios, recursos, horarios, llamadas, conversaciones, mensajes, pagos, pedidos, catalogo, prospectos, resenas, campanas, eventos, conocimiento. Solo SELECT; máximo 200 filas; fechas en la zona del negocio. Vea `esquema` primero.")
+async def consultar(ctx: Context, sql: str) -> str:
+    t = await _tenant(ctx)
+    if not _SQL_PERMITIDO.match(sql) or ";" in sql.rstrip().rstrip(";"):
+        raise MCPError(-32000, "Solo se permite una consulta SELECT.")
+    zona = (await db.uno("select zona_horaria from tenant where id = $1", t))["zona_horaria"]
+    async with (await db.pool()).acquire() as c:
+        async with c.transaction(readonly=True):
+            # El rol solo ve el esquema `negocio`; las vistas filtran por app.tenant.
+            await c.execute("set local role agente_lector")
+            await c.execute("set local search_path = negocio")
+            await c.execute("set local statement_timeout = 5000")
+            await c.execute("select set_config('app.tenant', $1, true), set_config('timezone', $2, true)", t, zona)
+            try:
+                filas = await c.fetch(f"select * from ({sql.rstrip().rstrip(';')}) q limit 200")
+            except Exception as e:  # noqa: BLE001 — el error de Postgres es la respuesta útil para el modelo
+                raise MCPError(-32000, f"Postgres: {str(e)[:300]}") from e
+    if not filas:
+        return "Sin filas."
+    return json.dumps([{k: _celda(v) for k, v in f.items()} for f in filas], ensure_ascii=False, default=str)[:20000]
 
 
 def app():
