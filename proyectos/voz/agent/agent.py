@@ -209,6 +209,11 @@ class Recepcionista(Agent):
             return "Hubo un problema tecnico. Discupate y ofrece transferir."
 
         if not res.get("ok"):
+            if res.get("error") in ("en_el_pasado", "fuera_de_horario"):
+                return (
+                    "Ese horario no se puede apartar (ya pasó o está fuera del horario). "
+                    "Vuelve a llamar consultar_disponibilidad y ofrece uno de los que devuelva."
+                )
             if res.get("error") == "slot_tomado":
                 return (
                     "Ese horario se acaba de apartar. Discupate rapido y vuelve "

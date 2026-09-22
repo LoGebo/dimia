@@ -1170,6 +1170,8 @@ export async function crearReserva(_previo: Estado, fd: FormData): Promise<Estad
       slot_tomado: "Ese horario acaba de ocuparse.",
       recurso_invalido: "El recurso no tiene capacidad para esas personas.",
       servicio_invalido: "El servicio no existe o está inactivo.",
+      en_el_pasado: "Ese horario ya pasó.",
+      fuera_de_horario: "Ese horario está fuera del horario de atención de ese recurso.",
     };
     return { error: mensajes[resultado.error ?? ""] ?? "No se pudo reservar." };
   }

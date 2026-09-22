@@ -373,6 +373,11 @@ class Herramientas:
             notas=str(argumentos.get("notas") or "") or None,
         )
         if not resultado.get("ok"):
+            if resultado.get("error") in ("en_el_pasado", "fuera_de_horario"):
+                return (
+                    "Ese horario no se puede apartar (ya pasó o está fuera del horario). "
+                    "Vuelve a llamar consultar_disponibilidad y ofrece uno de los que devuelva."
+                )
             if resultado.get("error") == "slot_tomado":
                 return (
                     "Ese horario se acaba de apartar. Discupate y vuelve a llamar "

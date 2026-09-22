@@ -222,7 +222,7 @@ async def enviar_whatsapp(ctx: Context, telefono: str, mensaje: str, nombre: str
     if len(digitos) == 10:
         digitos = "52" + digitos
     if not (11 <= len(digitos) <= 15) or not mensaje.strip():
-        return "Teléfono o mensaje inválido."
+        raise MCPError(-32602, "Teléfono o mensaje inválido.")  # como error, para que el agente no lo tome por éxito
     if not config.WHATSAPP_ACCESS_TOKEN or not config.WHATSAPP_PHONE_NUMBER_ID:
         return "Este negocio no tiene línea de WhatsApp configurada."
     negocio = (await db.uno("select nombre from tenant where id = $1", t))["nombre"]
