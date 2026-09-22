@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Bell } from "lucide-react";
+import { CampanaAvisos } from "@/components/campana-avisos";
 import { BuscadorGlobal, type DestinoPaleta } from "@/components/buscador-global";
 import { contadores, negocio, reservasEntre } from "@/lib/consultas";
 import { hora, isoDia, telefono } from "@/lib/formato";
@@ -43,19 +42,7 @@ export async function HerramientasGlobales() {
   return (
     <>
       <BuscadorGlobal pantallas={pantallas} citas={citas} destinoBusqueda={conAgenda ? "/agenda" : undefined} />
-      <Link
-        href={avisos.bandeja > 0 || avisos.recados === 0 ? "/bandeja" : "/recados"}
-        aria-label={pendientes > 0 ? `${pendientes} pendientes` : "Sin pendientes"}
-        title={`${avisos.bandeja} sin leer · ${avisos.recados} recados`}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-linea bg-panel text-tinta-2 transition-colors duration-100 hover:bg-panel-2 hover:text-tinta focus-visible:border-acento focus-visible:outline-none"
-      >
-        <Bell size={18} strokeWidth={1.75} aria-hidden="true" />
-        {pendientes > 0 ? (
-          <span className="numeros pop absolute -top-1.5 -right-1.5 min-w-4 rounded-md bg-acento px-1 text-center text-[10px] leading-4 font-bold text-acento-tinta">
-            {pendientes}
-          </span>
-        ) : null}
-      </Link>
+      <CampanaAvisos pendientes={pendientes} />
     </>
   );
 }

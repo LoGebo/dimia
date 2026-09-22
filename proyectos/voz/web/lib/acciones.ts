@@ -1858,3 +1858,18 @@ export async function vincularWhatsapp(agenteId: string, modo: "self-chat" | "bo
 export async function desvincularWhatsapp(agenteId: string): Promise<void> {
   await orquestador(`/agentes/${agenteId}/whatsapp`, { method: "DELETE" });
 }
+
+// --- Avisos del negocio (la campanita; la app de iOS lee la misma tabla) ---
+export type Aviso = { id: number; tipo: string; titulo: string; cuerpo: string; enlace: string | null; leido: boolean; creado: string };
+export async function avisos(): Promise<{ lista: Aviso[]; sinLeer: number }> {
+  return datos(async (q, id) => {
+    const lista = await q<Aviso>(
+      `select id, tipo, titulo, cuerpo, enlace, leido_en is not null as leido, creado::text
+         from aviso where tenant_id = $1 order by id desc limit 30`, [id]);
+    const [c] = await q<{ n: number }>(`select count(*)::int as n from aviso where tenant_id = $1 and leido_en is null`, [id]);
+    return { lista, sinLeer: c?.n ?? 0 };
+  });
+}
+export async function marcarAvisosLeidos(hastaId: number): Promise<void> {
+  await datos(async (q, id) => { await q(`update aviso set leido_en = now() where tenant_id = $1 and id <= $2 and leido_en is null`, [id, hastaId]); });
+}
