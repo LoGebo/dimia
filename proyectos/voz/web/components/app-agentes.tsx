@@ -18,7 +18,14 @@ export function AppAgentes({ agentes, grupos, negocio, children }: { agentes: Ag
   const [saltarBienvenida, setSaltar] = useState(false);
   const primeraVez = !agentes.some((a) => a.rol !== "recepcion") && !saltarBienvenida;
   // Que la computadora ya esté encendida cuando el dueño mande el primer mensaje.
-  useEffect(() => { void despertarMaquina(); }, []);
+  // La computadora se enciende cuando el dueño empieza a escribirle a un agente (no solo por abrir
+  // la pestaña): así no queda prendida de balde; el primer mensaje igual la despierta si hace falta.
+  useEffect(() => {
+    let hecho = false;
+    function escribir(e: Event) { if (hecho || !(e.target instanceof HTMLTextAreaElement)) return; hecho = true; void despertarMaquina(); }
+    document.addEventListener("focusin", escribir);
+    return () => document.removeEventListener("focusin", escribir);
+  }, []);
   const id = /^\/agentes\/([^/]+)$/.exec(ruta)?.[1];
   const esAgente = !!id && id !== "marketplace";
   // /agentes/recepcion es un alias del agente con rol recepción (existe siempre).

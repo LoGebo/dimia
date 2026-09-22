@@ -34,6 +34,14 @@ class Fly:
         r = await self.http.post(f"/apps/{self.app}/volumes", json={"name": f"d_{etiqueta}", "region": config.FLY_REGION, "size_gb": disco_gb})
         r.raise_for_status()
         volumen = r.json()["id"]
+        try:
+            return await self._crear_maquina(etiqueta, imagen, comando, entorno, cpus, memoria_mb, volumen)
+        except Exception:
+            # Sin esto cada intento fallido dejaba un volumen huérfano de 5 GB (llegaron a ser 40).
+            await self.http.delete(f"/apps/{self.app}/volumes/{volumen}")
+            raise
+
+    async def _crear_maquina(self, etiqueta, imagen, comando, entorno, cpus, memoria_mb, volumen):
         r = await self.http.post(f"/apps/{self.app}/machines", json={
             "name": f"m-{etiqueta}", "region": config.FLY_REGION,
             "config": {
@@ -43,8 +51,9 @@ class Fly:
                 "restart": {"policy": "on-failure", "max_retries": 3},
                 "auto_destroy": False,
             }})
-        r.raise_for_status()
-        return await self._esperar(r.json()["id"], "started")
+        if r.status_code >= 400:
+            raise RuntimeError(f"Fly no creó la máquina ({r.status_code}): {r.text[:300]}")
+        return await self._esperar(r.json()["id"], "started", vueltas=8)
 
     async def obtener(self, referencia):
         r = await self.http.get(f"/apps/{self.app}/machines/{referencia}")
@@ -113,9 +122,12 @@ class Fly:
         if disco:
             await self.http.delete(f"/apps/{self.app}/volumes/{disco}")
 
-    async def _esperar(self, referencia, estado, segundos=60):
-        r = await self.http.get(f"/apps/{self.app}/machines/{referencia}/wait", params={"state": estado, "timeout": segundos}, timeout=segundos + 10)
-        r.raise_for_status()
+    async def _esperar(self, referencia, estado, segundos=60, vueltas=1):
+        for vuelta in range(vueltas):  # la primera vez Fly baja la imagen (~2.5 GB): tarda varios minutos
+            r = await self.http.get(f"/apps/{self.app}/machines/{referencia}/wait", params={"state": estado, "timeout": segundos}, timeout=segundos + 10)
+            if r.status_code != 408 or vuelta == vueltas - 1:
+                r.raise_for_status()
+                break
         for _ in range(10):  # el exec y el API tardan un poco más que el estado
             m = await self.obtener(referencia)
             if m.encendida and m.direccion.startswith("[") and "None" not in m.direccion:

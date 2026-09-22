@@ -42,7 +42,7 @@ PRUEBA_ANTHROPIC_MODELO = os.environ.get("PRUEBA_ANTHROPIC_MODELO", "claude-sonn
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 PUBLICO_URL = os.environ.get("PUBLICO_URL", "https://dimia-agentes.fly.dev")  # para armar las URL de pantalla
-MINUTOS_SIN_USO = int(os.environ.get("MINUTOS_SIN_USO", "20"))
+MINUTOS_SIN_USO = int(os.environ.get("MINUTOS_SIN_USO", "5"))  # tras el último turno o de ver la pantalla; con turno en curso nunca se duerme
 
 PROHIBIDAS = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY")
 

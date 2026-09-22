@@ -559,9 +559,14 @@ async def pantalla_ws(ws: WebSocket, token: str):
                 async for dato in maquina_ws:
                     await ws.send_bytes(dato if isinstance(dato, bytes) else dato.encode())
 
-            t1, t2 = asyncio.create_task(hacia_maquina()), asyncio.create_task(hacia_navegador())
+            async def mantener():  # mientras el dueño mira la pantalla, la máquina no se duerme
+                while True:
+                    await asyncio.sleep(60)
+                    await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", d["t"])
+
+            t1, t2, t3 = asyncio.create_task(hacia_maquina()), asyncio.create_task(hacia_navegador()), asyncio.create_task(mantener())
             _, pendientes = await asyncio.wait({t1, t2}, return_when=asyncio.FIRST_COMPLETED)
-            for p in pendientes:
+            for p in (*pendientes, t3):
                 p.cancel()
     except (WebSocketDisconnect, OSError, websockets.exceptions.WebSocketException):
         pass

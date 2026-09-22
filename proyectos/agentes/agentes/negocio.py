@@ -259,8 +259,9 @@ async def asegurar_maquina(tenant: str) -> dict:
     n_agentes = len(await _agentes(tenant))
     if m is None:
         llave = vault.llave_nueva()
-        etiqueta = tenant.replace("-", "")[:20]
-        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, [], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=2, memoria_mb=memoria_para(n_agentes), disco_gb=5)
+        h = tenant.replace("-", "")
+        etiqueta = h[:8] + h[-12:]  # los primeros 20 chocaban entre negocios (dec1…0001 / dec1…0002); Fly limita el nombre del volumen a 30
+        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, [], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=4 if memoria_para(n_agentes) > 4096 else 2, memoria_mb=memoria_para(n_agentes), disco_gb=5)  # Fly: 2 vCPU compartidos llegan a 4 GB
         await db.ejecutar(
             "insert into maquina_negocio (tenant_id, proveedor, referencia, disco, direccion, llave) values ($1, $2, $3, $4, $5, $6)",
             tenant, prov.nombre, creada.referencia, creada.disco, creada.direccion, vault.cifrar(llave))
@@ -1024,7 +1025,7 @@ async def whatsapp_estado(tenant: str, agente_id: str) -> dict:
     if wa.get("activo"):
         return {"estado": "conectado", "numero": wa.get("numero"), **base}
     m = await maquina(tenant)
-    if not m or not wa:
+    if not m or not wa or not (await proveedor().obtener(m["referencia"])).encendida:
         return {"estado": "sin_vincular", **base}
     codigo, salida, _ = await proveedor().ejecutar(m["referencia"], ["sh", "-c", f"tail -n 20 /tmp/wa-{agente_id}.jsonl 2>/dev/null; kill -0 $(cat /tmp/wa-{agente_id}.pid 2>/dev/null) 2>/dev/null && echo VIVO"], timeout=15)
     vivo = salida.rstrip().endswith("VIVO")
