@@ -770,3 +770,29 @@ async def jev_paso(cuerpo: Paso, authorization: str = Header("")):
     await db.ejecutar("insert into agente_paso (tenant_id, agente_id, paso, nivel_turno, clase, confianza, nivel, ms) values ($1, $2, $3, $4, $5, $6, $7, $8)",
                       a["tenant_id"], a["id"], cuerpo.paso, cuerpo.nivel_turno, clase, conf, nivel, (d or {}).get("_ms"))
     return {"nivel": nivel, "modelo": modelo, "clase": clase, "confianza": conf}
+
+
+# --- WhatsApp del agente -------------------------------------------------------------
+
+class VincularWA(BaseModel):
+    modo: str = "self-chat"  # self-chat: el dueño se escribe a sí mismo · bot: número aparte para el agente
+    permitidos: list[str] = []
+
+
+@app.post("/agentes/{agente_id}/whatsapp")
+async def whatsapp_vincular(agente_id: uuid.UUID, cuerpo: VincularWA, tenant: str = Depends(negocio_id)):
+    error = await negocio.whatsapp_vincular(tenant, str(agente_id), cuerpo.modo, cuerpo.permitidos)
+    if error:
+        raise HTTPException(400, error)
+    return {"ok": True}
+
+
+@app.get("/agentes/{agente_id}/whatsapp")
+async def whatsapp_estado(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    return await negocio.whatsapp_estado(tenant, str(agente_id))
+
+
+@app.delete("/agentes/{agente_id}/whatsapp")
+async def whatsapp_desvincular(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    await negocio.whatsapp_desvincular(tenant, str(agente_id))
+    return {"ok": True}

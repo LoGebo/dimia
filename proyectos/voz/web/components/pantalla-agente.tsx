@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock, Check, Circle, ImagePlus, Monitor, Settings2, Trash2 } from "lucide-react";
 import { PantallaVivo } from "@/components/pantalla-vivo";
 import { DondeCorre } from "@/components/donde-corre";
+import { WhatsappAgente } from "@/components/whatsapp-agente";
 import { UsoPlan } from "@/components/uso-plan";
 import { Rutinas } from "@/components/rutinas";
 import { AjustesFinos } from "@/components/ajustes-finos";
@@ -224,6 +225,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
                 </>
               ) : null}
               {agente.trabajo ? <HabilidadesAgente key={`h-${agente.id}`} agenteId={agente.id} /> : null}
+              <WhatsappAgente key={`w-${agente.id}`} agenteId={agente.id} nombre={agente.nombre} />
               {!recepcion ? <DondeCorre key={`d-${agente.id}`} agenteId={agente.id} nombre={agente.nombre} donde={donde} alCambiar={setDonde} /> : null}
               <AjustesFinos key={agente.id} agenteId={agente.id} personalidad={finos?.personalidad ?? null} reglas={finos?.reglas ?? null} ajustes={finos?.ajustes ?? {}} alGuardar={() => router.refresh()} />
               {!recepcion ? <button type="button" onClick={() => borrarAgente(agente.id)} className="flex items-center gap-2 text-[13px] text-critico hover:underline"><Trash2 size={14} />Borrar este agente</button> : null}

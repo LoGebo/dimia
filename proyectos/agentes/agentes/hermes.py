@@ -43,6 +43,15 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
         # detrás de tool_search y el modelo no lo encuentra.
         "tools": {"tool_search": {"enabled": "off"}},
     }
+    wa = (ajustes or {}).get("whatsapp") or {}
+    if wa.get("activo"):
+        # El agente también contesta por WhatsApp (puente Baileys de Hermes, sesión en su perfil).
+        # Solo números autorizados por el dueño; nunca clientes (esos van por el motor de voz).
+        c["platforms"]["whatsapp"] = {"enabled": True, "extra": {
+            "bridge_port": 3100 + pantalla, "dm_policy": "allowlist", "allow_from": [str(x) for x in wa.get("permitidos") or []],
+            "group_policy": "disabled", "send_read_receipts": True}}
+        c["platform_toolsets"]["whatsapp"] = TOOLSETS
+        c["whatsapp"] = {"unauthorized_dm_behavior": "ignore"}
     if local:
         # En la computadora del dueño: sin escritorio virtual ni CDP nuestro; el navegador y el
         # computer_use son los de su Mac (cua-driver nativo) y la API solo escucha en localhost.
@@ -57,8 +66,11 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
     return yaml.safe_dump(c, allow_unicode=True, sort_keys=False)
 
 
-def env(llave: str, pantalla: int) -> str:
+def env(llave: str, pantalla: int, ajustes: dict | None = None) -> str:
     base = f"API_SERVER_ENABLED=true\nAPI_SERVER_HOST=::\nAPI_SERVER_PORT={puerto(pantalla)}\nAPI_SERVER_KEY={llave}\n"
+    wa = (ajustes or {}).get("whatsapp") or {}
+    if wa.get("activo"):
+        base += f"WHATSAPP_ENABLED=true\nWHATSAPP_MODE={'bot' if wa.get('modo') == 'bot' else 'self-chat'}\n"
     if config.PRUEBA_ANTHROPIC_TOKEN:
         base += f"ANTHROPIC_TOKEN={config.PRUEBA_ANTHROPIC_TOKEN}\n"
     return base
@@ -107,7 +119,7 @@ def soul_recepcion(negocio: str, reglas: str | None, personalidad: str | None = 
 
 def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None, ajustes: dict | None = None) -> dict[str, str]:
     p = f"{HOME}/agentes/{agente_id}"
-    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro, ajustes=ajustes), f"{p}/.env": env(llave, pantalla), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro, ajustes=ajustes), f"{p}/.env": env(llave, pantalla, ajustes), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
     if claude_json:
         a[f"{p}/.anthropic_oauth.json"] = claude_json
     return a

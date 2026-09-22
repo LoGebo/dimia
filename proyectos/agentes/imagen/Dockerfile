@@ -48,6 +48,11 @@ assert s.count(viejo) == 1, "build_api_kwargs cambió de forma"
 open(p, "w").write(s.replace(viejo, nuevo))
 print("dimia_jev enganchado")
 PY
+# WhatsApp del agente (puente Baileys de Hermes): dependencias ya instaladas y la marca que
+# Hermes revisa, para que no corra npm install al arrancar cada agente.
+RUN cd /opt/hermes/scripts/whatsapp-bridge && npm install --omit=dev --silent --no-audit --no-fund \
+    && python3 -c "import hashlib,pathlib;p=pathlib.Path('package.json');pathlib.Path('node_modules/.hermes-pkg-hash').write_text(hashlib.sha256(p.read_bytes()).hexdigest()[:16])" \
+    && chown -R 10000:10000 /opt/hermes/scripts/whatsapp-bridge
 COPY navegar_rapido.py /opt/dimia/navegar_rapido.py
 COPY escritorios.py /opt/dimia/escritorios.py
 COPY hd.py /opt/dimia/hd.py

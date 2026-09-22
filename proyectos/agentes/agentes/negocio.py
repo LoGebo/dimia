@@ -208,7 +208,7 @@ async def perfil_local(tenant: str, agente_id: str) -> tuple[dict[str, str], int
     mcp, cuentas, inst = await _mcp_de(tenant, a)
     archivos = {
         "config.yaml": hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj, local=True),
-        ".env": hermes.env(llave, pantalla),
+        ".env": hermes.env(llave, pantalla, aj),
         "SOUL.md": hermes.soul(a["nombre"], a["trabajo"], a["reglas"], negocio["nombre"], rol=a["rol"], personalidad=a["personalidad"], ajustes=aj, local=True),
         "auth.json": codex.auth_json(t["acceso"], t["refresco"]),
     }
@@ -335,6 +335,7 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
             nuevo_cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)
             if nuevo_cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
                 archivos[f"{hermes.HOME}/agentes/{aid}/config.yaml"] = nuevo_cfg
+                archivos[f"{hermes.HOME}/agentes/{aid}/.env"] = hermes.env(llave, pantalla, aj)  # WhatsApp y demás van en el .env
                 reiniciados.append(aid)
             if m["version_token"] != t["version"]:
                 archivos[f"{hermes.HOME}/agentes/{aid}/auth.json"] = auth
@@ -969,6 +970,101 @@ async def uso_cuenta(tenant: str) -> dict:
     return {"proveedor": "codex", "plan": p.get("plan_type"), "correo": p.get("email"), "ventanas": ventanas, "agentes": agentes, "sesion": sesion,
             "tope": bool(rl.get("limit_reached")), "modelos": [m for m, v in (p.get("model_usage") or {}).items() if v.get("available")],
             "creditos": cred.get("balance") if cred.get("has_credits") else None}
+
+
+# --- WhatsApp del agente (el dueño le escribe a su agente por WhatsApp) -----------------
+
+_PUENTE_WA = "/opt/hermes/scripts/whatsapp-bridge/bridge.js"
+
+
+def _normalizar_permitidos(numeros: list[str]) -> list[str]:
+    salida = []
+    for n in numeros:
+        d = "".join(c for c in str(n) if c.isdigit())
+        if len(d) == 10:
+            d = "52" + d
+        if 11 <= len(d) <= 15 and d not in salida:
+            salida.append(d)
+    return salida[:10]
+
+
+async def whatsapp_vincular(tenant: str, agente_id: str, modo: str, permitidos: list[str]) -> str | None:
+    """Arranca el vínculo: el puente de Hermes en modo «solo emparejar» escribe el QR (y luego
+    «connected») en un archivo; el panel lo lee con `whatsapp_estado`."""
+    a = await db.uno("select id, donde, ajustes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        return "Ese agente no existe."
+    if a["donde"] == "local" and tunel.de(agente_id):
+        return "Por ahora el WhatsApp del agente se vincula cuando corre en la computadora de Dimia."
+    permitidos = _normalizar_permitidos(permitidos)
+    if not permitidos:
+        return "Agregue al menos un número que pueda escribirle al agente."
+    aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
+    aj["whatsapp"] = {**(aj.get("whatsapp") or {}), "modo": "bot" if modo == "bot" else "self-chat", "permitidos": permitidos, "activo": False}
+    await db.ejecutar("update agente set ajustes = $2::jsonb where id = $1", agente_id, json.dumps(aj))
+    m = await asegurar_maquina(tenant)  # la config sin WhatsApp: el gateway suelta la sesión si la tenía
+    sesion = f"{hermes.HOME}/agentes/{agente_id}/platforms/whatsapp/session"
+    salida = f"/tmp/wa-{agente_id}.jsonl"
+    pid = f"/tmp/wa-{agente_id}.pid"
+    # Por archivo de PID: un pkill -f con el patrón del puente coincide con la línea de este mismo sh.
+    orden = (f"[ -f {pid} ] && kill $(cat {pid}) 2>/dev/null ; rm -rf {sesion} ; mkdir -p {sesion} && chown -R {hermes.UID}:{hermes.UID} {hermes.HOME}/agentes/{agente_id}/platforms"
+             f" && (setsid su -s /bin/sh hermes -c \"cd /opt/hermes/scripts/whatsapp-bridge && exec timeout 300 node {_PUENTE_WA} --pair-only --pair-json --session {sesion} --mode {aj['whatsapp']['modo']}\" > {salida} 2>&1 < /dev/null & echo $! > {pid}) ; sleep 1")
+    codigo, _, err = await proveedor().ejecutar(m["referencia"], ["sh", "-c", orden], timeout=20)
+    if codigo != 0:
+        return f"No se pudo iniciar el vínculo: {err[-200:]}"
+    return None
+
+
+async def whatsapp_estado(tenant: str, agente_id: str) -> dict:
+    """{estado: sin_vincular | esperando_qr | qr | conectado | error, qr_svg?, numero?}"""
+    a = await db.uno("select ajustes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    aj = (a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")) if a else {}
+    wa = aj.get("whatsapp") or {}
+    base = {"modo": wa.get("modo", "self-chat"), "permitidos": wa.get("permitidos", [])}
+    if wa.get("activo"):
+        return {"estado": "conectado", "numero": wa.get("numero"), **base}
+    m = await maquina(tenant)
+    if not m or not wa:
+        return {"estado": "sin_vincular", **base}
+    codigo, salida, _ = await proveedor().ejecutar(m["referencia"], ["sh", "-c", f"tail -n 20 /tmp/wa-{agente_id}.jsonl 2>/dev/null; kill -0 $(cat /tmp/wa-{agente_id}.pid 2>/dev/null) 2>/dev/null && echo VIVO"], timeout=15)
+    vivo = salida.rstrip().endswith("VIVO")
+    eventos = []
+    for linea in salida.splitlines():
+        with suppress(ValueError):
+            eventos.append(json.loads(linea))
+    if not eventos:
+        return {"estado": "esperando_qr" if codigo == 0 and salida == "" else "sin_vincular", **base}
+    conectado = next((e for e in reversed(eventos) if e.get("event") == "connected"), None)
+    if conectado:
+        numero = "".join(c for c in str((conectado.get("user") or {}).get("id") or conectado.get("user") or "").split(":")[0].split("@")[0] if c.isdigit())
+        aj["whatsapp"] = {**wa, "activo": True, "numero": numero}
+        await db.ejecutar("update agente set ajustes = $2::jsonb where id = $1", agente_id, json.dumps(aj))
+        await sincronizar(tenant, m)  # config con WhatsApp: el supervisor reinicia su Hermes y el gateway levanta el puente
+        return {"estado": "conectado", "numero": numero, **base}
+    ultimo = eventos[-1]
+    if not vivo:  # el vínculo caducó (5 min) sin escanear
+        return {"estado": "error", "error": "El código caducó; vuelva a vincular.", **base}
+    if ultimo.get("event") == "error":
+        return {"estado": "error", "error": "WhatsApp cerró la sesión; vuelva a vincular." if ultimo.get("error") == "logged_out" else str(ultimo.get("error")), **base}
+    qr = next((e.get("qr") for e in reversed(eventos) if e.get("event") == "qr"), None)
+    if qr:
+        import segno
+        return {"estado": "qr", "qr_png": segno.make(qr, error="m").png_data_uri(scale=6, border=2, dark="#0b0f17", light="#ffffff"), **base}
+    return {"estado": "esperando_qr", **base}
+
+
+async def whatsapp_desvincular(tenant: str, agente_id: str) -> None:
+    a = await db.uno("select ajustes from agente where id = $1 and tenant_id = $2", agente_id, tenant)
+    if not a:
+        return
+    aj = a["ajustes"] if isinstance(a["ajustes"], dict) else json.loads(a["ajustes"] or "{}")
+    aj.pop("whatsapp", None)
+    await db.ejecutar("update agente set ajustes = $2::jsonb where id = $1", agente_id, json.dumps(aj))
+    m = await maquina(tenant)
+    if m and (await proveedor().obtener(m["referencia"])).encendida:
+        await sincronizar(tenant, m)
+        sesion = f"{hermes.HOME}/agentes/{agente_id}/platforms/whatsapp/session"
+        await proveedor().ejecutar(m["referencia"], ["sh", "-c", f"[ -f /tmp/wa-{agente_id}.pid ] && kill $(cat /tmp/wa-{agente_id}.pid) 2>/dev/null ; rm -rf {sesion} /tmp/wa-{agente_id}.jsonl /tmp/wa-{agente_id}.pid"], timeout=15)
 
 
 # --- Habilidades del agente (marketplace, Skills Hub de Hermes y las que él mismo crea) ---

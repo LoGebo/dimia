@@ -1844,3 +1844,17 @@ export async function fichaRuta(agenteId: string): Promise<{ url: string } | nul
 export async function tareasAgente(agenteId: string): Promise<{ id: string; texto: string; estado: string; padre?: string | null }[]> {
   try { const r = await orquestador(`/agentes/${agenteId}/tareas`); return r.ok ? (await r.json()).tareas ?? [] : []; } catch { return []; }
 }
+
+// --- WhatsApp del agente ---
+export type EstadoWA = { estado: "sin_vincular" | "esperando_qr" | "qr" | "conectado" | "error"; qr_png?: string; numero?: string | null; modo?: string; permitidos?: string[]; error?: string };
+export async function whatsappAgente(agenteId: string): Promise<EstadoWA> {
+  try { const r = await orquestador(`/agentes/${agenteId}/whatsapp`); return r.ok ? r.json() : { estado: "sin_vincular" }; } catch { return { estado: "sin_vincular" }; }
+}
+export async function vincularWhatsapp(agenteId: string, modo: "self-chat" | "bot", permitidos: string[]): Promise<{ error?: string }> {
+  const r = await orquestador(`/agentes/${agenteId}/whatsapp`, { method: "POST", body: JSON.stringify({ modo, permitidos }) });
+  if (!r.ok) { const d = await r.json().catch(() => ({})); return { error: d.detail ?? "No se pudo iniciar." }; }
+  return {};
+}
+export async function desvincularWhatsapp(agenteId: string): Promise<void> {
+  await orquestador(`/agentes/${agenteId}/whatsapp`, { method: "DELETE" });
+}
