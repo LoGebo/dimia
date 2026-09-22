@@ -1,17 +1,19 @@
 """Dimia como integración: las herramientas del negocio (citas, clientes,
 cobros, servicios) para los agentes, por MCP. Cada agente entra con su propio
 token y solo ve su negocio. Solo lectura por ahora."""
+import asyncio
 import json
 import re
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+import httpx
 from mcp.server.mcpserver import Context, MCPServer
 from mcp_types import ToolAnnotations
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 
-from agentes import db
+from agentes import config, db
 
 SOLO_LECTURA = ToolAnnotations(readOnlyHint=True)
 servidor = MCPServer("dimia", instructions="Datos reales del negocio del dueño: citas, clientes, cobros y servicios. Úselos antes de suponer. Las herramientas que escriben (agendar, cancelar, anotar, registrar pago) piden la aprobación del dueño: antes de llamarlas, diga en el hilo exactamente qué va a hacer.")
@@ -213,21 +215,52 @@ async def registrar_pago(ctx: Context, telefono: str, monto: float, concepto: st
 whatsapp = MCPServer("whatsapp", instructions="Manda mensajes de WhatsApp desde la línea del negocio. Solo con permiso explícito del dueño en este hilo; nunca invente destinatarios.")
 
 
-@whatsapp.tool(name="enviar_whatsapp", description="Envía un mensaje de WhatsApp a un teléfono (10 dígitos de México o con lada) desde la línea del negocio. Úselo solo cuando el dueño lo haya aprobado en el hilo.")
-async def enviar_whatsapp(ctx: Context, telefono: str, mensaje: str) -> str:
+@whatsapp.tool(name="enviar_whatsapp", description="Envía un mensaje de WhatsApp a un teléfono (10 dígitos de México o con lada) desde la línea del negocio, al momento, y dice si Meta lo entregó. Si la persona no ha escrito en las últimas 24 h, sale como plantilla aprobada con su nombre y el mensaje. Úselo solo cuando el dueño lo haya aprobado en el hilo.")
+async def enviar_whatsapp(ctx: Context, telefono: str, mensaje: str, nombre: str = "") -> str:
     t = await _tenant(ctx)
     digitos = "".join(c for c in telefono if c.isdigit())
     if len(digitos) == 10:
         digitos = "52" + digitos
     if not (11 <= len(digitos) <= 15) or not mensaje.strip():
         return "Teléfono o mensaje inválido."
-    if not await db.uno("select 1 from tenant where id = $1 and telefono_entrada is not null", t):
+    if not config.WHATSAPP_ACCESS_TOKEN or not config.WHATSAPP_PHONE_NUMBER_ID:
         return "Este negocio no tiene línea de WhatsApp configurada."
+    negocio = (await db.uno("select nombre from tenant where id = $1", t))["nombre"]
+    # Meta solo deja texto libre dentro de las 24 h desde el último mensaje de la persona.
+    ultimo = await db.uno(
+        """select max(m.creado) as en from mensaje m join conversacion c on c.id = m.conversacion_id
+            where c.tenant_id = $1 and c.canal = 'whatsapp' and m.autor = 'cliente'
+              and right(regexp_replace(c.contacto, '[^0-9]', '', 'g'), 10) = right($2, 10)""", t, digitos)
+    en_ventana = bool(ultimo and ultimo["en"] and (datetime.now(ultimo["en"].tzinfo) - ultimo["en"]).total_seconds() < 23.5 * 3600)
+    if en_ventana:
+        cuerpo = {"messaging_product": "whatsapp", "to": digitos, "type": "text", "text": {"preview_url": False, "body": mensaje.strip()[:4000]}}
+        via = "texto"
+    else:
+        cuerpo = {"messaging_product": "whatsapp", "to": digitos, "type": "template", "template": {
+            "name": "mensaje_negocio", "language": {"code": "es_MX"},
+            "components": [{"type": "body", "parameters": [{"type": "text", "text": (nombre.strip() or "hola")[:60]}, {"type": "text", "text": negocio[:60]}, {"type": "text", "text": mensaje.strip().replace("\n", " ")[:900]}]}]}}
+        via = "plantilla"
+    async with httpx.AsyncClient(timeout=15) as http:
+        r = await http.post(f"https://graph.facebook.com/v25.0/{config.WHATSAPP_PHONE_NUMBER_ID}/messages", json=cuerpo, headers={"Authorization": f"Bearer {config.WHATSAPP_ACCESS_TOKEN}"})
+    if r.status_code >= 400:
+        err = (r.json().get("error") or {}) if r.content else {}
+        if via == "plantilla" and err.get("code") in (132001, 132000, 132015):
+            return f"No se mandó: +{digitos} no le ha escrito al negocio en 24 h y la plantilla para escribir primero todavía no está aprobada por Meta. Mándelo por WhatsApp Web o espere la aprobación."
+        return f"Meta rechazó el mensaje: {err.get('message') or r.text[:200]}"
+    wamid = (r.json().get("messages") or [{}])[0].get("id", "")
     import json as _json
     await db.ejecutar(
-        "insert into outbox (tenant_id, canal, destino, plantilla, payload) values ($1, 'whatsapp', $2, 'campana', $3::jsonb)",
-        t, digitos, _json.dumps({"mensaje": mensaje.strip(), "origen": "agente"}))
-    return f"Mensaje en cola para +{digitos}. Sale en menos de un minuto; si el cliente no ha escrito en 24 h, WhatsApp puede rechazarlo y el panel lo mostrará."
+        "insert into outbox (tenant_id, canal, destino, plantilla, payload, estado, intentos, enviado, externo_id) values ($1, 'whatsapp', $2, 'campana', $3::jsonb, 'enviado', 1, now(), $4)",
+        t, digitos, _json.dumps({"mensaje": mensaje.strip(), "origen": "agente", "via": via}), wamid)
+    # El veredicto real llega por webhook (entregado / leído / falló): se espera unos segundos.
+    for _ in range(16):
+        await asyncio.sleep(0.5)
+        f = await db.uno("select entrega, entrega_error from outbox where externo_id = $1", wamid)
+        if f and f["entrega"] in ("delivered", "read"):
+            return f"Entregado a +{digitos} ({'texto' if via == 'texto' else 'como plantilla, porque no había escrito en 24 h'})."
+        if f and f["entrega"] == "failed":
+            return f"WhatsApp no lo entregó a +{digitos}: {f['entrega_error']}"
+    return f"Enviado a +{digitos}; Meta lo aceptó y todavía no confirma la entrega (el teléfono puede estar apagado)."
 
 
 def app_whatsapp():
