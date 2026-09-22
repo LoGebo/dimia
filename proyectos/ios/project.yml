@@ -85,3 +85,5 @@ schemes:
         CAPTURAS: $(CAPTURAS)
         NEGOCIO: $(NEGOCIO)
         DIA: $(DIA)
+        CLINICA: $(CLINICA)
+        TAQUERIA: $(TAQUERIA)

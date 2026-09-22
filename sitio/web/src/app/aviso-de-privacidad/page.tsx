@@ -6,7 +6,7 @@ import css from "./aviso.module.css";
 export const metadata: Metadata = {
   title: "Aviso de privacidad",
   description:
-    "Cómo trata Dimia Consulting los datos personales que se envían desde dimia.mx.",
+    "Cómo trata Dimia Consulting los datos personales que se envían desde dimia.mx y desde la app de Dimia.",
   robots: { index: true, follow: true },
 };
 
@@ -45,6 +45,26 @@ export default function AvisoDePrivacidad() {
             que entrega el mensaje.
           </p>
 
+          <h2>La app de Dimia y el panel</h2>
+          <p>
+            Si su negocio es cliente, usted entra a la app de Dimia para iPhone y al panel con su{" "}
+            <strong>correo</strong> y una contraseña. Ahí se guardan los datos de su negocio —servicios,
+            horarios, citas, pedidos, cobros— y las conversaciones que sus clientes tienen con sus
+            agentes por teléfono, WhatsApp, Instagram y Messenger, además de lo que usted le escribe a
+            sus agentes. Los usamos solo para dar el servicio: que los agentes contesten, agenden y le
+            muestren lo que pasó. No los vendemos, no los usamos para publicidad y no rastreamos su
+            actividad fuera de la app.
+          </p>
+          <p>
+            Para operar usamos proveedores que procesan los datos por nuestra cuenta: alojamiento y base
+            de datos, telefonía y mensajería (Meta, operador telefónico) y el modelo de lenguaje que usted
+            conecta a sus agentes (su cuenta de ChatGPT o de Claude).
+          </p>
+          <p>
+            Puede eliminar su cuenta desde la app, en Cuenta → Eliminar mi cuenta. Se borran su usuario
+            y sus accesos; si es el único dueño, el negocio queda desactivado.
+          </p>
+
           <h2>Cuánto tiempo los conservamos</h2>
           <p>
             El tiempo necesario para atender su solicitud y, si se vuelve cliente, mientras dure la
@@ -62,7 +82,7 @@ export default function AvisoDePrivacidad() {
           <h2>Cambios</h2>
           <p>
             Cualquier modificación a este aviso se publica en esta misma dirección. Última
-            actualización: [ fecha por confirmar ].
+            actualización: 22 de septiembre de 2026.
           </p>
         </div>
 
