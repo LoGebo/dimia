@@ -40,6 +40,11 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.dimia.app
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_IDENTITY: "Apple Development"
+        # El nombre del certificado lleva acentos y codesign lo normaliza distinto en el requisito designado
+        # (la firma no se valida a sí misma); el requisito se fija por Team ID en firma.req.
+        OTHER_CODE_SIGN_FLAGS: "--requirements $(PROJECT_DIR)/firma.req"
         INFOPLIST_KEY_UIUserInterfaceStyle: Automatic
   DimiaTests:
     type: bundle.unit-test
