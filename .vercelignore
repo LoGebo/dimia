@@ -1,8 +1,10 @@
-# Solo el panel (proyectos/voz/web) se despliega; lo demás no sube.
+# Lo usan los dos proyectos de Vercel del repo: el panel (proyectos/voz/web) y el sitio (sitio/web).
+# Nunca excluir sitio/ ni proyectos/voz/web: el despliegue de ese proyecto sale vacío (dimia.mx en 404).
 /docs
 /marca
 /negocio
-/sitio
+/sitio/web/node_modules
+/sitio/web/.next
 /proyectos/agentes
 /proyectos/voz/.venv*
 /proyectos/voz/motor
