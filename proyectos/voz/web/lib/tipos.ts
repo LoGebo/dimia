@@ -128,10 +128,11 @@ export type PasoCita = "por_llegar" | "en_atencion" | "atendida" | "no_llego" | 
 export type Confirmacion = "confirmo" | "sin_confirmar" | null;
 
 export function confirmacionDe(
-  r: Pick<Reserva, "estado" | "confirmado_por_cliente" | "confirmacion_enviada">,
+  r: Pick<Reserva, "estado" | "confirmado_por_cliente" | "confirmacion_enviada"> & { fin?: string | Date },
 ): Confirmacion {
   if (r.estado !== "confirmada") return null;
   if (r.confirmado_por_cliente) return "confirmo";
+  if (r.fin && new Date(r.fin).getTime() < Date.now()) return null; // ya pasó: preguntar ya no aplica
   return r.confirmacion_enviada ? "sin_confirmar" : null;
 }
 
