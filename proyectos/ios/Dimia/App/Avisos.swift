@@ -72,6 +72,9 @@ final class Notificaciones: NSObject, UIApplicationDelegate, UNUserNotificationC
         let d = destino(enlace: enlace, agenda: n?.agenda ?? true, pedidos: n?.pedidos ?? false)
         sesion.pestana = d.pestana
         if let c = d.conversacion { sesion.conversacionPorAbrir = c }
+        if d.pestana == "agenda", let dia = URLComponents(string: enlace ?? "")?.queryItems?.first(where: { $0.name == "dia" })?.value {
+            sesion.diaPorAbrir = dia
+        }
     }
 
     /// La pestaña (y la conversación, si aplica) para una ruta del panel, según las pestañas que tiene el giro.

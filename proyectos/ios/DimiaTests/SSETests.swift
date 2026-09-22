@@ -21,7 +21,8 @@ struct SSETests {
 struct AvisosTests {
     @Test func enlaceAbreLaPestanaDelGiro() {
         let id = UUID()
-        #expect(Notificaciones.destino(enlace: "/agenda?cita=x", agenda: true, pedidos: false).pestana == "agenda")
+        #expect(Notificaciones.destino(enlace: "/agenda?q=XEHE&dia=2026-09-24", agenda: true, pedidos: false).pestana == "agenda")
+        #expect(Notificaciones.destino(enlace: "/mensajes", agenda: true, pedidos: false).pestana == "mensajes")
         #expect(Notificaciones.destino(enlace: "/agenda?cita=x", agenda: false, pedidos: true).pestana == "hoy")
         #expect(Notificaciones.destino(enlace: "/recados", agenda: false, pedidos: false).pestana == "recados")
         #expect(Notificaciones.destino(enlace: "/recados", agenda: true, pedidos: false).pestana == "hoy")

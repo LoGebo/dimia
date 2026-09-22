@@ -10,7 +10,8 @@ final class Sesion {
     var error: String?
     var pestana = "hoy"   // la pestaña activa; Hoy manda a las demás
     var sinLeer = 0       // avisos sin leer (la campanita)
-    var conversacionPorAbrir: UUID?   // la abre Mensajes cuando llega de una notificación
+    var conversacionPorAbrir: UUID?
+    var diaPorAbrir: String?          // «yyyy-MM-dd»; lo abre Agenda cuando llega de una notificación   // la abre Mensajes cuando llega de una notificación
 
     var entro: Bool { API.tokens != nil && yo != nil }
 

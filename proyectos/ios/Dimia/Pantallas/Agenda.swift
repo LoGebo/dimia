@@ -62,6 +62,12 @@ struct AgendaPantalla: View {
             }
             .refreshable { await cargar() }
             .task(id: "\(sesion.negocio?.id.uuidString ?? "")-\(iso(inicioSemana))") { await cargar() }
+            .onChange(of: sesion.diaPorAbrir, initial: true) {
+                guard let d = sesion.diaPorAbrir else { return }
+                let f = DateFormatter(); f.calendar = calendario; f.timeZone = calendario.timeZone; f.dateFormat = "yyyy-MM-dd"
+                if let fecha = f.date(from: d) { withAnimation(.snappy) { dia = fecha } }
+                sesion.diaPorAbrir = nil
+            }
         }
     }
 
