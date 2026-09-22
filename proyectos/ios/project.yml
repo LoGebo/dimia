@@ -79,3 +79,4 @@ schemes:
         CLAVE: $(CLAVE)
         CAPTURAS: $(CAPTURAS)
         NEGOCIO: $(NEGOCIO)
+        DIA: $(DIA)

@@ -18,6 +18,8 @@ nonisolated struct Negocio: Codable, Sendable, Identifiable, Hashable {
     var zona_horaria: String
     var id: UUID { tenant_id }
     var agenda: Bool { herramientas.contains("agendar") }
+    var pedidos: Bool { herramientas.contains("pedido") }
+    var recados: Bool { herramientas.contains("recado") }
 }
 
 nonisolated struct Yo: Codable, Sendable {
@@ -108,11 +110,52 @@ nonisolated struct Mensaje: Codable, Sendable, Identifiable, Hashable {
     var creado: Date
 }
 
+nonisolated struct PedidoItem: Codable, Sendable, Hashable {
+    var nombre: String
+    var cantidad: Int
+    var precio_unitario: Monto
+    var subtotal: Monto
+    var notas: String?
+}
+
+nonisolated struct Pedido: Codable, Sendable, Identifiable, Hashable {
+    var id: UUID
+    var codigo: String
+    var cliente_nombre: String?
+    var telefono: String
+    var tipo: String          // recoger | domicilio | local
+    var direccion: String?
+    var notas: String?
+    var estado: String        // abierto | confirmado | cancelado | entregado
+    var creado: Date
+    var listo_para: Date?
+    var total: Monto
+    var items: [PedidoItem]
+
+    var nombre: String { cliente_nombre ?? Formato.telefono(telefono) }
+    var porSacar: Bool { estado == "abierto" || estado == "confirmado" }
+    var tipoNombre: String { ["recoger": "Para recoger", "domicilio": "A domicilio", "local": "En el local"][tipo] ?? tipo }
+    var estadoNombre: String { ["abierto": "Sin cerrar", "confirmado": "En cocina", "entregado": "Entregado", "cancelado": "Cancelado"][estado] ?? estado }
+}
+
+nonisolated struct Recado: Codable, Sendable, Identifiable, Hashable {
+    var id: UUID
+    var nombre: String?
+    var telefono: String
+    var asunto: String
+    var detalle: String?
+    var atendido: Bool
+    var creado: Date
+}
+
 nonisolated struct Hoy: Codable, Sendable {
     var dia: String
     var zona_horaria: String
+    var herramientas: [String]
     var avisos: Avisos
     var citas: [Cita]
+    var pedidos: [Pedido]
+    var recados: [Recado]
     var cobros: Cobros
     var conversaciones: [Conversacion]
 }

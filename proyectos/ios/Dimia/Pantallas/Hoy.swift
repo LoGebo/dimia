@@ -18,6 +18,8 @@ struct HoyPantalla: View {
                         portada(hoy)
                         avisos(hoy)
                         dia(hoy)
+                        porSacar(hoy)
+                        recadosHoy(hoy)
                         if !agentes.isEmpty { misAgentes }
                         entradas(hoy)
                     } else if error == nil {
@@ -60,7 +62,7 @@ struct HoyPantalla: View {
                     Text(Formato.fecha(.now, zona: h.zona_horaria, larga: true).capitalizedFirst).font(.subheadline).opacity(0.72)
                 }
                 Text(frase(h)).font(.body).lineSpacing(3).opacity(0.92)
-                if sesion.negocio?.agenda ?? true {
+                if h.herramientas.contains("agendar") {
                     Divider().overlay(Color(UIColor(hex: 0xeef1f7)).opacity(0.18))
                     if let s = siguiente {
                         Button { sesion.pestana = "agenda" } label: {
@@ -86,10 +88,14 @@ struct HoyPantalla: View {
 
     /// Una frase, en español de México, con lo que importa: citas, sin leer, cobrado.
     private func frase(_ h: Hoy) -> String {
-        let agenda = sesion.negocio?.agenda ?? true
         let citas = h.citas.filter { $0.estado != "cancelada" }.count
         var partes: [String] = []
-        if agenda { partes.append(citas == 0 ? "no tiene citas" : citas == 1 ? "tiene una cita" : "tiene \(citas) citas") }
+        if h.herramientas.contains("agendar") { partes.append(citas == 0 ? "no tiene citas" : citas == 1 ? "tiene una cita" : "tiene \(citas) citas") }
+        if h.herramientas.contains("pedido") {
+            let sacar = h.pedidos.filter(\.porSacar).count
+            partes.append(h.pedidos.isEmpty ? "no hay pedidos" : sacar == 0 ? "\(h.pedidos.count) \(h.pedidos.count == 1 ? "pedido" : "pedidos") y nada por sacar" : "\(sacar) \(sacar == 1 ? "pedido" : "pedidos") por sacar")
+        }
+        if h.herramientas.contains("recado"), !h.recados.isEmpty { partes.append(h.recados.count == 1 ? "un recado por regresar" : "\(h.recados.count) recados por regresar") }
         let sinLeer = h.avisos.mensajes_sin_leer
         partes.append(sinLeer == 0 ? "nada sin leer" : sinLeer == 1 ? "un mensaje sin leer" : "\(sinLeer) mensajes sin leer")
         if h.cobros.cobrado.valor > 0 { partes.append("lleva \(Formato.moneda(h.cobros.cobrado)) cobrados") }
@@ -113,7 +119,7 @@ struct HoyPantalla: View {
         let lista: [(String, String, Color, String?)] = [
             a.retrasadas > 0 ? (a.retrasadas == 1 ? "Una persona lleva más de 15 minutos de retraso" : "\(a.retrasadas) personas llevan más de 15 minutos de retraso", "\(a.retrasadas)", .critico, "agenda") : nil,
             a.escaladas > 0 ? (a.escaladas == 1 ? "Una conversación pidió una persona" : "\(a.escaladas) conversaciones pidieron una persona", "\(a.escaladas)", .alerta, "mensajes") : nil,
-            a.recados > 0 ? (a.recados == 1 ? "Un recado espera que le marque" : "\(a.recados) recados esperan que le marque", "\(a.recados)", .alerta, nil) : nil,
+            a.recados > 0 ? (a.recados == 1 ? "Un recado espera que le marque" : "\(a.recados) recados esperan que le marque", "\(a.recados)", .alerta, (sesion.negocio?.agenda ?? true) || (sesion.negocio?.pedidos ?? false) ? nil : "recados") : nil,
             a.por_cobrar_atendidas > 0 ? (a.por_cobrar_atendidas == 1 ? "Una cita atendida hoy sin cobro registrado" : "\(a.por_cobrar_atendidas) citas atendidas hoy sin cobro registrado", "\(a.por_cobrar_atendidas)", .alerta, "agenda") : nil,
             a.cobros_pendientes > 0 ? (a.cobros_pendientes == 1 ? "Un pago pendiente por cobrar" : "\(a.cobros_pendientes) pagos pendientes por cobrar", Formato.moneda(a.cobros_monto), .alerta, nil) : nil,
         ].compactMap { $0 }
@@ -142,8 +148,27 @@ struct HoyPantalla: View {
         }
     }
 
+    @ViewBuilder private func porSacar(_ h: Hoy) -> some View {
+        let lista = h.pedidos.filter(\.porSacar)
+        if h.herramientas.contains("pedido"), !lista.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                titulo("Por sacar", accion: "Pedidos") { sesion.pestana = "pedidos" }
+                ForEach(lista.prefix(4)) { p in TarjetaPedido(pedido: p, zona: h.zona_horaria) { _ in sesion.pestana = "pedidos" } }
+            }
+        }
+    }
+
+    @ViewBuilder private func recadosHoy(_ h: Hoy) -> some View {
+        if h.herramientas.contains("recado"), !h.recados.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                titulo("Recados por regresar")
+                ForEach(h.recados.prefix(4)) { r in FilaRecado(recado: r, zona: h.zona_horaria) { Task { try? await API.enviar("POST", sesion.ruta + "/recados/\(r.id.uuidString.lowercased())/atendido"); await cargar() } } }
+            }
+        }
+    }
+
     @ViewBuilder private func dia(_ h: Hoy) -> some View {
-        if sesion.negocio?.agenda ?? true, !h.citas.filter({ $0.estado != "cancelada" }).isEmpty {
+        if h.herramientas.contains("agendar"), !h.citas.filter({ $0.estado != "cancelada" }).isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 titulo("Su día", accion: "Agenda") { sesion.pestana = "agenda" }
                 LineaTiempo(citas: h.citas, zona: h.zona_horaria, hoy: true, maximo: 5)

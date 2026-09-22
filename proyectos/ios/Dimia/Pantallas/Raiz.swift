@@ -6,11 +6,19 @@ struct Raiz: View {
     var body: some View {
         @Bindable var sesion = sesion
         TabView(selection: $sesion.pestana) {
+            // Las pestañas las decide el giro del negocio (sus herramientas), igual que las secciones del panel.
+            let n = sesion.negocio
             Tab("Hoy", systemImage: "sun.max", value: "hoy") { HoyPantalla() }
-            if sesion.negocio?.agenda ?? true {
+            if n?.agenda ?? true {
                 Tab("Agenda", systemImage: "calendar", value: "agenda") { AgendaPantalla() }
             }
+            if n?.pedidos ?? false {
+                Tab("Pedidos", systemImage: "bag", value: "pedidos") { PedidosPantalla() }
+            }
             Tab("Mensajes", systemImage: "bubble.left.and.bubble.right", value: "mensajes") { MensajesPantalla() }
+            if (n?.recados ?? false) && !(n?.agenda ?? true) && !(n?.pedidos ?? false) {
+                Tab("Recados", systemImage: "phone.arrow.down.left", value: "recados") { RecadosPantalla() }
+            }
             Tab("Agentes", systemImage: "person.2", value: "agentes") { AgentesPantalla() }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
