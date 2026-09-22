@@ -36,10 +36,12 @@ targets:
         NSAppTransportSecurity: { NSAllowsArbitraryLoads: false }
         CFBundleDevelopmentRegion: es-MX
         UIAppFonts: [Newsreader.ttf]
+        UIBackgroundModes: [remote-notification]
         CFBundleLocalizations: [es-MX]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.dimia.app
+        CODE_SIGN_ENTITLEMENTS: Dimia/Dimia.entitlements
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_IDENTITY: "Apple Development"
         # El nombre del certificado lleva acentos y codesign lo normaliza distinto en el requisito designado

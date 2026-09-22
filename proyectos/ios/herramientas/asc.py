@@ -1,10 +1,11 @@
 """Cliente mínimo de la API de App Store Connect con la llave dimia-ios."""
-import json, sys, time, urllib.request, jwt, pathlib
+import json, sys, time, urllib.parse, urllib.request, jwt, pathlib
 KID, ISS = "9U335XAL5M", "8215244f-f2f8-417e-a21f-90d833097668"
 KEY = pathlib.Path.home().joinpath(".appstoreconnect/private_keys/AuthKey_9U335XAL5M.p8").read_text()
 def token():
     return jwt.encode({"iss": ISS, "iat": int(time.time()), "exp": int(time.time()) + 1100, "aud": "appstoreconnect-v1"}, KEY, algorithm="ES256", headers={"kid": KID, "typ": "JWT"})
 def api(metodo, ruta, cuerpo=None):
+    ruta = urllib.parse.quote(ruta, safe="/?&=[],:%")
     r = urllib.request.Request("https://api.appstoreconnect.apple.com" + ruta, method=metodo, data=json.dumps(cuerpo).encode() if cuerpo else None,
                                headers={"Authorization": "Bearer " + token(), "Content-Type": "application/json"})
     try:

@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct DimiaApp: App {
+    @UIApplicationDelegateAdaptor(Notificaciones.self) private var notificaciones
     @State private var sesion = Sesion()
 
     init() { Apariencia.aplicar() }

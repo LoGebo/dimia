@@ -9,11 +9,14 @@ final class Sesion {
     var cargando = true
     var error: String?
     var pestana = "hoy"   // la pestaña activa; Hoy manda a las demás
+    var sinLeer = 0       // avisos sin leer (la campanita)
+    var conversacionPorAbrir: UUID?   // la abre Mensajes cuando llega de una notificación
 
     var entro: Bool { API.tokens != nil && yo != nil }
 
     init() {
         API.cargarTokens()
+        Notificaciones.sesion = self
         Task { await cargar() }
     }
 
@@ -42,9 +45,17 @@ final class Sesion {
     func elegir(_ n: Negocio) {
         negocio = n
         UserDefaults.standard.set(n.tenant_id.uuidString, forKey: "negocio")
+        Task { await contarAvisos() }
+    }
+
+    func contarAvisos() async {
+        guard negocio != nil else { return }
+        let lista: [Aviso] = (try? await API.obtener(ruta + "/avisos?limite=50")) ?? []
+        sinLeer = lista.filter { $0.leido_en == nil }.count
     }
 
     func salir() {
+        Task { await Notificaciones.olvidar() }
         API.tokens = nil
         yo = nil
         negocio = nil

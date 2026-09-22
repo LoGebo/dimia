@@ -27,6 +27,12 @@ class ApiSettings(BaseSettings):
     agentes_url: str = ""
     agentes_secreto: str = ""
 
+    # APNs (push de iOS). Sin llave no se manda nada; los avisos se quedan en la campanita.
+    apns_llave: str = ""          # contenido del .p8
+    apns_llave_id: str = ""
+    apns_equipo: str = "4W65YUHMHD"
+    apns_tema: str = "mx.dimia.app"
+
     api_titulo: str = "Panel de administracion"
     api_version: str = "1.0.0"
     cors_origenes: tuple[str, ...] = ()

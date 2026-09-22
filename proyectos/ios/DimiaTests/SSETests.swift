@@ -17,3 +17,16 @@ struct SSETests {
         #expect(Rasgos.hash("Cobranza") == 3_446_773_744)  // (h*31 + c) >>> 0, igual que avatar-agente.tsx
     }
 }
+
+struct AvisosTests {
+    @Test func enlaceAbreLaPestanaDelGiro() {
+        let id = UUID()
+        #expect(Notificaciones.destino(enlace: "/agenda?cita=x", agenda: true, pedidos: false).pestana == "agenda")
+        #expect(Notificaciones.destino(enlace: "/agenda?cita=x", agenda: false, pedidos: true).pestana == "hoy")
+        #expect(Notificaciones.destino(enlace: "/recados", agenda: false, pedidos: false).pestana == "recados")
+        #expect(Notificaciones.destino(enlace: "/recados", agenda: true, pedidos: false).pestana == "hoy")
+        let b = Notificaciones.destino(enlace: "/bandeja?c=\(id.uuidString.lowercased())", agenda: true, pedidos: false)
+        #expect(b.pestana == "mensajes" && b.conversacion == id)
+        #expect(Notificaciones.destino(enlace: "/cobros", agenda: true, pedidos: false).pestana == "hoy")
+    }
+}

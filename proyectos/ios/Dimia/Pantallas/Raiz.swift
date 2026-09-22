@@ -22,13 +22,31 @@ struct Raiz: View {
             Tab("Agentes", systemImage: "person.2", value: "agentes") { AgentesPantalla() }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .task(id: sesion.negocio?.id) {
+            await Notificaciones.pedirPermiso()
+            await Notificaciones.registrar()
+            await sesion.contarAvisos()
+        }
     }
 }
 
-/// Botón de la esquina con el negocio y los ajustes; va en todas las pestañas.
+/// La campanita y el botón de cuenta; van en todas las pestañas.
 struct BotonAjustes: ToolbarContent {
+    @Environment(Sesion.self) private var sesion
     @State private var abierto = false
+    @State private var avisos = false
     var body: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { avisos = true } label: {
+                if sesion.sinLeer > 0 {
+                    Image(systemName: "bell.badge").symbolRenderingMode(.palette).foregroundStyle(Color.critico, Color.acento)
+                } else {
+                    Image(systemName: "bell")
+                }
+            }
+            .accessibilityLabel(sesion.sinLeer > 0 ? "Avisos, \(sesion.sinLeer) sin leer" : "Avisos")
+            .sheet(isPresented: $avisos) { AvisosPantalla() }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Button { abierto = true } label: { Image(systemName: "person.crop.square") }
                 .accessibilityLabel("Cuenta y negocio")

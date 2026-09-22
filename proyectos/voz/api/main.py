@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -10,12 +11,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from api import apns
 from api.config import api_settings
 from api.db import base, traducir_error_postgres
 from api.errores import CodigoError, ErrorApi, ErrorRespuesta, manejar_error_api
 from api.routers import (
     acceso,
     agentes,
+    avisos,
     conocimiento,
     horarios,
     metricas,
@@ -33,9 +36,11 @@ log = logging.getLogger("api")
 @asynccontextmanager
 async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
     await base.conectar()
+    envio = asyncio.create_task(apns.ciclo())  # push de iOS; sin llave no hace nada
     try:
         yield
     finally:
+        envio.cancel()
         await base.cerrar()
 
 
@@ -105,6 +110,7 @@ def crear_app() -> FastAPI:
         acceso,
         movil,
         agentes,
+        avisos,
     ):
         app.include_router(modulo.router)
     app.include_router(negocios.verticales_router)

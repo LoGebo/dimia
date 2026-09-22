@@ -6,6 +6,7 @@ struct MensajesPantalla: View {
     @State private var error: String?
     @State private var busqueda = ""
     @State private var filtro: Filtro = .todos
+    @State private var ruta: [Conversacion] = []
 
     enum Filtro: String, CaseIterable, Identifiable {
         case todos = "Todos", sinLeer = "Sin leer", pidenPersona = "Piden persona", whatsapp = "WhatsApp", llamadas = "Llamadas", redes = "Redes"
@@ -27,7 +28,7 @@ struct MensajesPantalla: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $ruta) {
             List {
                 if let error { FilaError(texto: error) { Task { await cargar() } }.listRowBackground(Color.fondo).listRowSeparator(.hidden) }
                 if visibles.isEmpty && error == nil {
@@ -72,6 +73,12 @@ struct MensajesPantalla: View {
             .navigationDestination(for: Conversacion.self) { HiloConversacion(conversacion: $0) }
             .refreshable { await cargar() }
             .task(id: sesion.negocio?.id) { await cargar() }
+            .task(id: sesion.conversacionPorAbrir) {
+                guard let id = sesion.conversacionPorAbrir else { return }
+                if lista.isEmpty { await cargar() }
+                if let c = lista.first(where: { $0.id == id }) { ruta = [c] }
+                sesion.conversacionPorAbrir = nil
+            }
         }
     }
 

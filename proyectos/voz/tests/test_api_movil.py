@@ -70,3 +70,41 @@ async def test_flujo_movil(cliente):
 
     # Otro negocio no se ve.
     assert (await c.get(f"/v1/tenants/{uuid.uuid4()}/hoy", headers=auth)).status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_avisos_y_push(cliente):
+    """Un recado nuevo crea su aviso (trigger), la app lo lista y el envío a APNs lo marca y apaga tokens muertos."""
+    import httpx as _httpx
+    from api import apns
+    from api.config import api_settings
+
+    c, email, clave, tid = cliente
+    auth = {"Authorization": f"Bearer {(await c.post('/v1/acceso/entrar', json={'email': email, 'password': clave})).json()['access']}"}
+    vivo, muerto = "ab" * 32, "cd" * 32
+    for t in (vivo, muerto):
+        assert (await c.post("/v1/dispositivos", json={"token": t, "entorno": "sandbox", "tenant_id": str(tid)}, headers=auth)).status_code == 204
+    await base.execute("insert into lead (tenant_id, telefono, asunto) values ($1, '+525500000000', 'Quiere cotizar')", tid)
+    lista = (await c.get(f"/v1/tenants/{tid}/avisos", headers=auth)).json()
+    assert lista and lista[0]["tipo"] == "recado.creado"
+
+    enviados = []
+    def apple(req: _httpx.Request) -> _httpx.Response:
+        enviados.append(req.url.path)
+        return _httpx.Response(410, json={"reason": "Unregistered"}) if muerto in req.url.path else _httpx.Response(200)
+    ajustes = api_settings()
+    ajustes.apns_llave_id = "ABC123DEFG"
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import serialization
+    ajustes.apns_llave = ec.generate_private_key(ec.SECP256R1()).private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
+    try:
+        async with _httpx.AsyncClient(transport=_httpx.MockTransport(apple)) as http:
+            await apns._vuelta(http, solo_tenant=tid)  # la base es la de verdad: no tocar avisos de otros negocios
+    finally:
+        ajustes.apns_llave = ""
+    assert any(vivo in p for p in enviados)
+    assert await base.fetchval("select push_en is not null from aviso where tenant_id = $1 order by id desc limit 1", tid)
+    assert await base.fetchval("select activo from dispositivo where token = $1", muerto) is False
+
+    assert (await c.post(f"/v1/tenants/{tid}/avisos/leidos", json={"hasta_id": lista[0]["id"]}, headers=auth)).status_code == 204
+    await base.execute("delete from dispositivo where token in ($1, $2)", vivo, muerto)
