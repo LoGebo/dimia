@@ -147,7 +147,7 @@ struct TarjetaPedido: View {
                     } label: {
                         Text(pedido.estado == "abierto" ? "A cocina" : "Entregado").font(.subheadline.weight(.semibold))
                             .padding(.horizontal, 16).frame(height: 38)
-                            .background(Color(UIColor(hex: 0x0b0f17)), in: .capsule).foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
+                            .background(Color.firme, in: .capsule).foregroundStyle(Color.sobreFirme)
                     } primaryAction: { cambiar(pedido.estado == "abierto" ? "confirmado" : "entregado") }
                 }
                 if let url = URL(string: "tel:\(pedido.telefono)") {

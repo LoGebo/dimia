@@ -124,13 +124,13 @@ struct TiraSemana: View {
                 let esHoy = calendario.isDateInToday(d)
                 Button { withAnimation(.snappy) { dia = d } } label: {
                     VStack(spacing: 6) {
-                        Text(letra(d)).font(.caption2.weight(.medium)).foregroundStyle(elegido ? Color(UIColor(hex: 0xeef1f7)).opacity(0.75) : Color.tinta3)
+                        Text(letra(d)).font(.caption2.weight(.medium)).foregroundStyle(elegido ? Color.sobreFirme.opacity(0.75) : Color.tinta3)
                         Text("\(calendario.component(.day, from: d))").font(.body.weight(esHoy || elegido ? .bold : .regular).monospacedDigit())
-                            .foregroundStyle(elegido ? Color(UIColor(hex: 0xeef1f7)) : esHoy ? Color.acento : Color.tinta)
-                        Cuadrado(color: elegido ? Color(UIColor(hex: 0xeef1f7)) : Color.acento, lado: 4).opacity(conCitas.contains(clave(d)) ? 1 : 0)
+                            .foregroundStyle(elegido ? Color.sobreFirme : esHoy ? Color.acento : Color.tinta)
+                        Cuadrado(color: elegido ? Color.sobreFirme : Color.acento, lado: 4).opacity(conCitas.contains(clave(d)) ? 1 : 0)
                     }
                     .frame(maxWidth: .infinity).frame(height: 66)
-                    .background(elegido ? Color(UIColor(hex: 0x0b0f17)) : Color.clear, in: .rect(cornerRadius: 14))
+                    .background(elegido ? Color.firme : Color.clear, in: .rect(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Formato.fecha(d, zona: calendario.timeZone.identifier, larga: true))

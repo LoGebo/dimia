@@ -57,9 +57,9 @@ struct MensajesPantalla: View {
                                         if n > 0 { Text("\(n)").font(.caption.monospacedDigit()).opacity(0.7) }
                                     }
                                     .padding(.horizontal, 14).padding(.vertical, 8)
-                                    .foregroundStyle(filtro == f ? Color(UIColor(hex: 0xeef1f7)) : Color.tinta)
+                                    .foregroundStyle(filtro == f ? Color.sobreFirme : Color.tinta)
                                 }
-                                .glassEffect(filtro == f ? .regular.tint(Color(UIColor(hex: 0x0b0f17))).interactive() : .regular.interactive(), in: .capsule)
+                                .glassEffect(filtro == f ? .regular.tint(Color.firme).interactive() : .regular.interactive(), in: .capsule)
                             }
                         }
                         .padding(.horizontal, 16).padding(.vertical, 8)

@@ -153,9 +153,9 @@ struct HiloAgente: View {
         if m.de == "yo" {
             // El dueño: burbuja de tinta a la derecha, como en Grok Bot.
             VStack(alignment: .trailing, spacing: 3) {
-                Text(m.texto).font(.body).foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
+                Text(m.texto).font(.body).foregroundStyle(Color.sobreFirme)
                     .padding(.horizontal, 14).padding(.vertical, 9)
-                    .background(Color(UIColor(hex: 0x0b0f17)), in: .rect(cornerRadius: 18))
+                    .background(Color.firme, in: .rect(cornerRadius: 18))
                 if let nota = m.nota { Text(nota).font(.caption).foregroundStyle(Color.tinta3) }
             }
             .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, 56)
@@ -174,7 +174,7 @@ struct HiloAgente: View {
                 } else {
                     HStack(spacing: 8) {
                         Button { Task { await decidir(m, "aprobar") } } label: { Text("Aprobar").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40) }
-                            .buttonStyle(.borderedProminent).tint(Color(UIColor(hex: 0x0b0f17)))
+                            .buttonStyle(.borderedProminent).tint(Color.firme)
                         Button { Task { await decidir(m, "rechazar") } } label: { Text("Rechazar").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).frame(height: 40) }
                             .buttonStyle(.bordered).tint(Color.tinta)
                     }
@@ -205,8 +205,8 @@ struct HiloAgente: View {
                                     Spacer()
                                 }
                                 .padding(12)
-                                .background(m.elegida == o.letra ? Color(UIColor(hex: 0x0b0f17)) : Color.panel2, in: .rect(cornerRadius: 14))
-                                .foregroundStyle(m.elegida == o.letra ? Color(UIColor(hex: 0xeef1f7)) : Color.tinta)
+                                .background(m.elegida == o.letra ? Color.firme : Color.panel2, in: .rect(cornerRadius: 14))
+                                .foregroundStyle(m.elegida == o.letra ? Color.sobreFirme : Color.tinta)
                             }
                             .disabled(m.elegida != nil)
                         }
@@ -549,8 +549,8 @@ struct Compositor: View {
                     let t = texto; texto = ""; enviar(t, nivel); nivel = nil
                 } label: {
                     Image(systemName: "arrow.up").font(.body.weight(.bold)).frame(width: 34, height: 34)
-                        .foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
-                        .background(Color(UIColor(hex: 0x0b0f17)), in: .circle)
+                        .foregroundStyle(Color.sobreFirme)
+                        .background(Color.firme, in: .circle)
                 }
                 .disabled(vacio)
                 .opacity(vacio ? 0 : 1)

@@ -3,7 +3,8 @@ import SwiftUI
 // Los colores de marca/BRANDING.md, en versión clara y oscura. La app usa el sistema para todo lo demás:
 // listas agrupadas, letra SF, vidrio en la navegación. El azul es el único acento; el cuadrado, la única forma.
 extension Color {
-    static func dinamico(_ claro: UInt32, _ oscuro: UInt32) -> Color {
+    // nonisolated: UIKit resuelve el color fuera del hilo principal (animaciones); aislado, truena.
+    nonisolated static func dinamico(_ claro: UInt32, _ oscuro: UInt32) -> Color {
         Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: oscuro) : UIColor(hex: claro) })
     }
     static let tinta = dinamico(0x0b0f17, 0xeef1f7)
@@ -16,9 +17,14 @@ extension Color {
     static let bueno = dinamico(0x1f9d6a, 0x3fb68b)
     static let alerta = dinamico(0xb7791f, 0xf0a33c)
     static let critico = dinamico(0xc0392b, 0xe2685c)
+    /// Lo que va «en firme» (burbuja del dueño, día elegido, botón principal): tinta en claro, hueso en oscuro.
+    static let firme = tinta
+    static let sobreFirme = fondo
+    /// La superficie de tinta de las portadas; en oscuro se levanta un poco para no perderse en el fondo.
+    static let superficieTinta = dinamico(0x0b0f17, 0x1a2133)
 }
 
-extension UIColor {
+nonisolated extension UIColor {
     convenience init(hex: UInt32) {
         self.init(red: CGFloat((hex >> 16) & 255) / 255, green: CGFloat((hex >> 8) & 255) / 255, blue: CGFloat(hex & 255) / 255, alpha: 1)
     }
@@ -116,6 +122,6 @@ struct Tinta<Contenido: View>: View {
         contenido
             .foregroundStyle(Color(UIColor(hex: 0xeef1f7)))
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(UIColor(hex: 0x0b0f17)), in: .rect(cornerRadius: 22))
+            .background(Color.superficieTinta, in: .rect(cornerRadius: 22))
     }
 }
