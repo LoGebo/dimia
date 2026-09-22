@@ -320,7 +320,7 @@ struct HiloAgente: View {
             let idAgente = Int(Date.now.timeIntervalSince1970 * 1000) + 7
             var creada = false
             var termino = false
-            func poner(_ texto: String, anexar: Bool) {
+            @MainActor func poner(_ texto: String, anexar: Bool) {
                 if !creada { creada = true; mensajes.append(.init(id: idAgente, de: "agente", texto: texto)); return }
                 if let i = mensajes.firstIndex(where: { $0.id == idAgente }) { mensajes[i].texto = anexar ? mensajes[i].texto + texto : texto }
             }
