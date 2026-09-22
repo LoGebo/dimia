@@ -97,7 +97,7 @@ select b.id, b.codigo, b.cliente_nombre, b.telefono, b.personas, b.notas,
   join resource r on r.id = b.resource_id
   join tenant t on t.id = b.tenant_id
   left join lateral (select sum(g.monto) as cobrado from pago g where g.booking_id = b.id and g.estado = 'pagado') pg on true
- where b.tenant_id = $1 and (b.inicio at time zone t.zona_horaria)::date = $2::date
+ where b.tenant_id = $1 and (b.inicio at time zone t.zona_horaria)::date between $2::date and coalesce($3::date, $2::date)
  order by b.inicio"""
 
 SELECT_CONVERSACION = """
@@ -138,7 +138,7 @@ async def hoy(tenant_id: uuid.UUID, membresia: MiembroDelTenant) -> Hoy:
     dia = t["dia"]
     avisos, citas, cobros, hilos = (
         await base.fetchrow(AVISOS_SQL, tenant_id),
-        await base.fetch(SELECT_CITA, tenant_id, dia),
+        await base.fetch(SELECT_CITA, tenant_id, dia, None),
         await base.fetchrow(COBROS_SQL, tenant_id, dia),
         await base.fetch(f"{SELECT_CONVERSACION} where c.tenant_id = $1 and c.estado <> 'cerrada' order by c.ultimo_mensaje_en desc limit 5", tenant_id),
     )
@@ -153,8 +153,11 @@ async def hoy(tenant_id: uuid.UUID, membresia: MiembroDelTenant) -> Hoy:
 
 
 @router.get("/agenda", response_model=list[Cita])
-async def agenda(tenant_id: uuid.UUID, membresia: MiembroDelTenant, dia: Annotated[date, Query()]) -> list[Cita]:
-    return _filas(Cita, await base.fetch(SELECT_CITA, tenant_id, dia))
+async def agenda(tenant_id: uuid.UUID, membresia: MiembroDelTenant, dia: Annotated[date, Query()], hasta: Annotated[date | None, Query()] = None) -> list[Cita]:
+    """Las citas de un día o de un rango (hasta 31 días), para la tira de la semana."""
+    if hasta is not None and (hasta < dia or (hasta - dia).days > 31):
+        raise ErrorApi(CodigoError.VALIDACION, "rango inválido")
+    return _filas(Cita, await base.fetch(SELECT_CITA, tenant_id, dia, hasta))
 
 
 @router.get("/conversaciones", response_model=list[Conversacion])

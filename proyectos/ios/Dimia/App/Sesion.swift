@@ -8,6 +8,7 @@ final class Sesion {
     var negocio: Negocio?
     var cargando = true
     var error: String?
+    var pestana = "hoy"   // la pestaña activa; Hoy manda a las demás
 
     var entro: Bool { API.tokens != nil && yo != nil }
 
