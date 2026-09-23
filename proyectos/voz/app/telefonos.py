@@ -17,7 +17,9 @@ def normalizar(crudo: str | None) -> str | None:
     if crudo is None:
         return None
     d = _NO_DIGITOS.sub("", crudo)
-    if len(d) < 8:
+    if len(d) < 8 or len(d) > 15:
+        # E.164 no pasa de 15 dígitos: más largo es un id de Instagram/Messenger (IGSID/PSID),
+        # no un teléfono. Antes pasaba y las citas de Instagram quedaban sin WhatsApp.
         return None
     if len(d) == 10:
         return "+52" + d

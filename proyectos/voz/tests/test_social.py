@@ -348,7 +348,7 @@ async def test_los_horarios_van_como_botones_y_el_toque_reserva(tenant, cfg):
     llm = LLMFalso([
         RespuestaFalsa([_uso("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-22"})], "tool_use"),
         RespuestaFalsa([{"type": "text", "text": "Tengo estos horarios el martes 22:"}]),
-        RespuestaFalsa([_uso("reservar", {"opcion_id": "SE_REEMPLAZA", "nombre_cliente": "Ana"})], "tool_use"),
+        RespuestaFalsa([_uso("reservar", {"opcion_id": "SE_REEMPLAZA", "nombre_cliente": "Ana", "telefono": "81 3486 1658"})], "tool_use"),
         RespuestaFalsa([{"type": "text", "text": "Listo, Ana. Código *RPNF*."}]),
     ])
     registro = RegistroSesiones(cfg)
@@ -372,6 +372,7 @@ async def test_los_horarios_van_como_botones_y_el_toque_reserva(tenant, cfg):
     # El toque llego al modelo ya traducido a la opcion, y la reserva es la de las 10:00.
     assert f"[opcion_id={segunda}]" in sesion.mensajes[-4]["content"]
     assert agenda.reserva["inicio"].hour == 10
+    assert agenda.reserva["telefono"] == "+528134861658"  # el WhatsApp que dio, nunca el id de Instagram
 
 
 @pytest.mark.asyncio

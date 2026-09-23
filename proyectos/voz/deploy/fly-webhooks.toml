@@ -19,6 +19,9 @@ kill_timeout   = "30s"
   despachador = "python -m app.despachador"
 
 # Solo el proceso web recibe tráfico público (HTTPS 443 -> 8080).
+# ponytail: UNA sola máquina web. Las sesiones de WhatsApp/Instagram viven en memoria
+# (channels/whatsapp/sesion.py): con dos, cada mensaje caía en una distinta y el agente
+# olvidaba la conversación. Para escalar hay que guardar la sesión en Postgres primero.
 [http_service]
   internal_port       = 8080
   force_https         = true
