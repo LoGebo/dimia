@@ -225,7 +225,10 @@ async def enviar_whatsapp(ctx: Context, telefono: str, mensaje: str, nombre: str
         raise MCPError(-32602, "Teléfono o mensaje inválido.")  # como error, para que el agente no lo tome por éxito
     if not config.WHATSAPP_ACCESS_TOKEN or not config.WHATSAPP_PHONE_NUMBER_ID:
         return "Este negocio no tiene línea de WhatsApp configurada."
-    negocio = (await db.uno("select nombre from tenant where id = $1", t))["nombre"]
+    tn = await db.uno("select nombre, es_demo, demo_permitidos from tenant where id = $1", t)
+    negocio = tn["nombre"]
+    if tn["es_demo"] and f"+{digitos}" not in (tn["demo_permitidos"] or []):
+        return "Este es un negocio de demostración: no manda WhatsApp a números reales."
     # Meta solo deja texto libre dentro de las 24 h desde el último mensaje de la persona.
     ultimo = await db.uno(
         """select max(m.creado) as en from mensaje m join conversacion c on c.id = m.conversacion_id
