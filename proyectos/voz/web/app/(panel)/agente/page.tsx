@@ -104,7 +104,7 @@ export default async function Agente() {
                   etiqueta="Número de entrada"
                   ayuda={
                     progreso.puedeActivarLinea || config.telefono_entrada
-                      ? "El número al que llaman tus clientes. Al guardarlo, el agente empieza a contestar."
+                      ? "El número al que llaman sus clientes. Al guardarlo, el agente empieza a contestar."
                       : `Se desbloquea cuando esté todo listo: faltan ${progreso.total - progreso.cumplidos} de ${progreso.total}.`
                   }
                 >
@@ -119,7 +119,7 @@ export default async function Agente() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Campo
                   etiqueta="Cuenta de Instagram"
-                  ayuda="El ID de tu cuenta profesional. Sin esto, los mensajes de Instagram no saben de qué negocio son."
+                  ayuda="El ID de su cuenta profesional. Sin esto, los mensajes de Instagram no saben de qué negocio son."
                 >
                   <Entrada name="instagram_id" defaultValue={config.instagram_id ?? ""} placeholder="1784140..." />
                 </Campo>
@@ -159,7 +159,7 @@ export default async function Agente() {
                 titulo="Avisos por WhatsApp"
                 descripcion={
                   agenda
-                    ? "Un día antes, el agente pide confirmar la cita con botones. Aquí decides qué pasa con la que nadie confirma."
+                    ? "Un día antes, el agente pide confirmar la cita con botones. Aquí decide qué pasa con la que nadie confirma."
                     : "Cuando un pedido sale de la cocina, el cliente recibe el aviso."
                 }
               />
@@ -250,7 +250,7 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Cómo contesta"
-              descripcion="La primera frase de cada llamada. Edítala aquí; vacía, el agente usa la del giro."
+              descripcion="La primera frase de cada llamada. Edítela aquí; vacía, el agente usa la del giro."
               accion={config.saludo?.trim() ? <Insignia tono="alerta">Propio</Insignia> : null}
             />
             <Formulario accion={guardarSaludo} className="space-y-3 px-4 py-4">
@@ -263,7 +263,7 @@ export default async function Agente() {
                 aria-label="Saludo del agente"
               />
               <p className="text-[12px] text-tinta-3">
-                Escribe <code>{"{nombre}"}</code> donde vaya el nombre del negocio.
+                Escriba <code>{"{nombre}"}</code> donde vaya el nombre del negocio.
               </p>
               <BotonEnviar>Guardar saludo</BotonEnviar>
             </Formulario>
@@ -274,8 +274,8 @@ export default async function Agente() {
               titulo="Instrucciones que recibe"
               descripcion={
                 propio
-                  ? "Reescritas por ti. Vacía el campo para volver a las de fábrica."
-                  : "Las de fábrica. Puedes reescribirlas y el agente usará las tuyas."
+                  ? "Reescritas por usted. Vacía el campo para volver a las de fábrica."
+                  : "Las de fábrica. Puede reescribirlas y el agente usará las suyas."
               }
               accion={
                 <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ export default async function Agente() {
               />
               <p className="text-[12px] text-tinta-3">
                 Aquí van las instrucciones de cómo habla y qué nunca hace. Los servicios, el horario, el catálogo y la
-                fecha se agregan solos con lo que capturaste: no se escriben aquí.
+                fecha se agregan solos con lo que capturó: no se escriben aquí.
               </p>
               <BotonEnviar>Guardar instrucciones</BotonEnviar>
             </Formulario>
@@ -303,7 +303,7 @@ export default async function Agente() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Lo que recibe el agente"
-              descripcion="Tus instrucciones más los bloques que se arman con tus datos."
+              descripcion="Sus instrucciones más los bloques que se arman con sus datos."
               accion={<Copiar texto={prompt} />}
             />
             <pre className="max-h-[420px] overflow-auto px-4 py-4 text-[11.5px] leading-[1.6] whitespace-pre-wrap text-tinta-2">

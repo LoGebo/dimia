@@ -330,7 +330,9 @@ export function HiloAgente({ agente, negocio, panelAbierto, alternarPanel }: { a
     else if (decision === "aprobar") setMensajes((m) => m.map((x) => (x.id === id ? { ...x, resultado: "Aprobado." } : x)));
   }
 
-  const hora = new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date());
+  // La hora del navegador, no la del servidor (en UTC): calcularla en render rompe la hidratación.
+  const [hora, setHora] = useState("");
+  useEffect(() => setHora(new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date())), []);
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">

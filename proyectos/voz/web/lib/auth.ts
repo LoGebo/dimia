@@ -34,13 +34,22 @@ function firmar(valor: string): string {
   return createHmac("sha256", secretoDeSesion()).update(valor).digest("base64url");
 }
 
-function verificar(token: string): string | null {
-  const [valor, firma] = token.split(".");
-  if (!valor || !firma) return null;
-  const esperada = Buffer.from(firmar(valor));
+const DURACION_SESION = 60 * 60 * 24 * 30;
+
+/**
+ * La cookie es `id.version.caduca.firma`. La caducidad la revisa el servidor
+ * (no solo el navegador) y la versión se compara con usuario_panel: al salir
+ * se sube y toda cookie anterior deja de servir.
+ */
+function verificar(token: string): { id: string; version: number } | null {
+  const partes = token.split(".");
+  if (partes.length !== 4) return null;
+  const [id, version, caduca, firma] = partes as [string, string, string, string];
+  const esperada = Buffer.from(firmar(`${id}.${version}.${caduca}`));
   const recibida = Buffer.from(firma);
-  if (esperada.length !== recibida.length) return null;
-  return timingSafeEqual(esperada, recibida) ? valor : null;
+  if (esperada.length !== recibida.length || !timingSafeEqual(esperada, recibida)) return null;
+  if (!(Number(caduca) > Date.now() / 1000)) return null;
+  return { id, version: Number(version) };
 }
 
 function clienteSupabase(almacen: Awaited<ReturnType<typeof cookies>>) {
@@ -72,13 +81,13 @@ export const usuarioActual = cache(async (): Promise<{ id: string; email: string
     return { id: data.user.id, email: data.user.email ?? "" };
   }
   const token = almacen.get(COOKIE_SESION)?.value;
-  const id = token ? verificar(token) : null;
-  if (!id) return null;
+  const sesion = token ? verificar(token) : null;
+  if (!sesion) return null;
   const filas = await elevado((q) =>
-    q<{ email: string }>("select email from usuario_panel where id = $1", [id]),
+    q<{ email: string }>("select email from usuario_panel where id = $1 and sesion_version = $2", [sesion.id, sesion.version]),
   );
   const fila = filas[0];
-  return fila ? { id, email: fila.email } : null;
+  return fila ? { id: sesion.id, email: fila.email } : null;
 });
 
 /** null si no entra; "bloqueado" si ese correo agotó sus intentos en 15 minutos. */
@@ -86,8 +95,8 @@ export async function iniciarSesionLocal(email: string, password: string): Promi
   return elevado(async (q) => {
     const [freno] = await q<{ bloqueado: boolean }>("select acceso_bloqueado($1) as bloqueado", [email]);
     if (freno?.bloqueado) return "bloqueado";
-    const filas = await q<{ id: string }>(
-      "select id from usuario_panel where email = lower(trim($1)) and password_hash = crypt($2, password_hash)",
+    const filas = await q<{ id: string; sesion_version: number }>(
+      "select id, sesion_version from usuario_panel where email = lower(trim($1)) and password_hash = crypt($2, password_hash)",
       [email, password],
     );
     const fila = filas[0];
@@ -96,7 +105,7 @@ export async function iniciarSesionLocal(email: string, password: string): Promi
       return null;
     }
     await q("select acceso_logrado($1)", [email]);
-    await escribirCookie(fila.id);
+    await escribirCookie(fila.id, fila.sesion_version);
     return fila.id;
   });
 }
@@ -110,23 +119,32 @@ export async function registrarLocal(email: string, password: string): Promise<s
       [id, email, password],
     );
   });
-  await escribirCookie(id);
+  await escribirCookie(id, 0);
   return id;
 }
 
 export async function cerrarSesion(): Promise<void> {
   const almacen = await cookies();
   if (modoSupabase()) await clienteSupabase(almacen).auth.signOut();
+  const token = almacen.get(COOKIE_SESION)?.value;
+  const sesion = token ? verificar(token) : null;
+  // Borrarla del navegador no basta: una copia seguiría sirviendo.
+  if (sesion) {
+    await elevado((q) =>
+      q("update usuario_panel set sesion_version = sesion_version + 1 where id = $1 and sesion_version = $2", [sesion.id, sesion.version]),
+    );
+  }
   almacen.delete(COOKIE_SESION);
 }
 
-async function escribirCookie(id: string): Promise<void> {
+async function escribirCookie(id: string, version: number): Promise<void> {
   const almacen = await cookies();
-  almacen.set(COOKIE_SESION, `${id}.${firmar(id)}`, {
+  const valor = `${id}.${version}.${Math.floor(Date.now() / 1000) + DURACION_SESION}`;
+  almacen.set(COOKIE_SESION, `${valor}.${firmar(valor)}`, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: DURACION_SESION,
     secure: process.env.NODE_ENV === "production",
   });
 }

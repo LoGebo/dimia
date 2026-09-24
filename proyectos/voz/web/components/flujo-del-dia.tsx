@@ -86,7 +86,10 @@ export async function FlujoDelDia({
   const recursoActivo = listaRecursos.find(
     (r) => r.id === parametros.recurso,
   )?.id;
+  // Un día que no es hoy no tiene retrasos ni gente esperando: lo pasado queda «sin cerrar».
+  const esHoy = dia === hoy;
   const retrasada = (r: Reserva) =>
+    esHoy &&
     pasoDe(r) === "por_llegar" &&
     minutosDesde(r.inicio, ahora) > MINUTOS_TOLERANCIA;
   const conteoFiltro: Record<Filtro, number> = {
@@ -117,7 +120,7 @@ export async function FlujoDelDia({
     porLlegar,
   } = resumenCitas(delDia);
   const personas = confirmadasOAtendidas.reduce((s, r) => s + r.personas, 0);
-  const esperando = porLlegar.filter((r) => minutosDesde(r.inicio, ahora) >= 0);
+  const esperando = esHoy ? porLlegar.filter((r) => minutosDesde(r.inicio, ahora) >= 0) : [];
   const enFalta = delDia.filter(retrasada);
   const activos = listaRecursos.filter((r) => r.activo);
   const ocupados = new Set(enAtencion.map((r) => r.resource_id));
@@ -159,7 +162,7 @@ export async function FlujoDelDia({
     {
       paso: "atendida",
       nombre: "Atendidas",
-      pista: `${personas} personas`,
+      pista: `${personas} ${personas === 1 ? "persona" : "personas"} en el día`,
       tono: "bueno",
     },
   ];
@@ -262,7 +265,7 @@ export async function FlujoDelDia({
         <div className="border border-linea bg-panel">
           <Vacio
             titulo="Día libre"
-            detalle="No hay citas para esta fecha. Cuando el agente agende una por teléfono, aparece aquí sola. También puedes agregarla tú."
+            detalle="No hay citas para esta fecha. Cuando el agente agende una por teléfono, aparece aquí sola. También puede agregarla usted."
             accion={<div className="mt-2">{nueva("principal")}</div>}
           />
         </div>

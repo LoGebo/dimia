@@ -78,11 +78,12 @@ function errorLegible(error: unknown, proveedor?: ProveedorTts): string {
   }
   if (codigo === "23505" || /duplicate key/i.test(mensaje)) return "Ya existe uno con ese nombre.";
   if (codigo === "23503") return "No se puede: otro registro depende de este.";
+  if (codigo === "23P01") return "Ese horario ya lo ocupa otra cita.";
   if (codigo === "42501" || /row-level security/i.test(mensaje)) {
-    return "No se pudo completar por un permiso en la base. Avísanos y lo revisamos.";
+    return "No se pudo completar por un permiso en la base. Avísenos y lo revisamos.";
   }
   if (/statement timeout|timeout/i.test(mensaje)) {
-    return "La base tardó demasiado en responder. Intenta de nuevo.";
+    return "La base tardó demasiado en responder. Intente de nuevo.";
   }
   return "No se pudo guardar.";
 }
@@ -106,10 +107,10 @@ async function intentar(fn: () => Promise<Estado | unknown[] | void>): Promise<E
 export async function entrar(_previo: Estado, fd: FormData): Promise<Estado> {
   const email = texto(fd, "email");
   const password = texto(fd, "password");
-  if (!email || !password) return { error: "Escribe tu correo y contraseña." };
+  if (!email || !password) return { error: "Escriba su correo y contraseña." };
   if (modoSupabase()) return { error: "En modo Supabase el acceso se hace desde el formulario del cliente." };
   const id = await iniciarSesionLocal(email, password);
-  if (id === "bloqueado") return { error: "Demasiados intentos. Espera 15 minutos y vuelve a intentar." };
+  if (id === "bloqueado") return { error: "Demasiados intentos. Espere 15 minutos y vuelva a intentarlo." };
   if (!id) return { error: "Correo o contraseña incorrectos." };
   redirect("/hoy");
 }
@@ -119,9 +120,9 @@ export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> 
   const password = texto(fd, "password");
   const nombre = texto(fd, "nombre");
 
-  if (!email.includes("@")) return { error: "Escribe un correo válido." };
+  if (!email.includes("@")) return { error: "Escriba un correo válido." };
   if (password.length < 8) return { error: "La contraseña necesita al menos 8 caracteres." };
-  if (!nombre) return { error: "Ponle nombre a tu negocio." };
+  if (!nombre) return { error: "Póngale nombre a su negocio." };
   const giro = await giroElegido(fd);
   if ("error" in giro) return giro;
 
@@ -141,6 +142,10 @@ export async function registrar(_previo: Estado, fd: FormData): Promise<Estado> 
       telefonoEscalamiento: null,
     });
   } catch (error) {
+    // La cuenta ya tenía sesión: sin deshacerla, /registro redirige y el error
+    // no se ve, y el correo queda tomado por una cuenta sin negocio.
+    await cerrarSesion();
+    await elevado((q) => q("delete from auth.users where id = $1", [usuarioId]));
     return { error: errorLegible(error) };
   }
   await elegirNegocio(creado.id);
@@ -193,7 +198,7 @@ async function crearNegocio(
     );
     const id = filas[0]!.id;
     await q("insert into tenant_member (tenant_id, user_id, rol) values ($1, $2, 'owner')", [id, usuarioId]);
-    await sembrarPlantilla(q, id, vertical);
+    await sembrarPlantilla(q, id, vertical, herramientas.includes("agendar"));
     return { id, herramientas };
   });
 }
@@ -204,7 +209,7 @@ type GiroPropio = { nombre: string; herramientas: Herramienta[]; descripcion: st
 
 function giroPropio(fd: FormData): GiroPropio | { error: string } {
   const nombre = texto(fd, "giro_nombre");
-  if (!nombre) return { error: "Ponle nombre al giro." };
+  if (!nombre) return { error: "Póngale nombre al giro." };
   if (nombre.length > 60) return { error: "El nombre del giro va en 60 caracteres o menos." };
   const descripcion = texto(fd, "giro_instrucciones");
   if (descripcion.length > 2000) return { error: "La descripción del giro va en 2000 caracteres o menos." };
@@ -234,7 +239,7 @@ async function crearGiroPropio(q: Consulta, giro: GiroPropio): Promise<Vertical>
     `CONTEXTO: ${giro.nombre.toLowerCase()}.`,
     giro.descripcion ? `- ${giro.descripcion}` : null,
     giro.herramientas.includes("agendar") ? "- Agenda solo en horarios que devuelva la herramienta de disponibilidad." : null,
-    giro.herramientas.includes("pedido") ? "- Consulta el catalogo antes de decir que hay o cuanto cuesta." : null,
+    giro.herramientas.includes("pedido") ? "- Consulta el catálogo antes de decir qué hay o cuánto cuesta." : null,
     "- Lo que no puedas resolver, toma recado o transfiere.",
   ]
     .filter(Boolean)
@@ -242,7 +247,7 @@ async function crearGiroPropio(q: Consulta, giro: GiroPropio): Promise<Vertical>
   await q(
     `insert into vertical_template (clave, nombre, instrucciones, saludo, herramientas, activo, propio)
      values ($1, $2, $3, $4, $5::jsonb, true, true)`,
-    [clave, giro.nombre, instrucciones, "{nombre}, buen dia. ¿En que le puedo ayudar?", JSON.stringify(giro.herramientas)],
+    [clave, giro.nombre, instrucciones, "{nombre}, buen día. ¿En qué le puedo ayudar?", JSON.stringify(giro.herramientas)],
   );
   return clave;
 }
@@ -252,7 +257,7 @@ export async function altaNegocio(_previo: Estado, fd: FormData): Promise<Estado
   if (!usuario) redirect("/entrar");
   if ((await membresias(usuario.id)).length > 0) return { error: "Esta cuenta ya tiene un negocio." };
   const nombre = texto(fd, "nombre");
-  if (!nombre) return { error: "Ponle nombre al negocio." };
+  if (!nombre) return { error: "Póngale nombre al negocio." };
   const giro = await giroElegido(fd);
   if ("error" in giro) return giro;
   const escalamiento = telefonoOpcional(fd, "telefono_escalamiento");
@@ -303,7 +308,7 @@ export async function guardarNegocio(_previo: Estado, fd: FormData): Promise<Est
   const proveedor = (texto(fd, "tts_proveedor") || "azure") as ProveedorTts;
   const proveedorLlm = (texto(fd, "llm_proveedor") || "openai") as ProveedorLlm;
   const voz = opcional(fd, "voz_id");
-  if (!texto(fd, "nombre")) return { error: "Ponle nombre al negocio." };
+  if (!texto(fd, "nombre")) return { error: "Póngale nombre al negocio." };
 
   if (voz && !vozValida(proveedor, voz)) {
     const formato = FORMATO_VOZ[proveedor];
@@ -434,7 +439,7 @@ export async function quitarGrupoCatalogo(_previo: Estado, fd: FormData): Promis
         [id, grupo],
       );
       const conItems = Number(filas[0]?.total ?? 0);
-      if (conItems > 0) return { error: `"${grupo}" todavía tiene ${conItems} items. Muévelos o bórralos primero.` };
+      if (conItems > 0) return { error: `"${grupo}" todavía tiene ${conItems} items. Muévalos o bórrelos primero.` };
       await q("update tenant set tipos_catalogo = array_remove(tipos_catalogo, $2) where id = $1", [id, grupo]);
       return { ok: "Grupo quitado." };
     }),
@@ -458,7 +463,7 @@ export async function guardarItemCatalogo(_previo: Estado, fd: FormData): Promis
   const nombre = texto(fd, "nombre");
   const tipo = normalizarGrupo(texto(fd, "tipo"));
   if (!nombre) return { error: "El item necesita un nombre." };
-  if (!tipo) return { error: "Elige o escribe un tipo." };
+  if (!tipo) return { error: "Elija o escriba un tipo." };
 
   const alias = JSON.stringify(
     texto(fd, "alias")
@@ -627,6 +632,17 @@ export async function archivarServicio(_previo: Estado, fd: FormData): Promise<E
   });
 }
 
+/** Da de baja un recurso (quien ya no trabaja ahí) sin borrar su historial; se reactiva igual. */
+export async function archivarRecurso(_previo: Estado, fd: FormData): Promise<Estado> {
+  const activar = opcional(fd, "activar") === "1";
+  return intentar(async () => {
+    await datos((q, negocioId) =>
+      q("update resource set activo = $2 where id = $1 and tenant_id = $3", [texto(fd, "id"), activar, negocioId]),
+    );
+    return { ok: activar ? "Reactivado." : "Dado de baja." };
+  });
+}
+
 export type ReglaNueva = Omit<Regla, "id">;
 
 const HORA = /^\d{2}:\d{2}$/;
@@ -649,7 +665,7 @@ function reglaValida(r: ReglaNueva): boolean {
  * (`recursos`): el horario de un recurso que no se le pasó queda como estaba.
  */
 export async function guardarHorario(reglas: ReglaNueva[], recursos: string[]): Promise<Estado> {
-  if (!reglas.every(reglaValida)) return { error: "Hay una franja mal formada. Recarga y vuelve a intentar." };
+  if (!reglas.every(reglaValida)) return { error: "Hay una franja mal formada. Recargue la página y vuelva a intentarlo." };
   if (!reglas.every((r) => r.resource_id === null || recursos.includes(r.resource_id))) {
     return { error: "Hay una franja de un recurso que no está en el editor." };
   }
@@ -662,7 +678,7 @@ export async function guardarHorario(reglas: ReglaNueva[], recursos: string[]): 
       if (reglas.length > 0) {
         await q(
           `insert into schedule_rule (tenant_id, resource_id, tipo, dia_semana, hora_inicio, hora_fin)
-           select $1, r.resource_id, r.tipo::text, r.dia_semana, r.hora_inicio, r.hora_fin
+           select $1, r.resource_id, r.tipo::rule_kind, r.dia_semana, r.hora_inicio, r.hora_fin
              from unnest($2::uuid[], $3::text[], $4::int[], $5::time[], $6::time[])
                as r(resource_id, tipo, dia_semana, hora_inicio, hora_fin)
             where r.resource_id is null or exists (select 1 from resource x where x.id = r.resource_id and x.tenant_id = $1)`,
@@ -686,8 +702,8 @@ export async function guardarAusencia(_previo: Estado, fd: FormData): Promise<Es
   const recurso = texto(fd, "resource_id");
   const desde = texto(fd, "desde");
   const hasta = texto(fd, "hasta") || desde;
-  if (!recurso) return { error: "Elige a quién." };
-  if (!desde) return { error: "Elige desde cuándo." };
+  if (!recurso) return { error: "Elija a quién." };
+  if (!desde) return { error: "Elija desde cuándo." };
   if (!fechaValida(desde) || !fechaValida(hasta)) return { error: "Las fechas van como AAAA-MM-DD." };
   if (hasta < desde) return { error: "El fin no puede ser antes del inicio." };
   const dias = Math.round((Date.parse(`${hasta}T12:00:00Z`) - Date.parse(`${desde}T12:00:00Z`)) / 86400000) + 1;
@@ -698,38 +714,72 @@ export async function guardarAusencia(_previo: Estado, fd: FormData): Promise<Es
         "select id from resource where id = $2 and tenant_id = $1 and tipo = 'persona' and activo",
         [id, recurso],
       );
-      if (persona.length === 0) return { error: "Elige a una persona activa del equipo." };
-      await q(
+      if (persona.length === 0) return { error: "Elija a una persona activa del equipo." };
+      const hoy = (
+        await q<{ hoy: string }>("select (now() at time zone zona_horaria)::date::text as hoy from tenant where id = $1", [id])
+      )[0]!.hoy;
+      if (desde < hoy) return { error: "La ausencia no puede empezar en un día que ya pasó." };
+      // Los días que ya estaban bloqueados no se duplican.
+      const nuevos = await q(
         `insert into schedule_rule (tenant_id, resource_id, tipo, fecha, hora_inicio, hora_fin, motivo)
          select $1, $2, 'bloqueo', d::date, '00:00'::time, '23:59'::time, $5
-           from generate_series($3::date, $4::date, interval '1 day') d`,
+           from generate_series($3::date, $4::date, interval '1 day') d
+          where not exists (select 1 from schedule_rule x
+                             where x.tenant_id = $1 and x.resource_id = $2 and x.tipo = 'bloqueo' and x.fecha = d::date
+                               and x.hora_inicio = '00:00' and x.hora_fin = '23:59')
+         returning 1`,
         [id, recurso, desde, hasta, opcional(fd, "motivo")],
       );
-      return { ok: dias === 1 ? "Ausencia guardada." : `${dias} días bloqueados.` };
+      // La ausencia no toca las citas que ya existían: se le dice al dueño cuántas quedan.
+      const [citas] = await q<{ n: number }>(
+        `select count(*)::int as n from booking b join tenant t on t.id = b.tenant_id
+          where b.tenant_id = $1 and b.resource_id = $2 and b.estado = 'confirmada'
+            and (b.inicio at time zone t.zona_horaria)::date between $3::date and $4::date`,
+        [id, recurso, desde, hasta],
+      );
+      const n = citas?.n ?? 0;
+      const aviso = n === 0 ? "" : ` ${n === 1 ? "Hay 1 cita" : `Hay ${n} citas`} en esos días; reagéndelas o cancélelas.`;
+      const hechos = nuevos.length;
+      const base =
+        hechos === 0
+          ? dias === 1 ? "Ese día ya estaba bloqueado." : "Esos días ya estaban bloqueados."
+          : dias === 1
+            ? "Ausencia guardada."
+            : `${hechos} ${hechos === 1 ? "día bloqueado" : "días bloqueados"}.${hechos < dias ? " Los demás ya lo estaban." : ""}`;
+      return { ok: base + aviso };
     }),
   );
 }
 
 export async function guardarExcepcion(_previo: Estado, fd: FormData): Promise<Estado> {
   const fecha = texto(fd, "fecha");
-  if (!fecha) return { error: "Elige una fecha." };
+  if (!fecha) return { error: "Elija una fecha." };
   if (!fechaValida(fecha)) return { error: "La fecha va como AAAA-MM-DD." };
   const tipo = (texto(fd, "tipo") || "festivo") as TipoRegla;
-  if (!TIPOS_REGLA.includes(tipo)) return { error: "Elige qué pasa ese día." };
-  const inicio = texto(fd, "hora_inicio") || "00:00";
-  const fin = texto(fd, "hora_fin") || "23:59";
+  if (!TIPOS_REGLA.includes(tipo)) return { error: "Elija qué pasa ese día." };
+  // Un festivo cierra el día completo (ventanas_abiertas no mira sus horas): no se guardan horas que no aplican.
+  const inicio = tipo === "festivo" ? "00:00" : texto(fd, "hora_inicio") || "00:00";
+  const fin = tipo === "festivo" ? "23:59" : texto(fd, "hora_fin") || "23:59";
   if (!HORA.test(inicio) || !HORA.test(fin)) return { error: "Las horas van como HH:MM." };
   if (fin <= inicio) return { error: "La hora de fin debe ser después de la de inicio." };
-  return intentar(async () => {
-    await datos((q, id) =>
-      q(
+  return intentar(() =>
+    datos(async (q, id) => {
+      const hoy = (
+        await q<{ hoy: string }>("select (now() at time zone zona_horaria)::date::text as hoy from tenant where id = $1", [id])
+      )[0]!.hoy;
+      if (fecha < hoy) return { error: "Esa fecha ya pasó." };
+      const nuevas = await q(
         `insert into schedule_rule (tenant_id, tipo, fecha, hora_inicio, hora_fin)
-         values ($1, $2, $3::date, $4::time, $5::time)`,
+         select $1, $2::rule_kind, $3::date, $4::time, $5::time
+          where not exists (select 1 from schedule_rule x
+                             where x.tenant_id = $1 and x.resource_id is null and x.tipo = $2::rule_kind
+                               and x.fecha = $3::date and x.hora_inicio = $4::time and x.hora_fin = $5::time)
+         returning id`,
         [id, tipo, fecha, inicio, fin],
-      ),
-    );
-    return { ok: "Excepción agregada." };
-  });
+      );
+      return { ok: nuevas.length > 0 ? "Excepción agregada." : "Esa excepción ya estaba." };
+    }),
+  );
 }
 
 export async function eliminarRegla(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -829,9 +879,13 @@ export async function eliminarReglaWa(fd: FormData): Promise<void> {
 }
 
 export async function cancelarReserva(_previo: Estado, fd: FormData): Promise<Estado> {
-  return intentar(() =>
-    datos((q, negocioId) => q("select public.cancelar_reserva($1, $2)", [negocioId, texto(fd, "id")])),
-  );
+  return intentar(async () => {
+    const filas = await datos((q, negocioId) =>
+      q<{ r: { ok: boolean } }>("select public.cancelar_reserva($1, $2) as r", [negocioId, texto(fd, "id")]),
+    );
+    if (!filas[0]?.r?.ok) return { error: "Esa reserva ya no está confirmada." };
+    return { ok: "Reserva cancelada." };
+  });
 }
 
 export async function guardarCliente(_previo: Estado, fd: FormData): Promise<Estado> {
@@ -858,9 +912,9 @@ const METODOS_PAGO = ["efectivo", "tarjeta", "transferencia", "enlace", "otro"];
 /** Registra lo que de verdad se cobró por una cita o un pedido. */
 export async function registrarPago(_previo: Estado, fd: FormData): Promise<Estado> {
   const monto = numero(fd, "monto", 0);
-  if (!(monto > 0)) return { error: "Escribe un monto mayor a cero." };
+  if (!(monto > 0)) return { error: "Escriba un monto mayor a cero." };
   const metodo = texto(fd, "metodo");
-  if (!METODOS_PAGO.includes(metodo)) return { error: "Elige cómo se pagó." };
+  if (!METODOS_PAGO.includes(metodo)) return { error: "Elija cómo se pagó." };
   const enlace = opcional(fd, "enlace_url");
   if (enlace && !/^https?:\/\//.test(enlace)) return { error: "El enlace debe empezar con https://" };
   const pendiente = fd.get("pendiente") === "1";
@@ -899,15 +953,19 @@ export async function registrarPago(_previo: Estado, fd: FormData): Promise<Esta
 export async function cambiarEstadoPago(_previo: Estado, fd: FormData): Promise<Estado> {
   const estado = texto(fd, "estado");
   if (!["pagado", "cancelado", "reembolsado"].includes(estado)) return { error: "Estado desconocido." };
-  return intentar(() =>
-    datos((q, negocioId) =>
+  // Solo los pasos que tienen sentido: lo pendiente se paga o se cancela; lo pagado se reembolsa.
+  const desde = estado === "reembolsado" ? "pagado" : "pendiente";
+  return intentar(async () => {
+    const filas = await datos((q, negocioId) =>
       q(
         `update pago set estado = $3::pago_estado, pagado_en = case when $3 = 'pagado' then now() else pagado_en end, actualizado = now()
-          where id = $2 and tenant_id = $1`,
-        [negocioId, texto(fd, "id"), estado],
+          where id = $2 and tenant_id = $1 and estado = $4::pago_estado
+          returning id`,
+        [negocioId, texto(fd, "id"), estado, desde],
       ),
-    ),
-  );
+    );
+    if (filas.length === 0) return { error: "Ese cobro ya cambió de estado." };
+  });
 }
 
 const TIPOS_CAMPANA = ["no_show", "inactivos", "recordatorio_pago", "resena", "marketing", "manual"];
@@ -923,9 +981,11 @@ export async function crearCampana(_previo: Estado, fd: FormData): Promise<Estad
   const tipo = texto(fd, "tipo");
   const canal = texto(fd, "canal") === "llamada" ? "llamada" : "whatsapp";
   const mensaje = texto(fd, "mensaje");
-  if (!nombre) return { error: "Ponle nombre a la campaña." };
-  if (!TIPOS_CAMPANA.includes(tipo)) return { error: "Elige a quién va dirigida." };
-  if (!mensaje) return { error: canal === "llamada" ? "Escribe el guion de la llamada." : "Escribe el mensaje." };
+  if (!nombre) return { error: "Póngale nombre a la campaña." };
+  if (!TIPOS_CAMPANA.includes(tipo)) return { error: "Elija a quién va dirigida." };
+  if (!mensaje) return { error: canal === "llamada" ? "Escriba el guion de la llamada." : "Escriba el mensaje." };
+  // La plantilla de promoción trae «[ promoción ] hasta [ fecha ]»: sin editar, saldría tal cual.
+  if (/\[[^\]]*\]/.test(mensaje)) return { error: "Complete lo que va entre corchetes antes de guardar." };
   const dias = Math.max(1, Math.min(365, Math.round(numero(fd, "dias", 30))));
   const inicio = texto(fd, "ventana_inicio") || "10:00";
   const fin = texto(fd, "ventana_fin") || "19:00";
@@ -982,7 +1042,7 @@ export async function agregarContactosCampana(_previo: Estado, fd: FormData): Pr
   const campanaId = texto(fd, "campana_id");
   const segmento = texto(fd, "segmento") as SegmentoCliente;
   const condicion = CONDICION_SEGMENTO[segmento];
-  if (!condicion) return { error: "Elige un segmento." };
+  if (!condicion) return { error: "Elija un segmento." };
   return intentar(() =>
     datos((q, negocioId) =>
       q(
@@ -1014,7 +1074,7 @@ export async function guardarLinea(_previo: Estado, fd: FormData): Promise<Estad
   const tel = normalizarTelefono(texto(fd, "telefono"));
   const etiqueta = texto(fd, "etiqueta");
   if (!TELEFONO_E164.test(tel)) return { error: ERROR_TELEFONO };
-  if (!etiqueta) return { error: "Ponle etiqueta: de dónde viene quien marca ahí." };
+  if (!etiqueta) return { error: "Póngale etiqueta: de dónde viene quien marca ahí." };
   const campanaId = opcional(fd, "campana_id");
   try {
     const resultado = await datos(async (q, negocioId): Promise<Estado> => {
@@ -1075,13 +1135,29 @@ export async function guardarConfirmaciones(_previo: Estado, fd: FormData): Prom
   });
 }
 
-export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar";
+export type PasoFlujo = "llego" | "atendida" | "no_llego" | "regresar" | "reabrir";
+
+// El día de la cita y el de hoy, en la zona del negocio.
+const DIA_CITA = "(inicio at time zone (select zona_horaria from tenant where id = $1))::date";
+const DIA_HOY = "(now() at time zone (select zona_horaria from tenant where id = $1))::date";
 
 const CAMBIOS_PASO: Record<PasoFlujo, string> = {
   llego: "llegada = now()",
   regresar: "llegada = null",
-  atendida: "estado = 'completada', llegada = coalesce(llegada, now())",
+  // Cerrar hoy una cita de otro día no inventa la hora a la que entró.
+  atendida: `estado = 'completada', llegada = coalesce(llegada, case when ${DIA_CITA} = ${DIA_HOY} then now() end)`,
   no_llego: "estado = 'no_asistio'",
+  reabrir: "estado = 'confirmada', llegada = null",
+};
+
+/** Cuándo se vale cada paso: nadie llega ni falta a una cita que todavía no empieza. */
+const CONDICION_PASO: Record<PasoFlujo, string> = {
+  llego: `estado = 'confirmada' and ${DIA_CITA} = ${DIA_HOY}`,
+  regresar: "estado = 'confirmada'",
+  atendida: `estado = 'confirmada' and ${DIA_CITA} <= ${DIA_HOY}`,
+  no_llego: "estado = 'confirmada' and inicio <= now()",
+  // Deshace un «No llegó» marcado por error.
+  reabrir: "estado = 'no_asistio'",
 };
 
 /**
@@ -1089,13 +1165,20 @@ const CAMBIOS_PASO: Record<PasoFlujo, string> = {
  * así la cita sigue confirmada y sigue bloqueando su horario mientras se atiende.
  */
 export async function moverCita(_previo: Estado, fd: FormData): Promise<Estado> {
-  const cambio = CAMBIOS_PASO[texto(fd, "paso") as PasoFlujo];
+  const paso = texto(fd, "paso") as PasoFlujo;
+  const cambio = CAMBIOS_PASO[paso];
   if (!cambio) return { error: "Paso desconocido." };
-  return intentar(() =>
-    datos((q, negocioId) =>
-      q(`update booking set ${cambio} where id = $2 and tenant_id = $1 and estado = 'confirmada'`, [negocioId, texto(fd, "id")]),
-    ),
-  );
+  return intentar(async () => {
+    const filas = await datos((q, negocioId) =>
+      q(`update booking set ${cambio} where id = $2 and tenant_id = $1 and ${CONDICION_PASO[paso]} returning id`, [
+        negocioId,
+        texto(fd, "id"),
+      ]),
+    );
+    if (filas.length === 0) {
+      return { error: paso === "reabrir" ? "Esa cita ya no está marcada como no llegó." : "Esa cita ya cambió o todavía no es su hora." };
+    }
+  });
 }
 
 export type Slot = { inicio: string; fin: string; resource_id: string; resource_nombre: string };
@@ -1112,11 +1195,44 @@ export async function slotsLibres(servicioId: string, dia: string, personas: num
   );
 }
 
+/** Los rechazos de public.reservar() en palabras del dueño; reagendarReserva usa los mismos. */
+const MENSAJES_RESERVA: Record<string, string> = {
+  slot_tomado: "Ese horario acaba de ocuparse.",
+  recurso_invalido: "El recurso no tiene capacidad para esas personas.",
+  recurso_no_valido: "Ese servicio no lo da ese recurso.",
+  servicio_invalido: "El servicio no existe o está inactivo.",
+  en_el_pasado: "Ese horario ya pasó.",
+  fuera_de_horizonte: "Esa fecha está más lejos de lo que el negocio agenda.",
+  fuera_de_horario: "Ese horario está fuera del horario de atención de ese recurso.",
+};
+
 /** Mueve la cita al horario y al recurso elegidos: el slot que se mostró es el que se toma. */
 export async function reagendarReserva(reservaId: string, inicio: string, recursoId: string): Promise<Estado> {
-  if (Number.isNaN(Date.parse(inicio))) return { error: "Elige un horario." };
+  if (Number.isNaN(Date.parse(inicio))) return { error: "Elija un horario." };
   try {
     const movidas = await datos(async (q, id) => {
+      // Las mismas reglas que public.reservar(): el UPDATE directo se las saltaba
+      // (pasado, fuera de horario, día cerrado, capacidad, quién lo da, horizonte).
+      const [revision] = await q<{ motivo: string | null }>(
+        `select case
+                  when $3::timestamptz < now() - interval '5 minutes' then 'en_el_pasado'
+                  when r.capacidad < b.personas then 'recurso_invalido'
+                  when jsonb_array_length(s.recursos_validos) > 0 and not s.recursos_validos ? r.id::text then 'recurso_no_valido'
+                  when ($3::timestamptz at time zone t.zona_horaria)::date
+                       > (now() at time zone t.zona_horaria)::date + t.horizonte_dias then 'fuera_de_horizonte'
+                  when not exists (
+                    select 1 from public.ventanas_abiertas($1, r.id, ($3::timestamptz at time zone t.zona_horaria)::date, t.zona_horaria) w
+                     where w.ventana @> tstzrange($3::timestamptz, $3::timestamptz + make_interval(mins => s.duracion_min), '[]')
+                  ) then 'fuera_de_horario'
+                end as motivo
+           from booking b
+           join service s on s.id = b.service_id
+           join tenant t on t.id = b.tenant_id
+           join resource r on r.id = $4 and r.tenant_id = $1
+          where b.id = $2 and b.tenant_id = $1`,
+        [id, reservaId, inicio, recursoId],
+      );
+      if (revision?.motivo) return revision.motivo;
       const filas = await q<{ id: string }>(
         `update booking b
             set inicio = $3::timestamptz,
@@ -1130,9 +1246,10 @@ export async function reagendarReserva(reservaId: string, inicio: string, recurs
       );
       return filas.length;
     });
+    if (typeof movidas === "string") return { error: MENSAJES_RESERVA[movidas] ?? "No se pudo mover." };
     if (movidas === 0) return { error: "La reserva ya no está confirmada o el recurso no está activo." };
   } catch {
-    return { error: "Ese horario acaba de ocuparse. Elige otro." };
+    return { error: "Ese horario acaba de ocuparse. Elija otro." };
   }
   refrescarPanel();
   return { ok: "Reserva movida." };
@@ -1141,8 +1258,8 @@ export async function reagendarReserva(reservaId: string, inicio: string, recurs
 export async function crearReserva(_previo: Estado, fd: FormData): Promise<Estado> {
   const telefono = normalizarTelefono(texto(fd, "telefono"));
   if (!TELEFONO_E164.test(telefono)) return { error: ERROR_TELEFONO };
-  if (!texto(fd, "cliente_nombre")) return { error: "Escribe el nombre." };
-  if (Number.isNaN(Date.parse(texto(fd, "inicio")))) return { error: "Elige un horario." };
+  if (!texto(fd, "cliente_nombre")) return { error: "Escriba el nombre." };
+  if (Number.isNaN(Date.parse(texto(fd, "inicio")))) return { error: "Elija un horario." };
   let resultado: { ok: boolean; error?: string; codigo?: string };
   try {
     resultado = await datos(async (q, negocioId) => {
@@ -1166,14 +1283,7 @@ export async function crearReserva(_previo: Estado, fd: FormData): Promise<Estad
   }
   refrescarPanel();
   if (!resultado.ok) {
-    const mensajes: Record<string, string> = {
-      slot_tomado: "Ese horario acaba de ocuparse.",
-      recurso_invalido: "El recurso no tiene capacidad para esas personas.",
-      servicio_invalido: "El servicio no existe o está inactivo.",
-      en_el_pasado: "Ese horario ya pasó.",
-      fuera_de_horario: "Ese horario está fuera del horario de atención de ese recurso.",
-    };
-    return { error: mensajes[resultado.error ?? ""] ?? "No se pudo reservar." };
+    return { error: MENSAJES_RESERVA[resultado.error ?? ""] ?? "No se pudo reservar." };
   }
   return { ok: `Reservado con código ${resultado.codigo}.` };
 }
@@ -1370,12 +1480,12 @@ export type EstadoCobroIniciado = Estado & { pagoId?: string; enlace?: string; r
  */
 export async function iniciarCobro(_previo: EstadoCobroIniciado, fd: FormData): Promise<EstadoCobroIniciado> {
   const monto = numero(fd, "monto", 0);
-  if (!(monto > 0)) return { error: "Escribe un monto mayor a cero." };
+  if (!(monto > 0)) return { error: "Escriba un monto mayor a cero." };
   const modo = texto(fd, "modo");
   const proveedor = texto(fd, "proveedor");
-  if (!esProveedor(proveedor)) return { error: "Elige con qué cobrar." };
+  if (!esProveedor(proveedor)) return { error: "Elija con qué cobrar." };
   const terminalId = opcional(fd, "terminal");
-  if (modo === "terminal" && !terminalId) return { error: "Elige la terminal." };
+  if (modo === "terminal" && !terminalId) return { error: "Elija la terminal." };
   const bookingId = opcional(fd, "booking_id");
   const pedidoId = opcional(fd, "pedido_id");
   const concepto = texto(fd, "concepto") || "Cobro";
@@ -1630,7 +1740,7 @@ export async function alternarPlugin(clave: string, instalar: boolean): Promise<
 
 export async function crearGrupo(nombre: string, miembros: string[]): Promise<Estado & { id?: string }> {
   const n = nombre.trim();
-  if (!n) return { error: "Ponle nombre al grupo." };
+  if (!n) return { error: "Póngale nombre al grupo." };
   if (miembros.length < 2) return { error: "Un grupo necesita al menos dos agentes." };
   let id: string | undefined;
   const estado = await intentar(() =>

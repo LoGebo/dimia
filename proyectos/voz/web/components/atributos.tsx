@@ -53,7 +53,7 @@ export function EditorAtributos({ tipo, iniciales }: { tipo: string; iniciales: 
         </div>
       ) : (
         <p className="text-[11px] text-tinta-3">
-          Este tipo no tiene campos sugeridos. Agrega los que necesites abajo.
+          Este tipo no tiene campos sugeridos. Agregue los que necesite abajo.
         </p>
       )}
 

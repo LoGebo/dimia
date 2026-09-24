@@ -76,6 +76,7 @@ async def test_flujo_movil(cliente):
 async def test_avisos_y_push(cliente):
     """Un recado nuevo crea su aviso (trigger), la app lo lista y el envío a APNs lo marca y apaga tokens muertos."""
     import httpx as _httpx
+
     from api import apns
     from api.config import api_settings
 
@@ -87,6 +88,13 @@ async def test_avisos_y_push(cliente):
     await base.execute("insert into lead (tenant_id, telefono, asunto) values ($1, '+525500000000', 'Quiere cotizar')", tid)
     lista = (await c.get(f"/v1/tenants/{tid}/avisos", headers=auth)).json()
     assert lista and lista[0]["tipo"] == "recado.creado"
+    # Marcar atendido dos veces (doble toque) lo deja atendido; sin cuerpo sigue alternando.
+    rid = await base.fetchval("select id from lead where tenant_id = $1", tid)
+    for _ in range(2):
+        assert (await c.post(f"/v1/tenants/{tid}/recados/{rid}/atendido", json={"atendido": True}, headers=auth)).status_code == 204
+    assert await base.fetchval("select atendido from lead where id = $1", rid) is True
+    assert (await c.post(f"/v1/tenants/{tid}/recados/{rid}/atendido", headers=auth)).status_code == 204
+    assert await base.fetchval("select atendido from lead where id = $1", rid) is False
 
     enviados = []
     def apple(req: _httpx.Request) -> _httpx.Response:
@@ -94,8 +102,8 @@ async def test_avisos_y_push(cliente):
         return _httpx.Response(410, json={"reason": "Unregistered"}) if muerto in req.url.path else _httpx.Response(200)
     ajustes = api_settings()
     ajustes.apns_llave_id = "ABC123DEFG"
-    from cryptography.hazmat.primitives.asymmetric import ec
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
     ajustes.apns_llave = ec.generate_private_key(ec.SECP256R1()).private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
     try:
         async with _httpx.AsyncClient(transport=_httpx.MockTransport(apple)) as http:

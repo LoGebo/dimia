@@ -13,7 +13,7 @@ from mcp_types import ToolAnnotations
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 
-from agentes import config, db
+from agentes import config, db, red
 
 SOLO_LECTURA = ToolAnnotations(readOnlyHint=True)
 servidor = MCPServer("dimia", instructions="Datos reales del negocio del dueño: citas, clientes, cobros y servicios. Úselos antes de suponer. Las herramientas que escriben (agendar, cancelar, anotar, registrar pago) piden la aprobación del dueño: antes de llamarlas, diga en el hilo exactamente qué va a hacer.")
@@ -243,8 +243,7 @@ async def enviar_whatsapp(ctx: Context, telefono: str, mensaje: str, nombre: str
             "name": "mensaje_negocio", "language": {"code": "es_MX"},
             "components": [{"type": "body", "parameters": [{"type": "text", "text": (nombre.strip() or "hola")[:60]}, {"type": "text", "text": negocio[:60]}, {"type": "text", "text": mensaje.strip().replace("\n", " ")[:900]}]}]}}
         via = "plantilla"
-    async with httpx.AsyncClient(timeout=15) as http:
-        r = await http.post(f"https://graph.facebook.com/v25.0/{config.WHATSAPP_PHONE_NUMBER_ID}/messages", json=cuerpo, headers={"Authorization": f"Bearer {config.WHATSAPP_ACCESS_TOKEN}"})
+    r = await red.http().post(f"https://graph.facebook.com/v25.0/{config.WHATSAPP_PHONE_NUMBER_ID}/messages", json=cuerpo, headers={"Authorization": f"Bearer {config.WHATSAPP_ACCESS_TOKEN}"}, timeout=15)
     if r.status_code >= 400:
         err = (r.json().get("error") or {}) if r.content else {}
         if via == "plantilla" and err.get("code") in (132001, 132000, 132015):

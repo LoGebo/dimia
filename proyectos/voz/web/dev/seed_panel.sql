@@ -11,7 +11,20 @@ end $$;
 
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
-grant execute on all functions in schema public to authenticated;
+-- Solo lo que las migraciones dejan abierto: lo que revocaron a `public` (lo que solo
+-- llama el motor) sigue cerrado, como en Supabase.
+do $$
+declare f oid;
+begin
+  for f in select p.oid from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.prokind = 'f' loop
+    if has_function_privilege('public', f, 'execute') then
+      execute format('grant execute on function %s to authenticated', f::regprocedure);
+    else
+      execute format('revoke execute on function %s from authenticated', f::regprocedure);
+    end if;
+  end loop;
+end $$;
 alter default privileges in schema public
   grant select, insert, update, delete on tables to authenticated;
 

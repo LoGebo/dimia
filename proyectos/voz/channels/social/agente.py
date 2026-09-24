@@ -13,7 +13,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from dataclasses import dataclass, field
+import uuid
+from dataclasses import dataclass, field, replace
 from datetime import tzinfo
 from typing import Any
 
@@ -23,9 +24,7 @@ from channels import nucleo
 from channels.social.config import SocialSettings, social_settings
 from channels.social.parser import CanalSocial, MensajeSocial
 from channels.whatsapp import deterministas, plantilla
-import uuid
-
-from channels.whatsapp.agente import _accion_de_confirmacion, _momento, opcion_escrita
+from channels.whatsapp.agente import NO_SOPORTADO, _accion_de_confirmacion, _momento, opcion_escrita
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
 from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
@@ -45,7 +44,8 @@ Estas en Instagram/Messenger, no en una llamada. Se lee en el celular, rapido.
 - Maximo dos frases por mensaje. Si necesitas mas, es que estas explicando de mas.
 - Una sola pregunta por turno.
 - Nada de listas largas ni de repetir lo que el cliente acaba de decir.
-- Los precios y el codigo van tal cual, sin adorno.
+- Los precios y el codigo van tal cual, sin adorno: sin asteriscos ni negritas,
+  Instagram y Messenger no las muestran.
 - Cuando consultes disponibilidad, los horarios salen como botones debajo de
   tu mensaje. Tu solo escribe una linea que los introduzca ("Tengo estos
   horarios el martes 22:"), sin repetirlos. La persona toca uno o escribe la hora.
@@ -72,8 +72,10 @@ class AgenteSocial:
         agenda: Agenda | None = None,
         registro: RegistroSesiones | None = None,
         cfg: SocialSettings | None = None,
+        respaldo=None,
     ) -> None:
         self.llm = llm
+        self.respaldo = respaldo
         self.agenda = agenda_global if agenda is None else agenda
         self.cfg = social_settings() if cfg is None else cfg
         self.registro = RegistroSesiones(self.cfg) if registro is None else registro
@@ -117,14 +119,16 @@ class AgenteSocial:
             )
             return []
         if not entrante.soportado:
-            return []
+            return [(entrante.remitente_id, NO_SOPORTADO, ())]
 
         fija = await self._determinista(contexto, entrante)
         if fija is not None:
             return fija
         confirmada = await self._confirmacion(contexto, entrante)
-        if confirmada is not None:
+        if isinstance(confirmada, list):
             return confirmada
+        if confirmada is not None:
+            entrante = confirmada
 
         sesion = self.registro.obtener(
             contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil
@@ -155,7 +159,9 @@ class AgenteSocial:
                 sesion=sesion,
                 herramientas=herramientas,
                 herramientas_giro=contexto.herramientas_giro,
+                respaldo=self.respaldo,
             )
+        texto = nucleo.sin_marcado(texto)
 
         await nucleo.registrar_turno(
             self.agenda,
@@ -189,17 +195,30 @@ class AgenteSocial:
 
     async def _confirmacion(
         self, contexto: ContextoNegocio, entrante: MensajeSocial
-    ) -> list[Envio] | None:
+    ) -> list[Envio] | MensajeSocial | None:
         """La respuesta a la pregunta de 24 h (botón `cita:<accion>:<id>` o escrita), igual
-        que en WhatsApp: confirmar y cancelar sin modelo; cambiar sigue al modelo."""
+        que en WhatsApp: confirmar y cancelar sin modelo; cambiar sigue al modelo con la
+        cita apuntada en la sesión, y al reservar la nueva la anterior se cancela."""
         accion, booking = _accion_de_confirmacion(entrante)
-        if accion is None or accion == "cambiar":
+        if accion is None:
             return None
         tenant_id = contexto.tenant.id
         try:
-            cita = await self.agenda.confirmacion_pendiente(tenant_id, entrante.remitente_id, booking)
+            cita = await self.agenda.confirmacion_pendiente(
+                tenant_id, entrante.remitente_id, booking, escrita=booking is None
+            )
             if cita is None:
                 return None
+            if accion == "cambiar":
+                self.registro.obtener(
+                    tenant_id, entrante.remitente_id, entrante.nombre_perfil
+                ).mover_booking_id = uuid.UUID(cita["id"])
+                momento = _momento(cita.get("inicio"), contexto.tenant.tz)
+                return replace(
+                    entrante,
+                    texto=f"Quiero cambiar mi cita {cita['codigo']} del {momento} a otro horario",
+                    seleccion_id=None,
+                )
             if accion == "confirmo":
                 resultado = await self.agenda.booking_confirmar_cliente(tenant_id, uuid.UUID(cita["id"]))
             else:
@@ -211,9 +230,9 @@ class AgenteSocial:
             return None
         momento = _momento(cita.get("inicio"), contexto.tenant.tz)
         if accion == "confirmo":
-            texto = f"Confirmada. Te esperamos el {momento} en {contexto.tenant.nombre}."
+            texto = f"Confirmada. Le esperamos el {momento} en {contexto.tenant.nombre}."
         else:
-            texto = f"Cancelada la cita del {momento}. Cuando quieras agendar de nuevo, escríbenos."
+            texto = f"Cancelada la cita del {momento}. Cuando quiera agendar de nuevo, escríbanos."
         await nucleo.registrar_turno(
             self.agenda, tenant_id=tenant_id, canal=entrante.canal, contacto=entrante.remitente_id,
             entrante=entrante.texto, respuesta=texto, nombre=entrante.nombre_perfil,

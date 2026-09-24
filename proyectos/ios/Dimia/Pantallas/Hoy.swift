@@ -48,11 +48,23 @@ struct HoyPantalla: View {
         }
     }
 
+    private func cambiar(_ p: Pedido, _ estado: String) async {
+        do { try await API.enviar("PATCH", sesion.ruta + "/pedidos/\(p.id.uuidString.lowercased())", ["estado": estado]); await cargar() }
+        catch { self.error = error.localizedDescription }
+    }
+
+    private func atender(_ r: Recado) async {
+        do { try await API.enviar("POST", sesion.ruta + "/recados/\(r.id.uuidString.lowercased())/atendido", ["atendido": true]); await cargar() }
+        catch { self.error = error.localizedDescription }
+    }
+
     // MARK: portada
 
     /// Saludo, fecha, una frase con cómo va el día y la siguiente cita: lo que se lee en tres segundos.
     private func portada(_ h: Hoy) -> some View {
-        let hora = Calendar.current.component(.hour, from: .now)
+        var cal = Calendar.current
+        cal.timeZone = TimeZone(identifier: h.zona_horaria) ?? .current   // la hora del negocio, no la del iPhone
+        let hora = cal.component(.hour, from: .now)
         let saludo = hora < 12 ? "Buenos días." : hora < 19 ? "Buenas tardes." : "Buenas noches."
         let siguiente = h.citas.first { $0.estado == "confirmada" && $0.llegada == nil && $0.fin > .now }
         return Tinta {
@@ -95,7 +107,9 @@ struct HoyPantalla: View {
             let sacar = h.pedidos.filter(\.porSacar).count
             partes.append(h.pedidos.isEmpty ? "no hay pedidos" : sacar == 0 ? "\(h.pedidos.count) \(h.pedidos.count == 1 ? "pedido" : "pedidos") y nada por sacar" : "\(sacar) \(sacar == 1 ? "pedido" : "pedidos") por sacar")
         }
-        if h.herramientas.contains("recado"), !h.recados.isEmpty { partes.append(h.recados.count == 1 ? "un recado por regresar" : "\(h.recados.count) recados por regresar") }
+        // h.recados trae solo los 7 más nuevos; el total está en los avisos.
+        let recados = h.avisos.recados
+        if h.herramientas.contains("recado"), recados > 0 { partes.append(recados == 1 ? "un recado por regresar" : "\(recados) recados por regresar") }
         let sinLeer = h.avisos.mensajes_sin_leer
         partes.append(sinLeer == 0 ? "nada sin leer" : sinLeer == 1 ? "un mensaje sin leer" : "\(sinLeer) mensajes sin leer")
         if h.cobros.cobrado.valor > 0 { partes.append("lleva \(Formato.moneda(h.cobros.cobrado)) cobrados") }
@@ -153,7 +167,7 @@ struct HoyPantalla: View {
         if h.herramientas.contains("pedido"), !lista.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 titulo("Por sacar", accion: "Pedidos") { sesion.pestana = "pedidos" }
-                ForEach(lista.prefix(4)) { p in TarjetaPedido(pedido: p, zona: h.zona_horaria) { _ in sesion.pestana = "pedidos" } }
+                ForEach(lista.prefix(4)) { p in TarjetaPedido(pedido: p, zona: h.zona_horaria) { nuevo in Task { await cambiar(p, nuevo) } } }
             }
         }
     }
@@ -162,7 +176,7 @@ struct HoyPantalla: View {
         if h.herramientas.contains("recado"), !h.recados.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 titulo("Recados por regresar")
-                ForEach(h.recados.prefix(4)) { r in FilaRecado(recado: r, zona: h.zona_horaria) { Task { try? await API.enviar("POST", sesion.ruta + "/recados/\(r.id.uuidString.lowercased())/atendido"); await cargar() } } }
+                ForEach(h.recados.prefix(4)) { r in FilaRecado(recado: r, zona: h.zona_horaria) { Task { await atender(r) } } }
             }
         }
     }

@@ -29,17 +29,17 @@ export function Bienvenida({ actual }: { actual: ReglaWa | null }) {
     <Tarjeta>
       <TarjetaCabecera
         titulo="Mensaje de bienvenida"
-        descripcion="Se manda solo, sin gastar tokens, cuando alguien escribe por primera vez o vuelve tras cerrarse su conversación."
+        descripcion="Se manda solo, sin costo de inteligencia artificial, cuando alguien escribe por primera vez o vuelve tras cerrarse su conversación."
         accion={actual ? <Insignia tono="bueno">Activa</Insignia> : <Insignia>Sin configurar</Insignia>}
       />
       <form action={enviar} className="space-y-3 px-5 py-4">
-        <Campo etiqueta="Texto" ayuda="Déjalo vacío para que la IA abra la conversación directamente.">
+        <Campo etiqueta="Texto" ayuda="Déjelo vacío para que la IA abra la conversación directamente.">
           <textarea
             name="respuesta"
             defaultValue={actual?.respuesta ?? ""}
             rows={3}
             className="w-full rounded-lg border border-linea bg-panel px-3 py-2 text-[13px] text-tinta outline-none transition-colors focus:border-acento"
-            placeholder="¡Hola! Soy el asistente de Dimia. ¿Buscas conocer el servicio o ya eres cliente?"
+            placeholder="Hola. Soy el asistente de Dimia. ¿Busca conocer el servicio o ya es cliente?"
           />
         </Campo>
         {estado.error ? <Aviso tono="error">{estado.error}</Aviso> : null}
@@ -70,7 +70,7 @@ export function NuevaRegla() {
             name="respuesta"
             rows={3}
             className="w-full rounded-lg border border-linea bg-panel px-3 py-2 text-[13px] text-tinta outline-none transition-colors focus:border-acento"
-            placeholder="Tenemos tres planes desde $1,490 al mes. En una demo de 30 minutos te decimos cuál conviene: ¿te la agendo?"
+            placeholder="Tenemos tres planes desde $1,490 al mes. En una demo de 30 minutos le decimos cuál le conviene. ¿Se la agendo?"
           />
         </Campo>
         {estado.error ? <Aviso tono="error">{estado.error}</Aviso> : null}
@@ -88,7 +88,7 @@ export function ListaReglas({ reglas }: { reglas: ReglaWa[] }) {
     return (
       <Vacio
         titulo="Sin respuestas por palabra"
-        detalle="Agrega la primera: precios, horario, ubicación… lo que la gente pregunta igual todos los días."
+        detalle="Agregue la primera: precios, horario, ubicación… lo que la gente pregunta igual todos los días."
       />
     );
   }

@@ -6,7 +6,9 @@ final class RecorridoUITests: XCTestCase {
     func testRecorrido() throws {
         let app = XCUIApplication()
         let env = ProcessInfo.processInfo.environment
-        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? ""] + (env["NEGOCIO"].map { ["-negocio", $0] } ?? [])
+        // Sin credenciales no corren: `test` a secas solo corre DimiaTests. Con API=<url> no tocan producción.
+        try XCTSkipIf((env["CORREO"] ?? "").isEmpty, "Se corre a mano con CORREO y CLAVE.")
+        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? ""] + (env["NEGOCIO"].map { ["-negocio", $0] } ?? []) + (env["API"].map { ["-api", $0] } ?? [])
         app.launch()
         let dir = env["CAPTURAS"] ?? NSTemporaryDirectory()
         func captura(_ nombre: String) {

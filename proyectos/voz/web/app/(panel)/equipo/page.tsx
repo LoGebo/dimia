@@ -66,7 +66,7 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
             {porPersona.length === 0 ? (
               <Vacio
                 titulo="Nadie marcado como persona"
-                detalle="En Servicios, edita un recurso y elige «Una persona». Desde ahí se le pone teléfono, comisión y ausencias."
+                detalle="En Servicios, edite un recurso y elija «Una persona». Desde ahí se le pone teléfono, comisión y ausencias."
                 accion={
                   <Link href="/servicios" className="mt-1 text-[13px] font-medium text-acento transition-colors duration-150 hover:text-tinta">
                     Ir a Servicios
@@ -95,10 +95,10 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
                 </Campo>
                 <div className="grid grid-cols-2 gap-3">
                   <Campo etiqueta="Desde">
-                    <Entrada name="desde" type="date" defaultValue={hoy} required />
+                    <Entrada name="desde" type="date" defaultValue={hoy} min={hoy} required />
                   </Campo>
                   <Campo etiqueta="Hasta">
-                    <Entrada name="hasta" type="date" defaultValue={hoy} />
+                    <Entrada name="hasta" type="date" min={hoy} />
                   </Campo>
                 </div>
                 <Campo etiqueta="Motivo">
@@ -109,7 +109,7 @@ export default async function Equipo({ searchParams }: { searchParams: Promise<{
             </Tarjeta>
 
             <Tarjeta>
-              <TarjetaCabecera titulo="Próximas ausencias" descripcion={faltas.length > 0 ? `${faltas.length} ${faltas.length === 1 ? "día" : "días"} bloqueados.` : undefined} />
+              <TarjetaCabecera titulo="Próximas ausencias" descripcion={faltas.length > 0 ? `${faltas.length} ${faltas.length === 1 ? "día bloqueado" : "días bloqueados"}.` : undefined} />
               {faltas.length === 0 ? (
                 <Vacio titulo="Todos disponibles" detalle="Nadie tiene días bloqueados por delante." />
               ) : (

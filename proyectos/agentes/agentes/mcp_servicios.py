@@ -12,7 +12,7 @@ from mcp.types import ToolAnnotations
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.shared.exceptions import MCPError
 
-from agentes import conexiones, db
+from agentes import conexiones, db, red
 
 SOLO_LECTURA = ToolAnnotations(readOnlyHint=True)
 
@@ -39,8 +39,7 @@ async def _g(ctx: Context, metodo: str, url: str, **kw) -> dict:
     t = await conexiones.google_token(await _tenant(ctx))
     if not t:
         raise MCPError(-32000, "Google no está conectado; el dueño debe conectarlo en Marketplace.")
-    async with httpx.AsyncClient(timeout=30) as c:
-        r = await c.request(metodo, url, headers={"Authorization": f"Bearer {t}"}, **kw)
+    r = await red.http().request(metodo, url, headers={"Authorization": f"Bearer {t}"}, timeout=30, **kw)
     if r.status_code >= 400:
         raise MCPError(-32000, f"Google respondió {r.status_code}: {r.text[:200]}")
     return r.json() if r.content else {}
@@ -111,12 +110,11 @@ async def drive_leer(ctx: Context, id: str) -> str:
     meta = await _g(ctx, "GET", f"https://www.googleapis.com/drive/v3/files/{id}", params={"fields": "mimeType,name"})
     mt = meta.get("mimeType", "")
     t = await conexiones.google_token(await _tenant(ctx))
-    async with httpx.AsyncClient(timeout=60) as c:
-        if mt.startswith("application/vnd.google-apps."):
-            exp = "text/csv" if "spreadsheet" in mt else "text/plain"
-            r = await c.get(f"https://www.googleapis.com/drive/v3/files/{id}/export", params={"mimeType": exp}, headers={"Authorization": f"Bearer {t}"})
-        else:
-            r = await c.get(f"https://www.googleapis.com/drive/v3/files/{id}", params={"alt": "media"}, headers={"Authorization": f"Bearer {t}"})
+    if mt.startswith("application/vnd.google-apps."):
+        exp = "text/csv" if "spreadsheet" in mt else "text/plain"
+        r = await red.http().get(f"https://www.googleapis.com/drive/v3/files/{id}/export", params={"mimeType": exp}, headers={"Authorization": f"Bearer {t}"}, timeout=60)
+    else:
+        r = await red.http().get(f"https://www.googleapis.com/drive/v3/files/{id}", params={"alt": "media"}, headers={"Authorization": f"Bearer {t}"}, timeout=60)
     if r.status_code >= 400:
         raise MCPError(-32000, f"Drive respondió {r.status_code}")
     return f"{meta.get('name')}\n\n{r.text[:8000]}"
@@ -131,8 +129,7 @@ async def _n(ctx: Context, metodo: str, ruta: str, **kw) -> dict:
     c = await conexiones.leer(await _tenant(ctx), "notion")
     if not c:
         raise MCPError(-32000, "Notion no está conectado.")
-    async with httpx.AsyncClient(timeout=30) as http:
-        r = await http.request(metodo, f"https://api.notion.com/v1{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Notion-Version": "2022-06-28"}, **kw)
+    r = await red.http().request(metodo, f"https://api.notion.com/v1{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Notion-Version": "2022-06-28"}, timeout=30, **kw)
     if r.status_code >= 400:
         raise MCPError(-32000, f"Notion respondió {r.status_code}: {r.text[:200]}")
     return r.json()
@@ -178,8 +175,7 @@ async def _s(ctx: Context, metodo: str, **kw) -> dict:
     c = await conexiones.leer(await _tenant(ctx), "slack")
     if not c:
         raise MCPError(-32000, "Slack no está conectado.")
-    async with httpx.AsyncClient(timeout=30) as http:
-        r = await http.post(f"https://slack.com/api/{metodo}", headers={"Authorization": f"Bearer {c['token']}"}, **kw)
+    r = await red.http().post(f"https://slack.com/api/{metodo}", headers={"Authorization": f"Bearer {c['token']}"}, timeout=30, **kw)
     d = r.json()
     if not d.get("ok"):
         raise MCPError(-32000, f"Slack: {d.get('error')}")
@@ -215,8 +211,7 @@ async def _gh(ctx: Context, metodo: str, ruta: str, **kw) -> dict | list:
     c = await conexiones.leer(await _tenant(ctx), "github")
     if not c:
         raise MCPError(-32000, "GitHub no está conectado.")
-    async with httpx.AsyncClient(timeout=30) as http:
-        r = await http.request(metodo, f"https://api.github.com{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Accept": "application/vnd.github+json"}, **kw)
+    r = await red.http().request(metodo, f"https://api.github.com{ruta}", headers={"Authorization": f"Bearer {c['token']}", "Accept": "application/vnd.github+json"}, timeout=30, **kw)
     if r.status_code >= 400:
         raise MCPError(-32000, f"GitHub respondió {r.status_code}: {r.text[:200]}")
     return r.json() if r.content else {}

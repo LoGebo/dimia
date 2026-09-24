@@ -4,8 +4,10 @@ from __future__ import annotations
 import sys
 
 import asyncio
+import functools
 import json
 import logging
+import math
 import time
 import uuid
 from dataclasses import replace
@@ -16,7 +18,7 @@ from dotenv import load_dotenv
 from livekit import api
 from livekit.agents import (
     Agent, AgentSession, JobContext, JobProcess, RoomInputOptions,
-    JobExecutorType, RunContext, WorkerOptions, cli, function_tool,
+    JobExecutorType, RunContext, WorkerOptions, cli, function_tool, llm, stt, tts,
 )
 from livekit.plugins import deepgram, elevenlabs, openai, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
@@ -33,6 +35,47 @@ log = logging.getLogger("agente")
 cfg = settings()
 
 ESPERA_CONTESTACION_SEG = 45
+TOPE_HERRAMIENTA_SEG = 8
+FALLA_TECNICA = (
+    "Hubo un problema tecnico. Discupate y ofrece transferir con alguien del "
+    "equipo o que le devuelvan la llamada."
+)
+
+# Lo que el giro no tiene no se le da al modelo: un giro sin agenda que ofrece
+# y aparta citas deja al dueño con citas que no puede ver.
+HERRAMIENTAS_DE_AGENDA = {"consultar_disponibilidad", "reservar", "buscar_mi_reserva", "cancelar"}
+HERRAMIENTAS_DE_PEDIDO = {"agregar_al_pedido", "quitar_del_pedido", "repetir_pedido", "cerrar_pedido"}
+
+
+def herramientas_del_giro(plantilla: dict | None) -> list[str]:
+    """Las mismas que usa WhatsApp: sin lista, agendar y recado."""
+    return (plantilla or {}).get("herramientas") or ["agendar", "recado"]
+
+
+def herramientas_fuera(plantilla: dict | None) -> set[str]:
+    giro = herramientas_del_giro(plantilla)
+    fuera: set[str] = set()
+    if "agendar" not in giro:
+        fuera |= HERRAMIENTAS_DE_AGENDA
+    if "pedido" not in giro:
+        fuera |= HERRAMIENTAS_DE_PEDIDO
+    return fuera
+
+
+def a_prueba_de_fallas(fnc):
+    """Una herramienta que truena o se cuelga (la base caída, el pool agotado)
+    no deja al modelo improvisando ni a la persona esperando: le dice que se
+    disculpe y ofrezca transferir o recado."""
+
+    @functools.wraps(fnc)
+    async def envuelta(*args, **kwargs):
+        try:
+            return await asyncio.wait_for(fnc(*args, **kwargs), TOPE_HERRAMIENTA_SEG)
+        except Exception:
+            log.exception("fallo la herramienta %s", fnc.__name__)
+            return FALLA_TECNICA
+
+    return envuelta
 
 
 class Recepcionista(Agent):
@@ -68,6 +111,7 @@ class Recepcionista(Agent):
         self._duplicado_avisado = False
         self.escalado = False
         self.motivo_escalamiento: str | None = None
+        self.fin_motivo: str | None = None  # error_llm, error_tts, error_stt; None = colgo
         self._t0 = time.monotonic()
 
 
@@ -76,6 +120,7 @@ class Recepcionista(Agent):
 
 
     @function_tool
+    @a_prueba_de_fallas
     async def consultar_disponibilidad(
         self,
         ctx: RunContext,
@@ -209,7 +254,7 @@ class Recepcionista(Agent):
             return "Hubo un problema tecnico. Discupate y ofrece transferir."
 
         if not res.get("ok"):
-            if res.get("error") in ("en_el_pasado", "fuera_de_horario"):
+            if res.get("error") in ("en_el_pasado", "fuera_de_horario", "fuera_de_horizonte", "recurso_no_valido"):
                 return (
                     "Ese horario no se puede apartar (ya pasó o está fuera del horario). "
                     "Vuelve a llamar consultar_disponibilidad y ofrece uno de los que devuelva."
@@ -229,6 +274,7 @@ class Recepcionista(Agent):
         )
 
     @function_tool
+    @a_prueba_de_fallas
     async def buscar_mi_reserva(
         self, ctx: RunContext, codigo: str = "", nombre_cliente: str = ""
     ) -> str:
@@ -239,12 +285,17 @@ class Recepcionista(Agent):
             codigo: codigo de 4 caracteres, si te lo dictaron. Opcional.
             nombre_cliente: el nombre que dijo la persona. Opcional.
         """
+        # Sin identificador de llamada no se manda None: sin telefono la base
+        # entiende que pregunta el dueño y el nombre solo bastaria.
         filas = await agenda.buscar_reserva(
-            self.tenant.id, telefono=self.telefono,
+            self.tenant.id, telefono=self.telefono or "desconocido",
             codigo=codigo or None, nombre=nombre_cliente or None,
         )
         if not filas:
-            return "No encontre ninguna reserva. Pidele el codigo o el nombre."
+            return (
+                "No encontre ninguna reserva. Pidele el codigo de 4 caracteres de su "
+                "cita y su nombre; sin el codigo no des datos de ninguna cita."
+            )
         f = filas[0]
         cuando = f["inicio"].astimezone(self.tenant.tz).strftime("%d/%m a las %H:%M")
         return (
@@ -253,6 +304,7 @@ class Recepcionista(Agent):
         )
 
     @function_tool
+    @a_prueba_de_fallas
     async def cancelar(self, ctx: RunContext, booking_id: str) -> str:
         """Cancela una reserva ya localizada con buscar_mi_reserva.
 
@@ -266,6 +318,7 @@ class Recepcionista(Agent):
         return "No la encontre. Ofrece transferir."
 
     @function_tool
+    @a_prueba_de_fallas
     async def consultar_catalogo(
         self,
         ctx: RunContext,
@@ -314,6 +367,7 @@ class Recepcionista(Agent):
         )
 
     @function_tool
+    @a_prueba_de_fallas
     async def consultar_informacion(self, ctx: RunContext, pregunta: str) -> str:
         """Busca en la informacion del negocio: ubicacion, estacionamiento, formas de
         pago, politicas, horarios especiales. Usala cuando pregunten algo que no sea
@@ -339,7 +393,11 @@ class Recepcionista(Agent):
         except ValueError:
             pass
         encontrados = await agenda.buscar_catalogo(self.tenant.id, referencia, limite=1)
-        return encontrados[0]["id"] if encontrados else None
+        # Sin coincidencia, buscar_catalogo devuelve el catalogo de respaldo: eso
+        # no es lo que pidio (una «pizza» terminaba siendo otro platillo).
+        if not encontrados or encontrados[0].get("es_respaldo"):
+            return None
+        return encontrados[0]["id"]
 
     async def _pedido(self) -> uuid.UUID:
         if self.pedido_id is None:
@@ -361,6 +419,7 @@ class Recepcionista(Agent):
         return " | ".join(partes) + f" | TOTAL ${float(resumen.get('total', 0)):.0f}"
 
     @function_tool
+    @a_prueba_de_fallas
     async def agregar_al_pedido(
         self,
         ctx: RunContext,
@@ -384,6 +443,7 @@ class Recepcionista(Agent):
                 "ofrece lo mas parecido que si exista."
             )
 
+        cantidad = max(1, cantidad)
         pedido = await self._pedido()
         res = await agenda.pedido_agregar(
             self.tenant.id, pedido, item_id, cantidad, notas or None
@@ -398,6 +458,7 @@ class Recepcionista(Agent):
         )
 
     @function_tool
+    @a_prueba_de_fallas
     async def quitar_del_pedido(self, ctx: RunContext, nombre: str) -> str:
         """Quita algo del pedido cuando la persona se arrepiente o se equivoco.
 
@@ -412,6 +473,7 @@ class Recepcionista(Agent):
         return f"Quitado. Total va en ${float(res['total']):.0f}."
 
     @function_tool
+    @a_prueba_de_fallas
     async def repetir_pedido(self, ctx: RunContext) -> str:
         """Lee el pedido completo con el total. Usala ANTES de cerrar, siempre,
         y cuando la persona pregunte como va su pedido."""
@@ -424,6 +486,7 @@ class Recepcionista(Agent):
         )
 
     @function_tool
+    @a_prueba_de_fallas
     async def cerrar_pedido(
         self,
         ctx: RunContext,
@@ -464,6 +527,7 @@ class Recepcionista(Agent):
         )
 
     @function_tool
+    @a_prueba_de_fallas
     async def tomar_recado(
         self,
         ctx: RunContext,
@@ -480,6 +544,8 @@ class Recepcionista(Agent):
             nombre_cliente: nombre de quien llama.
             detalle: todo lo relevante que dijo, con sus palabras.
         """
+        if not asunto.strip():
+            return "Falta el asunto. Preguntale en pocas palabras que necesita."
         res = await agenda.registrar_recado(
             tenant_id=self.tenant.id,
             telefono=self.telefono or "desconocido",
@@ -510,19 +576,14 @@ class Recepcionista(Agent):
                 "y toma su numero y el motivo."
             )
         await ctx.session.say("Claro, te paso con alguien del equipo, un segundo.")
-        try:
-            room = ctx.session._room_io._room
-            async with api.LiveKitAPI() as lk:
-                await lk.sip.transfer_sip_participant(
-                    api.TransferSIPParticipantRequest(
-                        room_name=room.name,
-                        participant_identity=self.identidad_sip or self.telefono or "caller",
-                        transfer_to=f"tel:{destino}",
-                        play_dialtone=True,
-                    )
-                )
-        except Exception:
-            log.exception("fallo transferencia")
+        # _room_io es privado de livekit-agents: si cambia (o no hay sala, como en los evals)
+        # se cae a "no se pudo" en vez de tronar la herramienta, como antes de extraer transferir().
+        sala = getattr(getattr(getattr(ctx.session, "_room_io", None), "_room", None), "name", None)
+        if not sala or not await transferir(
+            sala,
+            self.identidad_sip or self.telefono or "caller",
+            destino,
+        ):
             return "No se pudo transferir. Toma su numero y dile que le marcan."
         return "Transferido."
 
@@ -555,12 +616,88 @@ def _tenant_de_metadatos(metadata: str | None, nombre_sala: str) -> uuid.UUID | 
     return None
 
 
-def construir_llm(tenant: Tenant | None = None):
+async def transferir(sala: str, identidad: str, destino: str) -> bool:
     try:
-        return _construir_llm(tenant)
+        async with api.LiveKitAPI() as lk:
+            await lk.sip.transfer_sip_participant(
+                api.TransferSIPParticipantRequest(
+                    room_name=sala,
+                    participant_identity=identidad,
+                    transfer_to=f"tel:{destino}",
+                    play_dialtone=True,
+                )
+            )
+    except Exception:
+        log.exception("fallo transferencia")
+        return False
+    return True
+
+
+async def colgar_con_respaldo(
+    ctx: JobContext, identidad: str, tenant: Tenant | None, telefono: str, call_id: str
+) -> str:
+    """El modelo, la voz o la base fallaron y ya nadie va a contestar.
+
+    En vez de dejar a la persona en una sala muda hasta que ella cuelgue, se le
+    pasa al numero de escalamiento (oye el tono de marcado); si no hay o falla,
+    se deja recado para que le devuelvan la llamada. Luego se cierra la sala,
+    que es lo que le cuelga. No depende del modelo ni de la voz.
+    Devuelve 'transferida', 'recado' o 'colgada'.
+    """
+    hecho = "colgada"
+    if tenant is not None and tenant.telefono_escalamiento and await transferir(
+        ctx.room.name, identidad, tenant.telefono_escalamiento
+    ):
+        hecho = "transferida"
+    elif tenant is not None:
+        try:
+            res = await agenda.registrar_recado(
+                tenant_id=tenant.id,
+                telefono=telefono,
+                asunto="La llamada se cortó por una falla técnica. Devuélvale la llamada.",
+                nombre=None,
+                detalle=None,
+                call_id=call_id,
+            )
+            if res.get("ok"):
+                hecho = "recado"
+        except Exception:
+            log.exception("no se pudo dejar el recado de la llamada caida")
+    try:
+        await ctx.delete_room()
+    except Exception:
+        log.exception("no se pudo cerrar la sala %s", ctx.room.name)
+    return hecho
+
+
+def construir_llm(tenant: Tenant | None = None):
+    """El modelo del negocio y, detras, los otros proveedores con llave.
+
+    Si el principal falla o tarda (un 429, una caida), FallbackAdapter pasa al
+    siguiente en el mismo turno en vez de dejar a la persona en silencio.
+    """
+    proveedor = tenant.llm_proveedor if tenant else cfg.llm_proveedor
+    if proveedor not in ("google", "anthropic"):
+        proveedor = "openai"  # lo mismo que hace _llm con un valor raro
+    try:
+        principal = _construir_llm(tenant)
     except Exception:
         log.exception("no se pudo construir el LLM del negocio; usando el base")
-        return openai.LLM(model=cfg.llm_model, temperature=0.4)
+        principal, proveedor = openai.LLM(model=cfg.llm_model, temperature=0.4), "openai"
+    respaldos = []
+    for otro, llave in (
+        ("openai", cfg.openai_api_key),
+        ("anthropic", cfg.anthropic_api_key),
+        ("google", cfg.google_api_key),
+    ):
+        if llave and otro != proveedor:
+            try:
+                respaldos.append(_llm(otro, cfg.modelo_por_proveedor.get(otro, cfg.llm_model)))
+            except Exception:
+                log.exception("no se pudo construir el LLM de respaldo %s", otro)
+    if not respaldos:
+        return principal
+    return llm.FallbackAdapter([principal, *respaldos], max_retry_per_llm=0)
 
 
 def _construir_llm(tenant: Tenant | None = None):
@@ -568,7 +705,10 @@ def _construir_llm(tenant: Tenant | None = None):
     modelo = (tenant.llm_modelo if tenant else None) or cfg.modelo_por_proveedor.get(
         proveedor, cfg.llm_model
     )
+    return _llm(proveedor, modelo)
 
+
+def _llm(proveedor: str, modelo: str):
     if proveedor == "google":
         from livekit.plugins import google
 
@@ -591,6 +731,48 @@ def construir_tts(tenant: Tenant):
             tenant.nombre, tenant.tts_proveedor,
         )
         return _construir_tts(replace(tenant, tts_ajustes={}))
+
+
+def construir_voz(tenant: Tenant):
+    """La voz del negocio y una de respaldo de otro proveedor con llave.
+
+    Suena distinta, pero una voz distinta es mejor que el silencio.
+    """
+    principal = construir_tts(tenant)
+    for otro, llave in (
+        ("cartesia", cfg.cartesia_api_key),
+        ("azure", cfg.azure_speech_key),
+        ("elevenlabs", cfg.elevenlabs_api_key),
+        ("deepgram", cfg.deepgram_api_key),
+    ):
+        if llave and otro != tenant.tts_proveedor:
+            try:
+                respaldo = _construir_tts(
+                    replace(tenant, tts_proveedor=otro, voz_id=None, tts_ajustes={})
+                )
+            except Exception:
+                log.exception("no se pudo construir la voz de respaldo %s", otro)
+                continue
+            return tts.FallbackAdapter([principal, respaldo], max_retry_per_tts=0)
+    return principal
+
+
+def construir_oido(terminos: list[str], vad: Any):
+    """Deepgram y, si hay llave de OpenAI, su transcripcion de respaldo."""
+    principal = deepgram.STT(
+        model=cfg.stt_model,
+        language=cfg.stt_language,
+        smart_format=True,
+        punctuate=True,
+        filler_words=True,
+        numerals=False,
+        keyterms=terminos,
+    )
+    if not cfg.openai_api_key:
+        return principal
+    return stt.FallbackAdapter(
+        [principal, openai.STT(language=cfg.stt_language.split("-")[0])], vad=vad
+    )
 
 
 def _construir_tts(tenant: Tenant):
@@ -667,7 +849,7 @@ def quien_llama(attrs: dict, identidad: str) -> tuple[str, str]:
 
 
 async def esperar_contestacion(
-    room: Any, participante: Any, timeout: float = ESPERA_CONTESTACION_SEG
+    room: Any, participante: Any, plazo: float = ESPERA_CONTESTACION_SEG
 ) -> bool:
     """True cuando el tramo SIP saliente ya tiene audio.
 
@@ -705,7 +887,7 @@ async def esperar_contestacion(
     room.on("participant_attributes_changed", al_cambiar)
     room.on("participant_disconnected", al_salir)
     try:
-        return await asyncio.wait_for(listo, timeout)
+        return await asyncio.wait_for(listo, plazo)
     except TimeoutError:
         return False
     finally:
@@ -721,7 +903,6 @@ async def entrypoint(ctx: JobContext) -> None:
     del panel. Si marcaron a una linea de campaña, esa es la procedencia del
     cliente y se atribuye antes de contestar.
     """
-    await agenda.conectar()
     await ctx.connect()
 
     participante = await ctx.wait_for_participant()
@@ -730,44 +911,63 @@ async def entrypoint(ctx: JobContext) -> None:
 
     tenant = None
     saliente = _saliente_de_metadatos(ctx.room.metadata)
-    if saliente:
-        tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
-        if tenant_id:
-            tenant = await agenda.tenant_por_id(tenant_id)
-        llamante = normalizar(str(saliente.get("telefono") or "")) or llamante
-    elif marcado:
-        tenant = await agenda.tenant_por_telefono(marcado)
-        if tenant is not None and llamante.startswith("+"):
-            try:
-                origen = await agenda.origen_por_numero(marcado)
-                if origen:
-                    await agenda.cliente_atribuir(tenant.id, llamante, origen)
-            except Exception:
-                log.exception("no se pudo atribuir el origen")
-    else:
-        tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
-        if tenant_id:
-            tenant = await agenda.tenant_por_id(tenant_id)
-            llamante = attrs.get("prueba.telefono") or "prueba-panel"
+    CATALOGO_EN_PROMPT = 80
+    # La base caida o el pool agotado dejaban a la persona en silencio hasta que
+    # el job reventaba (60 s). Ahora se transfiere o se deja recado y se cuelga.
+    try:
+        await agenda.conectar()
+        if saliente:
+            tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
+            if tenant_id:
+                tenant = await agenda.tenant_por_id(tenant_id)
+            llamante = normalizar(str(saliente.get("telefono") or "")) or llamante
+        elif marcado:
+            tenant = await agenda.tenant_por_telefono(marcado)
+            if tenant is not None and llamante.startswith("+"):
+                try:
+                    origen = await agenda.origen_por_numero(marcado)
+                    if origen:
+                        await agenda.cliente_atribuir(tenant.id, llamante, origen)
+                except Exception:
+                    log.exception("no se pudo atribuir el origen")
+        else:
+            tenant_id = _tenant_de_metadatos(ctx.room.metadata, ctx.room.name)
+            if tenant_id:
+                tenant = await agenda.tenant_por_id(tenant_id)
+                llamante = attrs.get("prueba.telefono") or "prueba-panel"
 
-    if tenant is None:
-        log.error("sala %s sin tenant resoluble", ctx.room.name)
-        await ctx.room.disconnect()
+        if tenant is None:
+            log.error("sala %s sin tenant resoluble", ctx.room.name)
+            await ctx.room.disconnect()
+            return
+
+        (
+            servicios, faq, plantilla, tipos, horario, terminos, menu, menu_total
+        ) = await asyncio.gather(
+            agenda.servicios(tenant.id),
+            agenda.faq(tenant.id),
+            agenda.plantilla_vertical(tenant.vertical),
+            agenda.tipos_de_catalogo(tenant.id),
+            agenda.horario_semanal(tenant.id),
+            agenda.terminos_del_negocio(tenant.id),
+            agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
+            agenda.catalogo_cuantos(tenant.id),
+        )
+    except Exception:
+        log.exception("sala %s: no se pudo cargar el negocio", ctx.room.name)
+        hecho = await colgar_con_respaldo(
+            ctx, participante.identity, tenant, llamante, uuid.uuid4().hex
+        )
+        log.warning("sala %s sin servicio: %s", ctx.room.name, hecho)
+        try:
+            await agenda.cerrar()
+        except Exception:
+            log.exception("no se pudo cerrar el pool")
         return
 
-    CATALOGO_EN_PROMPT = 80
-    (
-        servicios, faq, plantilla, tipos, horario, terminos, menu, menu_total
-    ) = await asyncio.gather(
-        agenda.servicios(tenant.id),
-        agenda.faq(tenant.id),
-        agenda.plantilla_vertical(tenant.vertical),
-        agenda.tipos_de_catalogo(tenant.id),
-        agenda.horario_semanal(tenant.id),
-        agenda.terminos_del_negocio(tenant.id),
-        agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
-        agenda.catalogo_cuantos(tenant.id),
-    )
+    fuera = herramientas_fuera(plantilla)
+    if "reservar" in fuera:
+        servicios = []  # sin agenda no se listan servicios que no se pueden apartar
     recepcionista = Recepcionista(
         tenant, servicios, faq, plantilla, tipos, horario,
         catalogo=menu,
@@ -775,6 +975,10 @@ async def entrypoint(ctx: JobContext) -> None:
     )
     recepcionista.telefono = llamante
     recepcionista.identidad_sip = participante.identity
+    if fuera:
+        await recepcionista.update_tools(
+            [t for t in recepcionista.tools if getattr(t, "id", None) not in fuera]
+        )
     if saliente:
         await recepcionista.update_instructions(
             recepcionista.instructions + prompt_mod.guion_saliente(saliente)
@@ -782,17 +986,9 @@ async def entrypoint(ctx: JobContext) -> None:
 
     session = AgentSession(
         vad=ctx.proc.userdata["vad"],
-        stt=deepgram.STT(
-            model=cfg.stt_model,
-            language=cfg.stt_language,
-            smart_format=True,
-            punctuate=True,
-            filler_words=True,
-            numerals=False,
-            keyterms=terminos,
-        ),
+        stt=construir_oido(terminos, ctx.proc.userdata["vad"]),
         llm=construir_llm(tenant),
-        tts=construir_tts(tenant),
+        tts=construir_voz(tenant),
         turn_detection=MultilingualModel(),
         preemptive_generation=True,
         min_endpointing_delay=cfg.espera_minima_turno,
@@ -847,6 +1043,7 @@ async def entrypoint(ctx: JobContext) -> None:
             log.exception("no se pudo registrar el turno de la llamada")
 
     demoras: dict[str, float] = {}
+    turnos_ms: list[float] = []
 
     @session.on("metrics_collected")
     def _medir(ev) -> None:
@@ -865,6 +1062,7 @@ async def entrypoint(ctx: JobContext) -> None:
         elif tipo == "TTSMetrics" and not m.cancelled:
             demoras["voz"] = m.ttfb
             total = sum(demoras.get(k, 0.0) for k in ("silencio", "modelo", "voz"))
+            turnos_ms.append(total * 1000)
             log.info(
                 "turno %.0f ms = silencio %.0f (de los cuales transcripcion %.0f)"
                 " + modelo %.0f + voz %.0f",
@@ -875,6 +1073,30 @@ async def entrypoint(ctx: JobContext) -> None:
                 demoras.get("voz", 0) * 1000,
             )
             demoras.clear()
+
+    @session.on("close")
+    def _al_cerrar(ev) -> None:
+        """El modelo, la voz o el oido fallaron sin remedio: plan B, no silencio."""
+        if ev.reason != "error":
+            return
+        tipo = type(ev.error).__name__ if ev.error is not None else ""
+        recepcionista.fin_motivo = {
+            "LLMError": "error_llm", "TTSError": "error_tts", "STTError": "error_stt",
+        }.get(tipo, "error")
+        log.error("sala %s: la sesion se cerro por %s", ctx.room.name, recepcionista.fin_motivo)
+
+        async def respaldo() -> None:
+            hecho = await colgar_con_respaldo(
+                ctx, participante.identity, tenant, llamante, recepcionista.call_id
+            )
+            recepcionista.escalado = recepcionista.escalado or hecho == "transferida"
+            recepcionista.recado = recepcionista.recado or hecho == "recado"
+            if hecho == "transferida":
+                recepcionista.motivo_escalamiento = "falla tecnica"
+
+        tarea = asyncio.create_task(respaldo())
+        escrituras.add(tarea)
+        tarea.add_done_callback(escrituras.discard)
 
     await session.start(
         agent=recepcionista,
@@ -900,6 +1122,36 @@ async def entrypoint(ctx: JobContext) -> None:
         await ctx.room.disconnect()
         return
 
+    async def _llamada(fin_motivo: str, final: bool = False) -> None:
+        try:
+            await agenda.registrar_llamada(
+                tenant_id=tenant.id,
+                call_id=recepcionista.call_id,
+                telefono=llamante,
+                duracion_seg=int(time.monotonic() - recepcionista._t0) if final else None,
+                resuelto=(
+                    recepcionista.booking_id is not None
+                    or recepcionista.pedido_cerrado
+                    or recepcionista.recado
+                ),
+                escalado=recepcionista.escalado,
+                motivo=recepcionista.motivo_escalamiento,
+                booking_id=recepcionista.booking_id,
+                transcripcion=turnos,
+                latencias=latencias(turnos_ms),
+                fin_motivo=fin_motivo,
+            )
+        except Exception:
+            if final:
+                raise
+            log.exception("no se pudo registrar la llamada al contestar")
+
+    # Al contestar ya queda la fila: si el worker se cae a media llamada, el
+    # dueño la ve 'en_curso' en vez de no ver nada.
+    contesto = asyncio.create_task(_llamada(fin_motivo="en_curso"))
+    escrituras.add(contesto)
+    contesto.add_done_callback(escrituras.discard)
+
     apertura = (
         prompt_mod.apertura_saliente(tenant, saliente) if saliente
         else prompt_mod.saludo(tenant, plantilla)
@@ -912,21 +1164,9 @@ async def entrypoint(ctx: JobContext) -> None:
         contesta, el call_log se queda sin cierre pero la campaña si se entera
         del resultado."""
         try:
-            await agenda.registrar_llamada(
-                tenant_id=tenant.id,
-                call_id=recepcionista.call_id,
-                telefono=llamante,
-                duracion_seg=int(time.monotonic() - recepcionista._t0),
-                resuelto=(
-                    recepcionista.booking_id is not None
-                    or recepcionista.pedido_cerrado
-                    or recepcionista.recado
-                ),
-                escalado=recepcionista.escalado,
-                motivo=recepcionista.motivo_escalamiento,
-                booking_id=recepcionista.booking_id,
-                transcripcion=turnos,
-            )
+            # La fila de 'en_curso' y el plan B van primero: si no, pisarian el cierre.
+            await asyncio.gather(*escrituras, return_exceptions=True)
+            await _llamada(fin_motivo=recepcionista.fin_motivo or "colgo", final=True)
         except Exception:
             log.exception("no se pudo registrar la llamada")
             return
@@ -969,6 +1209,18 @@ async def entrypoint(ctx: JobContext) -> None:
     ctx.add_shutdown_callback(al_colgar)
 
 
+def latencias(turnos_ms: list[float]) -> dict:
+    """p50 y p95 voz a voz de la llamada, como los lee el runbook."""
+    if not turnos_ms:
+        return {}
+    orden = sorted(turnos_ms)
+    return {
+        "voz_a_voz_p50": round(orden[(len(orden) - 1) // 2]),
+        "voz_a_voz_p95": round(orden[math.ceil(0.95 * len(orden)) - 1]),
+        "turnos": len(orden),
+    }
+
+
 if __name__ == "__main__":
     # En macOS el runtime nativo de LiveKit (liblivekit_ffi) segfaultea a veces al
     # arrancar el proceso hijo de un job y la llamada entra hasta el reintento,
@@ -980,6 +1232,15 @@ if __name__ == "__main__":
             entrypoint_fnc=entrypoint,
             prewarm_fnc=prewarm,
             num_idle_processes=cfg.procesos_precalentados,
+            # En ráfaga, de la tercera llamada en adelante esperan a que nazca su proceso y en
+            # un vCPU compartido eso pasa de los 10 s por defecto: el job fallaba sin otro worker.
+            initialize_process_timeout=30.0,
             job_executor_type=JobExecutorType.THREAD if en_mac else JobExecutorType.PROCESS,
+            # Capacidad por entorno (UMBRAL_CARGA, MEMORIA_MAX_LLAMADA_MB), sin redesplegar código.
+            **({"load_threshold": cfg.umbral_carga} if cfg.umbral_carga is not None else {}),
+            job_memory_limit_mb=cfg.memoria_max_llamada_mb,
+            # Vacio = despacho automatico (lo de hoy). Con nombre, solo recibe las salas
+            # que la regla de despacho de LiveKit le mande a ese agente.
+            agent_name=cfg.agent_name,
         )
     )

@@ -90,7 +90,7 @@ struct FichaAgente: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(guardando ? "Guardando…" : "Listo") { Task { await guardarTexto(); cerrar() } }.disabled(guardando)
+                    Button(guardando ? "Guardando…" : "Listo") { Task { if await guardarTexto() { cerrar() } } }.disabled(guardando)
                 }
             }
             .confirmationDialog("¿Borrar a \(agente.nombre)?", isPresented: $confirmarBorrado, titleVisibility: .visible) {
@@ -105,20 +105,22 @@ struct FichaAgente: View {
         }
     }
 
-    private func guardarTexto() async {
+    /// true si guardó o no había cambios; si falló, la hoja sigue abierta con el error y el texto.
+    @discardableResult private func guardarTexto() async -> Bool {
         var c = AgenteCambios()
         let n = nombre.trimmingCharacters(in: .whitespaces), t = trabajo.trimmingCharacters(in: .whitespaces)
         if n != agente.nombre, !n.isEmpty { c.nombre = n; if agente.avatar == nil { let r = Rasgos.de(nombre: agente.nombre, avatar: nil); c.avatar = "\(r.forma):\(r.color)" } }
         if t != (agente.trabajo ?? ""), !t.isEmpty { c.trabajo = t; if !agente.conCerebro { c.estado = "activo" } }
         if reglas != (agente.reglas ?? "") { c.reglas = reglas }
-        if c.nombre != nil || c.trabajo != nil || c.reglas != nil { await guardar(c) }
+        if c.nombre != nil || c.trabajo != nil || c.reglas != nil { return await guardar(c) }
+        return true
     }
 
-    private func guardar(_ c: AgenteCambios) async {
+    @discardableResult private func guardar(_ c: AgenteCambios) async -> Bool {
         guardando = true
         defer { guardando = false }
-        do { let a: Agente = try await API.enviar("PATCH", base, c); agente = a; cambiado(a); error = nil }
-        catch { self.error = error.localizedDescription }
+        do { let a: Agente = try await API.enviar("PATCH", base, c); agente = a; cambiado(a); error = nil; return true }
+        catch { self.error = error.localizedDescription; return false }
     }
 
     private func instalar(_ tipo: String, _ clave: String, _ si: Bool) async {

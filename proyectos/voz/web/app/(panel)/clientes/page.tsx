@@ -30,7 +30,7 @@ export default async function Clientes({
     <>
       <Encabezado
         titulo="Clientes"
-        descripcion="Cada persona que llamó o escribió. Entra a una para ver todo lo que pasó con ella."
+        descripcion="Cada persona que llamó o escribió. Entre a una para ver todo lo que pasó con ella."
         giro={giro.nombre}
         acciones={
           <form action="/clientes" className="flex items-center gap-1">
@@ -77,7 +77,7 @@ export default async function Clientes({
             </Link>
           </p>
         ) : lista.length >= 200 ? (
-          <p className="text-[12px] text-tinta-3">Se muestran los 200 con contacto más reciente; busca por nombre o teléfono para llegar al resto.</p>
+          <p className="text-[12px] text-tinta-3">Se muestran los 200 con contacto más reciente; busque por nombre o teléfono para llegar al resto.</p>
         ) : null}
 
         <TablaClientes lista={lista} zona={config.zona_horaria} agenda={agenda} pedidos={pedidos} busqueda={busqueda} />

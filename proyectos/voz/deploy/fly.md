@@ -3,31 +3,29 @@
 Es la opción recomendada para arrancar: no administras máquina, el despliegue
 es un comando y escalar es cambiar un número.
 
-## Región: por qué `qro`
+## Región: `dfw`
 
 La latencia de red entra dos veces en el presupuesto voz-a-voz (700-900 ms):
 del puente SIP al worker, y del worker a los proveedores de modelos.
 
 | Región Fly | Ciudad | RTT típico desde México central |
 |---|---|---|
-| `qro` | Querétaro, México | 10-25 ms |
 | `dfw` | Dallas | 35-55 ms |
 | `lax` | Los Ángeles | 55-80 ms |
 | `iad` | Ashburn | 70-100 ms |
 
-`qro` es la única región de Fly dentro de México y es la primaria. La regla
-real es más fuerte que "la región más cercana al cliente": **el worker debe
-estar cerca del puente SIP de LiveKit**, porque ese enlace lleva audio en
-tiempo real. Si LiveKit está en un VPS en Querétaro o Ciudad de México, el
-worker va en `qro`. Si por precio pusiste LiveKit en Dallas, el worker va en
-`dfw`, aunque tus clientes estén en Monterrey: 40 ms de RTT de red pesan menos
-que 40 ms extra en cada salto de audio.
+Fly ya no tiene región en México (`qro` desapareció de `fly platform regions`).
+Las cinco apps corren en `dfw`, que es la más cercana. La regla real es más
+fuerte que "la región más cercana al cliente": **el worker debe estar cerca del
+puente SIP de LiveKit**, porque ese enlace lleva audio en tiempo real.
 
-STT, LLM y TTS se sirven desde Estados Unidos en cualquier caso; desde `qro`
-son ~40 ms adicionales contra `dfw`, ya contemplados en el presupuesto.
+La base está en Virginia (pooler `aws-0-us-east-1`): cada consulta del worker y
+de webhooks cruza Dallas-Virginia (estimado 30-40 ms, sin medir). Antes de
+mover nada, medir el p95 de las herramientas en `call_log.latencias`; si pesa,
+la opción es `iad`, junto a la base y a los modelos de EE. UU.
 
-Fallback: `dfw` como segunda región cuando quieras sobrevivir a una caída de
-zona (`fly scale count 3 --region qro,dfw`).
+Segunda región para sobrevivir a una caída de zona:
+`fly scale count 3 --region dfw,iad`.
 
 ## Primer despliegue
 
@@ -70,7 +68,7 @@ directas tumban el límite de Postgres antes que cualquier otra cosa.
 
 ```bash
 fly scale count 3 --config deploy/fly.toml            # tres workers
-fly scale count 2 --region qro --region dfw           # repartidos
+fly scale count 2 --region dfw --region iad           # repartidos
 fly scale vm shared-cpu-4x --memory 4096              # más llamadas por worker
 fly status --config deploy/fly.toml
 ```
@@ -78,7 +76,20 @@ fly status --config deploy/fly.toml
 Regla de capacidad: **~3-4 llamadas concurrentes por vCPU**. `shared-cpu-2x`
 con 2 GB aguanta 6-8 llamadas cómodas. Cuando el `load_threshold` interno del
 worker se satura, LiveKit deja de mandarle trabajos y se los da a otra réplica:
-por eso agregar réplicas es suficiente, no hay balanceador que configurar.
+por eso agregar réplicas es suficiente, no hay balanceador que configurar. Con
+**una sola** máquina no hay a quién dárselos: la llamada entra a una sala sin
+agente y la persona oye silencio. La máquina `standby` que crea Fly no cuenta:
+solo arranca si falla el hardware.
+
+Se ajusta por entorno, sin tocar código:
+
+| Variable | Qué hace | Por omisión |
+|---|---|---|
+| `UMBRAL_CARGA` | `load_threshold` del worker (0-1) | el de LiveKit, 0.7 |
+| `PROCESOS_PRECALENTADOS` | `num_idle_processes` | 2 |
+| `MEMORIA_MAX_LLAMADA_MB` | `job_memory_limit_mb`: mata la llamada que se pase, no la VM | 0, sin tope |
+| `PG_POOL_MAX` | conexiones por llamada al pooler | 2 (en `fly.toml`) |
+| `AGENT_NAME` | despacho explícito (ver `livekit.md`) | vacío, automático |
 
 `auto_stop_machines` está apagado a propósito. Un worker que se duerme tarda
 segundos en despertar y arranca frío; el teléfono no espera.
@@ -95,8 +106,10 @@ pasan de eso, sube `kill_timeout`; el `drain_timeout` interno del worker es de
 una hora, así que el límite efectivo lo pone Fly, no el agente.
 
 La estrategia es `rolling`: Fly reemplaza una máquina a la vez, así que con
-`count >= 2` siempre queda alguien atendiendo. Con `count = 1` hay una ventana
-de segundos sin worker; es aceptable en la etapa de 1-5 clientes, no después.
+`count >= 2` siempre queda alguien atendiendo. Con `count = 1` la única máquina
+drena (deja de aceptar llamadas mientras termina las suyas, hasta 5 min) y
+después arranca la nueva: **hasta 5 minutos sin nadie que conteste**. Con una
+sola máquina, desplegar la voz solo fuera de horario.
 
 ## Verificación post-despliegue
 

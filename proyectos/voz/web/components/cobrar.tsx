@@ -194,7 +194,7 @@ function FormaCobro({
 
           <div className="grid grid-cols-2 gap-3">
             <Campo etiqueta="Monto (MXN)">
-              <Entrada name="monto" type="number" min={1} step="1" defaultValue={montoSugerido} required autoFocus className="numeros text-[16px]" disabled={cerrado} />
+              <Entrada name="monto" type="number" min={0.01} step="0.01" defaultValue={montoSugerido} required autoFocus className="numeros text-[16px]" disabled={cerrado} />
             </Campo>
             <Campo etiqueta="Cómo paga">
               <Selector value={modo} onChange={(e) => setModo(e.target.value as Modo)} disabled={cerrado}>
@@ -208,7 +208,7 @@ function FormaCobro({
           </div>
 
           {modo === "terminal" && opciones ? (
-            <Campo etiqueta="Terminal" ayuda="El monto aparece en la terminal; aquí ves cuando se aprueba.">
+            <Campo etiqueta="Terminal" ayuda="El monto aparece en la terminal; aquí ve cuando se aprueba.">
               <Selector
                 value={terminal}
                 onChange={(e) => {
@@ -240,7 +240,7 @@ function FormaCobro({
           ) : null}
 
           {modo === "enlace" && !conEnlace ? (
-            <Campo etiqueta="Enlace de pago" ayuda="Pega el enlace de tu pasarela, o conéctala en Ajustes → Pagos para que se cree solo.">
+            <Campo etiqueta="Enlace de pago" ayuda="Pegue el enlace de su pasarela, o conéctela en Ajustes → Pagos para que se cree solo.">
               <Entrada name="enlace_url" type="url" placeholder="https://" />
             </Campo>
           ) : null}

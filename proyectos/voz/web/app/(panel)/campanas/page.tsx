@@ -30,7 +30,7 @@ function insightsDe(lista: Campana[]): Insight[] {
       unidad: agendaron === 1 ? "cita" : "citas",
       variacion: { texto: `${contestados} contestaron`, tono: contestados > 0 ? "bueno" : "neutro" },
       serie: acumulado((c) => c.agendaron),
-      nota: mejor && mejor.agendaron > 0 ? `La que más trajo: ${mejor.nombre}.` : "Todavía ninguna trae citas; el agente sigue marcando.",
+      nota: mejor && mejor.agendaron > 0 ? `La que más trajo: ${mejor.nombre}.` : "Todavía ninguna trae citas; el agente sigue en contacto.",
       accion: { texto: "Ver clientes que faltaron", href: "/clientes?ver=faltan" },
     },
     {

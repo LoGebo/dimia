@@ -24,7 +24,7 @@ log = logging.getLogger("whatsapp")
 TTL_CONTEXTO_SEG = 300
 TITULO_BOTON = "Ver horarios"
 NO_SOPORTADO = (
-    "Por ahora solo leo mensajes de texto. ¿Me escribes que necesitas?"
+    "Por ahora solo leo mensajes de texto. ¿Me escribe qué necesita, por favor?"
 )
 
 
@@ -135,8 +135,10 @@ class AgenteWhatsApp:
         agenda: Agenda | None = None,
         registro: RegistroSesiones | None = None,
         cfg: WhatsAppSettings | None = None,
+        respaldo: ClienteLLM | None = None,
     ) -> None:
         self.llm = llm
+        self.respaldo = respaldo
         self.agenda = agenda_global if agenda is None else agenda
         self.cfg = whatsapp_settings() if cfg is None else cfg
         self.registro = RegistroSesiones(self.cfg) if registro is None else registro
@@ -233,11 +235,11 @@ class AgenteWhatsApp:
         calificacion = int(resultado.get("calificacion", 0))
         url = resultado.get("resena_url")
         if calificacion >= 4 and url:
-            respuesta = f"¡Gracias! Nos ayudaría mucho que lo compartieras aquí: {url}"
+            respuesta = f"Gracias. Nos ayudaría mucho que lo compartiera aquí: {url}"
         elif calificacion >= 4:
-            respuesta = "¡Gracias! Nos da gusto que te haya ido bien."
+            respuesta = "Gracias. Nos da gusto que le haya ido bien."
         else:
-            respuesta = "Gracias por decirlo. Lo vamos a revisar y, si quieres contarnos qué pasó, aquí te leemos."
+            respuesta = "Gracias por decirlo. Lo vamos a revisar y, si quiere contarnos qué pasó, aquí le leemos."
         await nucleo.registrar_turno(
             self.agenda,
             tenant_id=tenant_id,
@@ -261,15 +263,20 @@ class AgenteWhatsApp:
 
         Llega como boton (`cita:<accion>:<id>`) o escrita. Confirmar y cancelar
         no necesitan al modelo. Cambiar si: se devuelve el mensaje reescrito
-        con el codigo de la cita para que el modelo ofrezca horarios; sin
-        herramienta para mover, cancela y vuelve a reservar.
+        con el codigo de la cita para que el modelo ofrezca horarios, y la cita
+        queda en la sesion: al reservar la nueva, la anterior se cancela sola.
+
+        Escrita («no», «ok», «si») solo cuenta si no se hablo de otra cosa
+        despues de la pregunta: un «no» que contesta otra cosa no cancela.
         """
         accion, booking = _accion_de_confirmacion(entrante)
         if accion is None:
             return None
         tenant_id = contexto.tenant.id
         try:
-            cita = await self.agenda.confirmacion_pendiente(tenant_id, entrante.telefono, booking)
+            cita = await self.agenda.confirmacion_pendiente(
+                tenant_id, entrante.telefono, booking, escrita=booking is None
+            )
         except Exception:
             log.exception("no se pudo buscar la confirmacion pendiente")
             return None
@@ -277,6 +284,9 @@ class AgenteWhatsApp:
             return None
 
         if accion == "cambiar":
+            self.registro.obtener(
+                tenant_id, entrante.telefono, entrante.nombre_perfil
+            ).mover_booking_id = uuid.UUID(cita["id"])
             momento = _momento(cita.get("inicio"), contexto.tenant.tz)
             return replace(
                 entrante,
@@ -297,9 +307,9 @@ class AgenteWhatsApp:
 
         momento = _momento(cita.get("inicio"), contexto.tenant.tz)
         if accion == "confirmo":
-            respuesta = f"Confirmada. Te esperamos el {momento} en {contexto.tenant.nombre}."
+            respuesta = f"Confirmada. Le esperamos el {momento} en {contexto.tenant.nombre}."
         else:
-            respuesta = "Listo, quedó cancelada. Cuando quieras agendar de nuevo, escríbenos por aquí."
+            respuesta = "Listo, quedó cancelada. Cuando quiera agendar de nuevo, escríbanos por aquí."
         await nucleo.registrar_turno(
             self.agenda,
             tenant_id=tenant_id,
@@ -413,6 +423,7 @@ class AgenteWhatsApp:
             sesion=sesion,
             herramientas=herramientas,
             herramientas_giro=contexto.herramientas_giro,
+            respaldo=self.respaldo,
         )
 
     def _salidas(
@@ -422,6 +433,7 @@ class AgenteWhatsApp:
         herramientas: Herramientas,
         texto: str,
     ) -> list[Salida]:
+        texto = nucleo.negritas_whatsapp(texto)
         salidas: list[Salida] = []
         if herramientas.lista_pendiente:
             salidas.append(

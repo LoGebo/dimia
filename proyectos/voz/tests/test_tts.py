@@ -98,15 +98,20 @@ def _tenant_llm(proveedor: str, modelo: str | None = None) -> Tenant:
     )
 
 
+def _principal(llm):
+    """Con llaves de otros proveedores llega envuelto en FallbackAdapter."""
+    return getattr(llm, "_llm_instances", [llm])[0]
+
+
 @pytest.mark.parametrize("proveedor", ["openai", "google"])
 def test_cada_llm_construye(proveedor):
     llm = construir_llm(_tenant_llm(proveedor))
-    assert proveedor in type(llm).__module__
+    assert proveedor in type(_principal(llm)).__module__
 
 
 def test_modelo_explicito_se_respeta():
     llm = construir_llm(_tenant_llm("google", "gemini-3-flash-preview"))
-    assert "google" in type(llm).__module__
+    assert "google" in type(_principal(llm)).__module__
 
 
 def test_proveedor_desconocido_cae_al_base():

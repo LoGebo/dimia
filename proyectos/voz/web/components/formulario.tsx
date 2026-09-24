@@ -1,12 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { createContext, startTransition, useActionState, useContext, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { ReactNode } from "react";
 import { useDialogo } from "@/components/dialogo";
 import { MarcaExito, useAvisos } from "@/components/kit";
 import { Aviso, Boton } from "@/components/ui/primitivos";
 import type { Estado } from "@/lib/acciones";
+
+/** Si el formulario de arriba está enviando: con onSubmit, useFormStatus ya no lo ve. */
+export const Enviando = createContext(false);
 
 /**
  * Un formulario contra una acción de servidor. Al terminar bien, la marca de
@@ -29,7 +32,8 @@ export function Formulario({
   silencioso?: boolean;
   alExito?: (mensaje: string) => void;
 }) {
-  const [estado, enviar] = useActionState(accion, {} as Estado);
+  const [estado, enviar, pendiente] = useActionState(accion, {} as Estado);
+  const forma = useRef<HTMLFormElement>(null);
   const { avisar } = useAvisos();
   const dialogo = useDialogo();
   const [vez, setVez] = useState(0);
@@ -42,6 +46,7 @@ export function Formulario({
 
   useEffect(() => {
     if (!estado.ok) return;
+    forma.current?.reset();
     setVez((v) => v + 1);
     if (!silencioso) avisarRef.current({ titulo: estado.ok, tono: "bueno" });
     alExitoRef.current?.(estado.ok);
@@ -49,8 +54,19 @@ export function Formulario({
   }, [estado, silencioso]);
 
   return (
-    <form action={enviar} className={className} key={reiniciar && estado.ok ? `${estado.ok}-${vez}` : undefined}>
-      {children}
+    // onSubmit y no action={enviar}: con action, React 19 vacía los campos
+    // aunque el servidor regrese un error, y había que capturar todo otra vez.
+    <form
+      ref={forma}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => enviar(fd));
+      }}
+      className={className}
+      key={reiniciar && estado.ok ? `${estado.ok}-${vez}` : undefined}
+    >
+      <Enviando.Provider value={pendiente}>{children}</Enviando.Provider>
       {estado.error ? <Aviso tono="error">{estado.error}</Aviso> : null}
       {estado.ok && !silencioso ? <MarcaExito key={vez} texto={estado.ok} tamano={18} /> : null}
     </form>
@@ -70,7 +86,8 @@ export function BotonEnviar({
   disabled?: boolean;
   variante?: "solido" | "contorno";
 }) {
-  const { pending } = useFormStatus();
+  const nativo = useFormStatus().pending;
+  const pending = useContext(Enviando) || nativo;
   // Dos clics muy seguidos disparan ambos submits antes de que React marque
   // `pending` y deshabilite el botón: se creaban registros duplicados. Un ref
   // síncrono bloquea el segundo clic en el acto; se libera cuando el envío
@@ -91,6 +108,9 @@ export function BotonEnviar({
           e.preventDefault();
           return;
         }
+        // Si el navegador va a frenar el envío por un campo inválido, no se
+        // bloquea: si no, el botón quedaba muerto hasta recargar.
+        if (e.currentTarget.form?.checkValidity() === false) return;
         enviando.current = true;
       }}
     >

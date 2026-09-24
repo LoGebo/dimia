@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { FlujoDelDia } from "@/components/flujo-del-dia";
 import { ListaReservas } from "@/components/lista-reservas";
@@ -7,7 +6,7 @@ import { NuevaCita } from "@/components/nueva-cita";
 import { OcupacionSemanal } from "@/components/graficas";
 import { Tarjeta, TarjetaCabecera, Vacio } from "@/components/ui/primitivos";
 import { buscarReservas, negocio, proximasReservas, reservasEntre, servicios } from "@/lib/consultas";
-import { diaValido, fechaLarga, isoDia, lunesDe, sumarDias } from "@/lib/formato";
+import { diaValido, fechaCorta, fechaLarga, isoDia, lunesDe, sumarDias } from "@/lib/formato";
 import { exigirSeccion } from "@/lib/sesion";
 import { DIAS } from "@/lib/tipos";
 
@@ -36,18 +35,18 @@ export default async function Agenda({
           giro={giro.nombre}
           busqueda={busqueda}
           acciones={
-            <Link href="/agenda" className="text-[12px] text-tinta-3 transition hover:text-acento">
+            <a href="/agenda" className="text-[12px] text-tinta-3 transition hover:text-acento">
               Volver al día
-            </Link>
+            </a>
           }
         />
         <div className="px-5 py-5">
           <Tarjeta>
-            <TarjetaCabecera titulo={`${encontradas.length} reservas`} descripcion="Por código, teléfono o nombre." />
+            <TarjetaCabecera titulo={`${encontradas.length} ${encontradas.length === 1 ? "reserva" : "reservas"}`} descripcion="Por código, teléfono o nombre." />
             {encontradas.length === 0 ? (
               <Vacio
                 titulo="Sin coincidencias"
-                detalle="Busca por el código de cuatro letras que dictó el agente, por el teléfono desde el que llamaron, o por el nombre."
+                detalle="Busque por el código de cuatro letras que dictó el agente, por el teléfono desde el que llamaron, o por el nombre."
               />
             ) : (
               <ListaReservas reservas={encontradas} zona={config.zona_horaria} mostrarFecha />
@@ -82,7 +81,8 @@ export default async function Agenda({
     <>
       <div className="flex border border-linea bg-panel">
         {(["dia", "semana"] as const).map((v) => (
-          <Link
+          // <a> y no Link: ver NavegarDia.
+          <a
             key={v}
             href={enlace({ vista: v })}
             className={`px-2.5 py-1.5 text-[12px] transition ${
@@ -90,7 +90,7 @@ export default async function Agenda({
             }`}
           >
             {v === "dia" ? "Día" : "Semana"}
-          </Link>
+          </a>
         ))}
       </div>
       <NavegarDia
@@ -110,7 +110,7 @@ export default async function Agenda({
     const conteos = dias.map((d) => cuenta(porDia.get(d) ?? []));
     return (
       <>
-        <Encabezado titulo="Agenda" descripcion={`Semana del ${lunes}`} giro={giro.nombre} acciones={navegacion} principal={nueva} />
+        <Encabezado titulo="Agenda" descripcion={`Semana del ${fechaCorta(`${lunes}T12:00:00Z`, "UTC")}`} giro={giro.nombre} acciones={navegacion} principal={nueva} />
         <div className="space-y-4 px-5 py-5">
           <OcupacionSemanal conteos={conteos} />
           {dias.map((d, i) => {
@@ -121,9 +121,9 @@ export default async function Agenda({
                   titulo={`${DIAS[i]} ${d.slice(8)}`}
                   descripcion={`${cuenta(delDia)} ${cuenta(delDia) === 1 ? "cita" : "citas"}`}
                   accion={
-                    <Link href={enlace({ dia: d, vista: "dia" })} className="text-xs text-tinta-3 transition hover:text-acento">
+                    <a href={enlace({ dia: d, vista: "dia" })} className="text-xs text-tinta-3 transition hover:text-acento">
                       Ver día
-                    </Link>
+                    </a>
                   }
                 />
                 {delDia.length === 0 ? (
@@ -146,7 +146,7 @@ export default async function Agenda({
   const diaSiguiente = siguiente ? isoDia(new Date(siguiente.inicio), config.zona_horaria) : null;
   const descripcion = siguiente
     ? `${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · sin citas este día; la siguiente es el ${fechaLarga(siguiente.inicio, config.zona_horaria)}.`
-    : `${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · marca Llegó cuando entre cada persona y Atendida al terminar.`;
+    : `${fechaLarga(`${dia}T12:00:00Z`, "UTC")} · marque Llegó cuando entre cada persona y Atendida al terminar.`;
 
   return (
     <>
@@ -159,9 +159,9 @@ export default async function Agenda({
               descripcion={`${proximas.length === 1 ? "La siguiente cita" : `Las siguientes ${proximas.length} citas`} en la agenda.`}
               accion={
                 diaSiguiente ? (
-                  <Link href={enlace({ dia: diaSiguiente, vista: "dia" })} className="text-xs text-tinta-3 transition hover:text-acento">
+                  <a href={enlace({ dia: diaSiguiente, vista: "dia" })} className="text-xs text-tinta-3 transition hover:text-acento">
                     Ir a ese día
-                  </Link>
+                  </a>
                 ) : null
               }
             />

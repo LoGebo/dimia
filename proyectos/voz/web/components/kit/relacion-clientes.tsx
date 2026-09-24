@@ -128,7 +128,7 @@ export function TablaClientes({
       alClic={(c) => router.push(`/clientes/${c.id}`)}
       vacio={{
         titulo: "Nadie por aquí",
-        detalle: busqueda ? "Prueba con otro nombre o teléfono." : "En cuanto alguien llame o escriba, aparece aquí solo.",
+        detalle: busqueda ? "Pruebe con otro nombre o teléfono." : "En cuanto alguien llame o escriba, aparece aquí solo.",
       }}
     />
   );

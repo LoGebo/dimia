@@ -368,7 +368,8 @@ async def test_los_horarios_van_como_botones_y_el_toque_reserva(tenant, cfg):
     toque = _webhook("instagram", CUENTA_IG, "10:00 am", mid="mid.2")
     toque["entry"][0]["messaging"][0]["message"]["quick_reply"] = {"payload": segunda}
     envios = await agente.atender(parse_webhook(toque)[0])
-    assert envios == [(CLIENTE, "Listo, Ana. Código *RPNF*.", ())]
+    # Instagram no muestra negritas: los asteriscos saldrían tal cual.
+    assert envios == [(CLIENTE, "Listo, Ana. Código RPNF.", ())]
     # El toque llego al modelo ya traducido a la opcion, y la reserva es la de las 10:00.
     assert f"[opcion_id={segunda}]" in sesion.mensajes[-4]["content"]
     assert agenda.reserva["inicio"].hour == 10
@@ -413,3 +414,18 @@ async def test_los_botones_van_como_respuestas_rapidas_en_la_send_api():
         {"content_type": "text", "title": "9:00 am", "payload": "op-1"},
         {"content_type": "text", "title": "un titulo demasiado ", "payload": "op-2"},
     ]
+
+
+async def test_una_nota_de_voz_recibe_respuesta_y_no_silencio(tenant, cfg):
+    """Instagram mandaba el audio al vacío: el cliente se quedaba sin respuesta."""
+    from channels.whatsapp.agente import NO_SOPORTADO
+
+    cuerpo = _webhook("instagram", CUENTA_IG, "")
+    cuerpo["entry"][0]["messaging"][0]["message"]["attachments"] = [{"type": "audio"}]
+    entrantes = parse_webhook(cuerpo)
+    assert len(entrantes) == 1
+
+    llm = LLMFalso([])
+    agente = AgenteSocial(llm=llm, agenda=AgendaFalsa(tenant), cfg=cfg, registro=RegistroSesiones(cfg))
+    assert await agente.atender(entrantes[0]) == [(CLIENTE, NO_SOPORTADO, ())]
+    assert llm.llamadas == []

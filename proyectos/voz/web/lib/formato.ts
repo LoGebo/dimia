@@ -1,10 +1,14 @@
 export function moneda(valor: string | number | null): string {
   if (valor === null || valor === "") return "—";
+  // Pesos cerrados sin decimales; con centavos, los dos: el dueño ve lo que capturó.
+  const n = Number(valor);
+  const decimales = Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2;
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
-    maximumFractionDigits: 0,
-  }).format(Number(valor));
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  }).format(n);
 }
 
 export function hora(iso: string, zona: string): string {
@@ -64,8 +68,11 @@ export function isoDia(fecha: Date, zona: string): string {
 
 export const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
+/** Fecha real (V8 acepta 2026-02-30 y lo corre a marzo; Postgres no) y en un rango con sentido. */
 export function fechaValida(dia: string): boolean {
-  return FECHA_ISO.test(dia) && !Number.isNaN(Date.parse(`${dia}T12:00:00Z`));
+  if (!FECHA_ISO.test(dia) || dia < "1900-01-01" || dia > "2999-12-31") return false;
+  const d = new Date(`${dia}T12:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === dia;
 }
 
 /** Un `?dia=` de la URL solo se usa si es una fecha real; si no, se cae a hoy. */

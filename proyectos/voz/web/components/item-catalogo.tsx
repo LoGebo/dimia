@@ -70,7 +70,7 @@ export function FormularioItem({
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Campo etiqueta="Precio (MXN)">
-          <Entrada name="precio" type="number" min={0} step={5} defaultValue={item?.precio ?? ""} placeholder="opcional" />
+          <Entrada name="precio" type="number" min={0} step="0.01" defaultValue={item?.precio ?? ""} placeholder="opcional" />
         </Campo>
         <Campo etiqueta="Existencias" ayuda="Vacío = sin control. Baja con cada pedido; en cero se apaga solo.">
           <Entrada name="existencias" type="number" min={0} defaultValue={item?.existencias ?? ""} placeholder="sin control" />

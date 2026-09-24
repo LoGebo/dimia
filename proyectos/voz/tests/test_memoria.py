@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import asyncpg
 import pytest
@@ -19,9 +20,11 @@ def _j(v):
 
 
 def _lunes_proximo(hora: int) -> datetime:
-    hoy = datetime.now(UTC).date()
+    # Hora local del negocio: reservar() rechaza lo que cae fuera de su horario (9-18).
+    zona = ZoneInfo("America/Mexico_City")
+    hoy = datetime.now(zona).date()
     lunes = hoy + timedelta(days=(7 - hoy.weekday()) % 7 or 7)
-    return datetime(lunes.year, lunes.month, lunes.day, hora, 0, tzinfo=UTC)
+    return datetime(lunes.year, lunes.month, lunes.day, hora, 0, tzinfo=zona)
 
 
 @pytest_asyncio.fixture

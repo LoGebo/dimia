@@ -516,3 +516,95 @@ async def test_una_conversacion_donde_nadie_hablo_si_se_cierra_sin_modelo():
 
     assert cerradas == 0
     assert agenda.cierres[0][1:3] == ("sin motivo claro", "sin_resultado")
+
+
+# --- Arranque, llamadas en vuelo y reclamo de llamadas ----------------------
+
+
+class AgendaDeCiclo(AgendaFalsa):
+    def __init__(self) -> None:
+        super().__init__([])
+        self.recordatorios = 0
+        self.pausadas = 0
+
+    async def encolar_recordatorios(self, ventana_horas: int = 24) -> int:
+        self.recordatorios += 1
+        return 0
+
+    async def cancelar_sin_confirmar(self, horas: int = 2) -> int:
+        return 0
+
+    async def campana_pausar_llamadas(self) -> int:
+        self.pausadas += 1
+        return 0
+
+    async def campana_cerrar_terminadas(self) -> int:
+        return 0
+
+    async def campana_encolar(self, limite: int = 50) -> int:
+        return 0
+
+
+def test_los_temporizadores_vencen_en_la_primera_vuelta_tras_un_reinicio():
+    """Con 0.0 contra el reloj monotónico (que cuenta desde que arrancó la
+    máquina), una VM recién desplegada esperaba una hora para recordar o
+    cancelar citas y cinco minutos para las campañas."""
+    from app import despachador as mod
+
+    d = Despachador(AgendaDeCiclo(), MensajeroFalso())
+    arranque = 60.0  # un minuto de uptime
+    assert arranque - d._ultimo_recordatorio >= mod.CADA_RECORDATORIO_SEG
+    assert arranque - d._ultima_campana >= mod.CADA_CAMPANA_SEG
+    assert arranque - d._ultimo_cierre >= mod.CADA_CIERRE_SEG
+
+
+async def test_las_salientes_no_pasan_del_tope_en_vuelo(monkeypatch):
+    from app import despachador as mod
+
+    en_vuelo = maximo = 0
+
+    async def marcar_lento(cfg, tenant_id, destino, payload):
+        nonlocal en_vuelo, maximo
+        en_vuelo += 1
+        maximo = max(maximo, en_vuelo)
+        await asyncio.sleep(0.02)
+        en_vuelo -= 1
+        return "sala"
+
+    monkeypatch.setattr("app.despachador.marcar", marcar_lento)
+    filas = [{**_fila(canal="llamada"), "tenant_id": uuid.uuid4()} for _ in range(10)]
+    agenda = AgendaDeCampana(filas)
+    despachador = Despachador(agenda, MensajeroFalso())
+
+    await despachador.tanda()
+    await despachador.esperar_salientes()
+
+    assert maximo == mod.LLAMADAS_EN_VUELO
+    assert len(agenda.enviados) == 10
+
+
+async def test_sin_troncal_las_campanas_por_llamada_se_pausan(monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings(), "livekit_sip_trunk_saliente", "")
+    agenda = AgendaDeCiclo()
+
+    await Despachador(agenda, MensajeroFalso()).campanas()
+
+    assert agenda.pausadas == 1
+
+
+async def test_una_fila_de_llamada_se_reclama_una_sola_vez(pool, negocio):
+    """marcar() espera a que contesten: con 30 s de apartado, la siguiente vuelta
+    la reclamaba otra vez y la persona recibía dos llamadas."""
+    fila = await pool.fetchval(
+        "insert into outbox (tenant_id, canal, destino, plantilla) "
+        "values ($1, 'llamada', '+525511112222', 'campana') returning id",
+        negocio["tenant"],
+    )
+    await pool.execute("update outbox set disponible_en = now() - interval '1 s' where id = $1", fila)
+    reclamadas = await pool.fetch("select id from outbox_reclamar(1000) where tenant_id = $1", negocio["tenant"])
+    assert [r["id"] for r in reclamadas] == [fila]
+
+    faltan = await pool.fetchval("select disponible_en - now() from outbox where id = $1", fila)
+    assert faltan > timedelta(hours=VENCE_EN_HORAS)

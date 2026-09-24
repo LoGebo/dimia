@@ -67,7 +67,7 @@ export function SelectorGiro({
               />
             </OpcionTarjeta>
           ))}
-          <OpcionTarjeta nombre="Otro giro" detalle="Tú dices qué es y qué hace el agente" punteada>
+          <OpcionTarjeta nombre="Otro giro" detalle="Usted dice qué es y qué hace el agente" punteada>
             <input
               type="radio"
               name="vertical"
@@ -85,7 +85,7 @@ export function SelectorGiro({
 
       {propio ? (
         <div className="entra space-y-3 border border-linea bg-panel-2 px-4 py-4">
-          <Campo etiqueta="Nombre del giro" ayuda="Como lo dirías en una frase: veterinaria, despacho contable, gimnasio.">
+          <Campo etiqueta="Nombre del giro" ayuda="Como lo diría en una frase: veterinaria, despacho contable, gimnasio.">
             <Entrada
               name="giro_nombre"
               placeholder="Veterinaria"

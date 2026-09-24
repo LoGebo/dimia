@@ -4,7 +4,6 @@ import { BotonPeligro } from "@/components/boton-peligro";
 import { Formulario } from "@/components/formulario";
 import { TablaRegistros } from "@/components/kit";
 import { eliminarRegla } from "@/lib/acciones";
-import { fechaCorta } from "@/lib/formato";
 import type { Regla } from "@/lib/tipos";
 
 const NOMBRE: Record<string, string> = {
@@ -12,6 +11,9 @@ const NOMBRE: Record<string, string> = {
   bloqueo: "Bloqueo parcial",
   disponible: "Abierto extraordinario",
 };
+
+// Con año: una excepción puede ser del año que entra y la lista no debe confundirlas.
+const FECHA = new Intl.DateTimeFormat("es-MX", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 
 const TONO: Record<string, string> = {
   festivo: "bg-critico",
@@ -29,7 +31,7 @@ export function TablaExcepciones({ excepciones }: { excepciones: Regla[] }) {
           titulo: "Fecha",
           ancho: "120px",
           valor: (r) => r.fecha ?? "",
-          render: (r) => <span className="numeros text-[12.5px] font-medium text-tinta">{fechaCorta(`${r.fecha}T12:00:00Z`, "UTC")}</span>,
+          render: (r) => <span className="numeros text-[12.5px] font-medium text-tinta">{FECHA.format(new Date(`${r.fecha}T12:00:00Z`))}</span>,
         },
         {
           clave: "tipo",
@@ -48,11 +50,14 @@ export function TablaExcepciones({ excepciones }: { excepciones: Regla[] }) {
           numerica: true,
           ancho: "130px",
           valor: (r) => r.hora_inicio,
-          render: (r) => (
-            <span className="text-tinta-3">
-              {r.hora_inicio} – {r.hora_fin}
-            </span>
-          ),
+          render: (r) =>
+            r.tipo === "festivo" ? (
+              <span className="text-tinta-3">—</span>
+            ) : (
+              <span className="text-tinta-3">
+                {r.hora_inicio} – {r.hora_fin}
+              </span>
+            ),
         },
         {
           clave: "quitar",
@@ -76,7 +81,7 @@ export function TablaExcepciones({ excepciones }: { excepciones: Regla[] }) {
       ordenInicial={{ clave: "fecha", dir: "asc" }}
       vacio={{
         titulo: "Sin excepciones",
-        detalle: "Da de alta los días festivos y los puentes para que el agente no ofrezca horarios en los que estarás cerrado.",
+        detalle: "Dé de alta los días festivos y los puentes para que el agente no ofrezca horarios en los que estará cerrado.",
       }}
     />
   );

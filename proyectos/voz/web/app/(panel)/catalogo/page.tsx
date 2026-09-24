@@ -29,7 +29,7 @@ export default async function Catalogo() {
         acciones={agotados > 0 ? <Insignia tono="alerta">{agotados} marcados como no disponibles</Insignia> : null}
       />
 
-      <div className="grid gap-4 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid grid-cols-1 gap-4 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-4">
           {tipos.map((tipo) => {
             const delTipo = items.filter((i) => i.tipo === tipo);
@@ -37,12 +37,12 @@ export default async function Catalogo() {
               <Tarjeta key={tipo}>
                 <TarjetaCabecera
                   titulo={etiquetaTipo(tipo, true)}
-                  descripcion={`${delTipo.length} items · ${delTipo.filter((i) => i.disponible).length} disponibles`}
+                  descripcion={`${delTipo.length} ${delTipo.length === 1 ? "producto" : "productos"} · ${delTipo.filter((i) => i.disponible).length} ${delTipo.filter((i) => i.disponible).length === 1 ? "disponible" : "disponibles"}`}
                   accion={
                     <BotonDialogo
                       etiqueta={`+ Agregar ${etiquetaTipo(tipo).toLowerCase()}`}
                       titulo={`Nuevo ${etiquetaTipo(tipo).toLowerCase()}`}
-                      descripcion="Queda en el catálogo en cuanto guardes; el agente lo ofrece en la siguiente llamada."
+                      descripcion="Queda en el catálogo en cuanto guarde; el agente lo ofrece en la siguiente llamada."
                       ancho="max-w-2xl"
                     >
                       <FormularioItem tipos={tipos} recursos={activos} tipoInicial={tipo} />
@@ -57,7 +57,7 @@ export default async function Catalogo() {
           <Tarjeta>
             <TarjetaCabecera
               titulo="Agregar un grupo"
-              descripcion="Un grupo nuevo para acomodar lo que ofreces: postres, extras, promociones."
+              descripcion="Un grupo nuevo para acomodar lo que ofrece: postres, extras, promociones."
             />
             <Formulario accion={agregarGrupoCatalogo} className="flex flex-wrap items-end gap-3 px-4 py-4" reiniciar>
               <div className="min-w-0 flex-1">
@@ -69,7 +69,7 @@ export default async function Catalogo() {
             </Formulario>
             {propios.length > 0 ? (
               <div className="flex flex-wrap items-center gap-2 border-t border-linea px-4 py-3">
-                <span className="etiqueta">Tuyos</span>
+                <span className="etiqueta">Suyos</span>
                 {propios.map((g) => (
                   <Formulario key={g} accion={quitarGrupoCatalogo} className="inline-flex" silencioso>
                     <input type="hidden" name="grupo" value={g} />
@@ -91,7 +91,7 @@ export default async function Catalogo() {
         <div className="space-y-4 xl:sticky xl:top-[76px] xl:self-start">
           <Tarjeta>
             <TarjetaCabecera titulo="Probar como cliente" descripcion="Lo mismo que ejecuta el agente en la llamada: buscar_catalogo." />
-            <ProbadorCatalogo tipos={tipos} />
+            <ProbadorCatalogo tipos={tipos} ejemplos={items.slice(0, 4).map((i) => i.nombre.toLowerCase())} />
           </Tarjeta>
         </div>
       </div>

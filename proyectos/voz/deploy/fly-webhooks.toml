@@ -11,6 +11,10 @@ kill_timeout   = "30s"
 [env]
   LOG_LEVEL       = "INFO"
   PYTHONUNBUFFERED = "1"
+  # Con 4 conexiones, una rafaga de 100 mensajes ya esperaba el pool mas que al
+  # modelo. PG_DSN va al pooler de Supabase (6543, modo transaccion): 12 por
+  # proceso x (1 web + 2 despachadores) queda lejos de su limite de clientes.
+  PG_POOL_MAX     = "12"
 
 [processes]
   # Webhooks públicos de WhatsApp e Instagram/Messenger (Meta le pega aquí).

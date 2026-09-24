@@ -30,4 +30,9 @@ struct AvisosTests {
         #expect(b.pestana == "mensajes" && b.conversacion == id)
         #expect(Notificaciones.destino(enlace: "/cobros", agenda: true, pedidos: false).pestana == "hoy")
     }
+
+    @Test func erroresDeLaApiEnFrase() {
+        #expect(API.Fallo.http(401, "correo o contraseña incorrectos").errorDescription == "Correo o contraseña incorrectos.")
+        #expect(API.Fallo.http(502, "").errorDescription == "El servicio no respondió. Intente de nuevo en un momento.")
+    }
 }

@@ -42,9 +42,10 @@ struct RecadosPantalla: View {
 
     private func alternar(_ r: Recado) async {
         do {
-            try await API.enviar("POST", sesion.ruta + "/recados/\(r.id.uuidString.lowercased())/atendido")
+            // El estado va explícito: un doble toque no lo regresa a pendiente.
+            try await API.enviar("POST", sesion.ruta + "/recados/\(r.id.uuidString.lowercased())/atendido", ["atendido": !r.atendido])
             withAnimation(.snappy) {
-                if todos, let i = recados.firstIndex(where: { $0.id == r.id }) { recados[i].atendido.toggle() }
+                if todos, let i = recados.firstIndex(where: { $0.id == r.id }) { recados[i].atendido = !r.atendido }
                 else { recados.removeAll { $0.id == r.id } }
             }
         } catch { self.error = error.localizedDescription }

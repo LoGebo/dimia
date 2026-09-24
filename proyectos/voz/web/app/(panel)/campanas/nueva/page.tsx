@@ -13,7 +13,7 @@ export default async function NuevaCampanaPagina() {
     <>
       <Encabezado
         titulo="Nueva campaña"
-        descripcion="Elige a quién, por dónde y qué decir. El agente hace el resto y aquí ves quién contestó y quién agendó."
+        descripcion="Elija a quién, por dónde y qué decir. El agente hace el resto y aquí ve quién contestó y quién agendó."
         giro={giro.nombre}
         acciones={
           <Link href="/campanas" className="text-[12px] text-tinta-3 transition hover:text-acento">

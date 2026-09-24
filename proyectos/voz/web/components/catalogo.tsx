@@ -6,7 +6,8 @@ import { BotonEnviar, Formulario } from "@/components/formulario";
 import { BotonPeligro } from "@/components/boton-peligro";
 import { TablaRegistros } from "@/components/kit";
 import { Campo, Entrada, Selector } from "@/components/ui/primitivos";
-import { archivarServicio, guardarRecurso, guardarServicio } from "@/lib/acciones";
+import { moneda } from "@/lib/formato";
+import { archivarRecurso, archivarServicio, guardarRecurso, guardarServicio } from "@/lib/acciones";
 import { ETIQUETAS_RECURSO, type Recurso, type Servicio, type Vertical } from "@/lib/tipos";
 
 export function FormularioRecurso({
@@ -33,7 +34,7 @@ export function FormularioRecurso({
           <Entrada name="capacidad" type="number" min={1} defaultValue={recurso?.capacidad ?? 1} />
         </Campo>
       </div>
-      <Campo etiqueta="Etiqueta interna" ayuda="Zona, especialidad o piso. Solo la ves tú.">
+      <Campo etiqueta="Etiqueta interna" ayuda="Zona, especialidad o piso. Solo la ve usted.">
         <Entrada name="etiqueta" defaultValue={recurso?.metadatos?.etiqueta} placeholder="terraza" />
       </Campo>
       <fieldset>
@@ -93,7 +94,7 @@ export function FormularioServicio({
           <Entrada name="buffer_min" type="number" min={0} step={5} defaultValue={servicio?.buffer_min ?? 0} />
         </Campo>
         <Campo etiqueta="Precio (MXN)">
-          <Entrada name="precio" type="number" min={0} step={10} defaultValue={servicio?.precio ?? ""} placeholder="opcional" />
+          <Entrada name="precio" type="number" min={0} step="0.01" defaultValue={servicio?.precio ?? ""} placeholder="opcional" />
         </Campo>
       </div>
       <fieldset>
@@ -210,6 +211,15 @@ export function TablaRecursos({ recursos, vertical, etiqueta }: { recursos: Recu
         <Dialogo titulo={editando.nombre} descripcion="Cambios que el agente usa en la siguiente llamada." cerrar={() => setEditando(null)} cabecera className="max-w-xl">
           <div className="px-4 py-4">
             <FormularioRecurso recurso={editando} vertical={vertical} />
+            <Formulario accion={archivarRecurso} className="mt-3 border-t border-linea pt-3" silencioso alExito={() => setEditando(null)}>
+              <input type="hidden" name="id" value={editando.id} />
+              <input type="hidden" name="activar" value={editando.activo ? "0" : "1"} />
+              {editando.activo ? (
+                <BotonPeligro etiqueta="Sí, dar de baja" pendiente="Guardando…">Dar de baja</BotonPeligro>
+              ) : (
+                <BotonEnviar>Reactivar</BotonEnviar>
+              )}
+            </Formulario>
           </div>
         </Dialogo>
       ) : null}
@@ -264,7 +274,7 @@ export function TablaServicios({ servicios, recursos }: { servicios: Servicio[];
             numerica: true,
             ancho: "88px",
             valor: (s) => (s.precio ? Number(s.precio) : null),
-            render: (s) => (s.precio ? `$${Math.round(Number(s.precio))}` : <span className="text-tinta-3">—</span>),
+            render: (s) => (s.precio ? moneda(s.precio) : <span className="text-tinta-3">—</span>),
           },
         ]}
         filas={servicios}
@@ -276,7 +286,7 @@ export function TablaServicios({ servicios, recursos }: { servicios: Servicio[];
         ]}
         ordenInicial={{ clave: "nombre", dir: "asc" }}
         alClic={setEditando}
-        vacio={{ titulo: "Sin servicios", detalle: "Agrega al menos uno para poder agendar." }}
+        vacio={{ titulo: "Sin servicios", detalle: "Agregue al menos uno para poder agendar." }}
       />
       {editando ? (
         <Dialogo titulo={editando.nombre} descripcion="Duración, precio y quién lo da. El agente lo dice tal cual." cerrar={() => setEditando(null)} cabecera className="max-w-xl">

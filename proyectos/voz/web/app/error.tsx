@@ -31,8 +31,8 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-tinta-2">
           {versionVieja
-            ? "Tenías el panel abierto de antes. Se está recargando solo; no se perdió nada de lo que ya habías guardado."
-            : "No es tu culpa ni se perdió nada de lo que ya habías guardado. Vuelve a intentarlo; si sigue pasando, escríbenos y te decimos qué está pasando."}
+            ? "Tenía el panel abierto de antes. Se está recargando solo; no se perdió nada de lo que ya había guardado."
+            : "No es un error suyo ni se perdió nada de lo que ya había guardado. Vuelva a intentarlo; si sigue pasando, escríbanos y le decimos qué ocurre."}
         </p>
         {error.digest ? (
           <p className="etiqueta mt-4">Referencia {error.digest}</p>

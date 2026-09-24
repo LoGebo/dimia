@@ -83,6 +83,7 @@ schemes:
       targets: [DimiaTests, DimiaUITests]
       environmentVariables:
         CORREO: $(CORREO)
+        API: $(API)
         CLAVE: $(CLAVE)
         CAPTURAS: $(CAPTURAS)
         NEGOCIO: $(NEGOCIO)

@@ -230,7 +230,7 @@ export function TablaContactos({ contactos, zona }: { contactos: CampanaContacto
       clave={(p) => p.id}
       filtros={filtros}
       ordenInicial={{ clave: "intento", dir: "desc" }}
-      vacio={{ titulo: "Nadie todavía", detalle: "Agrega personas desde la derecha o cambia el criterio de la campaña." }}
+      vacio={{ titulo: "Nadie todavía", detalle: "Agregue personas desde la derecha o cambie el criterio de la campaña." }}
       className="border-0"
     />
   );
@@ -359,7 +359,7 @@ export function MarcaCampanaCreada({ nombre }: { nombre: string }) {
     } catch {}
     if (guardado === null || guardado !== nombre) return;
     setCreada(true);
-    avisar({ titulo: "Campaña creada", detalle: `${nombre} · en borrador hasta que la actives`, tono: "bueno" });
+    avisar({ titulo: "Campaña creada", detalle: `${nombre} · en borrador hasta que la active`, tono: "bueno" });
   }, [nombre, avisar]);
   if (!creada) return null;
   return <MarcaExito texto="Campaña creada" tamano={18} />;

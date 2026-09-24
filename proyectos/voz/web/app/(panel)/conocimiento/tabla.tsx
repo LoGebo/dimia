@@ -40,11 +40,11 @@ export function TablaRespuestas({ entradas }: { entradas: Faq[] }) {
         alClic={setEditando}
         vacio={{
           titulo: "Todavía no hay respuestas",
-          detalle: "Sin esto el agente transfiere cualquier pregunta que no sea agendar. Con cinco respuestas cubres casi todo.",
+          detalle: "Sin esto el agente transfiere cualquier pregunta que no sea agendar. Con cinco respuestas cubre casi todo.",
         }}
       />
       {editando ? (
-        <Dialogo titulo={editando.pregunta} descripcion="Escríbelo hablado, como si lo dijeras por teléfono." cerrar={() => setEditando(null)} cabecera className="max-w-xl">
+        <Dialogo titulo={editando.pregunta} descripcion="Escríbalo hablado, como si lo dijera por teléfono." cerrar={() => setEditando(null)} cabecera className="max-w-xl">
           <div className="px-4 py-4">
             <FormularioFaq entrada={editando} />
             <Formulario accion={eliminarFaq} className="mt-3 border-t border-linea pt-3">

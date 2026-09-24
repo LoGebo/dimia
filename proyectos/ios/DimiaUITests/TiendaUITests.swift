@@ -5,10 +5,12 @@ final class TiendaUITests: XCTestCase {
     @MainActor
     func testCapturas() throws {
         let env = ProcessInfo.processInfo.environment
+        // Sin credenciales no corren: `test` a secas solo corre DimiaTests. Con API=<url> no tocan producción.
+        try XCTSkipIf((env["CORREO"] ?? "").isEmpty, "Se corre a mano con CORREO y CLAVE.")
         let dir = env["CAPTURAS"] ?? NSTemporaryDirectory()
         func abrir(_ negocio: String) -> XCUIApplication {
             let app = XCUIApplication()
-            app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? "", "-negocio", negocio]
+            app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? "", "-negocio", negocio] + (env["API"].map { ["-api", $0] } ?? [])
             app.launch()
             XCTAssertTrue(app.tabBars.buttons["Agentes"].waitForExistence(timeout: 25))
             return app

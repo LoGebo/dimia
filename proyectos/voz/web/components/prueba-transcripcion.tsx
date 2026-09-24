@@ -29,7 +29,7 @@ export function Transcripcion({ turnos }: { turnos: Turno[] }) {
   if (turnos.length === 0) {
     return (
       <p className="px-4 py-8 text-center text-[12px] text-tinta-3">
-        Lo que digas y lo que conteste el agente aparece aquí, turno por turno.
+        Lo que usted diga y lo que conteste el agente aparece aquí, turno por turno.
       </p>
     );
   }

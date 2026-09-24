@@ -14,7 +14,7 @@ from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, Request, Response
 
-from app.llm_texto import cliente_texto
+from app.llm_texto import cliente_respaldo, cliente_texto
 from app.supabase_client import agenda
 from channels.social.agente import AgenteSocial
 from channels.social.cliente import ClienteSocial
@@ -37,6 +37,7 @@ async def ciclo_de_vida(app: FastAPI) -> AsyncIterator[None]:
     app.state.cliente = ClienteSocial(cfg)
     app.state.agente = AgenteSocial(
         llm=cliente_texto(cfg),
+        respaldo=cliente_respaldo(cfg),
         agenda=agenda,
         cfg=cfg,
     )
@@ -51,6 +52,13 @@ app = FastAPI(title="canal instagram y messenger", lifespan=ciclo_de_vida)
 
 
 async def procesar(app: FastAPI, entrante: MensajeSocial) -> None:
+    # Meta reintenta con el mismo mid: se reclama en la base antes del modelo.
+    if entrante.mensaje_id:
+        try:
+            if not await app.state.agente.agenda.mensaje_reclamar(entrante.canal, entrante.mensaje_id):
+                return
+        except Exception:
+            log.exception("no se pudo reclamar %s; se atiende igual", entrante.mensaje_id)
     try:
         envios = await app.state.agente.atender(entrante)
     except Exception:
@@ -63,7 +71,16 @@ async def procesar(app: FastAPI, entrante: MensajeSocial) -> None:
                 destino, texto, entrante.canal, opciones=list(botones)
             )
         except Exception:
-            log.exception("fallo enviando a %s por %s", destino, entrante.canal)
+            log.exception("fallo enviando a %s por %s; pasa a la cola", destino, entrante.canal)
+            # Sin botones en la cola: la hora escrita se casa igual con la opcion.
+            texto_cola = texto + "".join(f"\n- {b.titulo}" for b in botones)
+            try:
+                contexto = await app.state.agente._contexto(entrante.canal, entrante.cuenta_id)
+                await app.state.agente.agenda.outbox_respuesta(
+                    contexto.tenant.id, entrante.canal, destino, texto_cola
+                )
+            except Exception:
+                log.exception("tampoco se pudo encolar la respuesta a %s", destino)
 
 
 @app.get("/webhook/social")
@@ -96,7 +113,13 @@ async def recibir(
     ):
         return Response(status_code=401)
 
-    cuerpo = json.loads(crudo or b"{}")
+    try:
+        cuerpo = json.loads(crudo or b"{}")
+    except ValueError:
+        cuerpo = None
+    # Firmado pero ilegible: 400 y no un 500 que Meta reintenta sin fin.
+    if not isinstance(cuerpo, dict):
+        return Response(status_code=400)
     entrantes = parse_webhook(cuerpo)
     for entrante in entrantes:
         tareas.add_task(procesar, request.app, entrante)

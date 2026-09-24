@@ -6,9 +6,8 @@ import { Boton, Entrada, Selector, Vacio } from "@/components/ui/primitivos";
 import { moneda } from "@/lib/formato";
 import { etiquetaTipo, type ResultadoCatalogo } from "@/lib/tipos";
 
-const EJEMPLOS = ["algo sin lácteos", "tacos de pastol", "el más picante", "quién ve niños"];
-
-export function ProbadorCatalogo({ tipos }: { tipos: string[] }) {
+/** `ejemplos`: nombres del propio catálogo; los fijos eran de taquería y salían en una clínica. */
+export function ProbadorCatalogo({ tipos, ejemplos }: { tipos: string[]; ejemplos: string[] }) {
   const [consulta, setConsulta] = useState("");
   const [tipo, setTipo] = useState("");
   const [resultados, setResultados] = useState<ResultadoCatalogo[] | null>(null);
@@ -38,7 +37,7 @@ export function ProbadorCatalogo({ tipos }: { tipos: string[] }) {
         <Entrada
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
-          placeholder="Escribe lo que diría un cliente…"
+          placeholder="Escriba lo que diría un cliente…"
         />
         <div className="flex items-center gap-2">
           <Selector value={tipo} onChange={(e) => setTipo(e.target.value)} className="flex-1">
@@ -57,7 +56,7 @@ export function ProbadorCatalogo({ tipos }: { tipos: string[] }) {
 
       <div className="flex flex-wrap items-center gap-1.5 border-b border-linea px-4 py-2">
         <span className="text-[11px] text-tinta-3">Prueba con:</span>
-        {EJEMPLOS.map((e) => (
+        {ejemplos.map((e) => (
           <button
             key={e}
             onClick={() => buscar(e)}
@@ -71,12 +70,12 @@ export function ProbadorCatalogo({ tipos }: { tipos: string[] }) {
       {resultados === null ? (
         <Vacio
           titulo="Esto es lo que oye el agente"
-          detalle="Escribe una frase como la diría un cliente por teléfono. Lo que aparezca aquí es exactamente lo que la herramienta le devuelve: si algo no sale, el agente no lo va a decir."
+          detalle="Escriba una frase como la diría un cliente por teléfono. Lo que aparezca aquí es exactamente lo que la herramienta le devuelve: si algo no sale, el agente no lo va a decir."
         />
       ) : resultados.length === 0 ? (
         <Vacio
           titulo="La herramienta no devolvería nada"
-          detalle="Con esta frase el agente diría que no tiene el dato y ofrecería transferir. Agrega alias o ajusta la descripción del item que esperabas ver."
+          detalle="Con esta frase el agente diría que no tiene el dato y ofrecería transferir. Agregue alias o ajuste la descripción del item que esperaba ver."
         />
       ) : (
         <ul className="divide-y divide-linea">

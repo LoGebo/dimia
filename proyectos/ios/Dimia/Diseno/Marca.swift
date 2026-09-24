@@ -20,6 +20,10 @@ extension Color {
     /// Lo que va «en firme» (burbuja del dueño, día elegido, botón principal): tinta en claro, hueso en oscuro.
     static let firme = tinta
     static let sobreFirme = fondo
+    /// Texto sobre el azul: blanco en claro; en oscuro el azul es claro y el blanco no se lee (2.7:1), va tinta.
+    static let sobreAcento = dinamico(0xffffff, 0x0b0f17)
+    /// Texto de un botón azul deshabilitado: azul atenuado en claro, hueso atenuado en oscuro.
+    static let acentoApagado = Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: 0xeef1f7).withAlphaComponent(0.6) : UIColor(hex: 0x1f47c4).withAlphaComponent(0.85) })
     /// La superficie de tinta de las portadas; en oscuro se levanta un poco para no perderse en el fondo.
     static let superficieTinta = dinamico(0x0b0f17, 0x1a2133)
 }

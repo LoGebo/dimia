@@ -104,7 +104,7 @@ export default async function Resumen({
           {resumen.total === 0 ? (
             <Vacio
               titulo="Todavía no hay llamadas registradas"
-              detalle="En cuanto el agente conteste la primera llamada, aquí verás el volumen diario y qué tanto se resuelve sin intervención."
+              detalle="En cuanto el agente conteste la primera llamada, aquí verá el volumen diario y qué tanto se resuelve sin intervención."
             />
           ) : (
             <GraficaLlamadas datos={porDia} />
@@ -122,7 +122,7 @@ export default async function Resumen({
           </Tarjeta>
 
           <Tarjeta>
-            <TarjetaCabecera titulo="A qué hora te llaman" descripcion={`Hora local de ${config.zona_horaria}.`} />
+            <TarjetaCabecera titulo="A qué hora le llaman" descripcion={`Hora local de ${config.zona_horaria}.`} />
             {resumen.total === 0 ? (
               <Vacio titulo="Sin datos de horario" />
             ) : (
@@ -138,7 +138,7 @@ export default async function Resumen({
               descripcion={totalResenas > 0 ? `${totalResenas} calificaciones · promedio ${promedioGeneral.toFixed(1)} de 5` : "Se pregunta por WhatsApp después de cada cita atendida."}
             />
             {resenas.length === 0 ? (
-              <Vacio titulo="Sin calificaciones todavía" detalle="Activa las reseñas en Agente y pon tu liga de Google." />
+              <Vacio titulo="Sin calificaciones todavía" detalle="Active las reseñas en Agente y ponga su liga de Google." />
             ) : (
               <ul className="divide-y divide-linea">
                 {resenas.map((r) => (

@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 
 import httpx
 
+from agentes import red
+
 EMISOR = "https://auth.openai.com"
 CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
 URL_TOKEN = f"{EMISOR}/oauth/token"
@@ -54,12 +56,10 @@ async def sondear(device_auth_id: str, codigo: str) -> dict:
 
 
 async def refrescar(refresco: str) -> dict:
-    async with httpx.AsyncClient(timeout=20) as c:
-        r = await c.post(URL_TOKEN, data={"grant_type": "refresh_token", "refresh_token": refresco, "client_id": CLIENT_ID})
+    r = await red.http().post(URL_TOKEN, timeout=20, data={"grant_type": "refresh_token", "refresh_token": refresco, "client_id": CLIENT_ID})
     if r.status_code in (400, 401):
         raise CodexError("La cuenta de ChatGPT ya no autoriza a Dimia; hay que reconectarla.")
-    if r.status_code != 200:
-        raise CodexError(f"OpenAI respondió {r.status_code} al renovar el acceso.")
+    r.raise_for_status()  # 5xx: pasajero; CodexError (que desconecta) es solo el rechazo
     t = r.json()
     return {"acceso": t["access_token"], "refresco": t.get("refresh_token") or refresco}
 

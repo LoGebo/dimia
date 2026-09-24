@@ -88,7 +88,7 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
             {r.detalle ? <span className="text-[12px] leading-snug text-tinta-3">{r.detalle}</span> : null}
             {extras.length > 0 ? (
               <span className="text-[11.5px] text-tinta-3">
-                {extras.map(([clave, valor]) => `${clave}: ${String(valor)}`).join(" · ")}
+                {extras.map(([clave, valor]) => `${clave.replaceAll("_", " ")}: ${String(valor)}`).join(" · ")}
               </span>
             ) : null}
           </span>
@@ -118,7 +118,7 @@ export function TablaRecados({ lista, zona, soloPendientes }: { lista: Recado[];
       ordenInicial={{ clave: "cuando", dir: "desc" }}
       vacio={{
         titulo: soloPendientes ? "Nada pendiente" : "Sin recados",
-        detalle: "Cuando el agente no pueda resolver algo, toma nombre, teléfono y el asunto, y aquí lo vas a ver.",
+        detalle: "Cuando el agente no pueda resolver algo, toma nombre, teléfono y el asunto, y aquí lo va a ver.",
       }}
       className="border-0"
     />

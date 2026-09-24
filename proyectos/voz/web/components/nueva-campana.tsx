@@ -9,32 +9,32 @@ import { NOMBRE_TIPO_CAMPANA, type CanalCampana, type TipoCampana } from "@/lib/
 
 const MENSAJES: Record<TipoCampana, { whatsapp: string; llamada: string; objetivo: string }> = {
   no_show: {
-    whatsapp: "{nombre}, en {negocio} te esperábamos y no pudiste venir. ¿Te reagendamos? Responde por aquí y te damos horario.",
+    whatsapp: "{nombre}, en {negocio} le esperábamos y no pudo venir. ¿Le reagendamos? Responda por aquí y le damos horario.",
     llamada: "La persona tenía cita y no llegó. Pregunta con amabilidad si todo está bien y ofrece reagendar en el horario que le acomode.",
     objetivo: "reagendar la cita",
   },
   inactivos: {
-    whatsapp: "{nombre}, hace tiempo que no te vemos en {negocio}. Si quieres agendar, responde por aquí y te apartamos lugar.",
+    whatsapp: "{nombre}, hace tiempo que no le vemos en {negocio}. Si quiere agendar, responda por aquí y le apartamos lugar.",
     llamada: "Hace tiempo que no viene. Salúdale de parte del negocio, pregunta si necesita algo y ofrece agendar.",
     objetivo: "agendar una cita",
   },
   recordatorio_pago: {
-    whatsapp: "{nombre}, te recordamos que tienes un saldo pendiente con {negocio}. Si ya lo cubriste, ignora este mensaje.",
+    whatsapp: "{nombre}, le recordamos que tiene un saldo pendiente con {negocio}. Si ya lo cubrió, ignore este mensaje.",
     llamada: "Tiene un pago pendiente. Recuérdaselo con tacto y pregunta cómo prefiere cubrirlo.",
     objetivo: "acordar el pago",
   },
   resena: {
-    whatsapp: "{nombre}, gracias por venir a {negocio}. ¿Cómo te fue del 1 al 5? Responde con el número.",
+    whatsapp: "{nombre}, gracias por venir a {negocio}. ¿Cómo le fue del 1 al 5? Responda con el número.",
     llamada: "Vino hace poco. Pregunta cómo le fue y si recomendaría el lugar.",
     objetivo: "obtener una calificación",
   },
   marketing: {
-    whatsapp: "{nombre}, en {negocio} tenemos [ promoción ] hasta [ fecha ]. Responde por aquí si te interesa.",
+    whatsapp: "{nombre}, en {negocio} tenemos [ promoción ] hasta [ fecha ]. Responda por aquí si le interesa.",
     llamada: "Cuéntale la promoción y pregunta si le interesa agendar.",
     objetivo: "agendar una cita",
   },
   manual: {
-    whatsapp: "{nombre}, te escribimos de {negocio}. ",
+    whatsapp: "{nombre}, le escribimos de {negocio}. ",
     llamada: "",
     objetivo: "",
   },
@@ -126,7 +126,7 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
 
       <Campo
         etiqueta={canal === "whatsapp" ? "Mensaje" : "Guion para el agente"}
-        ayuda={canal === "whatsapp" ? "{nombre} y {negocio} se sustituyen solos." : "Dile al agente qué sabe de la persona y qué debe lograr. Él arma la conversación."}
+        ayuda={canal === "whatsapp" ? "{nombre} y {negocio} se sustituyen solos." : "Dígale al agente qué sabe de la persona y qué debe lograr. Él arma la conversación."}
       >
         <AreaTexto name="mensaje" rows={4} value={mensaje} onChange={(e) => setMensaje(e.target.value)} required />
       </Campo>
@@ -163,7 +163,7 @@ export function NuevaCampana({ alcances: iniciales }: { alcances: Record<string,
             Alcanzaría a <span className="numeros text-[12.5px] text-tinta">{alcance}</span> {alcance === 1 ? "persona" : "personas"} hoy.
           </span>
         ) : null}
-        <p className="text-[12px] text-tinta-3">Se crea en borrador; tú la activas cuando quieras.</p>
+        <p className="text-[12px] text-tinta-3">Se crea en borrador; usted la activa cuando quiera.</p>
       </div>
     </Formulario>
     </div>

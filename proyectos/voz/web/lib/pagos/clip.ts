@@ -31,7 +31,7 @@ export const clip: ProveedorPagos = {
           purchase_description: p.concepto.slice(0, 250),
           metadata: { external_reference: p.pagoId },
           webhook_url: p.urlWebhook,
-          redirection_url: { success: p.urlVolver, error: p.urlVolver, default: p.urlVolver },
+          redirection_url: { success: `${p.urlVolver}?estado=ok`, error: `${p.urlVolver}?estado=fallo`, default: p.urlVolver },
         }),
       },
       "clip",

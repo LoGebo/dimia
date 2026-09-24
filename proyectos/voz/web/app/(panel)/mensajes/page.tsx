@@ -1,22 +1,24 @@
 import { Encabezado } from "@/components/encabezado";
 import { Cifra, Glifos, TiraIndicadores } from "@/components/indicadores";
-import { mensajesSalientes, negocio } from "@/lib/consultas";
+import { conteoMensajes, mensajesSalientes, negocio } from "@/lib/consultas";
 import { exigirSeccion } from "@/lib/sesion";
 import { TablaMensajes } from "./tabla";
 
 export default async function Mensajes() {
   const giro = await exigirSeccion("/mensajes");
-  const [lista, config] = await Promise.all([mensajesSalientes(), negocio()]);
+  const [lista, conteo, config] = await Promise.all([mensajesSalientes(), conteoMensajes(), negocio()]);
 
-  const enviados = lista.filter((m) => m.estado === "enviado").length;
-  const enCola = lista.filter((m) => m.estado === "pendiente").length;
-  const fallidos = lista.filter((m) => m.estado === "fallido").length;
+  // Las cifras cuentan todo; la tabla solo trae los más recientes.
+  const enviados = conteo.enviado ?? 0;
+  const enCola = conteo.pendiente ?? 0;
+  const fallidos = conteo.fallido ?? 0;
+  const total = Object.values(conteo).reduce((s, n) => s + n, 0);
 
   return (
     <>
       <Encabezado
         titulo="Avisos"
-        descripcion="Confirmaciones, recordatorios y avisos que el agente manda solo por WhatsApp. Aquí ves si salieron."
+        descripcion="Confirmaciones, recordatorios y avisos que el agente manda solo por WhatsApp. Aquí ve si salieron."
         giro={giro.nombre}
       />
 
@@ -28,6 +30,11 @@ export default async function Mensajes() {
         </TiraIndicadores>
 
         <TablaMensajes lista={lista} zona={config.zona_horaria} />
+        {total > lista.length ? (
+          <p className="numeros text-[12px] text-tinta-3">
+            Se muestran los {lista.length} más recientes de {total}.
+          </p>
+        ) : null}
       </div>
     </>
   );

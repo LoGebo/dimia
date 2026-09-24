@@ -5,8 +5,8 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from app.franjas import franja_a_horas
 from app import telefonos
+from app.franjas import franja_a_horas
 from app.supabase_client import Agenda, Slot, Tenant
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.sesion import OpcionHorario, SesionWhatsApp, nombre_plausible
@@ -74,14 +74,19 @@ AGENDA: list[dict[str, Any]] = [
     {
         "name": "buscar_reserva",
         "description": (
-            "Busca la reserva del cliente por su numero, por codigo o por nombre. "
-            "Si te dijo su nombre, pasalo SIEMPRE: en Instagram no hay numero."
+            "Busca las reservas del numero que te escribe, o la del codigo que te de. "
+            "Por nombre no se busca: cualquiera puede decir un nombre. Si no aparece "
+            "(o escribe por Instagram), pidele el codigo de 4 caracteres de su cita; "
+            "por Instagram o Messenger, tambien el WhatsApp con el que reservo."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "codigo": {"type": "string", "description": "codigo de 4 caracteres"},
-                "nombre": {"type": "string", "description": "nombre con el que agendo"},
+                "telefono": {
+                    "type": "string",
+                    "description": "WhatsApp con el que reservo (10 digitos). Solo por Instagram o Messenger, junto con el codigo.",
+                },
             },
             "required": [],
         },
@@ -310,7 +315,12 @@ class Herramientas:
             )
             for clave, slot in zip(claves, elegidos, strict=False)
         ]
-        resumen = ", ".join(horario.etiqueta for horario in horarios)
+        # Con el id a la vista, el modelo puede reservar la hora que la persona
+        # acepto escribiendo ("a las 11:15 esta bien"), en este turno o en otro.
+        resumen = ", ".join(
+            f"{horario.etiqueta} (opcion_id={clave})"
+            for clave, horario in zip(claves, horarios, strict=False)
+        )
         return (
             f"Hay {len(horarios)} horarios libres: {resumen}. "
             "Ya se le mandan como lista tocable; solo escribe una linea que los "
@@ -373,14 +383,14 @@ class Herramientas:
             notas=str(argumentos.get("notas") or "") or None,
         )
         if not resultado.get("ok"):
-            if resultado.get("error") in ("en_el_pasado", "fuera_de_horario"):
+            if resultado.get("error") in ("en_el_pasado", "fuera_de_horario", "fuera_de_horizonte", "recurso_no_valido"):
                 return (
                     "Ese horario no se puede apartar (ya pasó o está fuera del horario). "
                     "Vuelve a llamar consultar_disponibilidad y ofrece uno de los que devuelva."
                 )
             if resultado.get("error") == "slot_tomado":
                 return (
-                    "Ese horario se acaba de apartar. Discupate y vuelve a llamar "
+                    "Ese horario se acaba de apartar. Disculpate y vuelve a llamar "
                     "consultar_disponibilidad para ofrecer otro."
                 )
             return "No se pudo apartar. Ofrece escalar con alguien del equipo."
@@ -388,35 +398,64 @@ class Herramientas:
         self.booking_id = uuid.UUID(resultado["booking_id"])
         self.sesion.opciones.clear()
         self.lista_pendiente = []
+        movida = ""
+        # Venia de «Cambiar»: la cita anterior se cancela aqui, no se deja al modelo.
+        if self.sesion.mover_booking_id is not None:
+            anterior = await self.agenda.cancelar_reserva_por_cliente(
+                self.tenant.id, self.sesion.mover_booking_id
+            )
+            self.sesion.mover_booking_id = None
+            if anterior.get("ok"):
+                movida = " La cita anterior ya quedo cancelada; diselo."
         return (
-            f"Reservado. Codigo {resultado['codigo']}, {opcion.etiqueta}. "
+            f"Reservado. Codigo {resultado['codigo']}, {opcion.etiqueta}.{movida} "
             "Confirmaselo con calidez y dale el codigo."
         )
 
     async def _buscar_reserva(self, argumentos: dict[str, Any]) -> str:
+        # Solo por el numero que escribe (Meta ya lo verifico) o por el codigo
+        # exacto: por nombre, cualquiera veia y cancelaba la cita de otra persona.
         codigo = str(argumentos.get("codigo") or "").strip() or None
-        nombre = str(argumentos.get("nombre") or "").strip() or None
         filas = await self.agenda.buscar_reserva(
-            self.tenant.id, telefono=self.sesion.telefono, codigo=codigo, nombre=nombre
+            self.tenant.id, telefono=self.sesion.telefono, codigo=codigo
         )
+        # Por Instagram/Messenger la sesion trae el id del remitente (solo coincide con
+        # citas viejas de Instagram); las nuevas llevan el WhatsApp: codigo + ese numero.
+        if not filas and codigo and telefonos.normalizar(self.sesion.telefono) is None:
+            dado = telefonos.normalizar(str(argumentos.get("telefono") or ""))
+            if dado is None:
+                return (
+                    "Para ubicar su cita por aqui necesito tambien el numero de WhatsApp "
+                    "con el que reservo (10 digitos). Pideselo y vuelve a buscar con el codigo."
+                )
+            filas = await self.agenda.buscar_reserva(
+                self.tenant.id, telefono=dado, codigo=codigo
+            )
         if not filas:
-            return "No encontre ninguna reserva. Pidele el codigo o el nombre."
-        fila = filas[0]
-        cuando = (
-            f"{fecha_larga(fila['inicio'], self.tenant.tz)} a las "
-            f"{reloj(fila['inicio'], self.tenant.tz)}"
-        )
-        return (
-            f"Tiene {fila['servicio']} el {cuando} a nombre de "
-            f"{fila['cliente_nombre']} (booking_id={fila['booking_id']}, "
-            f"codigo {fila['codigo']})."
-        )
+            return (
+                "No encontre ninguna reserva de este numero con ese dato. Pidele el "
+                "codigo de 4 caracteres de su cita; sin el no des datos de ninguna cita."
+            )
+        renglones = []
+        for fila in filas:
+            self.sesion.reservas_vistas.add(str(fila["booking_id"]))
+            cuando = (
+                f"{fecha_larga(fila['inicio'], self.tenant.tz)} a las "
+                f"{reloj(fila['inicio'], self.tenant.tz)}"
+            )
+            renglones.append(
+                f"{fila['servicio']} el {cuando} a nombre de {fila['cliente_nombre']} "
+                f"(booking_id={fila['booking_id']}, codigo {fila['codigo']})"
+            )
+        return "Tiene: " + " | ".join(renglones) + "."
 
     async def _cancelar_reserva(self, argumentos: dict[str, Any]) -> str:
         try:
             booking_id = uuid.UUID(str(argumentos.get("booking_id", "")))
         except ValueError:
             return "booking_id invalido. Usa buscar_reserva primero."
+        if str(booking_id) not in self.sesion.reservas_vistas:
+            return "Esa reserva no salio de buscar_reserva con este cliente. Usa buscar_reserva primero."
         resultado = await self.agenda.cancelar(self.tenant.id, booking_id)
         if resultado.get("ok"):
             return "Cancelada. Confirmaselo y ofrecele reagendar."
@@ -453,12 +492,17 @@ class Herramientas:
                 "No hay nada asi en el catalogo. Dilo claro y ofrece lo mas "
                 "parecido que si exista."
             )
+        # Sin coincidencia, la busqueda devuelve el catalogo de respaldo: no son "lo que pidio".
+        aviso = (
+            "No hay coincidencia con eso; esto es lo que si hay: "
+            if items[0].get("es_respaldo") else ""
+        )
         renglones = []
         for i in items:
             precio = f" ${float(i['precio']):.0f}" if i.get("precio") is not None else ""
             desc = f" — {i['descripcion']}" if i.get("descripcion") else ""
             renglones.append(f"{i['nombre']}{precio} (id={i['id']}){desc}")
-        return " | ".join(renglones)
+        return aviso + " | ".join(renglones)
 
     async def _consultar_informacion(self, argumentos: dict[str, Any]) -> str:
         pregunta = str(argumentos.get("pregunta", "")).strip()
@@ -485,7 +529,10 @@ class Herramientas:
         encontrados = await self.agenda.buscar_catalogo(
             self.tenant.id, referencia, None, limite=1
         )
-        return encontrados[0]["id"] if encontrados else None
+        # El respaldo (nada coincidio) no es lo que pidio: quien pedia "pizza" recibia cebolla asada.
+        if not encontrados or encontrados[0].get("es_respaldo"):
+            return None
+        return encontrados[0]["id"]
 
     async def _pedido(self) -> uuid.UUID:
         if self.sesion.pedido_id is None:
@@ -509,6 +556,11 @@ class Herramientas:
         if not res.get("ok"):
             if res.get("error") == "no_disponible":
                 return "Eso se acabo. Dilo y ofrece algo parecido del catalogo."
+            if res.get("error") == "sin_existencias":
+                return (
+                    f"Solo quedan {res.get('quedan', 0)} de {res.get('nombre', 'eso')} "
+                    "para este pedido. Diselo y pregunta si quiere esa cantidad."
+                )
             return "No se pudo agregar. Ofrece algo parecido o escala a una persona."
         return (
             f"Agregado: {cantidad} {res['nombre']}. Van ${float(res['total']):.0f}. "
@@ -557,6 +609,11 @@ class Herramientas:
                 return "Falta la direccion. Pidela con calle, numero y referencias."
             if error == "pedido_vacio":
                 return "El pedido esta vacio. Preguntale que quiere ordenar."
+            if error == "sin_existencias":
+                return (
+                    f"Mientras pedia se acabaron: solo quedan {res.get('quedan', 0)} de "
+                    f"{res.get('nombre', 'eso')}. Diselo y ajusta el pedido antes de cerrarlo."
+                )
             return "No se pudo cerrar. Escala a una persona."
         self.pedido_cerrado = True
         self.sesion.pedido_id = None

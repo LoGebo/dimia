@@ -28,11 +28,11 @@ function Encabezado({ modo }: { modo: Modo }) {
     <div className="mb-6">
       <p className="etiqueta text-laton">{modo === "entrar" ? "Acceso" : "Cuenta nueva"}</p>
       <h1 className="mt-2 flex items-baseline gap-1.5 font-display text-[28px] leading-none font-light tracking-[-0.012em] text-tinta">
-        {modo === "entrar" ? "Entra a tu panel" : "Crea tu cuenta"}
+        {modo === "entrar" ? "Entre a su panel" : "Cree su cuenta"}
         <i className="cuadrado" aria-hidden="true" />
       </h1>
       <p className="mt-2 text-[13px] leading-relaxed text-tinta-2">
-        {modo === "entrar" ? "Administra la agenda y el agente de tu negocio." : "En menos de quince minutos tu agente contesta."}
+        {modo === "entrar" ? "Administre la agenda y el agente de su negocio." : "En menos de quince minutos su agente contesta."}
       </p>
     </div>
   );
@@ -43,16 +43,16 @@ function Pie({ modo }: { modo: Modo }) {
     <p className="mt-5 border-t border-linea pt-4 text-xs text-tinta-3">
       {modo === "entrar" ? (
         <>
-          ¿No tienes cuenta?{" "}
+          ¿No tiene cuenta?{" "}
           <Link href="/registro" className="font-medium text-acento transition-colors duration-150 hover:text-tinta">
-            Regístrate
+            Regístrese
           </Link>
         </>
       ) : (
         <>
-          ¿Ya tienes cuenta?{" "}
+          ¿Ya tiene cuenta?{" "}
           <Link href="/entrar" className="font-medium text-acento transition-colors duration-150 hover:text-tinta">
-            Entra
+            Entre
           </Link>
         </>
       )}
@@ -79,7 +79,7 @@ function ConPostgres({ modo, plantillas }: { modo: Modo; plantillas: PlantillaVe
       <Encabezado modo={modo} />
       <div className="space-y-3">
         <Campo etiqueta="Correo">
-          <Entrada name="email" type="email" autoComplete="email" required placeholder="tu@negocio.mx" autoFocus />
+          <Entrada name="email" type="email" autoComplete="email" required placeholder="correo@negocio.mx" autoFocus />
         </Campo>
         <Campo etiqueta="Contraseña" ayuda={modo === "registro" ? "Mínimo 8 caracteres." : undefined}>
           <Entrada
@@ -96,7 +96,7 @@ function ConPostgres({ modo, plantillas }: { modo: Modo; plantillas: PlantillaVe
             </Campo>
             <SelectorGiro plantillas={plantillas} onCambio={setGiro} />
             <p className="text-[11.5px] text-tinta-3">
-              Tu negocio arranca con lo típico de su giro ya capturado. Lo revisas y lo ajustas.
+              Su negocio arranca con lo típico de su giro ya capturado. Usted lo revisa y lo ajusta.
             </p>
           </>
         ) : null}
@@ -148,7 +148,7 @@ function ConSupabase({ modo }: { modo: Modo }) {
       <Encabezado modo={modo} />
       <div className="space-y-3">
         <Campo etiqueta="Correo">
-          <Entrada name="email" type="email" autoComplete="email" required placeholder="tu@negocio.mx" autoFocus />
+          <Entrada name="email" type="email" autoComplete="email" required placeholder="correo@negocio.mx" autoFocus />
         </Campo>
         <Campo etiqueta="Contraseña" ayuda={modo === "registro" ? "Mínimo 8 caracteres." : undefined}>
           <Entrada name="password" type="password" required minLength={8} />

@@ -14,7 +14,7 @@ type Plantilla = {
   recursos: { nombre: string; capacidad: number }[];
   servicios: { nombre: string; duracion: number; precio: number | null; alias: string[] }[];
   faq: { pregunta: string; respuesta: string }[];
-  /** Franja de lunes a viernes; los sábados se ponen aparte. */
+  /** Días con 0 = lunes y 6 = domingo, como `schedule_rule.dia_semana` (no como Date.getDay()). */
   horario: { dias: number[]; abre: string; cierra: string }[];
 };
 
@@ -26,7 +26,7 @@ const GENERICA: Plantilla = {
     { pregunta: "¿Qué formas de pago aceptan?", respuesta: "[ Efectivo, tarjeta, transferencia ]" },
     { pregunta: "¿Tienen estacionamiento?", respuesta: "[ Sí o no, y dónde ]" },
   ],
-  horario: [{ dias: [1, 2, 3, 4, 5], abre: "09:00", cierra: "18:00" }],
+  horario: [{ dias: [0, 1, 2, 3, 4], abre: "09:00", cierra: "18:00" }],
 };
 
 const PLANTILLAS: Record<string, Plantilla> = {
@@ -47,7 +47,7 @@ const PLANTILLAS: Record<string, Plantilla> = {
       { pregunta: "¿Cómo pago?", respuesta: "[ Transferencia, tarjeta, enlace de pago ]" },
       { pregunta: "¿Dónde están?", respuesta: "[ Ciudad; si es remoto, decirlo ]" },
     ],
-    horario: [{ dias: [1, 2, 3, 4, 5], abre: "09:00", cierra: "18:00" }],
+    horario: [{ dias: [0, 1, 2, 3, 4], abre: "09:00", cierra: "18:00" }],
   },
   clinica: {
     recursos: [
@@ -65,7 +65,7 @@ const PLANTILLAS: Record<string, Plantilla> = {
       { pregunta: "¿Atienden urgencias?", respuesta: "[ Sí o no, y en qué horario ]" },
       { pregunta: "¿Trabajan con aseguradoras?", respuesta: "[ Cuáles, o ninguna ]" },
     ],
-    horario: [{ dias: [1, 2, 3, 4, 5], abre: "09:00", cierra: "19:00" }],
+    horario: [{ dias: [0, 1, 2, 3, 4], abre: "09:00", cierra: "19:00" }],
   },
   salon: {
     recursos: [
@@ -82,7 +82,7 @@ const PLANTILLAS: Record<string, Plantilla> = {
       { pregunta: "¿Qué formas de pago aceptan?", respuesta: "[ Efectivo, tarjeta, transferencia ]" },
       { pregunta: "¿Atienden sin cita?", respuesta: "[ Sí o no, y cuánto se espera ]" },
     ],
-    horario: [{ dias: [2, 3, 4, 5, 6], abre: "10:00", cierra: "20:00" }],
+    horario: [{ dias: [1, 2, 3, 4, 5], abre: "10:00", cierra: "20:00" }],
   },
   restaurante: {
     recursos: [
@@ -97,7 +97,7 @@ const PLANTILLAS: Record<string, Plantilla> = {
       { pregunta: "¿Aceptan grupos grandes?", respuesta: "[ Hasta cuántas personas y con cuánta anticipación ]" },
       { pregunta: "¿Se puede llevar mascota?", respuesta: "[ Sí, en terraza, o no ]" },
     ],
-    horario: [{ dias: [2, 3, 4, 5, 6, 0], abre: "13:00", cierra: "22:00" }],
+    horario: [{ dias: [1, 2, 3, 4, 5, 6], abre: "13:00", cierra: "22:00" }],
   },
   taller: {
     recursos: [
@@ -113,7 +113,23 @@ const PLANTILLAS: Record<string, Plantilla> = {
       { pregunta: "¿Cuánto tarda un servicio?", respuesta: "[ Tiempo típico ]" },
       { pregunta: "¿Dan garantía?", respuesta: "[ Cuánto tiempo y en qué ]" },
     ],
-    horario: [{ dias: [1, 2, 3, 4, 5], abre: "08:00", cierra: "18:00" }],
+    horario: [{ dias: [0, 1, 2, 3, 4], abre: "08:00", cierra: "18:00" }],
+  },
+  inmobiliaria: {
+    recursos: [
+      { nombre: "Asesor 1", capacidad: 1 },
+      { nombre: "Asesor 2", capacidad: 1 },
+    ],
+    servicios: [
+      { nombre: "Visita a propiedad", duracion: 60, precio: null, alias: ["visita", "cita", "ver casa", "ver departamento"] },
+    ],
+    faq: [
+      { pregunta: "¿En qué zonas tienen propiedades?", respuesta: "[ Zonas o desarrollos ]" },
+      { pregunta: "¿Aceptan crédito?", respuesta: "[ Infonavit, Fovissste, bancario, o solo contado ]" },
+      { pregunta: "¿Qué piden para rentar?", respuesta: "[ Requisitos: aval, depósito, comprobantes ]" },
+      { pregunta: "¿Dónde están sus oficinas?", respuesta: "[ Dirección de la oficina ]" },
+    ],
+    horario: [{ dias: [0, 1, 2, 3, 4], abre: "09:00", cierra: "19:00" }],
   },
 };
 
@@ -123,10 +139,13 @@ export function plantillaDelGiro(vertical: string): Plantilla {
 
 /**
  * Siembra el negocio recién creado. Se ejecuta dentro de la misma transacción
- * del alta: si algo falla, el negocio no queda a medias.
+ * del alta: si algo falla, el negocio no queda a medias. Un giro sin agenda
+ * (recepción, comida) no recibe recursos ni servicios: un servicio «Cita»
+ * haría que el agente agende citas que el dueño no puede ver.
  */
-export async function sembrarPlantilla(q: Consulta, tenantId: string, vertical: string): Promise<void> {
-  const plantilla = plantillaDelGiro(vertical);
+export async function sembrarPlantilla(q: Consulta, tenantId: string, vertical: string, agenda: boolean): Promise<void> {
+  const base = plantillaDelGiro(vertical);
+  const plantilla = agenda ? base : { ...base, recursos: [], servicios: [] };
 
   for (const r of plantilla.recursos) {
     await q("insert into resource (tenant_id, nombre, capacidad, activo) values ($1, $2, $3, true)", [
@@ -139,8 +158,9 @@ export async function sembrarPlantilla(q: Consulta, tenantId: string, vertical: 
   for (const s of plantilla.servicios) {
     await q(
       `insert into service (tenant_id, nombre, duracion_min, precio, alias, activo, sugerido)
-       values ($1, $2, $3, $4, $5, true, true)`,
-      [tenantId, s.nombre, s.duracion, s.precio, s.alias],
+       values ($1, $2, $3, $4, $5::jsonb, true, true)`,
+      // node-pg manda un arreglo como literal de Postgres ('{"a"}'), que jsonb rechaza.
+      [tenantId, s.nombre, s.duracion, s.precio, JSON.stringify(s.alias)],
     );
   }
 

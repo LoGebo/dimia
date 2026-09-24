@@ -18,7 +18,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket,
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from agentes import catalogo, claude, codex, config, cuotas, db, jev, negocio
+from agentes import catalogo, claude, codex, config, cuotas, db, jev, negocio, red
 
 log = logging.getLogger("agentes")
 config.guardia()
@@ -54,6 +54,12 @@ async def vida(_: FastAPI):
         for a in (app_mcp, app_mcp_wa, *apps_servicio.values()):
             await pila.enter_async_context(a.router.lifespan_context(a))
         yield
+        # Deploy o reinicio (SIGTERM): los turnos en curso viven solo en memoria; se les da
+        # hasta 25 s para terminar y guardar su respuesta (kill_timeout de fly.toml es 30 s).
+        for _ in range(25):
+            if not negocio._tenants_trabajando():
+                break
+            await asyncio.sleep(1)
     tarea.cancel()
 
 
@@ -393,8 +399,7 @@ async def mcp_proxy(servicio: str, ruta: str, request: Request):
     cab = {k: v for k, v in request.headers.items() if k.lower() in ("content-type", "accept", "mcp-session-id", "mcp-protocol-version")}
     cab["Authorization"] = f"Bearer {token}"
     cuerpo = await request.body()
-    async with httpx.AsyncClient(timeout=httpx.Timeout(10, read=300)) as c:
-        r = await c.request(request.method, s["mcp_url"], headers=cab, content=cuerpo)
+    r = await red.http().request(request.method, s["mcp_url"], headers=cab, content=cuerpo, timeout=httpx.Timeout(10, read=300))
     salida = {k: v for k, v in r.headers.items() if k.lower() in ("content-type", "mcp-session-id", "mcp-protocol-version")}
     return Response(content=r.content, status_code=r.status_code, headers=salida)
 

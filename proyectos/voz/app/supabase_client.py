@@ -102,6 +102,9 @@ class Agenda:
                 max_size=cfg.pg_pool_max,
                 statement_cache_size=0,
                 command_timeout=5,
+                # Conectar tardaba 60 s (el default) con la base en un agujero
+                # negro: la llamada entraba y nadie contestaba ese minuto.
+                timeout=5,
             )
 
     def adoptar_pool(self, pool: asyncpg.Pool) -> None:
@@ -251,6 +254,25 @@ class Agenda:
             nombre, herramienta, externo_id, call_id,
         )
 
+    async def mensaje_reclamar(self, canal: str, externo_id: str) -> bool:
+        """Apunta el wamid/mid antes de atenderlo. False si ya se habia recibido:
+        Meta reintenta el webhook y el segundo no debe despertar al modelo."""
+        return bool(await self.pool.fetchval(
+            "insert into mensaje_entrante (canal, externo_id) values ($1, $2) "
+            "on conflict do nothing returning true",
+            canal, externo_id,
+        ))
+
+    async def outbox_respuesta(
+        self, tenant_id: uuid.UUID, canal: str, destino: str, texto: str
+    ) -> None:
+        """La respuesta que Meta no acepto al momento: la cola la reintenta."""
+        await self.pool.execute(
+            "insert into outbox (tenant_id, canal, destino, plantilla, payload) "
+            "values ($1, $2, $3, 'campana', jsonb_build_object('origen', 'respuesta', 'mensaje', $4::text))",
+            tenant_id, canal, destino, texto,
+        )
+
     async def conversacion_escalar(
         self, tenant_id: uuid.UUID, conversacion_id: uuid.UUID, motivo: str
     ) -> None:
@@ -309,11 +331,16 @@ class Agenda:
         ) or False
 
     async def confirmacion_pendiente(
-        self, tenant_id: uuid.UUID, telefono: str, booking_id: uuid.UUID | None = None
+        self, tenant_id: uuid.UUID, telefono: str, booking_id: uuid.UUID | None = None,
+        escrita: bool = False,
     ) -> dict | None:
-        """La cita que se le pregunto y no ha contestado; None si no hay."""
+        """La cita que se le pregunto y no ha contestado; None si no hay.
+
+        `escrita`: la respuesta no vino del boton; solo cuenta si no se hablo de
+        otra cosa despues de la pregunta.
+        """
         crudo = await self.pool.fetchval(
-            "select public.confirmacion_pendiente($1, $2, $3)", tenant_id, telefono, booking_id
+            "select public.confirmacion_pendiente($1, $2, $3, $4)", tenant_id, telefono, booking_id, escrita
         )
         if crudo is None:
             return None
@@ -340,6 +367,13 @@ class Agenda:
 
     async def campana_encolar(self, limite: int = 50) -> int:
         return await self.pool.fetchval("select public.campana_encolar($1)", limite) or 0
+
+    async def campana_pausar_llamadas(self) -> int:
+        """Sin troncal de salida no se puede marcar: las campañas por llamada se pausan."""
+        return int((await self.pool.execute(
+            "update campana set estado = 'pausada', actualizado = now() "
+            "where canal = 'llamada' and estado = 'activa'"
+        )).split()[-1])
 
     async def campana_cerrar_terminadas(self) -> int:
         return await self.pool.fetchval("select public.campana_cerrar_terminadas()") or 0
@@ -577,19 +611,26 @@ class Agenda:
 
     async def registrar_llamada(
         self, tenant_id: uuid.UUID, call_id: str, telefono: str | None,
-        duracion_seg: int, resuelto: bool, escalado: bool,
+        duracion_seg: int | None, resuelto: bool, escalado: bool,
         motivo: str | None = None, booking_id: uuid.UUID | None = None,
         transcripcion: list | None = None, latencias: dict | None = None,
+        fin_motivo: str | None = None,
     ) -> None:
+        """Al contestar se inserta con fin_motivo 'en_curso'; al colgar se completa."""
         await self.pool.execute(
             """insert into call_log (tenant_id, call_id, telefono, duracion_seg,
                                      resuelto, escalado, motivo_escalamiento,
-                                     booking_id, transcripcion, latencias)
-               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-               on conflict (tenant_id, call_id) do nothing""",
+                                     booking_id, transcripcion, latencias, fin_motivo)
+               values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+               on conflict (tenant_id, call_id) do update set
+                 duracion_seg = excluded.duracion_seg, resuelto = excluded.resuelto,
+                 escalado = excluded.escalado,
+                 motivo_escalamiento = excluded.motivo_escalamiento,
+                 booking_id = excluded.booking_id, transcripcion = excluded.transcripcion,
+                 latencias = excluded.latencias, fin_motivo = excluded.fin_motivo""",
             tenant_id, call_id, telefono, duracion_seg, resuelto, escalado,
             motivo, booking_id,
-            json.dumps(transcripcion or []), json.dumps(latencias or {}),
+            json.dumps(transcripcion or []), json.dumps(latencias or {}), fin_motivo,
         )
 
 

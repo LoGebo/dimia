@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { BotonPeligro } from "@/components/boton-peligro";
 import { TablaRegistros, useAvisos, type Columna, type Filtro } from "@/components/kit";
 import { cambiarEstadoPago, type Estado } from "@/lib/acciones";
 import { fechaCorta, hora, moneda } from "@/lib/formato";
@@ -44,6 +45,8 @@ function AccionesPago({ pago }: { pago: Pago }) {
     const estado = String(fd.get("estado"));
     if (resultado.error) {
       avisar({ titulo: "No se pudo registrar", detalle: resultado.error, tono: "critico", duracion: 6000 });
+    } else if (estado === "reembolsado") {
+      avisar({ titulo: "Cobro reembolsado", detalle: `${moneda(pago.monto)} · ${pago.cliente_nombre ?? pago.concepto}`, tono: "alerta" });
     } else if (estado === "pagado") {
       avisar({ titulo: "Cobro registrado", detalle: `${moneda(pago.monto)} · ${NOMBRE_METODO[pago.metodo]} · ${pago.cliente_nombre ?? pago.concepto}`, tono: "bueno" });
     } else {
@@ -51,6 +54,19 @@ function AccionesPago({ pago }: { pago: Pago }) {
     }
     return resultado;
   }, {} as Estado);
+
+  if (pago.estado === "pagado") {
+    // Para corregir un cobro registrado por error o devuelto al cliente.
+    return (
+      <form action={enviar} className="flex justify-end">
+        <input type="hidden" name="id" value={pago.id} />
+        <input type="hidden" name="estado" value="reembolsado" />
+        <BotonPeligro etiqueta="Sí, reembolsar" pendiente="Reembolsando…">
+          Reembolsar
+        </BotonPeligro>
+      </form>
+    );
+  }
 
   return (
     <span className="flex justify-end gap-1">
@@ -82,7 +98,7 @@ export function TablaPagos({
   conFecha?: boolean;
   vacio: { titulo: string; detalle?: string };
 }) {
-  const pendientes = pagos.some((p) => p.estado === "pendiente");
+  const pendientes = pagos.some((p) => p.estado === "pendiente" || p.estado === "pagado");
 
   const columnas: Columna<Pago>[] = [
     {
@@ -144,7 +160,7 @@ export function TablaPagos({
     },
   ];
   if (pendientes) {
-    columnas.push({ clave: "acciones", titulo: "", ancho: "150px", render: (p) => (p.estado === "pendiente" ? <AccionesPago pago={p} /> : null) });
+    columnas.push({ clave: "acciones", titulo: "", ancho: "150px", render: (p) => (p.estado === "pendiente" || p.estado === "pagado" ? <AccionesPago pago={p} /> : null) });
   }
 
   const estados = (["pendiente", "pagado", "cancelado", "reembolsado"] as EstadoPago[]).filter((e) => pagos.some((p) => p.estado === e));

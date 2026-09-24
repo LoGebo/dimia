@@ -12,12 +12,12 @@ export default function AccesoLayout({ children }: { children: React.ReactNode }
         </div>
         <div className="relative max-w-md">
           <h1 className="font-display text-[34px] leading-[1.1] font-light tracking-[-0.012em] text-tinta">
-            Tu teléfono contestado, agendado y medido.
+            Su teléfono contestado, agendado y medido.
             <i className="cuadrado ml-1.5 align-baseline" aria-hidden="true" />
           </h1>
           <p className="mt-4 text-[13px] leading-relaxed text-tinta-2">
             El agente contesta cada llamada, consulta disponibilidad real y reserva en el momento.
-            Aquí controlas qué ofrece, a qué horas y con qué recursos.
+            Aquí controla qué ofrece, a qué horas y con qué recursos.
           </p>
           <dl className="mt-8 grid grid-cols-3 gap-px overflow-hidden border border-linea bg-linea">
             {[

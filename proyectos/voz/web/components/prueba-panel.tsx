@@ -9,7 +9,7 @@ export function CarritoVivo({ pedido, zona }: { pedido: EstadoPrueba["pedido"]; 
     return (
       <Vacio
         titulo="El pedido aparece aquí"
-        detalle="Conforme el agente agregue cosas, las vas a ver caer una por una con su precio."
+        detalle="Conforme el agente agregue cosas, las va a ver caer una por una con su precio."
       />
     );
   }
@@ -60,7 +60,7 @@ export function ReservasVivas({ reservas, zona }: { reservas: EstadoPrueba["rese
     return (
       <Vacio
         titulo="La reserva aparece aquí"
-        detalle="En cuanto el agente confirme una cita, la vas a ver aterrizar con su código."
+        detalle="En cuanto el agente confirme una cita, la va a ver aterrizar con su código."
       />
     );
   }

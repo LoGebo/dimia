@@ -6,7 +6,9 @@ final class PedidosUITests: XCTestCase {
     func testCambiarDeDia() throws {
         let app = XCUIApplication()
         let env = ProcessInfo.processInfo.environment
-        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? "", "-negocio", env["NEGOCIO"] ?? "", "-dia", env["DIA"] ?? ""]
+        // Sin credenciales no corren: `test` a secas solo corre DimiaTests. Con API=<url> no tocan producción.
+        try XCTSkipIf((env["CORREO"] ?? "").isEmpty, "Se corre a mano con CORREO y CLAVE.")
+        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? "", "-negocio", env["NEGOCIO"] ?? "", "-dia", env["DIA"] ?? ""] + (env["API"].map { ["-api", $0] } ?? [])
         app.launch()
         let dir = env["CAPTURAS"] ?? NSTemporaryDirectory()
         func captura(_ n: String) { try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(n).png")) }

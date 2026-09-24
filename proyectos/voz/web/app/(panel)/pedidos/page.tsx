@@ -141,7 +141,7 @@ export default async function Pedidos({
               detalle={
                 todos.length === 0
                   ? "Ningún pedido entró este día. En cuanto el agente cierre uno por teléfono, aparece solo."
-                  : "Ese filtro no tiene pedidos. Prueba con otro estado o con otro día."
+                  : "Ese filtro no tiene pedidos. Pruebe con otro estado o con otro día."
               }
             />
           </div>

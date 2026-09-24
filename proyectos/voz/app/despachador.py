@@ -55,6 +55,11 @@ CADA_CIERRE_SEG = 600
 CONVERSACION_FRIA_MIN = 120
 CADA_CAMPANA_SEG = 300
 MAX_INTENTOS_OUTBOX = 6
+# Llamadas salientes marcando a la vez. Compiten con las entrantes por el mismo
+# worker de voz y la misma cuota del modelo; las demás esperan su turno.
+LLAMADAS_EN_VUELO = 3
+# Un cierre por conversación pasa por el modelo; si se cuelga, la cola no espera.
+CIERRES_TIMEOUT_SEG = 300
 
 
 class Mensajero(Protocol):
@@ -294,10 +299,15 @@ class Despachador:
         self.social = social  # Instagram y Messenger (channels.social.cliente.ClienteSocial)
         self.por_vuelta = por_vuelta
         self.llm = llm
-        self._ultimo_recordatorio = 0.0
-        self._ultimo_cierre = 0.0
-        self._ultima_campana = 0.0
+        # -inf: corren en la primera vuelta. Con 0.0 contra el reloj monotónico
+        # (que cuenta desde que arrancó la máquina) un despliegue dejaba los
+        # recordatorios y las cancelaciones una hora sin correr.
+        self._ultimo_recordatorio = float("-inf")
+        self._ultimo_cierre = float("-inf")
+        self._ultima_campana = float("-inf")
         self._salientes: set[asyncio.Task] = set()
+        self._en_vuelo = asyncio.Semaphore(LLAMADAS_EN_VUELO)
+        self._cierres: asyncio.Task | None = None
 
     async def tanda(self) -> Tanda:
         """Una vuelta: reclama lo que toca, lo manda y marca el resultado.
@@ -403,7 +413,8 @@ class Despachador:
             try:
                 from app.config import settings
 
-                sala = await marcar(settings(), fila["tenant_id"], fila["destino"], fila["payload"])
+                async with self._en_vuelo:
+                    sala = await marcar(settings(), fila["tenant_id"], fila["destino"], fila["payload"])
                 await self.agenda.outbox_marcar_enviado(fila["id"])
                 log.info("llamada saliente en %s a %s", sala, fila["destino"])
             except SinTroncal as error:
@@ -419,7 +430,17 @@ class Despachador:
             log.exception("no se pudo anotar el resultado de marcar a %s", fila.get("destino"))
 
     async def campanas(self) -> int:
-        """Encola lo que las campañas activas tengan que decir hoy."""
+        """Encola lo que las campañas activas tengan que decir hoy.
+
+        Sin troncal de salida, las campañas por llamada se pausan en vez de
+        quemar a cada contacto como `fallido`: el dueño la ve pausada.
+        """
+        from app.config import settings
+
+        if not settings().livekit_sip_trunk_saliente:
+            pausadas = await self.agenda.campana_pausar_llamadas()
+            if pausadas:
+                log.warning("%d campañas por llamada pausadas: falta LIVEKIT_SIP_TRUNK_SALIENTE", pausadas)
         cerradas = await self.agenda.campana_cerrar_terminadas()
         if cerradas:
             log.info("%d campañas terminadas", cerradas)
@@ -452,6 +473,16 @@ class Despachador:
             cerradas += 1
         return cerradas
 
+    async def _cierres_con_tope(self) -> None:
+        """Los cierres van aparte: pasan por el modelo una conversación a la vez
+        y, en la misma vuelta, dejaban la cola de mensajes esperando."""
+        try:
+            cerradas = await asyncio.wait_for(self.cierres(), CIERRES_TIMEOUT_SEG)
+            if cerradas:
+                log.info("%d conversaciones cerradas con resumen", cerradas)
+        except Exception:
+            log.exception("los cierres de conversación fallaron")
+
     async def correr(self, intervalo: float = INTERVALO_SEG) -> None:
         """El ciclo. Nunca muere por un error de una tanda.
 
@@ -461,6 +492,8 @@ class Despachador:
         try:
             await self._ciclo(intervalo)
         except asyncio.CancelledError:
+            if self._cierres is not None:
+                self._cierres.cancel()
             await self.esperar_salientes()
             raise
 
@@ -487,11 +520,11 @@ class Despachador:
                     if encolados:
                         log.info("%d contactos de campaña encolados", encolados)
 
-                if ahora - self._ultimo_cierre >= CADA_CIERRE_SEG:
+                if ahora - self._ultimo_cierre >= CADA_CIERRE_SEG and (
+                    self._cierres is None or self._cierres.done()
+                ):
                     self._ultimo_cierre = ahora
-                    cerradas = await self.cierres()
-                    if cerradas:
-                        log.info("%d conversaciones cerradas con resumen", cerradas)
+                    self._cierres = asyncio.create_task(self._cierres_con_tope())
 
                 resultado = await self.tanda()
                 if resultado.reclamados:
@@ -517,7 +550,6 @@ async def _principal() -> None:
     )
     from app.config import settings
     from app.llm_texto import cliente_texto
-
     from channels.social.cliente import ClienteSocial
 
     await agenda.conectar()

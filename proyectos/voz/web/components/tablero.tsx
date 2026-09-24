@@ -118,7 +118,7 @@ export function TableroHoy({ negocioId, children }: { negocioId: string; childre
         <div className="flex items-center justify-end gap-2">
           {editando ? (
             <>
-              <span className="text-[12px] text-tinta-3">Arrastra para reordenar; quita o regresa bloques. Se guarda en este navegador.</span>
+              <span className="text-[12px] text-tinta-3">Arrastre para reordenar; quite o regrese bloques. Se guarda en este navegador.</span>
               {distinto ? (
                 <button
                   type="button"

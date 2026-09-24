@@ -80,7 +80,9 @@ def parse_webhook(cuerpo: dict[str, Any]) -> list[MensajeSocial]:
             if mensaje.get("is_echo"):
                 continue
             texto = str(mensaje.get("text") or "").strip()
-            if not texto:
+            # Audio, imagen o sticker: llega sin texto y se contesta que solo se lee
+            # texto. Reacciones y acuses de lectura no traen `message`.
+            if not texto and not mensaje.get("attachments"):
                 continue
             remitente = str((evento.get("sender") or {}).get("id", ""))
             if not remitente or not cuenta_id:

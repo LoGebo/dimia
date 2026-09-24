@@ -1,4 +1,4 @@
-import { contexto } from "@/lib/sesion";
+import { contexto, exigirSeccionDeRuta } from "@/lib/sesion";
 import { contadores, negocio } from "@/lib/consultas";
 import { salir } from "@/lib/acciones";
 import { AvanceListo } from "@/components/avance-listo";
@@ -17,6 +17,7 @@ import { telefono } from "@/lib/formato";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const { membresias, negocioId, usuario, giro } = await contexto();
+  await exigirSeccionDeRuta();
   const [actual, progreso, avisos, listaAgentes] = await Promise.all([negocio(), avance(giro.herramientas), contadores(), agentes()]);
   const membresia = membresias.find((m) => m.tenant_id === negocioId);
   const estadoLinea = !actual.telefono_entrada ? "sin" : actual.activo ? "activo" : "pausado";

@@ -128,7 +128,7 @@ palanca y no requiere coordinación.
 
 ```bash
 fly scale count 3 --config deploy/fly.toml
-fly scale count 4 --region qro --region dfw --config deploy/fly.toml
+fly scale count 4 --region dfw --region iad --config deploy/fly.toml
 fly scale vm shared-cpu-4x --memory 4096 --config deploy/fly.toml
 ```
 

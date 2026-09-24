@@ -35,7 +35,7 @@ struct AjustesPantalla: View {
                     Link("Panel completo en la web", destination: URL(string: "https://panel.dimia.mx")!)
                 }
                 Section {
-                    Button("Cerrar sesión") { sesion.salir(); cerrar() }
+                    Button("Cerrar sesión") { Task { await sesion.salir() }; cerrar() }
                     Button("Eliminar mi cuenta", role: .destructive) { confirmarBorrado = true }
                         .disabled(borrando)
                 } footer: {

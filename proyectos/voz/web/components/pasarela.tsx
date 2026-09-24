@@ -89,7 +89,7 @@ export function TarjetaPasarela({
       {cap.terminal && activo ? (
         <form action={guardarTerminalPredeterminada} className="border-t border-linea px-5 py-4">
           <input type="hidden" name="proveedor" value={proveedor} />
-          <Campo etiqueta="Terminal predeterminada" ayuda="La que se propone al cobrar. Pulsa «Buscar terminales» para verlas.">
+          <Campo etiqueta="Terminal predeterminada" ayuda="La que se propone al cobrar. Pulse «Buscar terminales» para verlas.">
             <div className="flex gap-2">
               <Selector name="terminal" defaultValue={terminalPredeterminada}>
                 <option value="">Elegir al cobrar</option>
@@ -107,7 +107,7 @@ export function TarjetaPasarela({
 
       <div className="mt-auto border-t border-linea px-5 py-4">
         <p className="text-[13px] font-semibold text-tinta">Webhook</p>
-        <p className="mt-0.5 text-[11.5px] text-tinta-3">Pégalo en el panel de {NOMBRE_PROVEEDOR[proveedor]} para que nos avise cada pago.</p>
+        <p className="mt-0.5 text-[11.5px] text-tinta-3">Péguelo en el panel de {NOMBRE_PROVEEDOR[proveedor]} para que nos avise cada pago.</p>
         <div className="mt-2 flex items-center gap-2">
           <code className="numeros min-w-0 flex-1 truncate rounded-lg border border-linea bg-panel-2 px-2.5 py-1.5 font-mono text-[11.5px] text-tinta-2">{webhook}</code>
           <button

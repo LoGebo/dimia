@@ -12,7 +12,7 @@ export function FormularioFaq({ entrada, compacto = false }: { entrada?: Faq; co
           <Campo etiqueta="Lo que preguntan">
             <Entrada name="pregunta" defaultValue={entrada?.pregunta} required placeholder="¿Tienen estacionamiento?" />
           </Campo>
-          <Campo etiqueta="Lo que contesta el agente" ayuda="Escríbelo hablado, como si lo dijeras por teléfono.">
+          <Campo etiqueta="Lo que contesta el agente" ayuda="Escríbalo hablado, como si lo dijera por teléfono.">
             <AreaTexto
               name="respuesta"
               defaultValue={entrada?.respuesta}

@@ -129,3 +129,24 @@ async def test_el_saludo_se_guarda_en_la_base(pool, negocio):
     )
     fila = await pool.fetchrow("select saludo from tenant where id = $1", negocio["tenant"])
     assert fila["saludo"] == "Buenas, ¿le tomo su pedido?"
+
+
+def test_giro_sin_agenda_no_trae_instrucciones_de_reservar():
+    """Sin la herramienta, el modelo con «RESERVA» en el prompt podía decir que la
+    cita quedó apartada."""
+    import uuid
+
+    from app import prompt as pm
+    from app.supabase_client import Tenant
+
+    t = Tenant(
+        id=uuid.uuid4(), nombre="Recepcion", vertical="recepcion",
+        zona_horaria="America/Mexico_City", telefono_escalamiento=None,
+        voz_id=None, tts_proveedor="azure", tts_ajustes={},
+        instrucciones_extra=None, llm_proveedor="openai", llm_modelo=None,
+    )
+    recepcion = pm.construir(t, [], [], plantilla={"herramientas": ["recado"], "instrucciones": "x"})
+    assert "COMO AGENDAS" not in recepcion and "RESERVA" not in recepcion
+    assert "pedido" not in recepcion.lower()
+    assert "COMO AGENDAS" in pm.construir(t, [], [], plantilla={"herramientas": ["agendar"]})
+    assert "COMO AGENDAS" in pm.construir(t, [], [])

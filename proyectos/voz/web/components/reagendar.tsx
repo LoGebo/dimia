@@ -134,7 +134,7 @@ function Mover({
         ) : null}
         {!slots && !cargando ? (
           <p className="text-xs text-tinta-3">
-            Elige un día para ver los horarios disponibles.
+            Elija un día para ver los horarios disponibles.
           </p>
         ) : null}
         {movida ? <MarcaExito texto={`Movida a ${movida}`} /> : null}

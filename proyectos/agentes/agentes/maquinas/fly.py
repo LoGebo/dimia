@@ -6,7 +6,7 @@ import asyncio
 
 import httpx
 
-from agentes import config
+from agentes import config, red
 from agentes.maquinas.base import Maquina
 
 API = "https://api.machines.dev/v1"
@@ -20,7 +20,7 @@ class Fly:
         if not config.FLY_API_TOKEN:
             raise RuntimeError("Falta FLY_API_TOKEN")
         self.app = config.FLY_APP_CEREBROS
-        self.http = httpx.AsyncClient(base_url=API, headers={"Authorization": f"Bearer {config.FLY_API_TOKEN}"}, timeout=60)
+        self.http = httpx.AsyncClient(base_url=API, headers={"Authorization": f"Bearer {config.FLY_API_TOKEN}"}, timeout=60, verify=red.SSL)
 
     def _maquina(self, m: dict) -> Maquina:
         mounts = m.get("config", {}).get("mounts") or []
@@ -64,9 +64,17 @@ class Fly:
         m = await self.obtener(referencia)
         if m.encendida:
             return m
-        r = await self.http.post(f"/apps/{self.app}/machines/{referencia}/start")
-        if r.status_code not in (200, 412):  # 412: ya estaba arrancando
-            r.raise_for_status()
+        # El volumen ata la máquina a su servidor: si ese servidor está lleno, Fly contesta
+        # «insufficient …» y se reintenta ~30 s antes de rendirse.
+        for espera in (5, 10, 15, None):
+            r = await self.http.post(f"/apps/{self.app}/machines/{referencia}/start")
+            if r.status_code in (200, 412):  # 412: ya estaba arrancando
+                break
+            if "insufficient" not in r.text.lower() and "capacity" not in r.text.lower():
+                r.raise_for_status()
+            if espera is None:
+                raise RuntimeError(f"El servidor de la computadora del negocio no tiene capacidad libre por ahora ({r.status_code}): {r.text[:200]}")
+            await asyncio.sleep(espera)
         return await self._esperar(referencia, "started")
 
     async def parar(self, referencia):

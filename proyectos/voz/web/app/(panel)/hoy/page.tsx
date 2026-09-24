@@ -254,8 +254,8 @@ export default async function Hoy() {
                     : pedidos
                       ? porSacar.length === 0
                         ? "Nada pendiente en cocina."
-                        : `${porSacar.length} pedidos sin entregar.`
-                      : "Los que aún no regresas."}
+                        : `${porSacar.length} ${porSacar.length === 1 ? "pedido" : "pedidos"} sin entregar.`
+                      : "Los que aún no ha regresado."}
                 </p>
               </div>
               <Link href={agenda ? "/agenda" : pedidos ? "/pedidos" : "/recados"} className="text-[13px] font-bold whitespace-nowrap text-acento transition-colors duration-150 hover:text-tinta">
@@ -581,7 +581,7 @@ function ParaEmpezar({
     <>
       <Encabezado
         titulo="Para empezar"
-        descripcion="Cuando esto esté completo, el agente contesta y aquí vas a ver cómo va el día."
+        descripcion="Cuando esto esté completo, el agente contesta y aquí va a ver cómo va el día."
         giro={giro}
       />
       <div className="px-5 py-5">
@@ -592,7 +592,7 @@ function ParaEmpezar({
                 ? "Solo falta el número"
                 : `Faltan ${faltantes.length} de ${progreso.total}`
             }
-            descripcion="Cada paso toma unos minutos. Puedes hacerlos en el orden que quieras."
+            descripcion="Cada paso toma unos minutos. Puede hacerlos en el orden que quiera."
           />
           <ol className="divide-y divide-linea">
             {progreso.requisitos.map((r, i) => (
@@ -630,7 +630,7 @@ function ParaEmpezar({
                     Número de entrada
                   </p>
                   <p className="text-[12px] text-tinta-3">
-                    El teléfono al que van a llamar tus clientes. Al guardarlo,
+                    El teléfono al que van a llamar sus clientes. Al guardarlo,
                     el agente empieza a contestar.
                   </p>
                 </div>

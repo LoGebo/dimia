@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -133,7 +133,15 @@ function FormaCita({
       cabecera
       className="max-w-lg"
     >
-      <form id="forma-nueva-cita" action={enviar}>
+      {/* onSubmit: con action={enviar} React vacía nombre y teléfono aunque la reserva falle. */}
+      <form
+        id="forma-nueva-cita"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          startTransition(() => enviar(fd));
+        }}
+      >
         <div className="grid gap-3 px-4 py-4 sm:grid-cols-2">
           <Campo etiqueta="Servicio">
             <Selector
@@ -256,7 +264,7 @@ function FormaCita({
           <p className="numeros mr-auto text-[11px] text-tinta-3">
             {elegido
               ? `${formatoHora.format(new Date(elegido.inicio))} · ${elegido.resource_nombre}`
-              : "Elige un horario."}
+              : "Elija un horario."}
           </p>
           <Boton type="button" variante="fantasma" onClick={cerrar}>
             Cerrar

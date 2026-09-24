@@ -45,12 +45,10 @@ async def canjear(pendiente: dict, codigo: str) -> dict:
 
 
 async def refrescar(refresco: str) -> dict:
-    async with httpx.AsyncClient(timeout=20, headers={"User-Agent": UA}) as c:
-        r = await c.post(URL_TOKEN, json={"grant_type": "refresh_token", "refresh_token": refresco, "client_id": CLIENT_ID})
+    r = await red.http().post(URL_TOKEN, timeout=20, headers={"User-Agent": UA}, json={"grant_type": "refresh_token", "refresh_token": refresco, "client_id": CLIENT_ID})
     if r.status_code in (400, 401):
         raise ClaudeError("La cuenta de Claude ya no autoriza a Dimia; hay que reconectarla.")
-    if r.status_code != 200:
-        raise ClaudeError(f"Claude respondió {r.status_code} al renovar.")
+    r.raise_for_status()  # 5xx: pasajero; ClaudeError (que desconecta) es solo el rechazo
     return _tokens(r.json())
 
 

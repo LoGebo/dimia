@@ -84,7 +84,9 @@ export function HiloGrupo({ grupo, agentes, negocio }: { grupo: Grupo; agentes: 
   }
 
   const fuera = agentes.filter((a) => !grupo.miembros.includes(a.id));
-  const hora = new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date());
+  // La hora del navegador, no la del servidor (en UTC): calcularla en render rompe la hidratación.
+  const [hora, setHora] = useState("");
+  useEffect(() => setHora(new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit" }).format(new Date())), []);
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1">

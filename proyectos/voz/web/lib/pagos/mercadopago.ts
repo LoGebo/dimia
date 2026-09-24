@@ -37,7 +37,7 @@ export const mercadopago: ProveedorPagos = {
           items: [{ title: p.concepto, quantity: 1, unit_price: p.monto, currency_id: p.moneda }],
           external_reference: p.pagoId,
           notification_url: p.urlWebhook,
-          back_urls: { success: p.urlVolver, failure: p.urlVolver, pending: p.urlVolver },
+          back_urls: { success: `${p.urlVolver}?estado=ok`, failure: `${p.urlVolver}?estado=fallo`, pending: `${p.urlVolver}?estado=pendiente` },
           auto_return: "approved",
           metadata: { pago_id: p.pagoId },
         }),

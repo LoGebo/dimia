@@ -110,6 +110,14 @@ automáticamente un trabajo por cada sala nueva. No hay que crear despachos
 explícitos ni tokens: el worker se conecta a `LIVEKIT_URL` con la API key, y
 LiveKit reparte cada sala al worker menos cargado.
 
+Eso también significa que **cualquier** worker conectado al mismo proyecto de
+LiveKit recibe salas: uno local o de QA con el `.env` de producción atiende
+llamadas reales, y el de producción recibe las salas de prueba. Lo correcto es
+un proyecto de LiveKit aparte para desarrollo. Como segunda defensa, el nombre
+del agente se lee de `AGENT_NAME`: vacío (lo de hoy) es despacho automático; con
+nombre, primero hay que agregar ese `agent_name` a la regla de despacho SIP de
+producción y a las salas de prueba del panel, o nadie contesta.
+
 De ahí sale el multi-tenant: el atributo `sip.trunkPhoneNumber` del
 participante trae el número marcado, y `agenda.tenant_por_telefono()` resuelve
 de qué negocio es. Ni una línea de código por cliente.

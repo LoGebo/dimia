@@ -6,7 +6,7 @@ Tres piezas, ni una más:
 |---|---|---|
 | Motor de agendamiento | Supabase gestionado (Postgres 17) | El estado transaccional no se opera a mano |
 | LiveKit + puente SIP | VPS propio, o LiveKit Cloud | Media WebRTC/RTP: necesita puertos y CPU dedicada |
-| Worker del agente | Fly.io (`qro`) o VPS con docker compose | Proceso persistente, sin estado, escala por réplicas |
+| Worker del agente | Fly.io (`dfw`) o VPS con docker compose | Proceso persistente, sin estado, escala por réplicas |
 
 El worker es **stateless**: todo lo que sabe lo lee de Postgres al entrar la
 llamada. Eso es lo que permite pasar de 1 a N réplicas sin coordinación: los
@@ -71,7 +71,7 @@ Nada de esto cambia el código; se cambian números.
 2. **20-60 clientes.** Sube a 2-3 réplicas del worker (`fly scale count 3` o
    `REPLICAS_AGENTE=3`). LiveKit sigue siendo uno solo. Sube Supabase a un
    plan con más conexiones del pooler y vigila `pg_stat_activity`.
-3. **60-150 clientes.** Réplicas del worker en dos regiones (`qro` y `dfw`) para
+3. **60-150 clientes.** Réplicas del worker en dos regiones (`dfw` e `iad`) para
    sobrevivir a una caída de zona. LiveKit en dos nodos detrás del mismo Redis,
    o migración a LiveKit Cloud si operar media deja de ser buen uso del tiempo.
 4. **Más allá.** El cuello de botella deja de ser el worker y pasa a ser el

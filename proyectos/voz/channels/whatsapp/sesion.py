@@ -52,6 +52,11 @@ class SesionWhatsApp:
     # conversacion se interrumpe y sigue horas despues, y el carrito tiene que
     # seguir ahi cuando el cliente vuelve a escribir.
     pedido_id: uuid.UUID | None = None
+    # Las citas que buscar_reserva le mostro a este numero: solo esas se pueden
+    # cancelar. El booking_id que manda el modelo no prueba que la cita sea suya.
+    reservas_vistas: set[str] = field(default_factory=set)
+    # La cita que se esta moviendo (boton «Cambiar»): al reservar la nueva, se cancela.
+    mover_booking_id: uuid.UUID | None = None
     ultimo_contacto: float = field(default_factory=time.monotonic)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
@@ -86,6 +91,8 @@ class SesionWhatsApp:
         self.mensajes.clear()
         self.opciones.clear()
         self.escalada = False
+        self.reservas_vistas.clear()
+        self.mover_booking_id = None
         self.tocar()
 
     def recortar(self, max_turnos: int) -> None:

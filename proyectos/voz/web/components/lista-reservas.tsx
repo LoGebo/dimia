@@ -1,4 +1,5 @@
 import { cancelarReserva, moverCita } from "@/lib/acciones";
+import { BotonPeligro } from "@/components/boton-peligro";
 import { Formulario } from "@/components/formulario";
 import { Boton, Insignia } from "@/components/ui/primitivos";
 import { Reagendar } from "@/components/reagendar";
@@ -32,7 +33,7 @@ export function ListaReservas({
   return (
     <ul className="divide-y divide-linea">
       {reservas.map((r) => {
-        // Ya terminó y nadie la cerró: se ofrece cerrarla (llegó / no llegó) en vez de moverla o cancelarla.
+        // Ya terminó y nadie la cerró: se ofrece cerrarla (atendida / no llegó) en vez de moverla o cancelarla.
         const paso = r.estado === "confirmada" && new Date(r.fin).getTime() < ahora;
         return (
         <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 hover:bg-panel-2">
@@ -72,7 +73,7 @@ export function ListaReservas({
               <Formulario accion={moverCita}>
                 <input type="hidden" name="id" value={r.id} />
                 <input type="hidden" name="paso" value="atendida" />
-                <Boton>Llegó</Boton>
+                <Boton>Atendida</Boton>
               </Formulario>
               <Formulario accion={moverCita}>
                 <input type="hidden" name="id" value={r.id} />
@@ -85,9 +86,15 @@ export function ListaReservas({
               <Reagendar reserva={r} zona={zona} />
               <Formulario accion={cancelarReserva}>
                 <input type="hidden" name="id" value={r.id} />
-                <Boton variante="peligro">Cancelar</Boton>
+                <BotonPeligro etiqueta="Sí, cancelar" pendiente="Cancelando…">Cancelar</BotonPeligro>
               </Formulario>
             </div>
+          ) : r.estado === "no_asistio" ? (
+            <Formulario accion={moverCita}>
+              <input type="hidden" name="id" value={r.id} />
+              <input type="hidden" name="paso" value="reabrir" />
+              <Boton variante="contorno">Deshacer</Boton>
+            </Formulario>
           ) : null}
         </li>
         );

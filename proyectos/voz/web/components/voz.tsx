@@ -74,7 +74,7 @@ export function ConfiguracionCerebro({
 
       <Campo
         etiqueta="Modelo"
-        ayuda={`Vacío usa ${porDefecto}. Puedes escribir cualquier modelo del proveedor.`}
+        ayuda={`Vacío usa ${porDefecto}. Puede escribir cualquier modelo del proveedor.`}
       >
         <Entrada
           name="llm_modelo"

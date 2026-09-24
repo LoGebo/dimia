@@ -17,14 +17,14 @@ pytestmark = pytest.mark.asyncio
 TELEFONO = "+525512345678"
 
 
-async def _cita(pool, negocio, horas: float) -> uuid.UUID:
+async def _cita(pool, negocio, horas: float, telefono: str = TELEFONO) -> uuid.UUID:
     inicio = datetime.now(UTC) + timedelta(hours=horas)
     return await pool.fetchval(
         """insert into booking (tenant_id, resource_id, service_id, inicio, fin,
                                 cliente_nombre, telefono, estado, codigo)
            values ($1, $2, $3, $4::timestamptz, $4::timestamptz + interval '30 min', 'Ana Ruiz', $5, 'confirmada', $6)
            returning id""",
-        negocio["tenant"], negocio["recurso"], negocio["servicio"], inicio, TELEFONO,
+        negocio["tenant"], negocio["recurso"], negocio["servicio"], inicio, telefono,
         uuid.uuid4().hex[:6].upper(),
     )
 
@@ -107,3 +107,30 @@ async def test_sin_confirmar_se_cancela_solo_donde_el_negocio_lo_pidio(pool, neg
         "select autor from evento where entidad_id = $1 and tipo = 'cita.cancelada' order by id desc limit 1", pronto
     )
     assert autor == "sistema"
+
+
+async def test_un_no_escrito_despues_de_otra_platica_no_es_respuesta(pool, negocio):
+    """Un «no» que contesta otra pregunta del bot no cancela la cita de mañana."""
+    cita = await _cita(pool, negocio, 24.5)
+    await pool.fetchval("select encolar_recordatorios(24)")
+    await _marcar_enviada(pool, cita)
+    t = negocio["tenant"]
+
+    assert await pool.fetchval("select confirmacion_pendiente($1, $2, null, true)", t, TELEFONO) is not None
+    await pool.fetchval(
+        "select mensaje_registrar($1, 'whatsapp', $2, 'cliente', '¿Aceptan tarjeta?')", t, TELEFONO)
+    assert await pool.fetchval("select confirmacion_pendiente($1, $2, null, true)", t, TELEFONO) is None
+    # El botón trae la cita: ese sí vale siempre.
+    assert await pool.fetchval("select confirmacion_pendiente($1, $2, $3)", t, TELEFONO, cita) is not None
+
+
+async def test_la_cita_vieja_de_instagram_se_encuentra_por_el_id(pool, negocio):
+    """Antes las citas de Instagram guardaban el id del remitente: Confirmo/Cambiar/Cancelo también valen."""
+    cita = await _cita(pool, negocio, 24.5, telefono="ig-legacy-1")
+    t = negocio["tenant"]
+    await pool.execute(
+        """insert into outbox (tenant_id, booking_id, canal, destino, plantilla, estado, enviado)
+           values ($1, $2, 'instagram', 'ig-legacy-1', 'confirmacion_24h', 'enviado', now())""", t, cita)
+
+    assert _json(await pool.fetchval("select confirmacion_pendiente($1, $2, $3)", t, "ig-legacy-1", cita))["id"] == str(cita)
+    assert await pool.fetchval("select confirmacion_pendiente($1, $2, $3)", t, "ig-otro-2", cita) is None

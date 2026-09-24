@@ -155,7 +155,7 @@ async def test_whatsapp_instagram_y_llamada_pelean_el_mismo_horario(pool, negoci
 
     r_wa, r_ig, r_voz = await asyncio.gather(
         wa.ejecutar("reservar", {"opcion_id": k1, "nombre_cliente": "Ana"}),
-        ig.ejecutar("reservar", {"opcion_id": k2, "nombre_cliente": "Beto"}),
+        ig.ejecutar("reservar", {"opcion_id": k2, "nombre_cliente": "Beto", "telefono": "5522222222"}),
         llamada,
     )
 
@@ -164,7 +164,7 @@ async def test_whatsapp_instagram_y_llamada_pelean_el_mismo_horario(pool, negoci
     perdidas_texto = [t for t in textos if "se acaba de apartar" in t]
     ganadas = len(ganadas_texto) + (1 if r_voz["ok"] else 0)
     assert ganadas == 1, (r_wa, r_ig, r_voz)
-    assert len(perdidas_texto) + (0 if r_voz["ok"] else 1) == 2
+    assert len(perdidas_texto) + (0 if r_voz["ok"] else 1) == 2, (r_wa, r_ig, r_voz)
 
     n = await pool.fetchval(
         "select count(*) from booking where tenant_id=$1 and estado='confirmada'", tenant.id
@@ -176,3 +176,32 @@ async def test_whatsapp_instagram_y_llamada_pelean_el_mismo_horario(pool, negoci
             assert h.sesion.opciones == {}
         else:
             assert h.sesion.opciones
+
+
+@pytest.mark.asyncio
+async def test_por_instagram_encuentra_su_cita_con_codigo_y_whatsapp(pool, negocio):
+    """La cita de Instagram guarda el WhatsApp, no el id del remitente: con el código
+    y ese número la encuentra; con el código solo, o con otro número, no."""
+    from app.supabase_client import Agenda, Tenant
+    from channels.whatsapp.herramientas import Herramientas
+    from channels.whatsapp.sesion import SesionWhatsApp
+
+    agenda = Agenda()
+    agenda.adoptar_pool(pool)
+    tenant = Tenant(
+        id=negocio["tenant"], nombre="Prueba", vertical="clinica",
+        zona_horaria="America/Mexico_City", telefono_escalamiento=None, voz_id=None,
+    )
+    nueva = await _reservar(pool, negocio, _proximo_lunes_10am(), "Laura")
+    codigo = nueva["codigo"]
+    # Como la guarda reservar() desde Instagram: el WhatsApp ya normalizado.
+    await pool.execute("update booking set telefono = '+525500000000' where id = $1", uuid.UUID(nueva["booking_id"]))
+    viejo = await _reservar(pool, negocio, _proximo_lunes_10am() + timedelta(hours=2), "Laura")
+    await pool.execute("update booking set telefono = 'ig-laura' where id = $1", uuid.UUID(viejo["booking_id"]))
+
+    h = Herramientas(agenda, tenant, [], SesionWhatsApp(tenant.id, "ig-laura"))
+    assert "WhatsApp" in await h.ejecutar("buscar_reserva", {"codigo": codigo})
+    assert "No encontre" in await h.ejecutar("buscar_reserva", {"codigo": codigo, "telefono": "5599999999"})
+    assert f"codigo {codigo}" in await h.ejecutar("buscar_reserva", {"codigo": codigo, "telefono": "55 0000 0000"})
+    # La cita vieja, que guardó el id de Instagram, sale con el código solo.
+    assert f"codigo {viejo['codigo']}" in await h.ejecutar("buscar_reserva", {"codigo": viejo["codigo"]})

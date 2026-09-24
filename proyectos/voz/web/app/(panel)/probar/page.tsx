@@ -20,7 +20,7 @@ export default async function Probar() {
   if (faltantes.length > 0) {
     return (
       <>
-        <Encabezado titulo="Probar el agente" descripcion="Háblale a tu agente desde aquí." giro={giro.nombre} />
+        <Encabezado titulo="Probar el agente" descripcion="Háblele a su agente desde aquí." giro={giro.nombre} />
         <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[minmax(0,560px)_1fr]">
           <Tarjeta className="self-start">
             <TarjetaCabecera
@@ -44,15 +44,15 @@ export default async function Probar() {
               </FilasTarea>
               <p className="text-[13px] leading-relaxed text-tinta-2">
                 Los tres valores salen del proyecto de LiveKit Cloud, en Settings → Keys. Son los mismos que usa el
-                worker de voz, así que si el agente ya contesta llamadas reales, cópialos del{" "}
+                worker de voz, así que si el agente ya contesta llamadas reales, cópielos del{" "}
                 <span className="text-[12px]">.env</span> de la raíz.
               </p>
               <p className="text-[13px] leading-relaxed text-tinta-2">
-                También necesitas el worker corriendo: <span className="text-[12px]">python -m agent.agent dev</span>.
+                También necesita el worker corriendo: <span className="text-[12px]">python -m agent.agent dev</span>.
                 Sin él la sala se abre y nadie contesta.
               </p>
               <p className="text-[11px] text-tinta-3">
-                Mientras tanto puedes revisar el{" "}
+                Mientras tanto puede revisar el{" "}
                 <Link href="/agente" className="text-acento transition-colors duration-150 hover:text-tinta">
                   prompt que recibiría
                 </Link>
@@ -72,7 +72,7 @@ export default async function Probar() {
     <>
       <Encabezado
         titulo="Probar el agente"
-        descripcion={`Háblale a ${config.nombre} desde el navegador. Es el mismo agente que contesta el teléfono.`}
+        descripcion={`Háblele a ${config.nombre} desde el navegador. Es el mismo agente que contesta el teléfono.`}
         giro={giro.nombre}
         acciones={
           <div className="flex items-center gap-2">

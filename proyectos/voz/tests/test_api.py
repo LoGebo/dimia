@@ -5,6 +5,7 @@ import os
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import asyncpg
 import jwt
@@ -41,6 +42,8 @@ def token_de(user_id: uuid.UUID) -> str:
 
 @pytest.fixture(scope="session", autouse=True)
 def ajustes_de_prueba():
+    # test_api_movil pisa SUPABASE_JWT_SECRET al importarse (colección): se restaura aquí.
+    os.environ["SUPABASE_JWT_SECRET"] = SECRETO
     api_settings.cache_clear()
     ajustes = api_settings()
     assert ajustes.supabase_jwt_secret == SECRETO
@@ -121,6 +124,20 @@ async def _crear_servicio(cliente, encabezados, tenant_id, nombre="Consulta", du
     )
     assert respuesta.status_code == 201, respuesta.text
     return respuesta.json()
+
+
+async def _abrir_agenda_y_hora(conexion, tenant_id: uuid.UUID, dias: int) -> datetime:
+    """reservar() valida el horario: abre los 7 días 9-18 y da las 10:00 locales en `dias`."""
+    for dow in range(7):
+        await conexion.execute(
+            "insert into schedule_rule (tenant_id, tipo, dia_semana, hora_inicio, hora_fin) "
+            "values ($1,'disponible',$2,'09:00','18:00')",
+            tenant_id, dow,
+        )
+    zona = ZoneInfo("America/Mexico_City")
+    return (datetime.now(zona) + timedelta(days=dias)).replace(
+        hour=10, minute=0, second=0, microsecond=0
+    )
 
 
 @pytest.mark.asyncio
@@ -368,8 +385,7 @@ async def test_listado_y_cancelacion_de_reservas(cliente, encabezados, negocio, 
     servicio = await _crear_servicio(cliente, encabezados, negocio)
 
     tenant_id = uuid.UUID(negocio)
-    inicio = datetime.now(UTC) + timedelta(days=2)
-    inicio = inicio.replace(minute=0, second=0, microsecond=0)
+    inicio = await _abrir_agenda_y_hora(conexion, tenant_id, 2)
 
     resultado = await conexion.fetchval(
         "select reservar($1,$2,$3,$4,$5,$6)",
@@ -616,7 +632,7 @@ async def test_limite_de_pagina_se_topa(cliente, encabezados, negocio):
 async def test_confirmar_reserva_encola_mensaje(cliente, encabezados, negocio, conexion):
     recurso = await _crear_recurso(cliente, encabezados, negocio)
     servicio = await _crear_servicio(cliente, encabezados, negocio)
-    inicio = (datetime.now(UTC) + timedelta(days=3)).replace(minute=0, second=0, microsecond=0)
+    inicio = await _abrir_agenda_y_hora(conexion, uuid.UUID(negocio), 3)
 
     crudo = await conexion.fetchval(
         "select reservar($1,$2,$3,$4,$5,$6)",

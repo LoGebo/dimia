@@ -21,8 +21,8 @@ export default async function AltaInicio() {
           <i className="cuadrado" aria-hidden="true" />
         </h1>
         <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-tinta-2">
-          Cuatro datos. El giro define qué sabe hacer el agente y qué te va a pedir después: agendar horarios, tomar
-          pedidos con su total, o solo contestar y dejarte el recado.
+          Cuatro datos. El giro define qué sabe hacer el agente y qué le va a pedir después: agendar horarios, tomar
+          pedidos con su total, o solo contestar y dejarle el recado.
         </p>
       </div>
       <Tarjeta className="px-5 py-5">

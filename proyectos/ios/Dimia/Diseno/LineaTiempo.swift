@@ -83,6 +83,7 @@ struct TarjetaCita: View {
                 Text(cita.servicio).font(.subheadline).foregroundStyle(Color.tinta2)
                 HStack(spacing: 8) {
                     Text(cita.recurso).font(.footnote).foregroundStyle(colorRecurso)
+                    if cita.personas > 1 { Text("\(cita.personas) personas").font(.footnote.monospacedDigit()).foregroundStyle(Color.tinta3) }
                     Spacer(minLength: 4)
                     if let c = cita.confirmacion, !pasada, !(cita.estado == "confirmada" && cita.llegada == nil && faltan < 0) {
                         Estampa(texto: c, tono: c == "Confirmó" ? .bueno : .alerta).fixedSize()

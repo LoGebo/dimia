@@ -67,6 +67,6 @@ async def ciclo() -> None:
         while True:
             try:
                 await _vuelta(cliente)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 log.exception("apns: la vuelta falló")
             await asyncio.sleep(5)

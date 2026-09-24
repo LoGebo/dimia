@@ -51,7 +51,7 @@ export function AltaNegocio({ plantillas }: { plantillas: PlantillaVertical[] })
       <div className="flex flex-wrap items-center gap-3 border-t border-linea pt-4">
         <BotonEnviar disabled={!listo}>Crear negocio</BotonEnviar>
         <p className="text-[12px] text-tinta-3">
-          {listo ? "Después configuras horarios, servicios y respuestas en el panel." : `Falta ${faltantes.join(" y ")}.`}
+          {listo ? "Después configura horarios, servicios y respuestas en el panel." : `Falta ${faltantes.join(" y ")}.`}
         </p>
       </div>
     </Formulario>

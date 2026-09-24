@@ -80,7 +80,7 @@ export async function avance(herramientas: Herramienta[]): Promise<Avance> {
           {
             clave: "horario",
             nombre: "Horario",
-            ayuda: "Cuándo abres. Sin esto no hay nada que ofrecer.",
+            ayuda: "Cuándo abre. Sin esto no hay nada que ofrecer.",
             ruta: "/horarios",
             listo: listaReglas.some((r) => r.tipo === "disponible"),
           },

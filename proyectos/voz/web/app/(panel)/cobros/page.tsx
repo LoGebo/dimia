@@ -26,7 +26,7 @@ export default async function Cobros({ searchParams }: { searchParams: Promise<{
       />
       <div className="space-y-4 px-5 py-5">
         <TiraIndicadores>
-          <Cifra etiqueta="Cobrado el día" valor={moneda(resumen.cobrado)} glifo={Glifos.dinero} pildora={`${resumen.operaciones} cobros`} tono="bueno" />
+          <Cifra etiqueta="Cobrado el día" valor={moneda(resumen.cobrado)} glifo={Glifos.dinero} pildora={`${resumen.operaciones} ${resumen.operaciones === 1 ? "cobro" : "cobros"}`} tono="bueno" />
           {resumen.por_metodo.slice(0, 2).map((m) => (
             <Cifra key={m.metodo} etiqueta={NOMBRE_METODO[m.metodo as MetodoPago] ?? m.metodo} valor={moneda(m.monto)} glifo={Glifos.dinero} />
           ))}
@@ -39,7 +39,7 @@ export default async function Cobros({ searchParams }: { searchParams: Promise<{
           />
         </TiraIndicadores>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
           <Tarjeta>
             <TarjetaCabecera titulo="Cobros del día" descripcion="Cada cita o pedido que se cobró, con su método." />
             <TablaPagos

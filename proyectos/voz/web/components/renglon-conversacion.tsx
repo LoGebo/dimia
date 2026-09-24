@@ -30,7 +30,8 @@ export function RenglonConversacion({ conversacion: c, zona }: { conversacion: C
           {sinLeer ? <i aria-hidden="true" className="h-1.5 w-1.5 flex-none bg-acento" /> : null}
           <span className="truncate">{nombreDe(c)}</span>
         </span>
-        <span className="numeros shrink-0 text-[11px] text-tinta-3">{hace(c.ultimo_mensaje_en, zona)}</span>
+        {/* «hace cuánto» depende del reloj: el servidor y el navegador pueden caer en minutos distintos. */}
+        <span suppressHydrationWarning className="numeros shrink-0 text-[11px] text-tinta-3">{hace(c.ultimo_mensaje_en, zona)}</span>
       </div>
       <p className={`mt-1 truncate text-[12px] ${sinLeer ? "text-tinta-2" : "text-tinta-3"}`}>{c.ultimo_mensaje ?? "Sin mensajes todavía."}</p>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-tinta-3">

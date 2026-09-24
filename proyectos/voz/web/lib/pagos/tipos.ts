@@ -18,7 +18,7 @@ export const CAPACIDADES: Record<Proveedor, { enlace: boolean; terminal: boolean
 /** Los campos que el dueño pega en Ajustes → Pagos, por pasarela. */
 export const CAMPOS_CREDENCIALES: Record<Proveedor, { clave: string; nombre: string; ayuda: string; secreto?: boolean }[]> = {
   mercadopago: [
-    { clave: "access_token", nombre: "Access token", ayuda: "Tus integraciones → tu aplicación → Credenciales de producción.", secreto: true },
+    { clave: "access_token", nombre: "Access token", ayuda: "«Tus integraciones» → su aplicación → Credenciales de producción.", secreto: true },
     { clave: "webhook_secret", nombre: "Clave secreta del webhook", ayuda: "Opcional. Webhooks → Configurar → clave secreta; con ella se verifica la firma.", secreto: true },
   ],
   clip: [
@@ -27,7 +27,7 @@ export const CAMPOS_CREDENCIALES: Record<Proveedor, { clave: string; nombre: str
   ],
   stripe: [
     { clave: "secret_key", nombre: "Clave secreta (sk_…)", ayuda: "Developers → API keys.", secreto: true },
-    { clave: "webhook_secret", nombre: "Secreto del webhook (whsec_…)", ayuda: "Developers → Webhooks → tu endpoint → Signing secret.", secreto: true },
+    { clave: "webhook_secret", nombre: "Secreto del webhook (whsec_…)", ayuda: "Developers → Webhooks → su endpoint → Signing secret.", secreto: true },
   ],
 };
 

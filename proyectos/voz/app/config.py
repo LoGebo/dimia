@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     deepgram_voz: str = "aura-2-javier-es"
     azure_voz: str = "es-MX-DaliaNeural"
     procesos_precalentados: int = 2
+    # Capacidad del worker de voz. Sin UMBRAL_CARGA aplica el de LiveKit (0.7 de
+    # CPU en producción). MEMORIA_MAX_LLAMADA_MB en 0 no pone tope por llamada.
+    umbral_carga: float | None = None
+    memoria_max_llamada_mb: float = 0
+    # AGENT_NAME: vacio = despacho automatico. Con nombre hay que crear la regla
+    # de despacho en LiveKit para ese agente, o nadie contesta.
+    agent_name: str = ""
     # Cuanto se espera, como maximo, a que el cliente termine de hablar. Medido en
     # llamadas reales: cuando el detector duda, este tope es la mitad del retardo
     # total del turno. Bajarlo acelera; bajarlo demasiado interrumpe al cliente.

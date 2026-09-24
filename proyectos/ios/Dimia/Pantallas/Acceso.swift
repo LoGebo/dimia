@@ -30,7 +30,9 @@ struct Acceso: View {
                 Button {
                     Task { await entrar() }
                 } label: {
-                    Group { if enviando { ProgressView().tint(.white) } else { Text("Entrar").font(.body.weight(.semibold)) } }
+                    Group { if enviando { ProgressView().tint(Color.acentoApagado) } else { Text("Entrar").font(.body.weight(.semibold)) } }
+                        // Deshabilitado, el sistema pone el fondo gris: sobreAcento ahí no se lee (1.3:1).
+                        .foregroundStyle(enviando || email.isEmpty || password.isEmpty ? Color.acentoApagado : Color.sobreAcento)
                         .frame(maxWidth: .infinity).frame(height: 50)
                 }
                 .buttonStyle(.borderedProminent)

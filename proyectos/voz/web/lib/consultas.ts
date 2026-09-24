@@ -182,6 +182,9 @@ export function faq(): Promise<Faq[]> {
   return datos(leer.faq);
 }
 
+// Un id que no es uuid truena en Postgres; en la URL eso es un 404, no un error.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const SELECT_RESERVA = `
   select b.id, b.codigo, b.cliente_nombre, b.telefono, b.personas, b.notas,
          b.inicio, b.fin, b.estado, b.llegada, b.cliente_id, b.creado, s.precio,
@@ -189,13 +192,15 @@ const SELECT_RESERVA = `
          exists (select 1 from outbox o where o.booking_id = b.id
                     and o.plantilla = 'confirmacion_24h' and o.estado = 'enviado') as confirmacion_enviada,
          s.nombre as servicio, r.nombre as recurso,
-         b.resource_id, b.service_id, pg.cobrado::text as cobrado
+         b.resource_id, b.service_id, pg.cobrado::text as cobrado, pg.pendiente::text as pendiente
     from booking b
     join service  s on s.id = b.service_id
     join resource r on r.id = b.resource_id
     left join lateral (
-      select sum(g.monto) as cobrado from pago g
-       where g.booking_id = b.id and g.estado = 'pagado'
+      select sum(g.monto) filter (where g.estado = 'pagado') as cobrado,
+             sum(g.monto) filter (where g.estado = 'pendiente') as pendiente
+        from pago g
+       where g.booking_id = b.id and g.estado in ('pagado', 'pendiente')
     ) pg on true`;
 
 /** Las citas de un rango de días, en la zona horaria del negocio. */
@@ -235,7 +240,9 @@ export function buscarReservas(termino: string): Promise<Reserva[]> {
       `${SELECT_RESERVA}
         where b.tenant_id = $1
           and (upper(b.codigo) = upper($2)
-               or regexp_replace(b.telefono, '\\D', '', 'g') like '%' || regexp_replace($2, '\\D', '', 'g') || '%'
+               -- sin dígitos el patrón queda '%%' y coincide con todo: el teléfono solo cuenta con 3 o más
+               or (length(regexp_replace($2, '\\D', '', 'g')) >= 3
+                   and regexp_replace(b.telefono, '\\D', '', 'g') like '%' || regexp_replace($2, '\\D', '', 'g') || '%')
                or b.cliente_nombre ilike '%' || $2 || '%')
         order by b.inicio desc
         limit 40`,
@@ -437,6 +444,7 @@ export function conversaciones(limite = 50): Promise<Conversacion[]> {
 }
 
 export function conversacion(conversacionId: string): Promise<ConversacionDetalle | null> {
+  if (!UUID.test(conversacionId)) return Promise.resolve(null);
   return datos(async (q, id) => {
     const filas = await q<ConversacionDetalle>(
       `select x.*, b.codigo as booking_codigo, b.inicio as booking_inicio, p.creado as pedido_creado
@@ -480,6 +488,17 @@ export function mensajesSalientes(limite = 100): Promise<MensajeSaliente[]> {
   );
 }
 
+/** Cuántos avisos hay por estado, sin el recorte de la lista. */
+export function conteoMensajes(): Promise<Record<string, number>> {
+  return datos(async (q, id) => {
+    const filas = await q<{ estado: string; total: number }>(
+      "select estado::text as estado, count(*)::int as total from outbox where tenant_id = $1 group by estado",
+      [id],
+    );
+    return Object.fromEntries(filas.map((f) => [f.estado, f.total]));
+  });
+}
+
 // ---------------------------------------------------------------
 // Clientes: la memoria del negocio.
 // ---------------------------------------------------------------
@@ -519,7 +538,8 @@ export function clientes(segmento: SegmentoCliente, busqueda = "", limite = 200)
         where c.tenant_id = $1
           and ${CONDICION_SEGMENTO[segmento]}
           and ($2 = '' or c.nombre ilike '%' || $2 || '%'
-               or regexp_replace(coalesce(c.telefono,''), '\\D', '', 'g') like '%' || regexp_replace($2, '\\D', '', 'g') || '%')
+               or (length(regexp_replace($2, '\\D', '', 'g')) >= 3
+                   and regexp_replace(coalesce(c.telefono,''), '\\D', '', 'g') like '%' || regexp_replace($2, '\\D', '', 'g') || '%'))
         order by c.ultimo_contacto desc
         limit $3`,
       [id, termino, limite],
@@ -528,6 +548,7 @@ export function clientes(segmento: SegmentoCliente, busqueda = "", limite = 200)
 }
 
 export function cliente(clienteId: string): Promise<ClienteResumen | null> {
+  if (!UUID.test(clienteId)) return Promise.resolve(null);
   return datos(async (q, id) => {
     const filas = await q<ClienteResumen>(`${SELECT_CLIENTE} where c.tenant_id = $1 and c.id = $2`, [id, clienteId]);
     return filas[0] ?? null;
@@ -660,6 +681,7 @@ export function campanas(): Promise<Campana[]> {
 }
 
 export function campana(campanaId: string): Promise<Campana | null> {
+  if (!UUID.test(campanaId)) return Promise.resolve(null);
   return datos(async (q, id) => {
     const filas = await q<Campana>(`${SELECT_CAMPANA} where ca.tenant_id = $1 and ca.id = $2`, [id, campanaId]);
     return filas[0] ?? null;
@@ -722,7 +744,7 @@ export function ausencias(): Promise<Ausencia[]> {
     q<Ausencia>(
       `select id, resource_id, fecha::text as fecha, hora_inicio::text as hora_inicio, hora_fin::text as hora_fin, motivo
          from schedule_rule
-        where tenant_id = $1 and tipo = 'bloqueo' and fecha is not null and fecha >= current_date - 7
+        where tenant_id = $1 and tipo = 'bloqueo' and fecha is not null and resource_id is not null and fecha >= current_date - 7
         order by fecha, resource_id`,
       [id],
     ),

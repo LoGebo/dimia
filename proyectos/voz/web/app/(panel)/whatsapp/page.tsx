@@ -22,7 +22,7 @@ export default async function WhatsApp() {
     <>
       <Encabezado
         titulo="WhatsApp"
-        descripcion="Primero contestan tus reglas fijas, sin gastar tokens. Lo que no atrapen lo resuelve el agente con inteligencia artificial."
+        descripcion="Primero contestan sus reglas fijas, sin costo de inteligencia artificial. Lo que no atrapen lo resuelve el agente con inteligencia artificial."
         giro={giro.nombre}
       />
       <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -63,7 +63,7 @@ export default async function WhatsApp() {
             <TarjetaCabecera titulo="Lo demás lo contesta la IA" />
             <div className="px-5 py-4 text-[13px] text-tinta-2">
               <p>
-                Cualquier mensaje que no atrape una regla va al mismo agente que contesta el teléfono: agenda, consulta tus
+                Cualquier mensaje que no atrape una regla va al mismo agente que contesta el teléfono: agenda, consulta sus
                 respuestas y toma recados con el cerebro configurado en{" "}
                 <Link href="/agente" className="text-acento transition-opacity hover:opacity-80">
                   Negocio y agente

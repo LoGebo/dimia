@@ -170,7 +170,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
     .reduce((a, b) => a + b, 0);
 
   return (
-    <div onMouseUp={() => setPintando(false)} onMouseLeave={() => setPintando(false)}>
+    <div onPointerUp={() => setPintando(false)} onPointerLeave={() => setPintando(false)} onPointerCancel={() => setPintando(false)}>
       <div className="flex flex-wrap items-center gap-2 border-b border-linea px-4 py-2.5">
         <Selector value={alcance} onChange={(e) => setAlcance(e.target.value)} className="w-auto">
           <option value={GLOBAL}>Todo el negocio</option>
@@ -214,12 +214,14 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
           <span className="text-tinta">{totalHoras.toFixed(1)}</span> h por semana
         </span>
         {mensaje?.tono === "ok" && !sucio ? <MarcaExito key={mensaje.vez} tamano={16} /> : null}
-        {sucio ? (
-          <span className="flex items-center gap-1.5 text-[10px] tracking-[0.16em] text-alerta uppercase">
-            <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" />
-            Sin guardar
-          </span>
-        ) : null}
+        {/* Siempre ocupa su lugar: si apareciera al primer toque, en teléfono partiría la barra y
+            movería la rejilla bajo el dedo a media pintada. */}
+        <span
+          className={`flex items-center gap-1.5 text-[10px] tracking-[0.16em] text-alerta uppercase ${sucio ? "" : "invisible"}`}
+        >
+          <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" />
+          Sin guardar
+        </span>
         <Boton variante="solido" onClick={guardar} disabled={!sucio || guardando} aria-busy={guardando}>
           {guardando ? <i aria-hidden="true" className="late h-1.5 w-1.5 bg-current" /> : null}
           {guardando ? "Guardando…" : "Guardar horario"}
@@ -248,7 +250,7 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-[46px_repeat(7,1fr)] gap-x-1 select-none">
+          <div className="grid touch-none grid-cols-[46px_repeat(7,1fr)] gap-x-1 select-none">
             <div className="relative">
               {Array.from({ length: FILAS }).map((_, fila) =>
                 fila % 2 === 0 ? (
@@ -267,12 +269,21 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
                     key={fila}
                     role="gridcell"
                     aria-label={`${DIAS_CORTOS[indiceDia]} ${horaDeMinutos(inicio + fila * PASO)}`}
-                    onMouseDown={() => {
+                    tabIndex={0}
+                    onPointerDown={(e) => {
+                      // Con el dedo el puntero queda capturado por la primera celda; soltarlo
+                      // deja que las demás reciban pointerenter y el arrastre pinte.
+                      e.currentTarget.releasePointerCapture(e.pointerId);
                       setPintando(true);
                       pintar(indiceDia, fila);
                     }}
-                    onMouseEnter={() => pintando && pintar(indiceDia, fila)}
-                    className={`h-[13px] cursor-crosshair border-b transition-colors duration-150 ${
+                    onPointerEnter={() => pintando && pintar(indiceDia, fila)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      pintar(indiceDia, fila);
+                    }}
+                    className={`h-[13px] cursor-crosshair border-b transition-colors duration-150 focus-visible:outline-1 focus-visible:outline-acento ${
                       celda ? "border-transparent" : fila % 2 === 1 ? "border-linea" : "border-transparent"
                     } ${celda ? COLOR[celda] : "bg-panel-2 hover:bg-linea"}`}
                   />
@@ -284,8 +295,8 @@ export function EditorHorario({ reglas, recursos }: { reglas: Regla[]; recursos:
       </div>
 
       <p className="border-t border-linea px-4 py-2.5 text-[11px] text-tinta-3">
-        Arrastra para pintar. Azul es horario abierto; latón es un bloqueo dentro del horario (comida, junta). Un día sin
-        azul queda cerrado. Haz clic en el nombre del día para copiarlo a toda la semana laboral.
+        Arrastre para pintar; con teclado, Enter pinta la celda. Azul es horario abierto; latón es un bloqueo dentro del
+        horario (comida, junta). Un día sin azul queda cerrado. Toque el nombre del día para copiarlo de lunes a viernes.
       </p>
     </div>
   );

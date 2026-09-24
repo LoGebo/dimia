@@ -5,6 +5,11 @@ const config = {
   // desarrollo: si lo hace, la pestaña abierta se rompe con un error de
   // webpack. Con NEXT_DIST_DIR=.next-verificacion el build va aparte.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // Sin agente elegido se abre Recepción. Aquí y no en la página: un redirect()
+  // dentro del render del panel sale en el streaming y truena al hidratar (React #310).
+  async redirects() {
+    return [{ source: "/agentes", destination: "/agentes/recepcion", permanent: false }];
+  },
   // El panel no se embebe en ningun lado: nadie puede meterlo en un iframe.
   async headers() {
     return [

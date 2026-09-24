@@ -5,6 +5,7 @@ Lo que se prueba es lo que Meta nos manda y lo que nosotros le contestamos.
 """
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import hashlib
 import hmac
@@ -12,7 +13,7 @@ import json
 import time
 import uuid
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, ClassVar
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -1086,7 +1087,7 @@ async def test_la_franja_filtra_los_horarios_ofrecidos(tenant, cfg):
     from channels.whatsapp.sesion import SesionWhatsApp
 
     class DiaCompleto(AgendaFalsa):
-        pedido: dict = {}
+        pedido: ClassVar[dict] = {}
 
         async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12, desde_hora=None, hasta_hora=None):
             self.pedido = {"limite": limite, "desde": desde_hora, "hasta": hasta_hora}
@@ -1101,22 +1102,37 @@ async def test_la_franja_filtra_los_horarios_ofrecidos(tenant, cfg):
     assert (agenda.pedido["desde"].hour, agenda.pedido["desde"].minute, agenda.pedido["hasta"]) == (16, 30, None)
 
 
-async def test_buscar_reserva_pasa_el_nombre(tenant, cfg):
-    """En Instagram no hay telefono: el nombre es la unica llave."""
+async def test_nadie_ve_ni_cancela_la_cita_de_otro_numero(tenant, cfg):
+    """Con solo un nombre, cualquiera veia y cancelaba la cita de otra persona.
+    Se busca por el numero que escribe o por el codigo, y solo se cancela lo que
+    esa busqueda le mostro a esta sesion."""
     from channels.whatsapp.herramientas import Herramientas
     from channels.whatsapp.sesion import SesionWhatsApp
 
     class ConReserva(AgendaFalsa):
-        consulta: dict = {}
+        consulta: ClassVar[dict] = {}
 
         async def buscar_reserva(self, tenant_id, telefono=None, codigo=None, nombre=None):
             self.consulta = {"telefono": telefono, "codigo": codigo, "nombre": nombre}
             return []
 
+        async def cancelar(self, tenant_id, booking_id):
+            self.canceladas.append(booking_id)
+            return {"ok": True}
+
     agenda = ConReserva(tenant)
-    h = Herramientas(agenda, tenant, [], SesionWhatsApp(tenant.id, "ig-123"))
-    await h.ejecutar("buscar_reserva", {"nombre": "Roberto Salas"})
-    assert agenda.consulta == {"telefono": "ig-123", "codigo": None, "nombre": "Roberto Salas"}
+    agenda.canceladas = []
+    h = Herramientas(agenda, tenant, [], SesionWhatsApp(tenant.id, "+525511110019"))
+    await h.ejecutar("buscar_reserva", {"nombre": "Laura Pérez"})
+    assert agenda.consulta == {"telefono": "+525511110019", "codigo": None, "nombre": None}
+
+    ajena = uuid.uuid4()
+    salida = await h.ejecutar("cancelar_reserva", {"booking_id": str(ajena)})
+    assert agenda.canceladas == [] and "buscar_reserva" in salida
+
+    h.sesion.reservas_vistas.add(str(ajena))
+    await h.ejecutar("cancelar_reserva", {"booking_id": str(ajena)})
+    assert agenda.canceladas == [ajena]
 
 
 # ------------------------------------------------- confirmacion 24 h
@@ -1139,7 +1155,7 @@ class AgendaConConfirmacion(AgendaFalsa):
         self.canceladas: list[uuid.UUID] = []
         self.buscadas: list[tuple[str, uuid.UUID | None]] = []
 
-    async def confirmacion_pendiente(self, tenant_id, telefono, booking_id=None):
+    async def confirmacion_pendiente(self, tenant_id, telefono, booking_id=None, escrita=False):
         self.buscadas.append((telefono, booking_id))
         if self.cita and (booking_id is None or str(booking_id) == self.cita["id"]):
             return self.cita
@@ -1219,3 +1235,230 @@ async def test_un_si_sin_cita_pendiente_sigue_al_modelo(tenant, cfg):
 
     assert agenda.confirmadas == []
     assert salidas[0].texto == "¿En qué te ayudo?"
+
+
+async def test_un_si_escrito_pide_que_no_se_haya_hablado_de_otra_cosa(tenant, cfg):
+    """El botón trae la cita y vale siempre; lo escrito solo si fue la respuesta inmediata."""
+    cita = _cita_pendiente()
+    vistas: list[bool] = []
+
+    class Agenda(AgendaConConfirmacion):
+        async def confirmacion_pendiente(self, tenant_id, telefono, booking_id=None, escrita=False):
+            vistas.append(escrita)
+            return None if escrita else self.cita
+
+    agenda = Agenda(tenant, cita)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("¿En qué le ayudo?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    await agente.atender(parse_webhook(_envoltura(_texto("no")))[0])
+    assert agenda.canceladas == [] and vistas == [True]
+
+    await agente.atender(parse_webhook(_envoltura(_boton(f"cita:cancelo:{cita['id']}", "Cancelo")))[0])
+    assert agenda.canceladas == [uuid.UUID(cita["id"])] and vistas[-1] is False
+
+
+async def test_cambiar_y_reservar_cancela_la_cita_anterior(tenant, cfg):
+    """«Cambiar» dejaba dos citas vivas: la anterior solo se cancelaba si el modelo se acordaba."""
+    cita = _cita_pendiente()
+    agenda = AgendaConConfirmacion(tenant, cita)
+    registro = RegistroSesiones(cfg)
+    llm = LLMFalso([
+        RespuestaFalsa(
+            [_uso("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-07"})],
+            "tool_use",
+        ),
+        RespuestaFalsa([_texto_bloque("Estos tengo:")], "end_turn"),
+    ])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=registro)
+    lista = await agente.atender(
+        parse_webhook(_envoltura(_boton(f"cita:cambiar:{cita['id']}", "Cambiar")))[0]
+    )
+    elegida = lista[0].opciones[0].id
+    llm.guion = [
+        RespuestaFalsa([_uso("reservar", {"opcion_id": elegida, "nombre_cliente": "Ana"}, "tu_2")], "tool_use"),
+        RespuestaFalsa([_texto_bloque("Listo, quedó movida.")], "end_turn"),
+    ]
+    await agente.atender(parse_webhook(_envoltura(_texto("10:00", "wamid.9")))[0])
+
+    assert len(agenda.reservas) == 1
+    assert agenda.canceladas == [uuid.UUID(cita["id"])]
+    assert "anterior ya quedo cancelada" in str(llm.llamadas[-1]["messages"][-1]["content"])
+
+
+async def test_una_herramienta_que_truena_no_envenena_la_sesion(tenant, cfg):
+    class Caida(AgendaFalsa):
+        async def slots_libres(self, *a, **k):
+            raise ConnectionError("la base parpadeo")
+
+    agenda = Caida(tenant)
+    llm = LLMFalso([
+        RespuestaFalsa(
+            [_uso("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-07"})],
+            "tool_use",
+        ),
+        RespuestaFalsa([_texto_bloque("Tuve un problema, ¿le tomo el recado?")], "end_turn"),
+    ])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("cita el lunes")))[0])
+
+    assert salidas[0].texto == "Tuve un problema, ¿le tomo el recado?"
+    resultado = llm.llamadas[1]["messages"][-1]["content"][0]
+    assert resultado["type"] == "tool_result" and "Error tecnico" in resultado["content"]
+
+
+async def test_si_el_modelo_truena_sale_el_respaldo_y_la_sesion_queda_sana(tenant, cfg):
+    from channels.nucleo import RESPALDO
+
+    class Cae(LLMFalso):
+        async def create(self, **kwargs):
+            if not self.guion:
+                raise TimeoutError("openai colgado")
+            return await super().create(**kwargs)
+
+    agenda = AgendaFalsa(tenant)
+    registro = RegistroSesiones(cfg)
+    llm = Cae([
+        RespuestaFalsa(
+            [_uso("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-07"})],
+            "tool_use",
+        ),
+    ])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=registro)
+
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("cita el lunes")))[0])
+
+    assert salidas[0].texto == RESPALDO
+    sesion = registro.obtener(tenant.id, "+525598765432")
+    # Sin tool_use colgado: el siguiente mensaje no truena con 400.
+    assert [m["role"] for m in sesion.mensajes] == ["user"]
+
+    # Con respaldo, el cliente recibe respuesta del otro proveedor.
+    respaldo = LLMFalso([RespuestaFalsa([_texto_bloque("Claro, ¿qué día?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=Cae([]), agenda=agenda, cfg=cfg, registro=registro, respaldo=respaldo)
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("hola", "wamid.2")))[0])
+    assert salidas[0].texto == "Claro, ¿qué día?"
+
+
+async def test_el_platillo_que_no_existe_no_se_cambia_por_otro(tenant, cfg):
+    class ConRespaldo(AgendaFalsa):
+        async def buscar_catalogo(self, tenant_id, consulta=None, tipo=None, limite=8):
+            return [{"id": self.item_id, "nombre": "Cebolla asada", "precio": 20, "es_respaldo": True}]
+
+    agenda = ConRespaldo(tenant)
+    h = Herramientas(agenda, tenant, [], SesionWhatsApp(tenant.id, "+525598765432"), herramientas_giro=["pedido"])
+
+    assert "No encontre eso" in await h.ejecutar("agregar_al_pedido", {"catalogo_id": "pizza"})
+    assert agenda.pedido_items == []
+    assert (await h.ejecutar("consultar_catalogo", {"busqueda": "pizza"})).startswith("No hay coincidencia")
+
+
+async def test_sin_existencias_dice_cuantas_quedan(tenant, cfg):
+    class Poco(AgendaFalsa):
+        async def pedido_agregar(self, *a, **k):
+            return {"ok": False, "error": "sin_existencias", "nombre": "Taco", "quedan": 1}
+
+    h = Herramientas(Poco(tenant), tenant, [], SesionWhatsApp(tenant.id, "+525598765432"), herramientas_giro=["pedido"])
+    assert "Solo quedan 1 de Taco" in await h.ejecutar("agregar_al_pedido", {"catalogo_id": str(uuid.uuid4())})
+
+
+async def test_negritas_de_markdown_salen_como_whatsapp(tenant, cfg):
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Su código es **C3GD**.")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=AgendaFalsa(tenant), cfg=cfg, registro=RegistroSesiones(cfg))
+    salidas = await agente.atender(parse_webhook(_envoltura(_texto("hola")))[0])
+    assert salidas[0].texto == "Su código es *C3GD*."
+
+
+async def test_la_disponibilidad_le_da_al_modelo_el_id_de_cada_hora(tenant, cfg):
+    agenda = AgendaFalsa(tenant)
+    sesion = SesionWhatsApp(tenant.id, "+525598765432")
+    h = Herramientas(agenda, tenant, await agenda.servicios(tenant.id), sesion)
+    salida = await h.ejecutar("consultar_disponibilidad", {"servicio_id": str(agenda.servicio_id), "fecha": "2026-09-07"})
+    assert all(f"opcion_id={clave}" in salida for clave in sesion.opciones)
+
+
+# ------------------------------------------------- servidor
+
+
+class _Estado:
+    def __init__(self, agente, cliente):
+        self.agente = agente
+        self.cliente = cliente
+
+
+class _App:
+    def __init__(self, agente, cliente):
+        self.state = _Estado(agente, cliente)
+
+
+async def test_un_reintento_de_meta_no_se_atiende_dos_veces_y_lo_no_enviado_va_a_la_cola(tenant, cfg):
+    from channels.whatsapp import servidor
+
+    class Agenda(AgendaFalsa):
+        def __init__(self, t):
+            super().__init__(t)
+            self.vistos: set = set()
+            self.cola: list = []
+
+        async def mensaje_reclamar(self, canal, externo_id):
+            nuevo = (canal, externo_id) not in self.vistos
+            self.vistos.add((canal, externo_id))
+            return nuevo
+
+        async def outbox_respuesta(self, tenant_id, canal, destino, texto):
+            self.cola.append((tenant_id, canal, destino, texto))
+
+    class MetaCaida:
+        async def marcar_leido(self, mensaje_id):
+            raise httpx.ConnectTimeout("meta")
+
+        async def entregar(self, salida):
+            raise httpx.HTTPStatusError("500", request=None, response=None)
+
+    agenda = Agenda(tenant)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Hola, ¿en qué le ayudo?")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+    app = _App(agente, MetaCaida())
+    entrante = parse_webhook(_envoltura(_texto("hola", "wamid.A")))[0]
+
+    await servidor.procesar(app, entrante)
+    await servidor.procesar(app, entrante)
+
+    assert len(llm.llamadas) == 1
+    assert agenda.cola == [(tenant.id, "whatsapp", NUMERO_CLIENTE, "Hola, ¿en qué le ayudo?")]
+
+
+async def test_marcar_leido_lento_no_detiene_la_respuesta(tenant, cfg):
+    """El acuse de leido que se cuelga en Meta no retrasa la respuesta al cliente."""
+    from channels.whatsapp import servidor
+
+    entregada = asyncio.Event()
+
+    class MetaLenta:
+        async def marcar_leido(self, mensaje_id):
+            await entregada.wait()  # solo termina si la respuesta ya salio
+
+        async def entregar(self, salida):
+            entregada.set()
+
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Hola")], "end_turn")])
+    agente = AgenteWhatsApp(llm=llm, agenda=AgendaFalsa(tenant), cfg=cfg, registro=RegistroSesiones(cfg))
+    entrante = parse_webhook(_envoltura(_texto("hola", "wamid.L")))[0]
+
+    await asyncio.wait_for(servidor.procesar(_App(agente, MetaLenta()), entrante), 2)
+    assert entregada.is_set()
+
+
+def test_un_cuerpo_firmado_pero_ilegible_es_400(cfg):
+    from fastapi.testclient import TestClient
+
+    from channels.whatsapp import servidor
+
+    servidor.app.state.cfg = cfg
+    crudo = b"{no json"
+    firma = "sha256=" + hmac.new(b"secreto", crudo, hashlib.sha256).hexdigest()
+    r = TestClient(servidor.app).post(
+        "/webhook/whatsapp", content=crudo, headers={"x-hub-signature-256": firma}
+    )
+    assert r.status_code == 400

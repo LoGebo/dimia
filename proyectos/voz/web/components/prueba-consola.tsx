@@ -82,7 +82,7 @@ export function ConsolaPrueba({
 
   async function abrirMicrofono(): Promise<MediaStream | null> {
     if (!navigator.mediaDevices?.getUserMedia) {
-      setAvisoMicro("Este navegador no permite usar el micrófono. Prueba en Chrome.");
+      setAvisoMicro("Este navegador no permite usar el micrófono. Pruebe en Chrome.");
       return null;
     }
     try {
@@ -95,7 +95,7 @@ export function ConsolaPrueba({
       });
       const [primera] = flujo.getAudioTracks();
       if (!primera || primera.readyState !== "live") {
-        setAvisoMicro("El micrófono abrió pero no entrega audio. Revisa el de entrada en Ajustes del sistema.");
+        setAvisoMicro("El micrófono abrió pero no entrega audio. Revise el de entrada en Ajustes del sistema.");
         return null;
       }
 
@@ -122,10 +122,10 @@ export function ConsolaPrueba({
       const nombre = falla instanceof DOMException ? falla.name : "";
       setAvisoMicro(
         nombre === "NotAllowedError"
-          ? "El navegador bloqueó el micrófono. Dale permiso en el candado de la barra de direcciones y vuelve a llamar."
+          ? "El navegador bloqueó el micrófono. Dele permiso en el candado de la barra de direcciones y vuelva a llamar."
           : nombre === "NotFoundError"
-            ? "No se encontró micrófono. Revisa el dispositivo de entrada en Ajustes del sistema."
-            : "No se pudo abrir el micrófono. Ciérralo en otras apps (Zoom, Meet) y vuelve a intentar.",
+            ? "No se encontró micrófono. Revise el dispositivo de entrada en Ajustes del sistema."
+            : "No se pudo abrir el micrófono. Ciérrelo en otras apps (Zoom, Meet) y vuelva a intentar.",
       );
       return null;
     }
@@ -268,10 +268,10 @@ export function ConsolaPrueba({
                 </Boton>
                 <div
                   className="flex items-center gap-2"
-                  title={microActivo ? "Nivel de tu micrófono" : "Micrófono silenciado"}
+                  title={microActivo ? "Nivel de su micrófono" : "Micrófono silenciado"}
                 >
                   <span className="text-[11px] uppercase tracking-wide text-neutral-500">
-                    tu voz
+                    su voz
                   </span>
                   <div className="flex h-6 items-end gap-[3px]">
                     {[0.08, 0.2, 0.35, 0.5, 0.68, 0.85].map((umbral) => (
@@ -316,7 +316,7 @@ export function ConsolaPrueba({
           {necesitaDesbloqueo ? (
             <div className="px-4 pb-3">
               <Aviso tono="error">
-                Tu navegador bloqueó la reproducción automática. Toca “Activar audio” para oír al
+                Su navegador bloqueó la reproducción automática. Toque “Activar audio” para oír al
                 agente. Safari lo bloquea siempre la primera vez.
               </Aviso>
             </div>
@@ -335,7 +335,7 @@ export function ConsolaPrueba({
           ) : null}
 
           <p className="border-t border-linea px-4 py-2 text-[11px] text-tinta-3">
-            Contesta el mismo agente que atiende tus llamadas reales, con el menú, los horarios y las
+            Contesta el mismo agente que atiende sus llamadas reales, con el menú, los horarios y las
             respuestas de {nombre}. Cada prueba consume crédito de las APIs de voz y de modelo:
             úsala para demostrar, no para platicar.
           </p>
@@ -464,7 +464,7 @@ function mensajeDeError(datos: { error?: string; faltantes?: string[] }): string
   if (datos.error === "livekit_sin_configurar") {
     return `Faltan variables de entorno: ${(datos.faltantes ?? []).join(", ")}.`;
   }
-  if (datos.error === "sin_acceso") return "Tu cuenta no tiene acceso a este negocio.";
-  if (datos.error === "sin_sesion") return "Se cerró tu sesión. Vuelve a entrar.";
+  if (datos.error === "sin_acceso") return "Su cuenta no tiene acceso a este negocio.";
+  if (datos.error === "sin_sesion") return "Se cerró su sesión. Vuelva a entrar.";
   return "El servidor no pudo emitir el token de la llamada.";
 }

@@ -119,6 +119,8 @@ export type Reserva = {
   service_id: string;
   /** Lo pagado por esta cita, o null si no se ha cobrado. */
   cobrado: string | null;
+  /** Lo que quedó por cobrar («Todavía no paga»), o null. */
+  pendiente: string | null;
 };
 
 /** En qué columna del día va una cita. Se deriva de `estado` y `llegada`. */
@@ -362,8 +364,8 @@ export const NOMBRE_TIPO_CAMPANA: Record<TipoCampana, { nombre: string; detalle:
   inactivos: { nombre: "Traer de vuelta a inactivos", detalle: "Clientes atendidos antes que no han vuelto en N días." },
   recordatorio_pago: { nombre: "Recordar un pago", detalle: "Clientes con un cobro pendiente." },
   resena: { nombre: "Pedir reseña", detalle: "Después de una cita atendida." },
-  marketing: { nombre: "Promoción", detalle: "Un mensaje a una lista que tú eliges." },
-  manual: { nombre: "Lista propia", detalle: "Tú eliges a quién." },
+  marketing: { nombre: "Promoción", detalle: "Un mensaje a una lista que usted elige." },
+  manual: { nombre: "Lista propia", detalle: "Usted elige a quién." },
 };
 
 export const NOMBRE_ESTADO_CONTACTO: Record<EstadoContacto, string> = {
@@ -793,7 +795,16 @@ export type Mensaje = {
   creado: string;
 };
 
-export type PlantillaMensaje = "confirmacion" | "cancelacion" | "recordatorio" | "pedido";
+export type PlantillaMensaje =
+  | "confirmacion"
+  | "cancelacion"
+  | "recordatorio"
+  | "pedido"
+  | "confirmacion_24h"
+  | "pedido_listo"
+  | "resena"
+  | "pago"
+  | "campana";
 export type EstadoEnvio = "pendiente" | "enviado" | "fallido";
 
 export const NOMBRE_PLANTILLA: Record<PlantillaMensaje, string> = {
@@ -801,6 +812,11 @@ export const NOMBRE_PLANTILLA: Record<PlantillaMensaje, string> = {
   confirmacion: "Confirmación de cita",
   recordatorio: "Recordatorio de cita",
   cancelacion: "Cancelación",
+  confirmacion_24h: "Confirmación un día antes",
+  pedido_listo: "Pedido listo",
+  resena: "Pregunta de reseña",
+  pago: "Enlace de pago",
+  campana: "Campaña",
 };
 
 export type MensajeSaliente = {

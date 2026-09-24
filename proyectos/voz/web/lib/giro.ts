@@ -41,8 +41,8 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
 
   return [
     { href: "/hoy", nombre: "Hoy", detalle: "Lo que pasa ahora", pestanas: hoy },
-    { href: "/bandeja", nombre: "Mensajes", detalle: "Lo que te dijeron", pestanas: mensajes },
-    { href: "/agentes", nombre: "Agentes", detalle: "Quién trabaja por ti", pestanas: [{ href: "/agentes", nombre: "Agentes" }] },
+    { href: "/bandeja", nombre: "Mensajes", detalle: "Lo que le dijeron", pestanas: mensajes },
+    { href: "/agentes", nombre: "Agentes", detalle: "Quién trabaja por usted", pestanas: [{ href: "/agentes", nombre: "Agentes" }] },
     { href: "/clientes", nombre: "Clientes", detalle: "Quién es quién", pestanas: clientes },
     { href: dinero[0]!.href, nombre: "Dinero", detalle: "Lo que entra", pestanas: dinero },
     { href: "/agente", nombre: "Ajustes", detalle: "Cómo trabaja el negocio", pestanas: ajustes },

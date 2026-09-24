@@ -22,7 +22,7 @@ final class Sesion {
     }
 
     func cargar() async {
-        cargando = true
+        cargando = true; error = nil
         defer { cargando = false }
         guard API.tokens != nil else { yo = nil; return }
         do {
@@ -33,6 +33,7 @@ final class Sesion {
         } catch API.Fallo.sinSesion {
             yo = nil
         } catch {
+            // Red caída o 5xx (también en el refresh): la sesión sigue; la app ofrece reintentar.
             self.error = error.localizedDescription
         }
     }
@@ -44,6 +45,8 @@ final class Sesion {
     }
 
     func elegir(_ n: Negocio) {
+        // La pestaña activa puede no existir en el otro giro (Pedidos, Recados): se vuelve a Hoy.
+        if n.id != negocio?.id { pestana = "hoy" }
         negocio = n
         UserDefaults.standard.set(n.tenant_id.uuidString, forKey: "negocio")
         Task { await contarAvisos() }
@@ -55,16 +58,18 @@ final class Sesion {
         sinLeer = lista.filter { $0.leido_en == nil }.count
     }
 
-    func salir() {
-        Task { await Notificaciones.olvidar() }
+    /// Primero da de baja el dispositivo (necesita el token); si no, los avisos del negocio siguen llegando.
+    func salir() async {
+        await Notificaciones.olvidar()
         API.tokens = nil
         yo = nil
         negocio = nil
+        pestana = "hoy"
     }
 
     func borrarCuenta() async throws {
         try await API.enviar("DELETE", "/v1/acceso/cuenta")
-        salir()
+        await salir()
     }
 
     /// Prefijo de las rutas del negocio actual.

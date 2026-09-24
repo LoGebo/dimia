@@ -26,7 +26,7 @@ export default async function Conocimiento() {
         descripcion="Lo que el agente puede contestar además de su trabajo principal. Si no está aquí, transfiere."
         giro={giro.nombre}
       />
-      <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[380px_1fr]">
+      <div className="grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[380px_minmax(0,1fr)]">
         <div className="space-y-4">
           <Tarjeta>
             <TarjetaCabecera titulo="Nueva respuesta" />
@@ -36,7 +36,7 @@ export default async function Conocimiento() {
           </Tarjeta>
           {faltantes.length > 0 ? (
             <Tarjeta>
-              <TarjetaCabecera titulo="Te faltan las más pedidas" descripcion="Casi toda llamada trae una de estas." />
+              <TarjetaCabecera titulo="Le faltan las más pedidas" descripcion="Casi toda llamada trae una de estas." />
               <ul className="divide-y divide-linea">
                 {faltantes.map((s) => (
                   <li key={s} className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-tinta-2">
@@ -52,7 +52,7 @@ export default async function Conocimiento() {
         <Tarjeta>
           <TarjetaCabecera
             titulo={`${entradas.length} ${entradas.length === 1 ? "respuesta" : "respuestas"}`}
-            descripcion="Ordenadas por prioridad. Toca una para editarla."
+            descripcion="Ordenadas por prioridad. Toque una para editarla."
           />
           <TablaRespuestas entradas={entradas} />
         </Tarjeta>

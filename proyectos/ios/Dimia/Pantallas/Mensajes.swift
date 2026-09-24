@@ -75,7 +75,8 @@ struct MensajesPantalla: View {
             .task(id: sesion.negocio?.id) { await cargar() }
             .task(id: sesion.conversacionPorAbrir) {
                 guard let id = sesion.conversacionPorAbrir else { return }
-                if lista.isEmpty { await cargar() }
+                // Una conversación nueva no está en la lista que ya se tenía: se recarga.
+                if !lista.contains(where: { $0.id == id }) { await cargar() }
                 if let c = lista.first(where: { $0.id == id }) { ruta = [c] }
                 sesion.conversacionPorAbrir = nil
             }
@@ -174,7 +175,7 @@ struct Burbuja: View {
             VStack(alignment: cliente ? .leading : .trailing, spacing: 3) {
                 Text(m.texto)
                     .font(sistema ? .caption : .body)
-                    .foregroundStyle(sistema ? Color.tinta3 : m.autor == "agente" ? Color.white : Color.tinta)
+                    .foregroundStyle(sistema ? Color.tinta3 : m.autor == "agente" ? Color.sobreAcento : Color.tinta)
                     .padding(.horizontal, sistema ? 0 : 12).padding(.vertical, sistema ? 0 : 8)
                     .background(sistema ? Color.clear : m.autor == "agente" ? Color.acento : m.autor == "equipo" ? Color.bueno.opacity(0.18) : Color.panel2)
                     .clipShape(.rect(cornerRadius: 16))

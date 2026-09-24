@@ -21,6 +21,8 @@ struct Raiz: View {
             }
             Tab("Agentes", systemImage: "person.2", value: "agentes") { AgentesPantalla() }
         }
+        // Al cambiar de negocio las pestañas empiezan de cero: nada de la lista del negocio anterior.
+        .id(sesion.negocio?.id)
         .tabBarMinimizeBehavior(.onScrollDown)
         .task(id: sesion.negocio?.id) {
             await Notificaciones.pedirPermiso()

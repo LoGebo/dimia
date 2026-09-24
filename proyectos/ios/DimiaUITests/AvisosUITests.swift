@@ -5,8 +5,10 @@ final class AvisosUITests: XCTestCase {
     @MainActor
     func testPermisoYCampanita() throws {
         let env = ProcessInfo.processInfo.environment
+        // Sin credenciales no corren: `test` a secas solo corre DimiaTests. Con API=<url> no tocan producción.
+        try XCTSkipIf((env["CORREO"] ?? "").isEmpty, "Se corre a mano con CORREO y CLAVE.")
         let app = XCUIApplication()
-        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? "", "-negocio", env["NEGOCIO"] ?? ""]
+        app.launchArguments = ["-correo", env["CORREO"] ?? "", "-clave", env["CLAVE"] ?? "", "-negocio", env["NEGOCIO"] ?? ""] + (env["API"].map { ["-api", $0] } ?? [])
         app.launch()
         let permitir = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
         if permitir.waitForExistence(timeout: 15) { permitir.tap() }

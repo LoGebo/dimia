@@ -1,11 +1,11 @@
 import "server-only";
 
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { conSesion, type Consulta } from "@/lib/db";
 import { usuarioActual } from "@/lib/auth";
-import { HERRAMIENTAS_POR_DEFECTO, permiteSeccion } from "@/lib/giro";
+import { HERRAMIENTAS_POR_DEFECTO, permiteSeccion, rutasPanel } from "@/lib/giro";
 import type { Herramienta, Membresia } from "@/lib/tipos";
 
 const COOKIE_NEGOCIO = "agenda_negocio";
@@ -78,6 +78,19 @@ export async function exigirSeccion(href: string): Promise<Giro> {
   const { giro } = await contexto();
   if (!permiteSeccion(giro.herramientas, href)) redirect("/hoy");
   return giro;
+}
+
+/**
+ * La misma revisión que exigirSeccion, pero desde el layout del panel con la
+ * ruta que deja el middleware. El layout corre antes de que loading.tsx abra
+ * el streaming, así que el redirect sale como un 307 real. Las páginas siguen
+ * llamando exigirSeccion para la navegación dentro del panel.
+ */
+export async function exigirSeccionDeRuta(): Promise<void> {
+  const ruta = (await headers()).get("x-ruta");
+  if (!ruta) return;
+  const seccion = `/${ruta.split("/")[1] ?? ""}`;
+  if (rutasPanel(["agendar", "pedido", "recado"]).includes(seccion)) await exigirSeccion(seccion);
 }
 
 export async function datos<T>(fn: (q: Consulta, negocioId: string) => Promise<T>): Promise<T> {

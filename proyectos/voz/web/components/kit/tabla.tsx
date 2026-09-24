@@ -37,6 +37,8 @@ function comparar(a: unknown, b: unknown) {
   if (a == null) return 1;
   if (b == null) return -1;
   if (typeof a === "number" && typeof b === "number") return a - b;
+  // Las fechas de pg llegan como Date: String(Date) empieza con el día de la semana y ordenaba por él.
+  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
   return String(a).localeCompare(String(b), "es-MX", { numeric: true, sensitivity: "base" });
 }
 

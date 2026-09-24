@@ -79,7 +79,7 @@ export default async function DetalleCampana({ params }: { params: Promise<{ id:
             <AvanceCampana campana={c} zona={config.zona_horaria} rechazos={rechazos} />
             <ResultadosCampana campana={c} contactos={contactos} zona={config.zona_horaria} />
             <Tarjeta>
-              <TarjetaCabecera titulo="Agregar personas" descripcion="Un segmento completo de tus clientes." />
+              <TarjetaCabecera titulo="Agregar personas" descripcion="Un segmento completo de sus clientes." />
               <Formulario accion={agregarContactosCampana} className="space-y-3 px-4 pb-4">
                 <input type="hidden" name="campana_id" value={c.id} />
                 <div className="flex items-end gap-2">

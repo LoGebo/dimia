@@ -3,6 +3,7 @@
 app            = "dimia-agentes"
 primary_region = "dfw"
 kill_signal    = "SIGTERM"
+kill_timeout   = 30  # los turnos en curso terminan antes de salir (api.vida)
 
 [build]
   dockerfile = "Dockerfile"
@@ -19,6 +20,15 @@ kill_signal    = "SIGTERM"
   auto_stop_machines  = false
   auto_start_machines = true
   min_machines_running = 1
+  # UNA sola instancia, a propósito: turnos, colas, túneles de Mac, OAuth pendiente y los
+  # candados por negocio viven en memoria. No escalar a 2 sin mover ese estado a la base.
+
+  # Turnos SSE, túneles, pantallas y los pasos de Hermes son conexiones largas: con el
+  # default de Fly (soft 20 / hard 25 conexiones) el proxy dejaba de meter tráfico nuevo.
+  [http_service.concurrency]
+    type       = "requests"
+    soft_limit = 200
+    hard_limit = 250
 
   [[http_service.checks]]
     grace_period = "20s"

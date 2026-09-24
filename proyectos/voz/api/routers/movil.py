@@ -269,8 +269,13 @@ async def recados(tenant_id: uuid.UUID, membresia: MiembroDelTenant, pendientes:
     return _filas(Recado, await base.fetch(f"{SELECT_RECADO} and ($2::boolean is false or not atendido) order by atendido, creado desc limit 200", tenant_id, pendientes))
 
 
+class RecadoAtendido(Modelo):
+    atendido: bool
+
+
 @router.post("/recados/{recado_id}/atendido", status_code=204)
-async def alternar_recado(tenant_id: uuid.UUID, recado_id: uuid.UUID, membresia: MiembroDelTenant) -> None:
-    r = await base.execute("update lead set atendido = not atendido where id = $2 and tenant_id = $1", tenant_id, recado_id)
+async def alternar_recado(tenant_id: uuid.UUID, recado_id: uuid.UUID, membresia: MiembroDelTenant, cuerpo: RecadoAtendido | None = None) -> None:
+    # Con cuerpo fija el estado (dos toques no lo regresan); sin cuerpo alterna, como las versiones viejas de la app.
+    r = await base.execute("update lead set atendido = coalesce($3, not atendido) where id = $2 and tenant_id = $1", tenant_id, recado_id, cuerpo.atendido if cuerpo else None)
     if r.endswith(" 0"):
         raise ErrorApi(CodigoError.NO_ENCONTRADO, "recado no encontrado")

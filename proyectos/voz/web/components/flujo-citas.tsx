@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { cancelarReserva, moverCita, type PasoFlujo } from "@/lib/acciones";
+import { BotonPeligro } from "@/components/boton-peligro";
 import { Cobrar } from "@/components/cobrar";
 import { Formulario } from "@/components/formulario";
 import { Reagendar } from "@/components/reagendar";
 import { ChipHerramienta } from "@/components/kit/chips-herramienta";
 import { CabeceraColumna, Estampa } from "@/components/kit/operacion";
-import { hora, moneda, telefono } from "@/lib/formato";
+import { hora, isoDia, moneda, telefono } from "@/lib/formato";
 import { confirmacionDe, pasoDe, type PasoCita, type Reserva } from "@/lib/tipos";
 
 export const MINUTOS_TOLERANCIA = 15;
@@ -204,7 +205,12 @@ function Tarjeta({
 }) {
   const cobrado = r.cobrado;
   const desdeInicio = minutosDesde(r.inicio, ahora);
-  const retraso = paso === "por_llegar" && desdeInicio > 0 ? desdeInicio : 0;
+  // Solo hoy se llega y se va tarde; una cita de otro día se ve con su horario.
+  const diaCita = isoDia(new Date(r.inicio), zona);
+  const hoy = isoDia(new Date(ahora), zona);
+  const esHoy = diaCita === hoy;
+  const sinCerrar = paso === "por_llegar" && diaCita < hoy;
+  const retraso = paso === "por_llegar" && esHoy && desdeInicio > 0 ? desdeInicio : 0;
   const enFalta = retraso > MINUTOS_TOLERANCIA;
   const enSala =
     paso === "en_atencion" && r.llegada ? minutosDesde(r.llegada, ahora) : 0;
@@ -218,7 +224,7 @@ function Tarjeta({
     texto: string;
     tono: "neutro" | "alerta" | "critico" | "bueno";
   };
-  if (paso === "por_llegar") {
+  if (paso === "por_llegar" && esHoy) {
     tiempo =
       desdeInicio < 0
         ? { texto: `en ${minutosLegibles(-desdeInicio)}`, tono: "neutro" }
@@ -283,7 +289,9 @@ function Tarjeta({
               {r.personas > 1 ? ` · ${r.personas} personas` : ""}
             </p>
           </div>
-          {apagada ? (
+          {sinCerrar ? (
+            <Estampa tono="alerta">Ya pasó · sin cerrar</Estampa>
+          ) : apagada ? (
             <Estampa tono={paso === "cancelada" ? "neutro" : "critico"}>
               {paso === "cancelada" ? "Cancelada" : "No llegó"}
             </Estampa>
@@ -332,22 +340,38 @@ function Tarjeta({
       ) : null}
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1 px-2 pb-2">
-        {paso === "por_llegar" ? (
+        {sinCerrar ? (
           <>
-            <Paso id={r.id} paso="llego" principal>
-              Llegó
+            <Paso id={r.id} paso="atendida" principal>
+              Atendida
             </Paso>
-            <Reagendar reserva={r} zona={zona} />
             <Paso id={r.id} paso="no_llego">
               No llegó
             </Paso>
+          </>
+        ) : paso === "por_llegar" ? (
+          <>
+            {esHoy ? (
+              <Paso id={r.id} paso="llego" principal>
+                Llegó
+              </Paso>
+            ) : null}
+            <Reagendar reserva={r} zona={zona} />
+            {desdeInicio >= 0 ? (
+              <Paso id={r.id} paso="no_llego">
+                No llegó
+              </Paso>
+            ) : null}
             <Formulario accion={cancelarReserva} className="ml-auto">
               <input type="hidden" name="id" value={r.id} />
-              <button className="h-7 px-2 text-[12px] text-tinta-3 transition-colors duration-150 hover:text-critico">
-                Cancelar
-              </button>
+              <BotonPeligro etiqueta="Sí, cancelar" pendiente="Cancelando…">Cancelar</BotonPeligro>
             </Formulario>
           </>
+        ) : null}
+        {paso === "no_llego" ? (
+          <Paso id={r.id} paso="reabrir">
+            Deshacer
+          </Paso>
         ) : null}
         {paso === "en_atencion" ? (
           <>
@@ -367,6 +391,13 @@ function Tarjeta({
                   Cobrado
                 </ChipHerramienta>
               </span>
+            ) : r.pendiente ? (
+              // Ya hay un cobro abierto: se cierra en Cobros, no se abre otro.
+              <Link href="/cobros" className="py-0.5">
+                <ChipHerramienta estado="en-curso" dato={moneda(r.pendiente)}>
+                  Pendiente
+                </ChipHerramienta>
+              </Link>
             ) : (
               <Cobrar
                 bookingId={r.id}

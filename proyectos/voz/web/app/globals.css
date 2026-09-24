@@ -83,8 +83,13 @@
   --font-mono: var(--fuente-mono), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-* {
-  border-color: var(--linea);
+/* En la capa base: fuera de capa le ganaba a border-acento, border-critico y al foco. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--linea);
+  }
 }
 
 /* Sin sombras: la profundidad se construye con tono, filete y espacio. */

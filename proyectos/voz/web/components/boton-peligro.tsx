@@ -1,16 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { Enviando } from "@/components/formulario";
 import { Boton } from "@/components/ui/primitivos";
 
 /**
  * Borrar en dos pasos. El primer clic pide confirmación en el mismo lugar,
  * sin diálogo del navegador: nada se borra de un solo clic distraído.
  */
-export function BotonPeligro({ children, etiqueta = "Sí, eliminar" }: { children: React.ReactNode; etiqueta?: string }) {
+export function BotonPeligro({
+  children,
+  etiqueta = "Sí, eliminar",
+  pendiente = "Eliminando…",
+}: {
+  children: React.ReactNode;
+  etiqueta?: string;
+  pendiente?: string;
+}) {
   const [confirmando, setConfirmando] = useState(false);
-  const { pending } = useFormStatus();
+  const nativo = useFormStatus().pending;
+  const pending = useContext(Enviando) || nativo;
 
   useEffect(() => {
     if (!confirmando) return;
@@ -29,7 +39,7 @@ export function BotonPeligro({ children, etiqueta = "Sí, eliminar" }: { childre
   return (
     <span className="flex flex-wrap items-center gap-2">
       <Boton type="submit" variante="peligro" disabled={pending}>
-        {pending ? "Eliminando…" : etiqueta}
+        {pending ? pendiente : etiqueta}
       </Boton>
       <button
         type="button"

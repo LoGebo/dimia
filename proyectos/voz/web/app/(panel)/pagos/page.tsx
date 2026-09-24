@@ -26,7 +26,7 @@ export default async function Pagos() {
     <>
       <Encabezado
         titulo="Pagos"
-        descripcion="Conecta la terminal o la pasarela que ya usas; cada cobro se registra solo y el agente puede mandar enlaces de pago."
+        descripcion="Conecte la terminal o la pasarela que ya usa; cada cobro se registra solo y el agente puede mandar enlaces de pago."
       />
       <div className="grid min-w-0 gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {PROVEEDORES.map((p) => {
