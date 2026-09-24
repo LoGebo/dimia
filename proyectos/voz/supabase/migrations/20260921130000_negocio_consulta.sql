@@ -3,6 +3,8 @@
 -- La vista corre como su dueño (postgres) y filtra por app.tenant; el rol agente_lector
 -- solo puede ver este esquema. Las tablas con llaves (oauth, conexiones, máquinas) no entran.
 create schema if not exists negocio;
+-- La vista de citas usa esta columna; la crea 20260922020000, pero sobre una base limpia hace falta antes.
+alter table public.booking add column if not exists confirmado_por_cliente timestamptz;
 
 create or replace function negocio.tenant_actual() returns uuid language sql stable as
 $$ select nullif(current_setting('app.tenant', true), '')::uuid $$;
