@@ -148,7 +148,10 @@ class Fly:
             await asyncio.sleep(espera)
         r.raise_for_status()
         d = r.json()
-        return int(d.get("exit_code", 0)), d.get("stdout", ""), d.get("stderr", "")
+        codigo, err = int(d.get("exit_code", 0)), d.get("stderr", "")
+        if codigo == 0 and "Rejection(" in err:  # init de Fly rechazó la llamada (p. ej. PayloadTooLarge) pero reporta 0
+            codigo = 1
+        return codigo, d.get("stdout", ""), err
 
     async def borrar(self, referencia, disco):
         """404 cuenta como borrada; cualquier otro error sube: quien llama no da por cerrada una

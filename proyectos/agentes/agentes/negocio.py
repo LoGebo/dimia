@@ -396,6 +396,28 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         await _sincronizar(tenant, m, reiniciar)
 
 
+_TANDA = 96_000  # ponytail: tope por exec; Fly rechaza cuerpos grandes (PayloadTooLarge). Un archivo solo más grande va en su propia tanda.
+
+
+async def _escribir(referencia: str, archivos: dict[str, str], borrar=()) -> tuple[int, str, str]:
+    """Escribe los archivos en tandas que caben en un exec de Fly; se detiene en la primera que falla."""
+    tandas: list[dict[str, str]] = [{}]
+    tam = 0
+    for ruta, contenido in archivos.items():
+        n = len(contenido.encode()) * 4 // 3 + len(ruta) + 200  # base64 + el resto del paso
+        if tandas[-1] and tam + n > _TANDA:
+            tandas.append({})
+            tam = 0
+        tandas[-1][ruta] = contenido
+        tam += n
+    r = (0, "", "")
+    for i, t in enumerate(tandas):
+        r = await proveedor().ejecutar(referencia, hermes.comando_escribir(t, borrar if i == 0 else ()), timeout=60)
+        if r[0] != 0:
+            break
+    return r
+
+
 _al_dia: dict[str, tuple[str, str]] = {}  # tenant -> (máquina, firma de lo último escrito con éxito)
 
 
@@ -489,7 +511,7 @@ async def _sincronizar(tenant: str, m, reiniciar: bool, solo_revisar: bool = Fal
         for nombre in salida_ls.split():
             if re.fullmatch(r"[0-9a-f-]{36}", nombre) and nombre not in vivos:
                 borrar.append(f"{hermes.HOME}/agentes/{nombre}")
-    codigo, salida, err = await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar), timeout=60)
+    codigo, salida, err = await _escribir(m["referencia"], archivos, borrar)
     log.info("sincronizar %s: %d archivos, exit %s, err=%s", tenant, len(archivos), codigo, err[-200:])
     if codigo != 0:
         raise RuntimeError(f"No se pudieron escribir los perfiles: {err[-400:]}")
@@ -1100,7 +1122,7 @@ async def borrar_agente(tenant: str, agente_id: str) -> None:
     if (await prov.obtener(m["referencia"])).encendida:
         quedan = {str(a["id"]): a["pantalla"] for a in await _agentes(tenant) if str(a["id"]) != agente_id and a["pantalla"]}
         archivos = {f"{hermes.HOME}/escritorios.json": hermes.escritorios_json(quedan)}
-        await prov.ejecutar(m["referencia"], hermes.comando_escribir(archivos, borrar=[f"{hermes.HOME}/agentes/{agente_id}"]), timeout=60)
+        await _escribir(m["referencia"], archivos, [f"{hermes.HOME}/agentes/{agente_id}"])
     await db.ejecutar("update maquina_negocio set perfiles = array_remove(perfiles, $2), configs = configs - $2 where tenant_id = $1", tenant, agente_id)
 
 

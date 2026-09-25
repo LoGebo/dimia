@@ -42,4 +42,4 @@ kill_timeout   = 30  # los turnos en curso terminan antes de salir (api.vida)
 
 [[vm]]
   size   = "shared-cpu-1x"
-  memory = "512mb"
+  memory = "1gb"

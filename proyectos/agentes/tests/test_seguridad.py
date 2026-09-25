@@ -431,3 +431,43 @@ def test_nada_de_pantalla_escucha_fuera_de_localhost():
     assert '"-localhost"' in escritorios
     assert 'websockets.serve(espectador, "127.0.0.1"' in (IMAGEN / "hd.py").read_text()
     assert "pantallas.py" in (IMAGEN / "Dockerfile").read_text()
+
+
+def test_escribir_parte_en_tandas_y_falla_si_fly_rechaza():
+    """Un exec grande se rechazaba (PayloadTooLarge) con exit 0 y el token real se quedaba en disco."""
+    import asyncio
+    from agentes import negocio
+
+    llamadas = []
+
+    class Prov:
+        async def ejecutar(self, ref, comando, timeout=60):
+            llamadas.append(len(comando[2]))
+            return (1, "", "falla") if len(llamadas) == 2 else (0, "", "")
+
+    viejo = negocio.proveedor
+    negocio.proveedor = lambda: Prov()
+    try:
+        archivos = {f"/opt/data/agentes/x/f{i}": "a" * 40_000 for i in range(5)}
+        codigo, _, _ = asyncio.run(negocio._escribir("m", archivos))
+    finally:
+        negocio.proveedor = viejo
+    assert codigo == 1 and len(llamadas) == 2  # parte en tandas y se detiene en la que falla
+    assert all(n < 200_000 for n in llamadas)
+
+
+def test_fly_ejecutar_trata_rechazo_como_error():
+    import asyncio
+
+    import httpx
+
+    from agentes.maquinas.fly import Fly
+
+    def responder(req):
+        return httpx.Response(200, json={"exit_code": 0, "stdout": "", "stderr": "Unhandled rejection: Rejection([PayloadTooLarge])"})
+
+    f = Fly.__new__(Fly)
+    f.app = "x"
+    f.http = httpx.AsyncClient(transport=httpx.MockTransport(responder), base_url="https://api")
+    codigo, _, _ = asyncio.run(f.ejecutar("m", ["true"]))
+    assert codigo == 1
