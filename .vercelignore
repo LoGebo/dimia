@@ -6,6 +6,7 @@
 /sitio/web/node_modules
 /sitio/web/.next
 /proyectos/agentes
+/infra
 /proyectos/voz/.venv*
 /proyectos/voz/motor
 /proyectos/voz/web/node_modules
