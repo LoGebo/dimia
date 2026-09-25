@@ -56,10 +56,17 @@ export async function conSesion<T>(userId: string, fn: (q: Consulta) => Promise<
   }
 }
 
-export async function elevado<T>(fn: (q: Consulta) => Promise<T>): Promise<T> {
+/**
+ * Fuera de la sesión del dueño: acceso, alta y webhooks. El panel entra como
+ * app_panel, sin BYPASSRLS: lo que toca un negocio necesita `negocioId`, que
+ * se fija en app.tenant solo para esta transacción. Sin él, la base truena en
+ * cualquier tabla de negocio en vez de mostrar datos de otro.
+ */
+export async function elevado<T>(fn: (q: Consulta) => Promise<T>, negocioId?: string): Promise<T> {
   const cliente = await pool().connect();
   try {
     await cliente.query("begin");
+    if (negocioId) await cliente.query("select set_config('app.tenant', $1, true)", [negocioId]);
     const resultado = await fn(consultar(cliente));
     await cliente.query("commit");
     return resultado;

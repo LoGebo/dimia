@@ -1,0 +1,90 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "NoSalirDeLaOrganizacion",
+      "Effect": "Deny",
+      "Action": "organizations:LeaveOrganization",
+      "Resource": "*"
+    },
+    {
+      "Sid": "NoApagarAuditoria",
+      "Effect": "Deny",
+      "Action": [
+        "cloudtrail:DeleteTrail",
+        "cloudtrail:StopLogging",
+        "guardduty:DeleteDetector",
+        "guardduty:DisassociateFromAdministratorAccount",
+        "guardduty:DisassociateFromMasterAccount",
+        "guardduty:StopMonitoringMembers",
+        "securityhub:DisableSecurityHub",
+        "securityhub:DisassociateFromAdministratorAccount",
+        "securityhub:DisassociateFromMasterAccount",
+        "config:DeleteConfigurationRecorder",
+        "config:DeleteDeliveryChannel",
+        "config:StopConfigurationRecorder",
+        "access-analyzer:DeleteAnalyzer"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_emergencia_*"
+        }
+      }
+    },
+    {
+      "Sid": "SinUsuariosNiLlavesDeIAM",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreateUser",
+        "iam:CreateAccessKey",
+        "iam:CreateLoginProfile"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_emergencia_*"
+        }
+      }
+    },
+    {
+      "Sid": "LlavesYRespaldosIntocables",
+      "Effect": "Deny",
+      "Action": [
+        "kms:ScheduleKeyDeletion",
+        "kms:DisableKey",
+        "backup:Delete*",
+        "backup:PutBackupVaultAccessPolicy"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_emergencia_*"
+        }
+      }
+    },
+    {
+      "Sid": "SinCompromisos",
+      "Effect": "Deny",
+      "Action": [
+        "savingsplans:Create*",
+        "ec2:Purchase*",
+        "rds:Purchase*",
+        "elasticache:Purchase*",
+        "redshift:Purchase*",
+        "es:Purchase*",
+        "shield:CreateSubscription",
+        "route53domains:RegisterDomain",
+        "route53domains:TransferDomain",
+        "aws-marketplace:Subscribe",
+        "servicequotas:RequestServiceQuotaIncrease"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_emergencia_*"
+        }
+      }
+    }
+  ]
+}

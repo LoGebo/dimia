@@ -10,7 +10,7 @@ import httpx
 import jwt
 
 from api.config import api_settings
-from api.db import base
+from api.db import base, en_negocio
 
 log = logging.getLogger("apns")
 SERVIDOR = {"produccion": "https://api.push.apple.com", "sandbox": "https://api.sandbox.push.apple.com"}
@@ -35,6 +35,17 @@ def carga(a: dict) -> dict:
 
 
 async def _vuelta(cliente: httpx.AsyncClient, solo_tenant=None) -> int:
+    """Negocio por negocio: la API no ve avisos ajenos, solo pregunta cuáles tienen pendientes."""
+    if solo_tenant is None:
+        enviados = 0
+        for fila in await base.fetch("select avisos_por_empujar() as tenant_id"):
+            enviados += await _vuelta(cliente, fila["tenant_id"])
+        return enviados
+    with en_negocio(solo_tenant):
+        return await _vuelta_del_negocio(cliente, solo_tenant)
+
+
+async def _vuelta_del_negocio(cliente: httpx.AsyncClient, solo_tenant) -> int:
     a = api_settings()
     async with base.transaccion() as c:
         avisos = await c.fetch(

@@ -14,4 +14,13 @@ def proveedor() -> Maquinas:
     raise RuntimeError(f"Proveedor de máquinas desconocido: {config.PROVEEDOR_MAQUINAS}")
 
 
-__all__ = ["Maquina", "Maquinas", "proveedor"]
+@functools.cache
+def tareas() -> Maquinas:
+    """Máquinas de tarea (capa 2). Mismo proveedor, otra app: su red privada no llega a las casas."""
+    if config.PROVEEDOR_MAQUINAS == "fly":
+        from agentes.maquinas.fly import Fly
+        return Fly(app=config.FLY_APP_TAREAS)
+    raise RuntimeError(f"Proveedor de máquinas desconocido: {config.PROVEEDOR_MAQUINAS}")
+
+
+__all__ = ["Maquina", "Maquinas", "proveedor", "tareas"]

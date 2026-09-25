@@ -29,51 +29,47 @@ export async function POST(req: Request, { params }: { params: Promise<{ proveed
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
+  // El negocio se resuelve antes de escribir: el panel entra sin BYPASSRLS y
+  // solo escribe con app.tenant fijado. Stripe no manda `t`: se ata por el pago.
+  let tenantId = tenantParam;
+  if (!tenantId) {
+    const pagoId = pagoIdCrudo(cuerpo);
+    if (pagoId) {
+      tenantId = (await elevado((q) => q<{ t: string | null }>("select pago_negocio($1) as t", [pagoId])))[0]?.t ?? null;
+    }
+  }
+  // Sin negocio no hay a quién atribuirlo ni con qué credenciales verificarlo.
+  // Antes quedaba un renglón huérfano; ahora solo el registro del servidor.
+  if (!tenantId) {
+    console.warn(`aviso de ${proveedor} sin negocio resoluble; se ignora`);
+    return NextResponse.json({ ok: true });
+  }
+  const negocio = tenantId;
+
   const eventoId = await elevado(async (q) => {
     const r = await q<{ id: string }>(
       `insert into pago_evento (proveedor, tenant_id, tipo, cuerpo)
        values ($1, $2, $3, $4::jsonb) returning id`,
-      [proveedor, tenantParam, tipoDe(cuerpo, url), JSON.stringify(cuerpo)],
+      [proveedor, negocio, tipoDe(cuerpo, url), JSON.stringify(cuerpo)],
     );
     return r[0]!.id;
-  });
+  }, negocio);
 
   try {
     await elevado(async (q) => {
-      let tenantId = tenantParam;
-      let integracion: { credenciales: Credenciales } | undefined;
-      if (tenantId) {
-        integracion = (
-          await q<{ credenciales: Credenciales }>(
-            `select credenciales from integracion where tenant_id = $1 and proveedor = $2 and activo`,
-            [tenantId, proveedor],
-          )
-        )[0];
-      }
-      // Sin negocio en la URL (Stripe manda a un solo endpoint por cuenta): se busca por el pago referido.
-      if (!integracion) {
-        const pagoId = pagoIdCrudo(cuerpo);
-        if (pagoId) {
-          const fila = (
-            await q<{ tenant_id: string; credenciales: Credenciales }>(
-              `select p.tenant_id, i.credenciales from pago p join integracion i on i.tenant_id = p.tenant_id and i.proveedor = $2 and i.activo
-                where p.id = $1`,
-              [pagoId, proveedor],
-            )
-          )[0];
-          if (fila) {
-            tenantId = fila.tenant_id;
-            integracion = fila;
-          }
-        }
-      }
-      if (!tenantId || !integracion) throw new Error("negocio sin integración activa");
+      const integracion = (
+        await q<{ credenciales: Credenciales }>(
+          `select credenciales from integracion where tenant_id = $1 and proveedor = $2 and activo`,
+          [negocio, proveedor],
+        )
+      )[0];
+      if (!integracion) throw new Error("negocio sin integración activa");
 
       const p = pasarela(proveedor);
       if (!p.verificarWebhook(integracion.credenciales, crudo, req.headers, url)) throw new Error("firma inválida");
       const lectura = await p.interpretarWebhook(integracion.credenciales, cuerpo, req.headers, url);
       if (!lectura) {
-        await q(`update pago_evento set procesado = true, tenant_id = $2 where id = $1`, [eventoId, tenantId]);
+        await q(`update pago_evento set procesado = true where id = $1`, [eventoId]);
         return;
       }
 
@@ -88,14 +84,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ proveed
             where tenant_id = $1
               and estado = 'pendiente'
               and (id = $2::uuid or referencia_externa = $4 or datos->>'intento' = $4)`,
-          [tenantId, lectura.pagoId, nuevo, lectura.referencia, eventoId, lectura.monto ?? null],
+          [negocio, lectura.pagoId, nuevo, lectura.referencia, eventoId, lectura.monto ?? null],
         );
       }
-      await q(`update pago_evento set procesado = true, tenant_id = $2, referencia = $3 where id = $1`, [eventoId, tenantId, lectura.referencia]);
-    });
+      await q(`update pago_evento set procesado = true, referencia = $2 where id = $1`, [eventoId, lectura.referencia]);
+    }, negocio);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await elevado((q) => q(`update pago_evento set error = $2 where id = $1`, [eventoId, msg.slice(0, 500)]));
+    await elevado((q) => q(`update pago_evento set error = $2 where id = $1`, [eventoId, msg.slice(0, 500)]), negocio);
   }
 
   return NextResponse.json({ ok: true });

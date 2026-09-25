@@ -33,6 +33,9 @@ class ApiSettings(BaseSettings):
     apns_equipo: str = "4W65YUHMHD"
     apns_tema: str = "mx.dimia.app"
 
+    # Token del vigilante externo para GET /salud/operacion. Vacío = la ruta no existe.
+    salud_token: str = ""
+
     api_titulo: str = "Panel de administracion"
     api_version: str = "1.0.0"
     cors_origenes: tuple[str, ...] = ()

@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, status
 
 from api.auth import MiembroDelTenant, OwnerDelTenant, UsuarioActual
-from api.db import base
+from api.db import base, fijar_negocio
 from api.errores import CodigoError, ErrorApi
 from api.esquemas import Pagina, Tenant, TenantActualizar, TenantCrear, VerticalPlantilla
 from api.repositorio import PaginacionQuery, contar, ejecutar, ejecutar_muchos, sentencia_update
@@ -49,15 +49,19 @@ async def listar_verticales(identidad: UsuarioActual) -> list[VerticalPlantilla]
 @router.post("", response_model=Tenant, status_code=status.HTTP_201_CREATED)
 async def crear_tenant(cuerpo: TenantCrear, identidad: UsuarioActual) -> Tenant:
     """Da de alta un negocio y deja a quien lo crea como owner."""
+    # El id nace aqui para fijarlo antes de insertar: la base solo deja
+    # escribir en el negocio fijado.
+    tenant_id = uuid.uuid4()
+    fijar_negocio(tenant_id)
     async with base.transaccion() as conexion:
         await conexion.execute(
             "insert into auth.users (id) values ($1) on conflict do nothing", identidad.user_id
         )
         fila = await conexion.fetchrow(
-            f"""insert into tenant (nombre, vertical, zona_horaria, telefono_entrada,
+            f"""insert into tenant (id, nombre, vertical, zona_horaria, telefono_entrada,
                                     telefono_escalamiento, voz_id, slot_granularidad_min,
                                     anticipacion_min, horizonte_dias)
-                values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                values ($10,$1,$2,$3,$4,$5,$6,$7,$8,$9)
                 returning {columnas()}""",
             cuerpo.nombre,
             cuerpo.vertical,
@@ -68,6 +72,7 @@ async def crear_tenant(cuerpo: TenantCrear, identidad: UsuarioActual) -> Tenant:
             cuerpo.slot_granularidad_min,
             cuerpo.anticipacion_min,
             cuerpo.horizonte_dias,
+            tenant_id,
         )
         await conexion.execute(
             "insert into tenant_member (tenant_id, user_id, rol) values ($1,$2,'owner')",

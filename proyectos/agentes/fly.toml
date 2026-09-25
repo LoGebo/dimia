@@ -4,6 +4,9 @@ app            = "dimia-agentes"
 primary_region = "dfw"
 kill_signal    = "SIGTERM"
 kill_timeout   = 30  # los turnos en curso terminan antes de salir (api.vida)
+# Runbook: un deploy de este orquestador CORTA los turnos que pasen de 25 s. Por aquí pasan los
+# streams de Codex de todas las máquinas (/proxy, por la 6PN en dimia-agentes.internal:8080); vida()
+# espera turnos y streams abiertos hasta 25 s y luego sale. Desplegar en horas de poco uso.
 
 [build]
   dockerfile = "Dockerfile"

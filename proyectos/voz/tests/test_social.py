@@ -359,7 +359,7 @@ async def test_los_horarios_van_como_botones_y_el_toque_reserva(tenant, cfg):
     assert (destino, texto) == (CLIENTE, "Tengo estos horarios el martes 22:")
     assert [b.titulo for b in botones] == ["9:00 am", "10:00 am", "11:00 am"]
 
-    sesion = registro.obtener(tenant.id, CLIENTE)
+    sesion = registro.obtener(tenant.id, CLIENTE, canal="instagram")
     segunda = botones[1].id
     assert segunda in sesion.opciones
     llm.guion[0].content[0]["input"]["opcion_id"] = segunda
@@ -386,7 +386,7 @@ async def test_la_bienvenida_fija_queda_en_el_historial_del_modelo(tenant, cfg):
 
     await agente.atender(parse_webhook(_webhook("instagram", CUENTA_IG, "hola"))[0])
 
-    sesion = registro.obtener(tenant.id, CLIENTE)
+    sesion = registro.obtener(tenant.id, CLIENTE, canal="instagram")
     assert [m["role"] for m in sesion.mensajes] == ["user", "assistant"]
     assert sesion.mensajes[1]["content"][0]["text"].startswith("¿Buscas conocer")
 

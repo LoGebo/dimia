@@ -18,11 +18,19 @@ UID = "10000"  # usuario `hermes` dentro de la imagen oficial
 TOOLSETS = ["memory", "skills", "todo", "web", "browser", "vision", "terminal", "file", "code_execution", "computer_use", "cronjob"]
 
 
+PUERTO_PANTALLAS = 8600  # imagen/pantallas.py: la única puerta a las pantallas desde fuera de la máquina
+
+
 def puerto(pantalla: int) -> int:
     return 8700 + pantalla
 
 
-def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None, local: bool = False) -> str:
+def proxy(tenant: str, llave_maquina: str) -> dict:
+    """Cómo llega la máquina a las credenciales que no guarda: el proxy del orquestador, con su llave de máquina."""
+    return {"url": f"{config.PROXY_URL}/proxy/{tenant}", "llave": llave_maquina}
+
+
+def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None, local: bool = False, proxy: dict | None = None) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
     rutas = {n: {"model": m, "provider": "openai-codex"} for n, m in config.MODELOS_CODEX.items()}
     if cerebro == "claude":  # Claude Max por el OAuth de Claude Code (archivo .anthropic_oauth.json del perfil)
@@ -59,15 +67,17 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
         c["mcp_servers"] = mcp or {}
         return yaml.safe_dump(c, allow_unicode=True, sort_keys=False)
     # Navegador rápido con Jev: siempre presente; lo paga Dimia (centavos por tarea).
-    c["mcp_servers"] = {**mcp_navegador_rapido(pantalla), **(mcp or {})}
+    c["mcp_servers"] = {**mcp_navegador_rapido(pantalla, proxy), **(mcp or {})}
     # El Chromium de su pantalla (escritorios.py lo levanta con CDP en 9200+n).
     # backend off = las herramientas browser_* de siempre (no la CLI de Browser Use), sobre nuestro CDP.
     c["browser"] = {"backend": "off", "cdp_url": f"http://127.0.0.1:{9200 + pantalla}", "inactivity_timeout": 600}
     return yaml.safe_dump(c, allow_unicode=True, sort_keys=False)
 
 
-def env(llave: str, pantalla: int, ajustes: dict | None = None) -> str:
+def env(llave: str, pantalla: int, ajustes: dict | None = None, proxy: dict | None = None) -> str:
     base = f"API_SERVER_ENABLED=true\nAPI_SERVER_HOST=::\nAPI_SERVER_PORT={puerto(pantalla)}\nAPI_SERVER_KEY={llave}\n"
+    if proxy:  # Codex por el proxy: el token real del cliente nunca entra a la máquina
+        base += f"HERMES_CODEX_BASE_URL={proxy['url']}/codex\n"
     wa = (ajustes or {}).get("whatsapp") or {}
     if wa.get("activo"):
         base += f"WHATSAPP_ENABLED=true\nWHATSAPP_MODE={'bot' if wa.get('modo') == 'bot' else 'self-chat'}\n"
@@ -117,9 +127,9 @@ def soul_recepcion(negocio: str, reglas: str | None, personalidad: str | None = 
     return "\n".join(partes) + "\n"
 
 
-def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None, ajustes: dict | None = None) -> dict[str, str]:
+def archivos_perfil(agente_id: str, llave: str, soul_md: str, auth_json: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", claude_json: str | None = None, ajustes: dict | None = None, proxy: dict | None = None) -> dict[str, str]:
     p = f"{HOME}/agentes/{agente_id}"
-    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro, ajustes=ajustes), f"{p}/.env": env(llave, pantalla, ajustes), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
+    a = {f"{p}/config.yaml": config_yaml(llave, pantalla, mcp=mcp, cerebro=cerebro, ajustes=ajustes, proxy=proxy), f"{p}/.env": env(llave, pantalla, ajustes, proxy), f"{p}/SOUL.md": soul_md, f"{p}/auth.json": auth_json}
     if claude_json:
         a[f"{p}/.anthropic_oauth.json"] = claude_json
     return a
@@ -129,15 +139,18 @@ def escritorios_json(mapa: dict[str, int]) -> str:
     return json.dumps(mapa)
 
 
-def mcp_navegador_rapido(pantalla: int) -> dict:
-    llave_jev = config.VERCEL_AI_GATEWAY_KEY or config.TYPESAFE_API_KEY
-    if not llave_jev:
+def mcp_navegador_rapido(pantalla: int, proxy: dict | None) -> dict:
+    """Jev y el modelo chico van por el proxy del orquestador: en la máquina solo queda su llave
+    de máquina, nunca la llave de plataforma (la misma para todos los negocios). Sin proxy, sin
+    navegador rápido."""
+    if not proxy or not (config.VERCEL_AI_GATEWAY_KEY or config.TYPESAFE_API_KEY):
         return {}
+    puerta = f"{proxy['url']}/puerta"
     env = {
         "BU_CDP_URL": f"http://127.0.0.1:{9200 + pantalla}", "DISPLAY": f":{pantalla}",
-        "TYPESAFE_API_KEY": config.TYPESAFE_API_KEY or "x", "VERCEL_AI_GATEWAY_KEY": config.VERCEL_AI_GATEWAY_KEY,
-        # El modelo chico que escribe texto en formularios, por la misma puerta de Vercel.
-        "TEXT_MODEL_API_KEY": config.VERCEL_AI_GATEWAY_KEY or config.TYPESAFE_API_KEY, "TEXT_MODEL_BASE_URL": "https://ai-gateway.vercel.sh/v1",
+        "TYPESAFE_API_KEY": proxy["llave"], "VERCEL_AI_GATEWAY_KEY": proxy["llave"], "DIMIA_PUERTA_URL": puerta,
+        # El modelo chico que escribe texto en formularios, por la misma puerta.
+        "TEXT_MODEL_API_KEY": proxy["llave"], "TEXT_MODEL_BASE_URL": puerta,
         "TEXT_MODEL": config.MODELO_TEXTO_CHICO, "TEXT_MODEL_REASONING": "none",
     }
     return {"navegador_rapido": {"command": "/opt/jev/bin/python", "args": ["/opt/dimia/navegar_rapido.py"], "env": env}}
@@ -178,13 +191,19 @@ def mcp_whatsapp(token: str) -> dict:
     return {"whatsapp": {"url": f"{config.PUBLICO_URL}/mcp-whatsapp/", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
+def mcp_tareas(token: str) -> dict:
+    """Máquinas de tarea (capa 2). Sin trust untrusted: la máquina es desechable y sin credenciales,
+    y pedir aprobación en cada comando haría inútil la herramienta."""
+    return {"tareas": {"url": f"{config.PUBLICO_URL}/mcp-tareas/", "headers": {"Authorization": f"Bearer {token}"}}}
+
+
 def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[str]:
     """Un solo `sh -c` que deja los archivos en su lugar con el dueño correcto.
     ponytail: base64 en la línea de comando; suficiente para archivos de KB."""
     pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/agentes/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
-        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials", "dimia.json")) else "644"  # config lleva llaves de MCP
+        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials", "dimia.json", "llave_maquina")) else "644"  # config lleva llaves de MCP
         pasos.append(f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && printf %s {b64} | base64 -d > {shlex.quote(ruta)}.tmp && chmod {modo} {shlex.quote(ruta)}.tmp && mv {shlex.quote(ruta)}.tmp {shlex.quote(ruta)}")
     pasos.append(f"chown -R {UID}:{UID} {HOME}")
     return ["sh", "-c", " && ".join(pasos)]

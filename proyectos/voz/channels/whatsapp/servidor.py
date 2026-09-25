@@ -67,19 +67,26 @@ async def procesar(app: FastAPI, entrante: MensajeEntrante) -> None:
         log.exception("fallo atendiendo %s", entrante.telefono)
         salidas = []
 
+    respondido = False
     for salida in salidas:
         try:
             await app.state.cliente.entregar(salida)
+            respondido = True
         except Exception:
             log.exception("fallo enviando a %s; pasa a la cola", salida.destino)
-            await _a_la_cola(app, entrante, salida)
+            respondido = await _a_la_cola(app, entrante, salida) or respondido
+    if respondido and entrante.mensaje_id:
+        try:
+            await app.state.agente.agenda.mensaje_respondido("whatsapp", entrante.mensaje_id)
+        except Exception:
+            log.exception("no se pudo marcar respondido %s", entrante.mensaje_id)
     try:
         await leido
     except Exception:
         log.warning("no se pudo marcar leido %s", entrante.mensaje_id)
 
 
-async def _a_la_cola(app: FastAPI, entrante: MensajeEntrante, salida: Salida) -> None:
+async def _a_la_cola(app: FastAPI, entrante: MensajeEntrante, salida: Salida) -> bool:
     """La respuesta que Meta no acepto no se pierde: la cola la reintenta con backoff.
     La lista tocable va como texto; la hora escrita se casa igual con la opcion."""
     if isinstance(salida, SalidaLista):
@@ -89,8 +96,10 @@ async def _a_la_cola(app: FastAPI, entrante: MensajeEntrante, salida: Salida) ->
     try:
         contexto = await app.state.agente._contexto(entrante.numero_negocio)
         await app.state.agente.agenda.outbox_respuesta(contexto.tenant.id, "whatsapp", salida.destino, texto)
+        return True
     except Exception:
         log.exception("tampoco se pudo encolar la respuesta a %s", salida.destino)
+        return False
 
 
 @app.get("/webhook/whatsapp")
@@ -151,4 +160,15 @@ async def registrar_entrega(app: FastAPI, estado: EstadoEntrega) -> None:
 
 @app.get("/salud")
 async def salud() -> dict[str, str]:
+    # Solo vida del proceso: es el check de Fly. Si dependiera de la base, un
+    # parpadeo del pooler sacaria a todas las maquinas del proxy a la vez, y la
+    # platica sigue en memoria aunque la base no conteste.
+    return {"estado": "ok"}
+
+
+@app.get("/salud/base", response_model=None)
+async def salud_base() -> Response | dict[str, str]:
+    """Para el vigilante y las alertas, no para el proxy de Fly."""
+    if not await agenda.base_viva(2.0):
+        return Response(status_code=503, content="base sin respuesta")
     return {"estado": "ok"}

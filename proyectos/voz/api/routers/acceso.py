@@ -106,14 +106,19 @@ async def borrar_cuenta(identidad: UsuarioActual) -> None:
     """Regla 5.1.1(v) de App Store: la cuenta se borra desde la app. Se va el usuario y sus
     membresías; el negocio se queda si tiene otro dueño, y si no, se desactiva."""
     async with base.transaccion() as c:
-        solos = await c.fetch(
-            """select m.tenant_id from tenant_member m
-                where m.user_id = $1 and m.rol = 'owner'
-                  and not exists (select 1 from tenant_member o where o.tenant_id = m.tenant_id and o.user_id <> $1 and o.rol = 'owner')""",
-            identidad.user_id,
+        propios = await c.fetch(
+            "select tenant_id from tenant_member where user_id = $1 and rol = 'owner'", identidad.user_id
         )
-        for f in solos:
-            await c.execute("update tenant set activo = false where id = $1", f["tenant_id"])
+        for f in propios:
+            # Los otros dueños solo se ven desde el negocio: se fija un momento.
+            await c.execute("select set_config('app.tenant', $1, true)", str(f["tenant_id"]))
+            otro_dueno = await c.fetchval(
+                "select exists (select 1 from tenant_member where tenant_id = $1 and user_id <> $2 and rol = 'owner')",
+                f["tenant_id"], identidad.user_id,
+            )
+            if not otro_dueno:
+                await c.execute("update tenant set activo = false where id = $1", f["tenant_id"])
+        await c.execute("select set_config('app.tenant', '', true)")
         await c.execute("delete from tenant_member where user_id = $1", identidad.user_id)
         await c.execute("delete from usuario_panel where id = $1", identidad.user_id)
         await c.execute("delete from auth.users where id = $1", identidad.user_id)

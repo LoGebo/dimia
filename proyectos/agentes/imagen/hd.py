@@ -106,7 +106,8 @@ async def espectador(ws):
 
 
 async def main():
-    async with websockets.serve(espectador, "::", PUERTO, max_size=None, ping_interval=20):
+    # Solo localhost: desde fuera se entra por la compuerta (pantallas.py) con pase firmado.
+    async with websockets.serve(espectador, "127.0.0.1", PUERTO, max_size=None, ping_interval=20):
         print(f"hd {DISPLAY} en {PUERTO} ({ANCHO}x{ALTO} @ {FPS} fps)", flush=True)
         await asyncio.Future()
 

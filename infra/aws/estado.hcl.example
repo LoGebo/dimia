@@ -1,0 +1,7 @@
+# Copie a estado.hcl con las salidas de bootstrap. No lleva secretos, pero sí IDs de cuenta.
+# Uso: tofu init -backend-config=../../estado.hcl (la ruta depende de la profundidad de la pila).
+bucket       = "dimia-tofu-estado-<id de compartido>"
+region       = "us-east-2"
+encrypt      = true
+kms_key_id   = "arn:aws:kms:us-east-2:<id de compartido>:key/mrk-<id>"
+use_lockfile = true

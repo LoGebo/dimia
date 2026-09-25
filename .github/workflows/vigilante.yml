@@ -1,0 +1,59 @@
+name: Vigilante
+
+# Self-healing nivel 0 (planeacion/aws-arquitectura-meta.md §3.10): detectar desde
+# fuera de Fly, Vercel y Supabase. Solo lee; nunca reinicia, despliega ni hace merge.
+# Dos sondeos fallidos seguidos abren o actualizan un issue `incidente`; al
+# recuperarse lo cierra. La lógica vive en infra/vigilante/vigilar.py.
+#
+# Secretos (Settings → Secrets → Actions):
+#   SALUD_TOKEN            obligatorio: el mismo que `fly secrets set SALUD_TOKEN` en dimia-api
+#   WHATSAPP_VERIFY_TOKEN  obligatorio: el verify token del webhook de Meta
+#   VIGILANTE_LATIDO_URL   obligatorio: latido hacia un «dead man's switch» externo
+#                          (healthchecks.io o PagerDuty). GitHub apaga los cron de un repo
+#                          sin actividad en 60 días y salta corridas con carga: sin él, el
+#                          vigilante muere en silencio. Si falta, abre la huella `vigilante`.
+#   PAGERDUTY_ROUTING_KEY  opcional: dispara y resuelve en PagerDuty (Events API v2)
+# Repo público: issues y logs los ve cualquiera. El vigilante solo publica el código
+# HTTP y el nombre de la señal, nunca cuerpos ni cifras (deploy/runbook.md).
+# Variables (opcionales) para cambiar las URL: VIGILANTE_API_URL, VIGILANTE_AGENTES_URL,
+# VIGILANTE_WEBHOOKS_URL, VIGILANTE_PANEL_URL.
+# Aviso por correo: GitHub notifica el issue nuevo; la corrida sale en rojo solo cuando abre uno.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: vigilante
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  vigilar:
+    name: Sondear la operación
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: infra/vigilante
+          sparse-checkout-cone-mode: false
+
+      - name: Sondear y reconciliar incidentes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VIGILANTE_CORRIDA: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          VIGILANTE_API_URL: ${{ vars.VIGILANTE_API_URL || 'https://dimia-api.fly.dev' }}
+          VIGILANTE_AGENTES_URL: ${{ vars.VIGILANTE_AGENTES_URL || 'https://dimia-agentes.fly.dev' }}
+          VIGILANTE_WEBHOOKS_URL: ${{ vars.VIGILANTE_WEBHOOKS_URL || 'https://agente-webhooks.fly.dev' }}
+          VIGILANTE_PANEL_URL: ${{ vars.VIGILANTE_PANEL_URL || 'https://app.dimia.mx' }}
+          SALUD_TOKEN: ${{ secrets.SALUD_TOKEN }}
+          WHATSAPP_VERIFY_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN }}
+          PAGERDUTY_ROUTING_KEY: ${{ secrets.PAGERDUTY_ROUTING_KEY }}
+          VIGILANTE_LATIDO_URL: ${{ secrets.VIGILANTE_LATIDO_URL }}
+        run: python3 infra/vigilante/vigilar.py

@@ -10,7 +10,7 @@ from fastapi import Depends, Path
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from api.config import api_settings
-from api.db import base
+from api.db import base, fijar_negocio, fijar_usuario
 from api.errores import CodigoError, ErrorApi
 
 Rol = Literal["owner", "staff"]
@@ -99,6 +99,7 @@ async def usuario_actual(
     except (KeyError, ValueError) as exc:
         raise ErrorApi(CodigoError.TOKEN_INVALIDO, "el token no trae un sub valido") from exc
 
+    fijar_usuario(user_id)
     return Identidad(user_id=user_id, email=claims.get("email"), claims=claims)
 
 
@@ -109,6 +110,8 @@ async def membresia_actual(
     tenant_id: Annotated[uuid.UUID, Path()],
     identidad: UsuarioActual,
 ) -> Membresia:
+    # Se fija antes de preguntar: la membresia misma se lee ya aislada.
+    fijar_negocio(tenant_id)
     fila = await base.fetchrow(
         "select rol from tenant_member where tenant_id = $1 and user_id = $2",
         tenant_id,

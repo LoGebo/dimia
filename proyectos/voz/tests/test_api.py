@@ -148,6 +148,21 @@ async def test_salud_responde(cliente):
 
 
 @pytest.mark.asyncio
+async def test_salud_no_se_cuelga_con_la_base_en_un_agujero_negro(cliente, monkeypatch):
+    """El check de Fly vencía antes que el select: sin respuesta ni causa."""
+    import asyncio
+
+    async def colgado(*a, **k):
+        await asyncio.sleep(10)
+
+    monkeypatch.setattr(base, "fetchval", colgado)
+    inicio = asyncio.get_running_loop().time()
+    respuesta = await cliente.get("/salud")
+    assert respuesta.status_code == 503
+    assert asyncio.get_running_loop().time() - inicio < 5
+
+
+@pytest.mark.asyncio
 async def test_sin_token_es_401(cliente):
     respuesta = await cliente.get("/v1/tenants")
     assert respuesta.status_code == 401

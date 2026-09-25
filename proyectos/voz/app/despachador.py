@@ -41,7 +41,7 @@ from zoneinfo import ZoneInfo
 
 from app.cierre import ModeloNoContesto, resumir
 from app.salientes import SinTroncal, marcar
-from app.supabase_client import Agenda
+from app.supabase_client import Agenda, en_negocio
 
 log = logging.getLogger("despachador")
 
@@ -457,20 +457,22 @@ class Despachador:
             return 0
         cerradas = 0
         for fila in await self.agenda.conversaciones_por_resumir(CONVERSACION_FRIA_MIN):
-            turnos = await self.agenda.turnos_de_conversacion(fila["id"])
-            try:
-                cierre = await resumir(self.llm, turnos)
-            except ModeloNoContesto as error:
-                log.warning("cierre de %s pospuesto: %s", fila["id"], error)
-                continue
-            if cierre is None:
-                cierre_vacio = ("sin motivo claro", "sin_resultado", "")
-                await self.agenda.conversacion_cerrar(fila["tenant_id"], fila["id"], *cierre_vacio)
-                continue
-            await self.agenda.conversacion_cerrar(
-                fila["tenant_id"], fila["id"], cierre.motivo, cierre.resultado, cierre.resumen
-            )
-            cerradas += 1
+            # La lista cruza negocios; leer los turnos y cerrar es de uno solo.
+            with en_negocio(fila["tenant_id"]):
+                turnos = await self.agenda.turnos_de_conversacion(fila["id"])
+                try:
+                    cierre = await resumir(self.llm, turnos)
+                except ModeloNoContesto as error:
+                    log.warning("cierre de %s pospuesto: %s", fila["id"], error)
+                    continue
+                if cierre is None:
+                    cierre_vacio = ("sin motivo claro", "sin_resultado", "")
+                    await self.agenda.conversacion_cerrar(fila["tenant_id"], fila["id"], *cierre_vacio)
+                    continue
+                await self.agenda.conversacion_cerrar(
+                    fila["tenant_id"], fila["id"], cierre.motivo, cierre.resultado, cierre.resumen
+                )
+                cerradas += 1
         return cerradas
 
     async def _cierres_con_tope(self) -> None:
@@ -527,6 +529,9 @@ class Despachador:
                     self._cierres = asyncio.create_task(self._cierres_con_tope())
 
                 resultado = await self.tanda()
+                # Solo tras una vuelta completa: si la tanda truena cada vez, el
+                # latido envejece y el vigilante externo lo ve (salud_operacion).
+                await self.agenda.latido("despachador")
                 if resultado.reclamados:
                     log.info(
                         "cola: %d reclamados, %d enviados, %d fallidos, %d vencidos, %d marcando",
@@ -552,7 +557,7 @@ async def _principal() -> None:
     from app.llm_texto import cliente_texto
     from channels.social.cliente import ClienteSocial
 
-    await agenda.conectar()
+    await agenda.conectar(settings().pg_dsn_despachador or None)
     cliente = WhatsAppCliente()
     social = ClienteSocial()
     llm = cliente_texto(settings())

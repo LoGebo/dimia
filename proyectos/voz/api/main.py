@@ -24,6 +24,7 @@ from api.routers import (
     metricas,
     movil,
     negocios,
+    operacion,
     recados,
     recursos,
     reservas,
@@ -115,10 +116,17 @@ def crear_app() -> FastAPI:
         app.include_router(modulo.router)
     app.include_router(negocios.verticales_router)
     app.include_router(agentes.negocio_router)
+    app.include_router(operacion.router)
 
-    @app.get("/salud", tags=["salud"])
-    async def salud() -> dict[str, str]:
-        await base.fetchval("select 1")
+    @app.get("/salud", tags=["salud"], response_model=None)
+    async def salud() -> JSONResponse | dict[str, str]:
+        # Tope corto: con el pool agotado o la base en un agujero negro, el check
+        # de Fly vencía antes que el select y no se sabía por qué.
+        try:
+            await asyncio.wait_for(base.fetchval("select 1"), 2.0)
+        except Exception:
+            log.exception("salud: la base no contestó")
+            return JSONResponse(status_code=503, content={"estado": "sin_base"})
         return {"estado": "ok", "version": ajustes.api_version}
 
     return app

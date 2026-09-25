@@ -16,9 +16,10 @@ import httpx
 import websockets
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, StreamingResponse
+from starlette.background import BackgroundTask
 from pydantic import BaseModel
 
-from agentes import catalogo, claude, codex, config, cuotas, db, jev, negocio, red
+from agentes import catalogo, claude, codex, config, credenciales, cuotas, db, jev, negocio, red, vault, vms
 
 log = logging.getLogger("agentes")
 config.guardia()
@@ -32,9 +33,20 @@ async def _ciclo():
             await negocio.renovar_todos()
             await negocio.despertar_para_rutinas()
             await negocio.dormir_inactivas()
+            await negocio.enfriar()
         except Exception as e:  # noqa: BLE001
             log.warning("ciclo: %s", e)
         await asyncio.sleep(120)
+
+
+async def _barrido():
+    """Máquinas de tarea: vencidas, huérfanas y conciliación del saldo, cada minuto."""
+    while True:
+        try:
+            await vms.barrer()
+        except Exception as e:  # noqa: BLE001
+            log.warning("barrido de tareas: %s", e)
+        await asyncio.sleep(60)
 
 
 from agentes import conexiones, mcp_dimia, mcp_servicios  # noqa: E402
@@ -42,30 +54,34 @@ from fastapi.responses import HTMLResponse  # noqa: E402
 
 app_mcp = mcp_dimia.app()
 app_mcp_wa = mcp_dimia.app_whatsapp()
+app_mcp_tareas = mcp_dimia.app_tareas()
 apps_servicio = {"google": mcp_servicios.app_google(), "notion": mcp_servicios.app_notion(), "slack": mcp_servicios.app_slack(), "github": mcp_servicios.app_github()}
 
 
 @asynccontextmanager
 async def vida(_: FastAPI):
     tarea = asyncio.create_task(_ciclo())
+    barrido = asyncio.create_task(_barrido())
     # El transporte MCP montado necesita su propio ciclo de vida (Starlette no lo arranca solo).
     from contextlib import AsyncExitStack
     async with AsyncExitStack() as pila:
-        for a in (app_mcp, app_mcp_wa, *apps_servicio.values()):
+        for a in (app_mcp, app_mcp_wa, app_mcp_tareas, *apps_servicio.values()):
             await pila.enter_async_context(a.router.lifespan_context(a))
         yield
         # Deploy o reinicio (SIGTERM): los turnos en curso viven solo en memoria; se les da
         # hasta 25 s para terminar y guardar su respuesta (kill_timeout de fly.toml es 30 s).
         for _ in range(25):
-            if not negocio._tenants_trabajando():
+            if not negocio._tenants_trabajando() and not _streams_proxy:  # también el modelo a media respuesta
                 break
             await asyncio.sleep(1)
     tarea.cancel()
+    barrido.cancel()
 
 
 app = FastAPI(title="Dimia agentes", lifespan=vida)
 app.mount("/mcp", app_mcp)
 app.mount("/mcp-whatsapp", app_mcp_wa)
+app.mount("/mcp-tareas", app_mcp_tareas)
 for _nombre, _a in apps_servicio.items():
     app.mount(f"/mcp-{_nombre}", _a)
 
@@ -498,7 +514,71 @@ async def estado_maquina(tenant: str = Depends(negocio_id)):
         return {"estado": "sin_maquina"}
     from agentes.maquinas import proveedor
     viva = await proveedor().obtener(m["referencia"])
-    return {"estado": "encendida" if viva.encendida else "dormida", "proveedor": m["proveedor"], "perfiles": m["perfiles"], "ultimo_uso": m["ultimo_uso"].isoformat()}
+    return {"estado": "encendida" if viva.encendida else "dormida", "nivel": m["nivel"], "proveedor": m["proveedor"], "perfiles": m["perfiles"], "ultimo_uso": m["ultimo_uso"].isoformat()}
+
+
+# --- API de máquinas v1 (capa 2, máquinas de tarea). Interna: la usan el panel y el MCP. ---
+
+class VmNueva(BaseModel):
+    agente_id: uuid.UUID
+    plantilla: str = "terminal"
+    tamano: str = "s"
+    ttl_s: int = 900
+    dominios: list[str] = []
+
+
+class VmExec(BaseModel):
+    agente_id: uuid.UUID
+    comando: str
+    timeout: int = 60
+
+
+class VmArchivo(BaseModel):
+    agente_id: uuid.UUID
+    ruta: str
+    contenido_b64: str
+
+
+async def _vm(llamada):
+    try:
+        return await llamada
+    except vms.Rechazo as e:
+        raise HTTPException(e.codigo, e.mensaje)
+
+
+@app.post("/v1/vms", status_code=201)
+async def vm_crear(cuerpo: VmNueva, idempotency_key: str = Header(""), tenant: str = Depends(negocio_id)):
+    return await _vm(vms.crear(tenant, str(cuerpo.agente_id), idempotency_key, cuerpo.plantilla, cuerpo.tamano, cuerpo.ttl_s, cuerpo.dominios))
+
+
+@app.get("/v1/vms")
+async def vm_listar(agente_id: uuid.UUID | None = None, tenant: str = Depends(negocio_id)):
+    return await vms.listar(tenant, str(agente_id) if agente_id else None)
+
+
+@app.post("/v1/vms/{vm_id}/exec")
+async def vm_exec(vm_id: uuid.UUID, cuerpo: VmExec, tenant: str = Depends(negocio_id)):
+    return await _vm(vms.ejecutar(tenant, str(cuerpo.agente_id), str(vm_id), cuerpo.comando, cuerpo.timeout))
+
+
+@app.put("/v1/vms/{vm_id}/archivos")
+async def vm_subir(vm_id: uuid.UUID, cuerpo: VmArchivo, tenant: str = Depends(negocio_id)):
+    try:
+        datos = base64.b64decode(cuerpo.contenido_b64, validate=True)
+    except ValueError:
+        raise HTTPException(400, "contenido_b64 no es base64 válido.")
+    return await _vm(vms.subir(tenant, str(cuerpo.agente_id), str(vm_id), cuerpo.ruta, datos))
+
+
+@app.get("/v1/vms/{vm_id}/archivos")
+async def vm_bajar(vm_id: uuid.UUID, agente_id: uuid.UUID, ruta: str, tenant: str = Depends(negocio_id)):
+    return {"ruta": ruta, "contenido_b64": base64.b64encode(await _vm(vms.bajar(tenant, str(agente_id), str(vm_id), ruta))).decode()}
+
+
+@app.delete("/v1/vms/{vm_id}")
+async def vm_borrar(vm_id: uuid.UUID, agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
+    await _vm(vms.borrar(tenant, str(agente_id), str(vm_id)))
+    return {"ok": True}
 
 
 # --- Pantalla del agente (VNC en el navegador) ---
@@ -516,8 +596,17 @@ def _verificar(token: str) -> dict | None:
         return None
     if not hmac.compare_digest(firma, hmac.new(config.PANEL_SECRETO.encode(), cuerpo.encode(), hashlib.sha256).hexdigest()[:32]):
         return None
-    d = json.loads(base64.urlsafe_b64decode(cuerpo + "=" * (-len(cuerpo) % 4)))
-    return d if d.get("exp", 0) > time.time() else None
+    try:
+        d = json.loads(base64.urlsafe_b64decode(cuerpo + "=" * (-len(cuerpo) % 4)))
+    except ValueError:
+        return None
+    return d if isinstance(d, dict) and d.get("exp", 0) > time.time() else None
+
+
+async def _pantalla_vigente(d: dict) -> int | None:
+    """La pantalla del agente del pase, releída: si el agente ya no es de ese negocio (o se borró), nada."""
+    a = await db.uno("select pantalla from agente where id = $1 and tenant_id = $2", uuid.UUID(d["a"]), uuid.UUID(d["t"]))
+    return a["pantalla"] if a and a["pantalla"] else None
 
 
 @app.post("/agentes/{agente_id}/pantalla")
@@ -551,11 +640,14 @@ async def pantalla_ws(ws: WebSocket, token: str):
     if not m:
         await ws.close(code=4404)
         return
-    host = m["direccion"].rsplit(":", 1)[0]
+    n = await _pantalla_vigente(d)
+    if n is None:
+        await ws.close(code=4404)
+        return
     await ws.accept(subprotocol="binary")
     await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", d["t"])
     try:
-        async with websockets.connect(f"ws://{host}:{6080 + int(d['n'])}/websockify", subprotocols=["binary"], max_size=None) as maquina_ws:
+        async with websockets.connect(negocio.url_pantalla(m, "vnc", n), subprotocols=["binary"], max_size=None) as maquina_ws:
             async def hacia_maquina():
                 while True:
                     await maquina_ws.send(await ws.receive_bytes())
@@ -624,13 +716,13 @@ async def hd_ws(ws: WebSocket, token: str):
                 await ws.close()
         return
     m = await negocio.maquina(d["t"])
-    if not m:
+    n = await _pantalla_vigente(d)
+    if not m or n is None:
         await ws.close(code=4404)
         return
-    host = m["direccion"].rsplit(":", 1)[0]
     await ws.accept()
     try:
-        async with websockets.connect(f"ws://{host}:{7000 + int(d['n'])}/", max_size=None) as maquina_ws:
+        async with websockets.connect(negocio.url_pantalla(m, "hd", n), max_size=None) as maquina_ws:
             async def hacia_maquina():  # el navegador no manda nada; esto detecta su cierre
                 while True:
                     await ws.receive()
@@ -806,3 +898,97 @@ async def whatsapp_estado(agente_id: uuid.UUID, tenant: str = Depends(negocio_id
 async def whatsapp_desvincular(agente_id: uuid.UUID, tenant: str = Depends(negocio_id)):
     await negocio.whatsapp_desvincular(tenant, str(agente_id))
     return {"ok": True}
+
+
+# --- Proxy de credenciales: la máquina del negocio no guarda cuentas ni llaves de plataforma ---
+
+async def _maquina_autorizada(tenant: str, request: Request) -> None:
+    """La máquina entra con su llave de máquina (maquina_negocio.llave), solo para su propio negocio
+    y solo por la red privada de Fly: el proxy público siempre pone Fly-Client-IP, así que una llave
+    filtrada no sirve desde internet. 403 y no 401: un 401 aquí lo leería Hermes como «la cuenta de
+    ChatGPT dejó de autorizar»."""
+    if "fly-client-ip" in request.headers:
+        raise HTTPException(403, "El proxy solo atiende por la red privada.")
+    token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    f = await db.uno("select llave from maquina_negocio where tenant_id = $1", tenant) if token else None
+    if not f or not hmac.compare_digest(vault.descifrar(f["llave"]).encode(), token.encode()):
+        raise HTTPException(403, "Máquina no autorizada para este negocio.")
+
+
+_TOPE_CUERPO = 8 << 20  # 8 MB: cabe una conversación larga con capturas; más es abuso
+
+
+async def _cuerpo(request: Request) -> bytes:
+    cuerpo = await request.body()
+    if len(cuerpo) > _TOPE_CUERPO:
+        raise HTTPException(413)
+    return cuerpo
+
+
+_streams_proxy = 0  # respuestas de Codex abiertas: un deploy espera a que terminen (vida)
+
+
+def _cerrar_stream(r: httpx.Response):
+    async def cerrar():
+        global _streams_proxy
+        _streams_proxy -= 1
+        await r.aclose()
+    return BackgroundTask(cerrar)
+
+
+@app.api_route("/proxy/{tenant}/codex/{ruta:path}", methods=["GET", "POST"])
+async def proxy_codex(tenant: uuid.UUID, ruta: str, request: Request):
+    """Codex del negocio: Hermes apunta aquí su HERMES_CODEX_BASE_URL con la llave de máquina como
+    token; el orquestador (único que refresca) pone el access token real ya fuera de la máquina."""
+    global _streams_proxy
+    tenant = str(tenant)
+    await _maquina_autorizada(tenant, request)
+    if not credenciales.ruta_valida(ruta):
+        raise HTTPException(404)
+    cuerpo = await _cuerpo(request)
+    t = None
+    for intento in range(2):
+        try:  # el segundo intento pide el refresh del token rechazado: pudo revocarse antes de vencer
+            t = await negocio.renovar_si_hace_falta(tenant, **({"rechazada": t["version"]} if t else {}))
+        except negocio.SinCodex:
+            raise HTTPException(401, "El negocio no tiene cuenta de ChatGPT conectada.")
+        peticion = red.http().build_request(request.method, f"{credenciales.CODEX_UPSTREAM}/{ruta}", params=request.query_params,
+                                            headers=credenciales.cabeceras_codex(request.headers, t["acceso"]), content=cuerpo,
+                                            timeout=httpx.Timeout(15, read=600))
+        r = await red.http().send(peticion, stream=True)
+        if r.status_code == 401 and intento == 0:
+            await r.aclose()
+            continue
+        _streams_proxy += 1
+        return StreamingResponse(r.aiter_bytes(), status_code=r.status_code, headers=credenciales.cabeceras_salida(r.headers), background=_cerrar_stream(r))
+
+
+_TOPE_PUERTA = 300  # llamadas por minuto y negocio: Jev da un paso cada ~0.5 s; varios agentes a la vez caben
+_puerta_uso: dict[str, tuple[int, int]] = {}  # tenant -> (minuto, llamadas en ese minuto)
+
+
+def _cupo_puerta(tenant: str, ahora: float | None = None) -> bool:
+    """ponytail: contador en memoria, vale con una sola instancia del orquestador (fly.toml)."""
+    minuto = int((ahora or time.time()) // 60)
+    m, n = _puerta_uso.get(tenant, (minuto, 0))
+    n = n + 1 if m == minuto else 1
+    _puerta_uso[tenant] = (minuto, n)
+    return n <= _TOPE_PUERTA
+
+
+@app.post("/proxy/{tenant}/puerta/{ruta:path}")
+async def proxy_puerta(tenant: uuid.UUID, ruta: str, request: Request):
+    """Jev y el modelo chico de navegar_rapido, con la llave de plataforma puesta aquí y no en la máquina."""
+    await _maquina_autorizada(str(tenant), request)
+    if not _cupo_puerta(str(tenant)):
+        raise HTTPException(429, "Demasiadas llamadas al navegador rápido; intente en un minuto.")
+    try:
+        cuerpo = json.loads(await _cuerpo(request) or b"{}")
+    except ValueError:
+        raise HTTPException(400)
+    destino = credenciales.puerta(ruta, cuerpo) if isinstance(cuerpo, dict) else None
+    if not destino:
+        raise HTTPException(404)
+    url, llave, cuerpo = destino
+    r = await red.http().post(url, json=cuerpo, headers={"Authorization": f"Bearer {llave}"}, timeout=httpx.Timeout(10, read=60))
+    return Response(content=r.content, status_code=r.status_code, media_type=r.headers.get("content-type"))

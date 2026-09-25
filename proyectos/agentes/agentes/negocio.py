@@ -13,7 +13,7 @@ from contextlib import suppress
 import re
 import time
 
-from agentes import catalogo, claude, codex, conexiones, config, cuotas, db, hermes, jev, red, tunel, vault
+from agentes import catalogo, claude, codex, conexiones, config, credenciales, cuotas, db, hermes, jev, red, tunel, vault, vms
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -33,6 +33,13 @@ async def guardar_tokens(tenant: str, acceso: str, refresco: str) -> None:
            on conflict (tenant_id) do update set acceso = excluded.acceso, refresco = excluded.refresco,
              expira = excluded.expira, cuenta = excluded.cuenta, version = codex_oauth.version + 1, actualizado = now()""",
         tenant, vault.cifrar(acceso), vault.cifrar(refresco), d["expira"], d["cuenta"])
+    await rotar_llave_maquina(tenant)  # reconectar también corta una llave de máquina filtrada
+
+
+async def rotar_llave_maquina(tenant: str) -> None:
+    """Llave de máquina nueva: la vieja deja de abrir el proxy en ese instante. La siguiente
+    sincronización escribe la nueva (llave_maquina, auth.json, config) y reinicia cada Hermes."""
+    await db.ejecutar("update maquina_negocio set llave = $2 where tenant_id = $1", tenant, vault.cifrar(vault.llave_nueva()))
 
 
 async def tokens(tenant: str) -> dict:
@@ -125,18 +132,24 @@ async def cerebro(tenant: str) -> str:
     raise SinCodex()
 
 
-async def renovar_si_hace_falta(tenant: str, margen=timedelta(minutes=30)) -> dict:
+async def renovar_si_hace_falta(tenant: str, margen=timedelta(minutes=30), rechazada: int | None = None) -> dict:
     """Un solo refrescador: el orquestador. Hermes nunca refresca por su cuenta
-    (renovamos mucho antes de sus 120 s de margen)."""
+    (renovamos mucho antes de sus 120 s de margen). rechazada: la versión del token que Codex
+    acaba de contestar con 401; se refresca aunque no venza, salvo que otro ya lo haya rotado o
+    ya se haya forzado un refresh hace menos de 60 s (un 401 que no es del token no rota sin fin)."""
     t = await tokens(tenant)
-    if t["expira"] - datetime.now(timezone.utc) > margen:
+    if rechazada is None and t["expira"] - datetime.now(timezone.utc) > margen:
         return t
     # El ciclo y los turnos (o dos turnos) refrescaban a la vez: el segundo usaba el refresh token
     # ya rotado, recibía 400 y borraba la conexión buena. Uno a la vez y releer: si otro ya renovó,
     # se usa lo suyo. La llamada HTTP no retiene conexión del pool (5 negocios lentos lo agotaban).
     async with _candado(tenant, "codex"):
         t = await tokens(tenant)
-        if t["expira"] - datetime.now(timezone.utc) > margen or (_en_pausa(tenant, "codex") and t["expira"] > datetime.now(timezone.utc)):
+        if rechazada is not None:
+            if t["version"] != rechazada or _en_pausa(tenant, "codex_401"):
+                return t
+            _pausa[(tenant, "codex_401")] = time.monotonic()
+        elif t["expira"] - datetime.now(timezone.utc) > margen or (_en_pausa(tenant, "codex") and t["expira"] > datetime.now(timezone.utc)):
             return t
         try:
             nuevo = await codex.refrescar(t["refresco"])
@@ -204,7 +217,9 @@ async def _mcp_de(tenant: str, a) -> tuple[dict | None, set[str], list]:
     if a["rol"] == "recepcion":
         integraciones |= {"dimia", "whatsapp"}  # Recepción siempre trae la agenda y la línea del negocio
     cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
-    if integraciones & {"dimia", "whatsapp"} or cuentas:
+    # Recepción habla con el público por WhatsApp: nunca crea máquinas ni corre código.
+    con_tareas = config.HERMES_TAREAS_ACTIVO and a["rol"] != "recepcion"
+    if integraciones & {"dimia", "whatsapp"} or cuentas or con_tareas:
         token = a["mcp_token"]
         if not token:
             token = vault.llave_nueva()
@@ -214,6 +229,8 @@ async def _mcp_de(tenant: str, a) -> tuple[dict | None, set[str], list]:
             mcp.update(hermes.mcp_dimia(token))
         if "whatsapp" in integraciones:
             mcp.update(hermes.mcp_whatsapp(token))
+        if con_tareas:
+            mcp.update(hermes.mcp_tareas(token))
         for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack, higgsfield
             puente = any(v.get("cuenta") == cuenta and v.get("mcp") for v in catalogo.INTEGRACIONES.values())
             mcp.update(hermes.mcp_servicio(cuenta, token, puente=puente))
@@ -311,23 +328,48 @@ async def asegurar_maquina(tenant: str) -> dict:
         return await _asegurar_maquina(tenant)
 
 
+async def _crear_casa(tenant: str, n_agentes: int, disco: str | None = None):
+    h = tenant.replace("-", "")
+    etiqueta = h[:8] + h[-12:]  # los primeros 20 chocaban entre negocios (dec1…0001 / dec1…0002); Fly limita el nombre del volumen a 30
+    return await proveedor().crear(etiqueta, config.HERMES_IMAGEN, [], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID},
+                                   cpus=4 if memoria_para(n_agentes) > 4096 else 2, memoria_mb=memoria_para(n_agentes), disco_gb=5, disco=disco)  # Fly: 2 vCPU compartidos llegan a 4 GB
+
+
 async def _asegurar_maquina(tenant: str) -> dict:
     prov = proveedor()
     m = await maquina(tenant)
     n_agentes = len(await _agentes(tenant))
+    actual = await prov.obtener(m["referencia"]) if m else None
     if m is None:
         llave = vault.llave_nueva()
-        h = tenant.replace("-", "")
-        etiqueta = h[:8] + h[-12:]  # los primeros 20 chocaban entre negocios (dec1…0001 / dec1…0002); Fly limita el nombre del volumen a 30
-        creada = await prov.crear(etiqueta, config.HERMES_IMAGEN, [], {"HERMES_HOME": hermes.HOME, "HERMES_UID": hermes.UID, "HERMES_GID": hermes.UID}, cpus=4 if memoria_para(n_agentes) > 4096 else 2, memoria_mb=memoria_para(n_agentes), disco_gb=5)  # Fly: 2 vCPU compartidos llegan a 4 GB
+        creada = await _crear_casa(tenant, n_agentes)
         await db.ejecutar(
             "insert into maquina_negocio (tenant_id, proveedor, referencia, disco, direccion, llave) values ($1, $2, $3, $4, $5, $6)",
             tenant, prov.nombre, creada.referencia, creada.disco, creada.direccion, vault.cifrar(llave))
         m = await maquina(tenant)
         await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
+        await vms.evento(tenant, "casa", "creada", referencia=creada.referencia, memoria_mb=memoria_para(n_agentes))
+    elif not actual.existe:
+        # Sueño tibio (o la borraron por fuera): máquina nueva sobre el MISMO disco, como Grok Bot al
+        # recrear la computadora. Sin disco no se inventa uno vacío: se perderían los logins del negocio.
+        if not m["disco"]:
+            raise RuntimeError("La computadora del negocio no tiene disco que recuperar")
+        creada = await _crear_casa(tenant, n_agentes, disco=m["disco"])
+        await rotar_llave_maquina(tenant)  # máquina nueva, llave nueva
+        # Caliente desde ya: si sincronizar falla después (token de Codex vencido, típico de una casa
+        # tibia), dormir_inactivas igual la para; en 'tibio' se quedaba encendida para siempre.
+        await db.ejecutar("update maquina_negocio set referencia = $2, direccion = $3, perfiles = '{}', nivel = 'caliente', dormida_desde = null, ultimo_uso = now() where tenant_id = $1",
+                          tenant, creada.referencia, creada.direccion)
+        await db.ejecutar("update maquina_uso set fin = coalesce(fin, now()) where tenant_id = $1 and fin is null", tenant)
+        await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
+        await vms.evento(tenant, "casa", "recreada", desde=m["nivel"], anterior=m["referencia"], referencia=creada.referencia)
+        _al_dia.pop(tenant, None)
+        m = await maquina(tenant)
     else:
-        actual = await prov.obtener(m["referencia"])
         if not actual.encendida:
+            await vms.evento(tenant, "casa", "despertada", desde=m["nivel"], dormida_desde=m["dormida_desde"])
+            await rotar_llave_maquina(tenant)  # nadie la usa mientras duerme: la llave no vive más que una sesión
+            m = await maquina(tenant)
             await db.ejecutar("update maquina_uso set fin = coalesce(fin, now()) where tenant_id = $1 and fin is null", tenant)  # cierra lo que quedó abierto
             await db.ejecutar("insert into maquina_uso (tenant_id) values ($1)", tenant)
         if actual.memoria_mb < memoria_para(n_agentes):
@@ -339,7 +381,7 @@ async def _asegurar_maquina(tenant: str) -> dict:
             await db.ejecutar("update maquina_negocio set direccion = $2 where tenant_id = $1", tenant, viva.direccion)
             m = await maquina(tenant)
     await sincronizar(tenant, m)
-    await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", tenant)
+    await db.ejecutar("update maquina_negocio set ultimo_uso = now(), nivel = 'caliente', dormida_desde = null where tenant_id = $1", tenant)
     return await maquina(tenant)
 
 
@@ -363,8 +405,12 @@ async def _sincronizar(tenant: str, m, reiniciar: bool, solo_revisar: bool = Fal
     cual, t, claude_json = await _credenciales(tenant)
     negocio = await _negocio(tenant)
     agentes = await _agentes(tenant)
-    auth = codex.auth_json(t["acceso"], t["refresco"])
-    archivos: dict[str, str] = {}
+    # La máquina nunca recibe la cuenta de ChatGPT del cliente ni llaves de plataforma: solo su
+    # llave de máquina, con la que entra al proxy del orquestador (credenciales.py).
+    llave_maquina = vault.descifrar(m["llave"])
+    px = hermes.proxy(tenant, llave_maquina)
+    auth = credenciales.auth_json_relleno(llave_maquina)
+    archivos: dict[str, str] = {f"{hermes.HOME}/llave_maquina": llave_maquina}
     instalados = set(m["perfiles"])
     nuevos: list[str] = []
     reiniciados: list[str] = []  # config cambiada: el supervisor los reinicia; hay que esperar a que vuelvan
@@ -402,21 +448,25 @@ async def _sincronizar(tenant: str, m, reiniciar: bool, solo_revisar: bool = Fal
         for i in inst:
             if i["tipo"] == "skill" and i["clave"] in todas_skills:
                 archivos[f"{raiz_skills}/{i['clave']}/SKILL.md"] = todas_skills[i["clave"]]["contenido"]
-        cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj)  # yaml.dump es caro: una vez por agente
+        cfg = hermes.config_yaml(llave, pantalla, mcp=mcp, cerebro=cual, ajustes=aj, proxy=px)  # yaml.dump es caro: una vez por agente
+        # La huella de la llave de máquina va con config y .env: si rota, ese Hermes se reinicia y
+        # deja de mandar la vieja (que el proxy ya rechaza).
+        env = hermes.env(llave, pantalla, aj, px) + f"# llave {hashlib.sha256(llave_maquina.encode()).hexdigest()[:12]}\n"
         if aid not in instalados:
-            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp, cerebro=cual, claude_json=claude_json, ajustes=aj))
+            archivos.update(hermes.archivos_perfil(aid, llave, soul, auth, pantalla, mcp, cerebro=cual, claude_json=claude_json, ajustes=aj, proxy=px))
             nuevos.append(aid)
         else:
             archivos[f"{hermes.HOME}/agentes/{aid}/SOUL.md"] = soul  # barato: siempre al día
-            if cfg != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
+            # Siempre el de relleno: así la primera sincronización tras el cambio borra del disco
+            # el refresh token real que dejaban las versiones anteriores.
+            archivos[f"{hermes.HOME}/agentes/{aid}/auth.json"] = auth
+            if cfg + env != configs.get(aid):  # solo si cambió: el supervisor reinicia ese Hermes al ver el archivo
                 archivos[f"{hermes.HOME}/agentes/{aid}/config.yaml"] = cfg
-                archivos[f"{hermes.HOME}/agentes/{aid}/.env"] = hermes.env(llave, pantalla, aj)  # WhatsApp y demás van en el .env
+                archivos[f"{hermes.HOME}/agentes/{aid}/.env"] = env  # WhatsApp, el proxy de Codex y demás van en el .env
                 reiniciados.append(aid)
-            if m["version_token"] != t["version"]:
-                archivos[f"{hermes.HOME}/agentes/{aid}/auth.json"] = auth
-                if claude_json:
-                    archivos[f"{hermes.HOME}/agentes/{aid}/.anthropic_oauth.json"] = claude_json
-        configs_nuevos[aid] = cfg
+            if m["version_token"] != t["version"] and claude_json:
+                archivos[f"{hermes.HOME}/agentes/{aid}/.anthropic_oauth.json"] = claude_json
+        configs_nuevos[aid] = cfg + env
     archivos[f"{hermes.HOME}/escritorios.json"] = hermes.escritorios_json(pantallas)
     # Los perfiles viven en /opt/data/agentes/<id>, NO en /opt/data/profiles/<id>: con esa ruta Hermes
     # toma /opt/data como raíz y cada gateway corre el cron de TODOS los perfiles (rutinas repetidas).
@@ -469,6 +519,13 @@ async def empujar_tokens(tenant: str) -> None:
 
 class SinComputadora(Exception):
     """El agente corre en la computadora del dueño y esa computadora no está conectada."""
+
+
+def url_pantalla(m, tipo: str, n: int) -> str:
+    """La pantalla `tipo` (vnc | hd) del agente n, por la compuerta de la máquina con un pase de 60 s
+    firmado con su llave de máquina. Nada de pantalla escucha fuera de localhost en la máquina."""
+    pase = credenciales.firmar_pantalla(vault.descifrar(m["llave"]), tipo, n)
+    return f"ws://{_host(m)}:{hermes.PUERTO_PANTALLAS}/{tipo}/{int(n)}?t={pase}"
 
 
 def _url(m, pantalla: int, ruta: str) -> str:
@@ -694,6 +751,11 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
         yield {"evento": "error", "texto": "Su computadora no está conectada. Ábrala y espere a que Dimia la vea en Ajustes del agente."}
         return
     agente = await db.uno("select id, nombre, llave, sesion_hermes, sesion_local, pantalla, donde from agente where id = $1", agente_id)
+    try:  # el cerebro con que corre este turno: tras una falla la cuenta ya pudo borrarse y cerebro() cambiar
+        cual = await cerebro(tenant)
+    except SinCodex:
+        yield {"evento": "sin_codex", "texto": "Conecte su cuenta de ChatGPT o de Claude para que este agente pueda trabajar."}
+        return
     if m:
         await _esperar_hermes(_host(m), agente["pantalla"])
     previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
@@ -794,12 +856,10 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                             yield {"evento": "cuota", "texto": f"Se agotó el cupo de su suscripción de ChatGPT por ahora.{reinicia} Mientras, los agentes esperan; vea el detalle en su perfil."}
                             return
                         if "401" in msg or "unauthorized" in msg.lower() or "credential" in msg.lower():
-                            if await cerebro(tenant) == "claude":
-                                await desconectar_claude(tenant)
-                                yield {"evento": "sin_codex", "texto": "Su cuenta de Claude dejó de autorizar a Dimia. Reconéctela para continuar."}
-                            else:
-                                await desconectar_codex(tenant)
-                                yield {"evento": "sin_codex", "texto": "Su cuenta de ChatGPT dejó de autorizar a Dimia. Reconéctela para continuar."}
+                            aviso = await _tras_rechazo(tenant, cual)
+                            if aviso["evento"] == "error":
+                                log.warning("run.failed 401 con la cuenta viva %s/%s: %s", tenant, agente_id, msg[:500])
+                            yield aviso
                         else:
                             yield {"evento": "error", "texto": "El agente no pudo terminar este turno."}
                             log.warning("run.failed %s/%s: %s", tenant, agente_id, msg[:500])
@@ -815,10 +875,24 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                         yield {"evento": "fin", "texto": ""}
     await db.ejecutar(
         "insert into agente_turno (tenant_id, agente_id, nivel, modelo, jev, pasos, ms, ok) values ($1, $2, $3, $4, $5, $6, $7, $8)",
-        tenant, agente["id"], nivel, modelo_de(await cerebro(tenant), nivel),
+        tenant, agente["id"], nivel, modelo_de(cual, nivel),
         json.dumps(decision) if decision else None, pasos, int((time.perf_counter() - inicio) * 1000), ok)
     if respuesta:
         await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto, pasos) values ($1, $2, 'agente', $3, $4::jsonb)", tenant, agente["id"], "".join(respuesta), json.dumps(traza) if traza else None)
+
+
+async def _tras_rechazo(tenant: str, cual: str) -> dict:
+    """El run falló por credenciales; cual es el cerebro con que corrió el turno (leído antes: el
+    proxy pudo borrar Codex y entonces cerebro() ya diría Claude). Claude (sin proxy) se desconecta
+    como siempre. Codex va por el proxy: si la cuenta dejó de autorizar, el proxy ya lo comprobó al
+    refrescar y la borró; si sigue ahí, fue un 401 de paso (reinicio, llave de máquina) y no se le
+    hace reconectar al dueño."""
+    if cual == "claude":
+        await desconectar_claude(tenant)
+        return {"evento": "sin_codex", "texto": "Su cuenta de Claude dejó de autorizar a Dimia. Reconéctela para continuar."}
+    if not await db.uno("select 1 from codex_oauth where tenant_id = $1", tenant):
+        return {"evento": "sin_codex", "texto": "Su cuenta de ChatGPT dejó de autorizar a Dimia. Reconéctela para continuar."}
+    return {"evento": "error", "texto": "El agente no pudo terminar este turno. Intente de nuevo en un momento."}
 
 
 async def tareas_de(tenant: str, agente_id: str, http: httpx.AsyncClient | None = None, m=None, sid: str | None = None, llave: str | None = None) -> list[dict] | None:
@@ -896,7 +970,7 @@ async def dormir_inactivas() -> None:
     for tenant in ocupados:
         await db.ejecutar("update maquina_negocio set ultimo_uso = now() where tenant_id = $1", tenant)
     filas = await db.todos("""select m.tenant_id, m.referencia from maquina_negocio m
-                              where m.ultimo_uso < now() - make_interval(mins => $1)
+                              where m.nivel = 'caliente' and m.ultimo_uso < now() - make_interval(mins => $1)
                                 and not exists (select 1 from agente a where a.tenant_id = m.tenant_id and a.rutina_proxima between now() - interval '10 minutes' and now() + interval '25 minutes')""", config.MINUTOS_SIN_USO)
     for f in filas:
         if str(f["tenant_id"]) in ocupados:
@@ -905,9 +979,39 @@ async def dormir_inactivas() -> None:
             if (await prov.obtener(f["referencia"])).encendida:
                 await prov.parar(f["referencia"])
                 log.info("máquina %s dormida", f["tenant_id"])
+                await vms.evento(str(f["tenant_id"]), "casa", "dormida", referencia=f["referencia"])
             await db.ejecutar("update maquina_uso set fin = now() where tenant_id = $1 and fin is null", f["tenant_id"])
+            await db.ejecutar("update maquina_negocio set dormida_desde = coalesce(dormida_desde, now()) where tenant_id = $1", f["tenant_id"])
         except Exception as e:  # noqa: BLE001
             log.warning("no se pudo dormir %s: %s", f["tenant_id"], e)
+
+
+async def enfriar() -> None:
+    """Sueño tibio (§3.6): una casa parada más de DIAS_TIBIO días pierde la máquina y conserva
+    solo el disco; el siguiente turno crea una máquina nueva sobre él (_asegurar_maquina).
+    El nivel frío (solo un respaldo fuera del proveedor) no existe en Fly: sus snapshots de
+    volumen se retienen a lo más 60 días y borrar el disco perdería los logins del negocio.
+    Llega con S3 en AWS (paso 8)."""
+    if not config.HERMES_SUENO_NIVELES:
+        return
+    prov = proveedor()
+    filas = await db.todos("""select tenant_id, referencia from maquina_negocio
+                               where nivel = 'caliente' and disco is not null and dormida_desde < now() - make_interval(days => $1)""", config.DIAS_TIBIO)
+    for f in filas:
+        tenant = str(f["tenant_id"])
+        if tenant in _tenants_trabajando():
+            continue
+        try:
+            async with _candado(tenant, "maquina"):  # nadie la despierta a la mitad
+                m = await maquina(tenant)
+                if m["nivel"] != "caliente" or m["dormida_desde"] is None or (await prov.obtener(m["referencia"])).encendida:
+                    continue
+                await prov.borrar(m["referencia"], None)  # sin disco: el volumen se queda
+                await db.ejecutar("update maquina_negocio set nivel = 'tibio' where tenant_id = $1", tenant)
+                _al_dia.pop(tenant, None)
+                await vms.evento(tenant, "casa", "tibia", referencia=m["referencia"], disco=m["disco"])
+        except Exception as e:  # noqa: BLE001
+            log.warning("no se pudo enfriar %s: %s", tenant, e)
 
 
 async def renovar_todos() -> None:

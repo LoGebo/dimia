@@ -23,9 +23,9 @@ kill_timeout   = "30s"
   despachador = "python -m app.despachador"
 
 # Solo el proceso web recibe tráfico público (HTTPS 443 -> 8080).
-# ponytail: UNA sola máquina web. Las sesiones de WhatsApp/Instagram viven en memoria
-# (channels/whatsapp/sesion.py): con dos, cada mensaje caía en una distinta y el agente
-# olvidaba la conversación. Para escalar hay que guardar la sesión en Postgres primero.
+# Las sesiones de WhatsApp/Instagram viven en Postgres (conversacion_sesion, migración
+# 20260925030000): el web puede correr en 2+ máquinas (`fly scale count web=2`) una vez
+# aplicada esa migración. Antes de aplicarla, UNA sola máquina.
 [http_service]
   internal_port       = 8080
   force_https         = true
@@ -34,6 +34,8 @@ kill_timeout   = "30s"
   min_machines_running = 1
   processes           = ["web"]
 
+  # Solo vida del proceso: la base se vigila aparte en /salud/base. Un check que
+  # dependa de la base saca a todas las maquinas a la vez en un parpadeo del pooler.
   [[http_service.checks]]
     grace_period = "30s"
     interval     = "30s"

@@ -1,0 +1,139 @@
+name: Infra · plan
+
+# PR que toca infra/aws: verificación sin credenciales siempre; plan por OIDC con el rol
+# tofu-plan solo cuando existen las cuentas (variable del repo INFRA_AWS_HABILITADA = true).
+# En un PR corre el workflow de la rama del PR, así que solo se planean las pilas de cuentas que
+# confían en el claim :pull_request (plan_en_pr, hoy solo noprod). Las de producción se planean
+# en main, en infra-apply, y el revisor ve ese plan antes de aprobar.
+# Sin secretos: estado.hcl y comun.tfvars salen de las variables INFRA_ESTADO_HCL e INFRA_COMUN_TFVARS.
+
+on:
+  pull_request:
+    paths:
+      - "infra/aws/**"
+      - ".github/workflows/infra-*.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash # -eo pipefail
+
+env:
+  TOFU_VERSION: "1.12.6"
+  AWS_STS_REGIONAL_ENDPOINTS: regional
+
+jobs:
+  verificar:
+    name: Verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - uses: terraform-linters/setup-tflint@1cf010d3c7aef302051ccdb68c14c5dc2efa34ef # v6.3.1
+        with:
+          tflint_version: v0.64.0
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Instalar checkov
+        run: pip install checkov==3.3.10
+
+      - name: fmt · validate · pruebas · tflint · checkov
+        run: infra/aws/verificar.sh
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # tflint --init baja el ruleset de AWS sin topar el límite anónimo
+
+  pilas:
+    name: Pilas tocadas
+    if: vars.INFRA_AWS_HABILITADA == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matriz: ${{ steps.pilas.outputs.matriz }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: pilas
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        # La asignación con pipefail falla el job si git diff falla; un echo con $( ) no.
+        run: |
+          matriz=$(git diff --name-only "$BASE" "$HEAD" | python3 infra/aws/pilas.py --pr)
+          echo "matriz=$matriz" >> "$GITHUB_OUTPUT"
+
+  plan:
+    name: Plan · ${{ matrix.pila }}
+    needs: [verificar, pilas]
+    if: needs.pilas.outputs.matriz != '[]' && needs.pilas.outputs.matriz != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.pilas.outputs.matriz) }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/aws/${{ matrix.pila }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ matrix.cuenta }}:role/tofu-plan
+          aws-region: us-east-2
+          role-session-name: plan-${{ github.run_id }}
+
+      - name: Configuración común
+        working-directory: infra/aws
+        env:
+          ESTADO_HCL: ${{ vars.INFRA_ESTADO_HCL }}
+          COMUN_TFVARS: ${{ vars.INFRA_COMUN_TFVARS }}
+        run: |
+          test -n "$ESTADO_HCL" && test -n "$COMUN_TFVARS" || { echo "Faltan INFRA_ESTADO_HCL o INFRA_COMUN_TFVARS"; exit 1; }
+          printf '%s\n' "$ESTADO_HCL" > estado.hcl
+          printf '%s\n' "$COMUN_TFVARS" > comun.tfvars
+
+      - run: tofu init -input=false -lockfile=readonly -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
+
+      - run: tofu plan -input=false -lock-timeout=5m -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -out=plan.out
+
+      - name: checkov sobre el plan
+        run: |
+          pip install checkov==3.3.10
+          tofu show -json plan.out > plan.json
+          checkov -f plan.json --framework terraform_plan --compact --quiet --repo-root-for-plan-enrichment "$GITHUB_WORKSPACE/infra/aws"
+          rm -f plan.json
+
+      - name: Resumen
+        run: |
+          { echo "### ${{ matrix.pila }}"; echo '```'; tofu show -no-color plan.out | tail -c 60000; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

@@ -27,9 +27,11 @@ export function Pie() {
             <a href={FIRMA.telefonoHref} className={css.enlaceMono}>
               {FIRMA.telefono}
             </a>
-            <a href={FIRMA.linkedin} rel="noopener noreferrer" target="_blank" className={css.enlace}>
-              LinkedIn
-            </a>
+            {FIRMA.linkedin ? (
+              <a href={FIRMA.linkedin} rel="noopener noreferrer" target="_blank" className={css.enlace}>
+                LinkedIn
+              </a>
+            ) : null}
           </div>
         </div>
 

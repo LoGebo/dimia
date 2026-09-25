@@ -1,0 +1,5 @@
+# El archivo de candados sí va al repo en las pilas: fija los hashes de los proveedores.
+!.terraform.lock.hcl
+modulos/**/.terraform.lock.hcl
+# Valores por cuenta; en CI salen de variables del repo.
+estado.hcl

@@ -1,0 +1,13 @@
+{
+  "_nota": "Pila -> cuenta donde corre y quién aplica. cuenta vacía = la cuenta aún no existe y CI se la salta. manual = la aplica el dueño (gestión y las base: tofu-apply no puede tocarse a sí mismo). entorno = environment de GitHub con revisor; debe coincidir con entorno_apply de la base de esa cuenta. plan_en_pr = el PR planea esta pila; solo las cuentas cuya base pone plan_en_pr = true (noprod).",
+  "vivos/gestion": { "cuenta": "", "aplica": "manual" },
+  "vivos/finops": { "cuenta": "", "aplica": "manual" },
+  "vivos/operaciones/base": { "cuenta": "", "aplica": "manual" },
+  "vivos/sandbox-agente/base": { "cuenta": "", "aplica": "manual" },
+  "vivos/noprod/base": { "cuenta": "", "aplica": "manual", "plan_en_pr": true },
+  "vivos/noprod/red": { "cuenta": "", "aplica": "ci", "entorno": "infra-noprod", "plan_en_pr": true },
+  "vivos/celdas/c01/base": { "cuenta": "", "aplica": "manual" },
+  "vivos/celdas/c01/red-mx": { "cuenta": "", "aplica": "ci", "entorno": "infra-c01" },
+  "vivos/voz/g1/base": { "cuenta": "", "aplica": "manual" },
+  "vivos/voz/g1/red": { "cuenta": "", "aplica": "ci", "entorno": "infra-voz-g1" }
+}

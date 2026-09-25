@@ -65,11 +65,13 @@ async def procesar(app: FastAPI, entrante: MensajeSocial) -> None:
         log.exception("fallo atendiendo %s en %s", entrante.remitente_id, entrante.canal)
         return
 
+    respondido = False
     for destino, texto, botones in envios:
         try:
             await app.state.cliente.enviar_texto(
                 destino, texto, entrante.canal, opciones=list(botones)
             )
+            respondido = True
         except Exception:
             log.exception("fallo enviando a %s por %s; pasa a la cola", destino, entrante.canal)
             # Sin botones en la cola: la hora escrita se casa igual con la opcion.
@@ -79,8 +81,14 @@ async def procesar(app: FastAPI, entrante: MensajeSocial) -> None:
                 await app.state.agente.agenda.outbox_respuesta(
                     contexto.tenant.id, entrante.canal, destino, texto_cola
                 )
+                respondido = True
             except Exception:
                 log.exception("tampoco se pudo encolar la respuesta a %s", destino)
+    if respondido and entrante.mensaje_id:
+        try:
+            await app.state.agente.agenda.mensaje_respondido(entrante.canal, entrante.mensaje_id)
+        except Exception:
+            log.exception("no se pudo marcar respondido %s", entrante.mensaje_id)
 
 
 @app.get("/webhook/social")
@@ -129,4 +137,15 @@ async def recibir(
 
 @app.get("/salud")
 async def salud() -> dict[str, str]:
+    # Solo vida del proceso: es el check de Fly. Si dependiera de la base, un
+    # parpadeo del pooler sacaria a todas las maquinas del proxy a la vez, y la
+    # platica sigue en memoria aunque la base no conteste.
+    return {"estado": "ok"}
+
+
+@app.get("/salud/base", response_model=None)
+async def salud_base() -> Response | dict[str, str]:
+    """Para el vigilante y las alertas, no para el proxy de Fly."""
+    if not await agenda.base_viva(2.0):
+        return Response(status_code=503, content="base sin respuesta")
     return {"estado": "ok"}

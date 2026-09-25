@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SoloTokensDeNuestroRepo",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Resource": "*",
+      "Condition": {
+        "Null": { "token.actions.githubusercontent.com:sub": "false" },
+        "StringNotLike": { "token.actions.githubusercontent.com:sub": "${github_sub}:*" }
+      }
+    }
+  ]
+}

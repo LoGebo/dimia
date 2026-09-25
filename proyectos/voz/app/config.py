@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     pg_dsn: str = "postgresql://postgres:postgres@localhost:54322/postgres"
+    # El despachador vive en la misma app de Fly que los webhooks (mismos
+    # secretos) pero entra con otro rol: app_cron cruza negocios, app_texto no.
+    # Vacío = usa pg_dsn.
+    pg_dsn_despachador: str = ""
     # Tamaño del pool de asyncpg, por réplica y por event loop. Se deja chico a
     # propósito: al escalar en horizontal, `pg_dsn` apunta al pooler en modo
     # transacción (Supabase pooler / Neon pooled / PgBouncer) y muchas réplicas
@@ -35,6 +39,13 @@ class Settings(BaseSettings):
     # CPU en producción). MEMORIA_MAX_LLAMADA_MB en 0 no pone tope por llamada.
     umbral_carga: float | None = None
     memoria_max_llamada_mb: float = 0
+    # CAPACIDAD_LLAMADAS > 0 cambia la carga del worker de CPU a llamadas activas:
+    # hasta CAPACIDAD_LLAMADAS atiende normal y en los LUGARES_SOBRECUPO siguientes
+    # contesta «todas las líneas están ocupadas» y transfiere o deja recado, en vez
+    # de que la llamada timbre sin nadie. En 0 (default) queda la carga por CPU y
+    # UMBRAL_CARGA. Se fija con `lk perf`, no a ojo (§3.3: 12 por pod de 8 vCPU).
+    capacidad_llamadas: int = 0
+    lugares_sobrecupo: int = 2
     # AGENT_NAME: vacio = despacho automatico. Con nombre hay que crear la regla
     # de despacho en LiveKit para ese agente, o nadie contesta.
     agent_name: str = ""
@@ -58,7 +69,7 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4.1-mini"
     modelo_por_proveedor: dict[str, str] = {
         "openai": "gpt-4.1-mini",
-        "anthropic": "claude-haiku-4-5-20251001",
+        "anthropic": "claude-sonnet-5",
         "google": "gemini-3.6-flash",
     }
 

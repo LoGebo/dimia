@@ -1,0 +1,197 @@
+name: Infra · apply
+
+# Merge a main que toca infra/aws: plan de TODAS las pilas de CI con tofu-plan y, solo en las que
+# cambian, apply del MISMO plan.out con tofu-apply tras la aprobación del revisor del environment
+# infra-<pila>. Se planean todas y no las del último diff: GitHub guarda un solo run pendiente por
+# grupo de concurrency y cancela los intermedios, y un diff contra github.event.before perdería
+# sus pilas sin avisar. Apagado hasta que existan las cuentas (INFRA_AWS_HABILITADA = true).
+# Las pilas manuales (gestión y base) nunca se aplican desde aquí.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/aws/**"
+
+permissions:
+  contents: read
+
+# Nunca se cancela un apply a medias; los runs van en fila. Si GitHub descarta un run pendiente,
+# el siguiente lo cubre porque planea todo.
+concurrency:
+  group: infra-apply
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash # -eo pipefail
+
+env:
+  TOFU_VERSION: "1.12.6"
+  AWS_STS_REGIONAL_ENDPOINTS: regional
+
+jobs:
+  pilas:
+    name: Pilas de CI
+    if: vars.INFRA_AWS_HABILITADA == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      matriz: ${{ steps.pilas.outputs.matriz }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # La asignación falla el job si pilas.py falla; un echo con $( ) no.
+      - id: pilas
+        run: |
+          matriz=$(python3 infra/aws/pilas.py --solo-ci --todas </dev/null)
+          echo "matriz=$matriz" >> "$GITHUB_OUTPUT"
+
+  plan:
+    name: Plan · ${{ matrix.pila }}
+    needs: pilas
+    if: needs.pilas.outputs.matriz != '[]' && needs.pilas.outputs.matriz != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.pilas.outputs.matriz) }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/aws/${{ matrix.pila }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ matrix.cuenta }}:role/tofu-plan
+          aws-region: us-east-2
+          role-session-name: plan-${{ github.run_id }}
+
+      - name: Configuración común
+        working-directory: infra/aws
+        env:
+          ESTADO_HCL: ${{ vars.INFRA_ESTADO_HCL }}
+          COMUN_TFVARS: ${{ vars.INFRA_COMUN_TFVARS }}
+        run: |
+          test -n "$ESTADO_HCL" && test -n "$COMUN_TFVARS" || { echo "Faltan INFRA_ESTADO_HCL o INFRA_COMUN_TFVARS"; exit 1; }
+          printf '%s\n' "$ESTADO_HCL" > estado.hcl
+          printf '%s\n' "$COMUN_TFVARS" > comun.tfvars
+
+      - run: tofu init -input=false -lockfile=readonly -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
+
+      # 0 = sin cambios, 2 = hay cambios; cualquier otro código falla el job.
+      - id: plan
+        run: |
+          codigo=0
+          tofu plan -input=false -lock-timeout=5m -detailed-exitcode -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -out=plan.out || codigo=$?
+          case "$codigo" in
+            0) echo "cambios=false" >> "$GITHUB_OUTPUT" ;;
+            2) echo "cambios=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$codigo" ;;
+          esac
+
+      - name: Resumen para el revisor
+        if: steps.plan.outputs.cambios == 'true'
+        run: |
+          { echo "### ${{ matrix.pila }}"; echo '```'; tofu show -no-color plan.out | tail -c 60000; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      # Solo las pilas con cambios suben su plan; «cambios» arma con eso la matriz del apply.
+      # El plan va cifrado del lado del cliente (bloque encryption de la pila).
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.plan.outputs.cambios == 'true'
+        with:
+          name: plan-${{ matrix.id }}
+          path: infra/aws/${{ matrix.pila }}/plan.out
+          overwrite: true
+          retention-days: 3
+          if-no-files-found: error
+
+  cambios:
+    name: Pilas con cambios
+    needs: [pilas, plan]
+    runs-on: ubuntu-latest
+    outputs:
+      matriz: ${{ steps.cambios.outputs.matriz }}
+    steps:
+      # Sin coincidencias no baja nada: ninguna pila cambió.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: plan-*
+          path: planes
+
+      - id: cambios
+        env:
+          MATRIZ: ${{ needs.pilas.outputs.matriz }}
+        run: |
+          matriz=$(python3 -c 'import json, os; print(json.dumps([p for p in json.loads(os.environ["MATRIZ"]) if os.path.isfile("planes/plan-" + p["id"] + "/plan.out")]))')
+          echo "matriz=$matriz" >> "$GITHUB_OUTPUT"
+
+  apply:
+    name: Apply · ${{ matrix.pila }}
+    needs: cambios
+    if: needs.cambios.outputs.matriz != '[]' && needs.cambios.outputs.matriz != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.cambios.outputs.matriz) }}
+    # Cada pila tiene su environment con revisor humano y solo la rama main (README).
+    environment: ${{ matrix.entorno }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/aws/${{ matrix.pila }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: plan-${{ matrix.id }}
+          path: infra/aws/${{ matrix.pila }}
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ matrix.cuenta }}:role/tofu-apply
+          aws-region: us-east-2
+          role-session-name: apply-${{ github.run_id }}
+
+      - name: Configuración común
+        working-directory: infra/aws
+        env:
+          ESTADO_HCL: ${{ vars.INFRA_ESTADO_HCL }}
+          COMUN_TFVARS: ${{ vars.INFRA_COMUN_TFVARS }}
+        run: |
+          printf '%s\n' "$ESTADO_HCL" > estado.hcl
+          printf '%s\n' "$COMUN_TFVARS" > comun.tfvars
+
+      - run: tofu init -input=false -lockfile=readonly -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
+
+      # La llave del cifrado es una variable estática: se vuelve a pasar para leer el plan.
+      - run: tofu apply -input=false -lock-timeout=5m -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" plan.out

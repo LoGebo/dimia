@@ -1462,3 +1462,43 @@ def test_un_cuerpo_firmado_pero_ilegible_es_400(cfg):
         "/webhook/whatsapp", content=crudo, headers={"x-hub-signature-256": firma}
     )
     assert r.status_code == 400
+
+
+async def test_solo_lo_que_se_contesto_o_se_encolo_queda_respondido(tenant, cfg):
+    """El vigilante cuenta los mensajes reclamados sin respuesta (salud_operacion)."""
+    from channels.whatsapp import servidor
+
+    class Agenda(AgendaFalsa):
+        def __init__(self, t):
+            super().__init__(t)
+            self.respondidos: list = []
+
+        async def mensaje_reclamar(self, canal, externo_id):
+            return True
+
+        async def mensaje_respondido(self, canal, externo_id):
+            self.respondidos.append((canal, externo_id))
+
+        async def outbox_respuesta(self, tenant_id, canal, destino, texto):
+            raise ConnectionError("base caída")
+
+    class Meta:
+        def __init__(self, falla):
+            self.falla = falla
+
+        async def marcar_leido(self, mensaje_id):
+            pass
+
+        async def entregar(self, salida):
+            if self.falla:
+                raise httpx.ConnectTimeout("meta")
+
+    agenda = Agenda(tenant)
+    llm = LLMFalso([RespuestaFalsa([_texto_bloque("Hola")], "end_turn") for _ in range(2)])
+    agente = AgenteWhatsApp(llm=llm, agenda=agenda, cfg=cfg, registro=RegistroSesiones(cfg))
+
+    await servidor.procesar(_App(agente, Meta(falla=False)), parse_webhook(_envoltura(_texto("hola", "wamid.R1")))[0])
+    # Meta y la cola fallan: nadie recibió nada, se queda sin respuesta.
+    await servidor.procesar(_App(agente, Meta(falla=True)), parse_webhook(_envoltura(_texto("hola", "wamid.R2")))[0])
+
+    assert agenda.respondidos == [("whatsapp", "wamid.R1")]

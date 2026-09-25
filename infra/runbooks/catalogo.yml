@@ -1,0 +1,87 @@
+# Catálogo cerrado de runbooks (planeacion/aws-arquitectura-meta.md §3.10, nivel N1).
+#
+# Estados: propuesto → supervisado → auto.
+#   propuesto   lo ejecuta una persona a mano, siguiendo los pasos tal cual.
+#   supervisado la automatización lo propone y una persona aprueba cada ejecución.
+#   auto        corre solo, dentro de los candados de §3.10.
+# Un runbook pasa a `auto` después de 5 ejecuciones supervisadas con la
+# postcondición cumplida y una prueba de falla en staging (P9). Hoy los tres
+# están en `propuesto`: nada de aquí se ejecuta solo.
+#
+# `huellas` son las del vigilante (infra/vigilante/vigilar.py): el título del
+# issue es «Incidente: <huella>». Si la postcondición no se cumple en su plazo,
+# se aplica la reversa y se escala; una acción que no funcionó no se repite
+# sobre la misma señal.
+
+- id: reiniciar-maquina-webhooks
+  estado: propuesto
+  descripcion: Reinicia la máquina web de agente-webhooks cuando dejó de contestar a Meta.
+  huellas:
+    - agente-webhooks
+    - agente-webhooks:meta
+    - operacion:mensajes_sin_respuesta_1h
+  precondicion:
+    - agente-webhooks /salud o la verificación GET de Meta fallan en dos sondeos seguidos.
+    - dimia-api /salud contesta 200. Si también falla, la causa es la base o Fly, no la máquina; este runbook no aplica.
+    - No hubo despliegue de agente-webhooks en los últimos 15 min. Si lo hubo, lo que toca es rollback a la imagen anterior (carril urgente), no reiniciar.
+  pasos:
+    - fly machine list -a agente-webhooks --json   # la máquina del proceso `web`; hay una sola a propósito
+    - fly machine restart <id> -a agente-webhooks
+  efecto_secundario: >-
+    Las sesiones de WhatsApp e Instagram viven en memoria (channels/whatsapp/sesion.py):
+    quien estaba a media plática pierde el contexto de esa conversación.
+  postcondicion:
+    - En 3 min, /salud contesta 200 y la verificación de Meta devuelve el reto.
+    - En 15 min, operacion:mensajes_sin_respuesta_1h deja de crecer.
+  reversa: >-
+    El reinicio no deja nada que deshacer. Si la postcondición no se cumple: no se
+    reinicia otra vez; se revisa `fly logs -a agente-webhooks` y se escala a la persona de guardia.
+
+- id: drenar-worker-voz-atascado
+  estado: propuesto
+  descripcion: Saca de servicio un worker de voz que dejó de latir, dejando terminar las llamadas en curso.
+  huellas:
+    - operacion:voz_latido_seg
+    - operacion:llamadas_sin_cierre_2h
+    - operacion:llamadas_con_error_1h
+  precondicion:
+    - El latido `voz:<máquina>` de esa máquina tiene más de 180 s (select componente, visto, detalle from latido where componente like 'voz:%').
+    - Al menos otra máquina de voz late con menos de 180 s. Si ninguna late, no se drena nada: es caída total y se escala de inmediato.
+    - Se drena una sola máquina a la vez.
+  pasos:
+    - fly machine list -a agente-voz --json   # el id coincide con `voz:<id>` de la tabla latido
+    - fly machine stop <id> -a agente-voz --signal SIGTERM --timeout 300   # LiveKit Agents deja de aceptar llamadas y espera las activas (kill_timeout 300 s)
+    - fly machine start <id> -a agente-voz
+  postcondicion:
+    - En 5 min, `voz:<id>` vuelve a latir con menos de 180 s.
+    - En 1 h, operacion:llamadas_sin_cierre_2h no crece.
+  reversa: >-
+    fly machine start <id> -a agente-voz si se quedó detenida. Si al arrancar no late,
+    se deja detenida (las otras máquinas atienden) y se escala.
+
+- id: reencolar-outbox-atorado
+  estado: propuesto
+  descripcion: Devuelve a la cola los mensajes que se rindieron durante una caída ya resuelta del proveedor.
+  huellas:
+    - operacion:cola_atraso_seg
+    - operacion:despachador_latido_seg
+  precondicion:
+    - El despachador late con menos de 180 s. Si no late, primero `fly machine restart <id> -a agente-webhooks` sobre la máquina del proceso `despachador`, y se espera a que lata.
+    - La causa ya se resolvió: la plantilla o el token de Meta funcionan (un envío de prueba manual salió).
+    - Solo filas de texto (nunca `canal = 'llamada'`, marcar dos veces a un cliente es peor que no marcar) y de menos de 12 h (VENCE_EN_HORAS del despachador).
+  pasos:
+    - |
+      -- Primero contar, con el mismo filtro, y anotar el total en el issue.
+      update outbox
+         set estado = 'pendiente', intentos = 0, disponible_en = now(), ultimo_error = null
+       where estado = 'fallido'
+         and canal <> 'llamada'
+         and creado > now() - interval '12 hours'
+         and creado between '<inicio de la caída>' and '<fin de la caída>'
+      returning id;   -- guardar la lista en el issue: es la reversa
+  postcondicion:
+    - En 10 min, operacion:cola_atraso_seg vuelve a ≤ 300 s.
+    - Las filas reencoladas pasan a `enviado`; ninguna vuelve a `fallido` con el mismo error.
+  reversa: |
+    update outbox set estado = 'fallido', ultimo_error = 'reencolado revertido a mano'
+     where id = any('<ids devueltos>'::uuid[]) and estado = 'pendiente';

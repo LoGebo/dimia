@@ -20,7 +20,7 @@ class SocialSettings(BaseSettings):
     graph_url: str = "https://graph.facebook.com"
 
     anthropic_api_key: str = ""
-    llm_model: str = "claude-haiku-4-5"
+    llm_model: str = "claude-sonnet-5"
     llm_max_tokens: int = 1024
     llm_max_iteraciones: int = 6
     sesion_ttl_min: int = 30

@@ -65,15 +65,17 @@ async def refrescar(refresco: str) -> dict:
 
 
 def datos_jwt(acceso: str) -> dict:
-    """exp y cuenta de ChatGPT, leídos del payload del JWT (sin verificar firma: solo informan)."""
+    """exp, cuenta y residencia de ChatGPT, leídos del payload del JWT (sin verificar firma: solo informan)."""
     try:
         cuerpo = acceso.split(".")[1]
         cuerpo += "=" * (-len(cuerpo) % 4)
         p = json.loads(base64.urlsafe_b64decode(cuerpo))
     except Exception:
-        return {"expira": datetime.now(timezone.utc), "cuenta": None}
+        return {"expira": datetime.now(timezone.utc), "cuenta": None, "residencia": None}
     auth = p.get("https://api.openai.com/auth") or {}
-    return {"expira": datetime.fromtimestamp(int(p.get("exp", 0)), tz=timezone.utc), "cuenta": auth.get("chatgpt_account_id")}
+    return {"expira": datetime.fromtimestamp(int(p.get("exp", 0)), tz=timezone.utc), "cuenta": auth.get("chatgpt_account_id"),
+            # sin ella los workspaces con residencia contestan 401 (Hermes la saca igual del JWT)
+            "residencia": auth.get("chatgpt_data_residency") or auth.get("chatgpt_compute_residency")}
 
 
 def auth_json(acceso: str, refresco: str) -> str:

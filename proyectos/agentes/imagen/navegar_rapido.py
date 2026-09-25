@@ -13,16 +13,18 @@ import jev_ultrafast.model as modelo
 from browser_harness.helpers import cdp
 from jev_ultrafast.agent import Agent
 
-# --- Jev por Vercel AI Gateway (misma respuesta) y modelo de texto por la misma puerta ---
+# --- Jev y el modelo de texto por la puerta del orquestador ---
+# DIMIA_PUERTA_URL es el proxy del orquestador; la llave que llega aquí es la de la máquina, no la
+# de plataforma: el orquestador pone la real (y el modelo) al reenviar.
 _post = modelo.post_json
-VERCEL = os.environ.get("VERCEL_AI_GATEWAY_KEY", "")
+PUERTA = os.environ.get("DIMIA_PUERTA_URL", "https://ai-gateway.vercel.sh/v1").rstrip("/")
+LLAVE = os.environ.get("VERCEL_AI_GATEWAY_KEY", "")
 
 
 def post_json(url, key, body):
-    if VERCEL and "typesafe.ai" in url:
-        body = {**body, "model": "typesafe-ai/jev"}
-        return _post("https://ai-gateway.vercel.sh/v1/evaluate", VERCEL, body)
-    if "ai-gateway.vercel.sh" in url:  # el helper de texto: sin claves de razonamiento que la puerta no conoce
+    if LLAVE and "typesafe.ai" in url:
+        return _post(f"{PUERTA}/evaluate", LLAVE, {**body, "model": "typesafe-ai/jev"})
+    if url.startswith(PUERTA):  # el helper de texto: sin claves de razonamiento que la puerta no conoce
         body = {k: v for k, v in body.items() if k not in ("reasoning", "thinking")}
     return _post(url, key, body)
 

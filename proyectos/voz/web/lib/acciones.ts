@@ -182,6 +182,8 @@ async function crearNegocio(
   usuarioId: string,
   datos: { nombre: string; giro: GiroElegido; zonaHoraria: string; telefonoEscalamiento: string | null },
 ): Promise<{ id: string; herramientas: Herramienta[] }> {
+  // El id nace aquí para fijarlo antes de insertar: la base solo deja escribir en el negocio fijado.
+  const id = crypto.randomUUID();
   return elevado(async (q) => {
     const vertical = datos.giro.propio ? await crearGiroPropio(q, datos.giro.propio) : datos.giro.vertical;
     const plantillas = await q<{ herramientas: Herramienta[] }>(
@@ -190,17 +192,16 @@ async function crearNegocio(
     );
     const herramientas = plantillas[0]?.herramientas ?? ["agendar", "recado"];
     const rapido = herramientas.includes("pedido") || vertical === "restaurante";
-    const filas = await q<{ id: string }>(
-      `insert into tenant (nombre, vertical, zona_horaria, telefono_escalamiento,
+    await q(
+      `insert into tenant (id, nombre, vertical, zona_horaria, telefono_escalamiento,
                            slot_granularidad_min, anticipacion_min)
-       values ($1, $2, $3, $4, $5, $6) returning id`,
-      [datos.nombre, vertical, datos.zonaHoraria, datos.telefonoEscalamiento, rapido ? 15 : 30, rapido ? 60 : 120],
+       values ($7, $1, $2, $3, $4, $5, $6)`,
+      [datos.nombre, vertical, datos.zonaHoraria, datos.telefonoEscalamiento, rapido ? 15 : 30, rapido ? 60 : 120, id],
     );
-    const id = filas[0]!.id;
     await q("insert into tenant_member (tenant_id, user_id, rol) values ($1, $2, 'owner')", [id, usuarioId]);
     await sembrarPlantilla(q, id, vertical, herramientas.includes("agendar"));
     return { id, herramientas };
-  });
+  }, id);
 }
 
 const HERRAMIENTAS_VALIDAS: Herramienta[] = ["agendar", "pedido", "recado"];

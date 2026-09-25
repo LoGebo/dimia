@@ -236,7 +236,7 @@ from (values
   ('clinica',     'openai',    null,                        'azure',      'es-MX-DaliaNeural',    '{"prosodia":{"rate":1.0}}'),
   ('restaurante', 'google',    'gemini-2.5-flash',          'azure',      'es-MX-JorgeNeural',    '{"prosodia":{"rate":1.08}}'),
   ('comida',      'google',    'gemini-flash-lite-latest',  'azure',      'es-MX-CandelaNeural',  '{"prosodia":{"rate":1.15}}'),
-  ('salon',       'anthropic', 'claude-haiku-4-5-20251001', 'elevenlabs', 'MOpELGWw8bqcERsmVMzW', '{"estabilidad":0.45,"similitud":0.8,"estilo":0.15,"velocidad":1.0}'),
+  ('salon',       'anthropic', 'claude-sonnet-5', 'elevenlabs', 'MOpELGWw8bqcERsmVMzW', '{"estabilidad":0.45,"similitud":0.8,"estilo":0.15,"velocidad":1.0}'),
   ('taller',      'openai',    'gpt-4.1-mini',              'cartesia',   '5c5ad5e7-1020-476b-8b91-fdcbe9cc313c', '{}'),
   ('recepcion',   'openai',    null,                        'deepgram',   'aura-2-javier-es',     '{}')
 ) as d(vertical, llm_proveedor, llm_modelo, tts_proveedor, voz_id, tts_ajustes)

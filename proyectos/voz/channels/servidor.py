@@ -1,4 +1,4 @@
-"""Un solo proceso web para todos los webhooks de Meta.
+"""Un solo proceso web para todos los webhooks de Meta (y el de Telnyx Call Control).
 
 WhatsApp e Instagram/Messenger viven en apps separadas para poder correr y
 probarse solas; en Fly conviene un solo puerto. Esto reparte por prefijo sin
@@ -13,6 +13,7 @@ from __future__ import annotations
 from contextlib import AsyncExitStack
 
 from channels.social.servidor import app as social
+from channels.telnyx import app as telnyx
 from channels.whatsapp.servidor import app as whatsapp
 
 _pila = AsyncExitStack()
@@ -41,7 +42,13 @@ async def app(scope, receive, send) -> None:
         await send({"type": "http.response.start", "status": 413, "headers": []})
         await send({"type": "http.response.body", "body": b""})
         return
-    destino = social if scope.get("path", "").startswith("/webhook/social") else whatsapp
+    ruta = scope.get("path", "")
+    if ruta.startswith("/webhook/social"):
+        destino = social
+    elif ruta.startswith("/webhook/telnyx"):
+        destino = telnyx
+    else:
+        destino = whatsapp
     await destino(scope, receive, send)
 
 

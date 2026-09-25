@@ -691,7 +691,7 @@ export const PROVEEDORES_LLM: {
 }[] = [
   { valor: "openai", nombre: "OpenAI", detalle: "El más probado en llamadas", porDefecto: "gpt-4.1-mini" },
   { valor: "google", nombre: "Google Gemini", detalle: "El más rápido y barato", porDefecto: "gemini-3.6-flash" },
-  { valor: "anthropic", nombre: "Anthropic", detalle: "El que mejor sigue instrucciones largas", porDefecto: "claude-haiku-4-5-20251001" },
+  { valor: "anthropic", nombre: "Anthropic", detalle: "El que mejor sigue instrucciones largas", porDefecto: "claude-sonnet-5" },
 ];
 
 export const MODELOS_LLM: Record<
@@ -709,7 +709,8 @@ export const MODELOS_LLM: Record<
     { id: "gemini-3.7-flash", nombre: "Gemini 3.7 Flash", detalle: "El más reciente; probarlo antes de dejarlo en producción", costoMinuto: 0.005 },
   ],
   anthropic: [
-    { id: "claude-haiku-4-5-20251001", nombre: "Claude Haiku 4.5", detalle: "Rápido y muy obediente", costoMinuto: 0.004 },
+    // Haiku 4.5 se retira el 15-oct-2026. Sonnet 5 cuesta el doble por token (2/10 USD por millón).
+    { id: "claude-sonnet-5", nombre: "Claude Sonnet 5", detalle: "Muy obediente con instrucciones largas; algo más lento", costoMinuto: 0.008 },
   ],
 };
 

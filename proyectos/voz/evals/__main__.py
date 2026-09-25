@@ -50,7 +50,8 @@ async def ejecutar(args: argparse.Namespace) -> int:
     if not escenarios:
         print("no hay escenarios que correr", file=sys.stderr)
         return CODIGO_CONFIGURACION
-    for modelo in (args.modelo_agente, args.modelo_cliente):
+    # Con --cliente-guion el cliente no llama a ningun modelo: no pide su llave.
+    for modelo in (args.modelo_agente, None if args.cliente_guion else args.modelo_cliente):
         if modelo and not hay_credenciales(modelo):
             print(
                 f"falta la llave del proveedor de {modelo}. "

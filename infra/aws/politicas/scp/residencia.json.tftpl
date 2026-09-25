@@ -1,0 +1,43 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DatosSoloEnMexico",
+      "Effect": "Deny",
+      "Action": [
+        "rds:CreateDBCluster",
+        "rds:CreateDBInstance",
+        "rds:RestoreDBClusterFromSnapshot",
+        "rds:RestoreDBClusterToPointInTime",
+        "rds:RestoreDBInstanceFromDBSnapshot",
+        "dynamodb:CreateTable",
+        "dynamodb:CreateGlobalTable",
+        "dynamodb:RestoreTableFromBackup",
+        "sqs:CreateQueue"
+      ],
+      "Resource": "*",
+      "Condition": { "StringNotEquals": { "aws:RequestedRegion": "mx-central-1" } }
+    },
+    {
+      "Sid": "BucketsYSecretosEnMexicoOVoz",
+      "Effect": "Deny",
+      "Action": ["s3:CreateBucket", "secretsmanager:CreateSecret"],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": { "aws:RequestedRegion": ["mx-central-1", "us-east-1", "us-east-2"] }
+      }
+    },
+    {
+      "Sid": "FueraDeMexicoSoloCuentasDeVoz",
+      "Effect": "Deny",
+      "Action": ["s3:CreateBucket", "secretsmanager:CreateSecret"],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": "mx-central-1",
+          "aws:PrincipalAccount": ${cuentas_voz}
+        }
+      }
+    }
+  ]
+}

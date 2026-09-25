@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SoloIdentidadesDeLaOrganizacion",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": ["s3:*", "sqs:*", "kms:*", "secretsmanager:*", "sts:AssumeRole"],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEqualsIfExists": { "aws:PrincipalOrgID": "${org_id}" },
+        "BoolIfExists": { "aws:PrincipalIsAWSService": "false" }
+      }
+    },
+    {
+      "Sid": "SoloPorTLS",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": ["s3:*", "sqs:*", "kms:*", "secretsmanager:*", "sts:*"],
+      "Resource": "*",
+      "Condition": { "BoolIfExists": { "aws:SecureTransport": "false" } }
+    }
+  ]
+}

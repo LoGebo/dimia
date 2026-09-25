@@ -3,7 +3,11 @@
   Xvfb :n · dbus de sesión (AT-SPI para computer use) · openbox · x11vnc 5900+n ·
   websockify 6080+n · HD H.264 7000+n · Chromium con CDP 9200+n · `hermes gateway run` con
   HERMES_HOME=/opt/data/agentes/<agente>, DISPLAY=:n y API en 8700+n.
-Lo que muera se relanza en la siguiente vuelta."""
+Además, una sola compuerta de pantallas (pantallas.py, 8600) para toda la máquina.
+Lo que muera se relanza en la siguiente vuelta.
+
+Qué se ve desde fuera de la máquina: solo la API de cada Hermes (8700+n, con su llave) y la
+compuerta de pantallas (8600, con pase firmado). VNC, noVNC, HD y CDP escuchan en 127.0.0.1."""
 import json
 import os
 import subprocess
@@ -17,6 +21,7 @@ UID = 10000  # usuario hermes
 HERMES = "/opt/hermes/.venv/bin/hermes"
 
 procesos: dict[tuple[str, str], subprocess.Popen] = {}
+COMPUERTA = ("", "pantallas")  # de toda la máquina, no de un agente
 marcas: dict[str, float] = {}  # mtime del config.yaml que corre cada Hermes
 
 
@@ -67,7 +72,7 @@ def escritorio(agente: str, n: int):
         "--hide-crash-restore-bubble", "--disable-session-crashed-bubble", "--test-type", "--force-renderer-accessibility",
         f"--remote-debugging-port={9200 + n}", "--remote-allow-origins=*", f"--user-data-dir={perfil_nav}", "about:blank"], base)
     lanzar((agente, "vnc"), ["x11vnc", "-display", disp, "-rfbport", str(5900 + n), "-localhost", "-forever", "-shared", "-nopw", "-quiet", "-noxdamage"], base)
-    lanzar((agente, "novnc"), ["websockify", "--web", "/usr/share/novnc", f"[::]:{6080 + n}", f"localhost:{5900 + n}"])
+    lanzar((agente, "novnc"), ["websockify", "--web", "/usr/share/novnc", f"127.0.0.1:{6080 + n}", f"127.0.0.1:{5900 + n}"])
     # Pantalla en HD (H.264 por WebSocket) en 7000+n; solo captura mientras alguien mira.
     lanzar((agente, "hd"), ["/opt/hermes/.venv/bin/python", "/opt/dimia/hd.py", disp, str(7000 + n), str(ANCHO), str(ALTO)], base)
     pestaña_viva(n)
@@ -118,7 +123,8 @@ def main():
         try:
             with open(ARCHIVO) as f:
                 mapa = json.load(f)
-            for agente in {k[0] for k in procesos} - set(mapa):
+            lanzar(COMPUERTA, ["/opt/hermes/.venv/bin/python", "/opt/dimia/pantallas.py"])
+            for agente in {k[0] for k in procesos if k != COMPUERTA} - set(mapa):
                 apagar(agente)
             for agente, n in mapa.items():
                 escritorio(agente, int(n))

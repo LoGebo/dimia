@@ -2,16 +2,24 @@
 # (Xvfb + openbox + Chromium, terminal, archivos, LibreOffice, PDF) con AT-SPI
 # para computer use (cua-driver), VNC en el navegador, y un proceso Hermes por
 # agente con su propia pantalla. Hermes llega intacto.
-FROM nousresearch/hermes-agent:latest
+# Sin secretos: ni en la imagen ni en el disco. La máquina solo recibe su llave de máquina;
+# la cuenta de ChatGPT y las llaves de plataforma se agregan en el proxy del orquestador.
+# Base fija por digest (v2026.9.24, Hermes 0.21.5): el proxy de credenciales depende de que Hermes lea
+# HERMES_CODEX_BASE_URL y la compuerta de websockets>=13 en su venv. Subir de versión = cambiar el digest.
+FROM nousresearch/hermes-agent:v2026.9.24@sha256:fca358f12efd65bfaaca05884166f15c0e2788375ca30d77061ac1ebc96452b7
 
 USER root
+# Si Hermes deja de leer HERMES_CODEX_BASE_URL mandaría la llave de máquina a chatgpt.com; si falta
+# websockets.asyncio la compuerta de pantallas no arranca. Que falle al construir, no en producción.
+RUN grep -rq --include=*.py --exclude-dir=tests --exclude-dir=.venv HERMES_CODEX_BASE_URL /opt/hermes \
+    && /opt/hermes/.venv/bin/python -c "import websockets.asyncio.server"
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xvfb x11vnc openbox novnc websockify xdotool \
       at-spi2-core dbus-x11 \
       chromium ffmpeg xterm pcmanfm mousepad evince \
       libreoffice-calc libreoffice-writer libreoffice-impress libreoffice-gtk3 \
       fonts-liberation fonts-noto-color-emoji fonts-dejavu \
-      curl ca-certificates git python3-venv \
+      curl ca-certificates git python3-venv iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
 # cua-driver (computer use de Hermes), instalado en /opt/cua para el usuario hermes.
@@ -56,6 +64,7 @@ RUN cd /opt/hermes/scripts/whatsapp-bridge && npm install --omit=dev --silent --
 COPY navegar_rapido.py /opt/dimia/navegar_rapido.py
 COPY escritorios.py /opt/dimia/escritorios.py
 COPY hd.py /opt/dimia/hd.py
+COPY pantallas.py /opt/dimia/pantallas.py
 COPY arranque.sh /opt/dimia/arranque.sh
 COPY openbox-rc.xml /opt/dimia/openbox-rc.xml
 COPY openbox-menu.xml /opt/dimia/openbox-menu.xml

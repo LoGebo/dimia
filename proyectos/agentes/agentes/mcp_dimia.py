@@ -269,3 +269,67 @@ def app_whatsapp():
     return whatsapp.streamable_http_app(
         streamable_http_path="/", stateless_http=True, json_response=True,
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
+
+
+# --- Máquinas de tarea (capa 2, §3.6): el agente corre código fuera de la computadora de casa ---
+
+tareas = MCPServer("tareas", instructions=(
+    "Máquinas de tarea: computadoras Linux desechables, separadas de la computadora del negocio, para correr código, "
+    "instalar paquetes o abrir archivos no confiables. Viven hasta 30 minutos, no tienen credenciales ni guardan nada: "
+    "baje a su computadora lo que quiera conservar. Sin red salvo los dominios exactos que pida al crearla. "
+    "Borre la máquina al terminar; cada minuto encendida gasta saldo del negocio."))
+
+
+async def _agente_mcp(ctx: Context) -> tuple[str, str]:
+    token = (ctx.headers or {}).get("authorization", "").removeprefix("Bearer ").strip()
+    f = await db.uno("select id, tenant_id from agente where mcp_token = $1 and mcp_token is not null", token) if token else None
+    if not f:
+        raise MCPError(-32000, "Token de agente inválido")
+    return str(f["tenant_id"]), str(f["id"])
+
+
+@tareas.tool(name="maquina_tarea", description=(
+    "Maneja sus máquinas de tarea. accion: 'crear' (tamano xs|s|m|l, minutos 1-30, dominios separados por coma, p. ej. 'pypi.org,files.pythonhosted.org'), "
+    "'ejecutar' (maquina, comando de shell; corre en la carpeta de trabajo), 'subir' (maquina, ruta relativa, contenido; es_base64 para binarios), "
+    "'bajar' (maquina, ruta), 'borrar' (maquina) o 'listar'."))
+async def maquina_tarea(ctx: Context, accion: str, maquina: str = "", comando: str = "", ruta: str = "", contenido: str = "",
+                        es_base64: bool = False, tamano: str = "s", minutos: int = 15, dominios: str = "", clave: str = "") -> str:
+    import base64
+    import uuid
+
+    from agentes import vms  # aquí: vms importa maquinas, que no hace falta si nadie usa la herramienta
+    tenant, agente = await _agente_mcp(ctx)
+    try:
+        if accion == "crear":
+            v = await vms.crear(tenant, agente, clave or f"mcp-{uuid.uuid4()}", "terminal", tamano, int(minutos) * 60, [d for d in dominios.split(",") if d.strip()])
+            return f"Máquina {v['id']} lista ({v['tamano']}, vence {v['vence_en']}). Salida a: {', '.join(v['dominios']) or 'ninguna red'}."
+        if accion == "ejecutar":
+            r = await vms.ejecutar(tenant, agente, maquina, comando)
+            return f"código {r['codigo']}\n--- salida ---\n{r['salida']}\n--- errores ---\n{r['errores']}"
+        if accion == "subir":
+            datos = base64.b64decode(contenido) if es_base64 else contenido.encode()
+            r = await vms.subir(tenant, agente, maquina, ruta, datos)
+            return f"Escrito {r['ruta']} ({r['bytes']} bytes)."
+        if accion == "bajar":
+            datos = await vms.bajar(tenant, agente, maquina, ruta)
+            try:
+                texto = datos.decode()
+            except UnicodeDecodeError:
+                texto = "base64:" + base64.b64encode(datos).decode()
+            tope = 100_000  # el contexto del modelo no es un disco
+            return texto if len(texto) <= tope else texto[:tope] + f"\n[… truncado: {len(texto)} caracteres; parta el archivo o bájelo por partes]"
+        if accion == "borrar":
+            await vms.borrar(tenant, agente, maquina)
+            return "Máquina borrada."
+        if accion == "listar":
+            lista = await vms.listar(tenant, agente)
+            return "\n".join(f"{v['id']} · {v['tamano']} · {v['estado']} · vence {v['vence_en']}" for v in lista) or "No tiene máquinas de tarea encendidas."
+        return "Acción no válida. Use crear, ejecutar, subir, bajar, borrar o listar."
+    except vms.Rechazo as e:
+        return e.mensaje
+
+
+def app_tareas():
+    return tareas.streamable_http_app(
+        streamable_http_path="/", stateless_http=True, json_response=True,
+        transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))

@@ -9,7 +9,7 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, tzinfo
 from typing import Any, Protocol
 
-from app.supabase_client import Agenda, Tenant
+from app.supabase_client import Agenda, Tenant, fijar_negocio
 from app.supabase_client import agenda as agenda_global
 from channels import nucleo
 from channels.whatsapp import deterministas, plantilla
@@ -141,12 +141,14 @@ class AgenteWhatsApp:
         self.respaldo = respaldo
         self.agenda = agenda_global if agenda is None else agenda
         self.cfg = whatsapp_settings() if cfg is None else cfg
-        self.registro = RegistroSesiones(self.cfg) if registro is None else registro
+        self.registro = RegistroSesiones(self.cfg, self.agenda) if registro is None else registro
         self._contextos: dict[str, ContextoNegocio] = {}
 
     async def _contexto(self, numero_negocio: str) -> ContextoNegocio | None:
         vigente = self._contextos.get(numero_negocio)
         if vigente and time.monotonic() - vigente.cargado < TTL_CONTEXTO_SEG:
+            # Del cache no pasa por tenant_por_*: se fija aqui el negocio de la tarea.
+            fijar_negocio(vigente.tenant.id)
             return vigente
 
         tenant = await self.agenda.tenant_por_telefono(numero_negocio)
@@ -192,10 +194,9 @@ class AgenteWhatsApp:
         if fija is not None:
             return fija
 
-        sesion = self.registro.obtener(
+        async with self.registro.tomar(
             contexto.tenant.id, entrante.telefono, entrante.nombre_perfil
-        )
-        async with sesion.lock:
+        ) as sesion:
             herramientas = Herramientas(
                 self.agenda, contexto.tenant, contexto.servicios, sesion,
                 herramientas_giro=contexto.herramientas_giro,
@@ -284,9 +285,10 @@ class AgenteWhatsApp:
             return None
 
         if accion == "cambiar":
-            self.registro.obtener(
+            async with self.registro.tomar(
                 tenant_id, entrante.telefono, entrante.nombre_perfil
-            ).mover_booking_id = uuid.UUID(cita["id"])
+            ) as sesion:
+                sesion.mover_booking_id = uuid.UUID(cita["id"])
             momento = _momento(cita.get("inicio"), contexto.tenant.tz)
             return replace(
                 entrante,
@@ -350,10 +352,10 @@ class AgenteWhatsApp:
         )
         if respuesta is None:
             return None
-        sesion = self.registro.obtener(
+        async with self.registro.tomar(
             contexto.tenant.id, entrante.telefono, entrante.nombre_perfil
-        )
-        nucleo.anotar_turno_fijo(sesion, entrante.texto or "", respuesta)
+        ) as sesion:
+            nucleo.anotar_turno_fijo(sesion, entrante.texto or "", respuesta)
         await nucleo.registrar_turno(
             self.agenda,
             tenant_id=contexto.tenant.id,

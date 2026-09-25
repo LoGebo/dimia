@@ -10,7 +10,8 @@ export const FIRMA = {
   correo: "hola@dimia.mx",
   telefono: "+52 81 1518 8129",
   telefonoHref: "tel:+528115188129",
-  linkedin: "https://www.linkedin.com/",
+  // [ URL de la página de Dimia en LinkedIn por confirmar ]: vacío, el pie no pinta el enlace.
+  linkedin: "",
   ciudad: "Ciudad de México",
   anio: 2026,
 } as const;
@@ -32,7 +33,7 @@ export const NAVEGACION = [
 
 export const HERO = {
   titular:
-    "Dimia es la plataforma de operación inteligente que convierte cada conversación con tus clientes en acciones, oportunidades y datos para hacer crecer tu negocio.",
+    "Dimia es la plataforma de operación inteligente que convierte cada conversación con sus clientes en acciones, oportunidades y datos para hacer crecer su negocio.",
   bajadaAntes: "El punto donde el dato deja de informar y empieza a ",
   bajadaFuerte: "decidir",
   bajadaDespues: ".",
@@ -251,8 +252,8 @@ export const PLANES = {
   rotulo: "Planes iniciales",
   titular: "Precios claros, comparación directa",
   razones: [
-    "Configuración adaptada a tu negocio",
-    "Datos organizados en tu panel",
+    "Configuración adaptada a su negocio",
+    "Datos organizados en su panel",
     "Sin costo de activación",
   ],
   columnas: [

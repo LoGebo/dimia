@@ -124,14 +124,14 @@ class LLMAnthropic:
         extra: dict[str, Any] = {}
         if herramientas:
             extra["tools"] = list(herramientas)
-        if self.temperatura is not None:
-            extra["temperature"] = self.temperatura
-
+        # Como en produccion: sin razonamiento (latencia de voz) y sin temperatura,
+        # que el SDK 1.x ya no acepta.
         respuesta = await self._cliente.messages.create(
             model=self.modelo,
             max_tokens=self.max_tokens,
             system=[{"type": "text", "text": sistema, "cache_control": {"type": "ephemeral"}}],
             messages=a_bloques_anthropic(historial),
+            thinking={"type": "disabled"},
             **extra,
         )
         texto = "".join(b.text for b in respuesta.content if b.type == "text").strip()

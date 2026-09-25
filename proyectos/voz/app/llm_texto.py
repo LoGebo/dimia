@@ -182,6 +182,23 @@ class OpenAIComoAnthropic:
         self.modelo = modelo
 
 
+class ClaudeSinRazonar:
+    """AsyncAnthropic con `thinking` apagado en cada llamada.
+
+    Sonnet 5 y posteriores razonan por omision: segundos de mas por turno,
+    bloques `thinking` en el historial que OpenAI no entiende, y un 400 con el
+    `tool_choice` forzado del cierre.
+    """
+
+    def __init__(self, cliente: Any) -> None:
+        self._cliente = cliente
+        self.messages = self
+
+    async def create(self, **parametros: Any) -> Any:
+        parametros.setdefault("thinking", {"type": "disabled"})
+        return await self._cliente.messages.create(**parametros)
+
+
 # El default de los SDK es 600 s: el cliente se quedaba sin respuesta diez minutos.
 TIMEOUT_SEG = 30.0
 
@@ -192,15 +209,22 @@ def cliente_texto(cfg: Any, proveedor: str | None = None) -> Any:
     if proveedor == "anthropic":
         from anthropic import AsyncAnthropic
 
-        return AsyncAnthropic(
+        return ClaudeSinRazonar(AsyncAnthropic(
             api_key=getattr(cfg, "anthropic_api_key", "") or None, timeout=TIMEOUT_SEG, max_retries=1
-        )
+        ))
     from openai import AsyncOpenAI
 
     return OpenAIComoAnthropic(
         AsyncOpenAI(api_key=getattr(cfg, "openai_api_key", "") or None, timeout=TIMEOUT_SEG, max_retries=1),
         modelo=getattr(cfg, "texto_llm_modelo", "") or "gpt-4.1-mini",
     )
+
+
+# El respaldo de cada proveedor. Claude Haiku 4.5 se retira en Foundry el
+# 19-oct-2026 y en la API de Anthropic «no antes del 15-oct-2026», y no tiene
+# sucesor Haiku: va Sonnet 5 (activo hasta jun-2027). TEXTO_LLM_RESPALDO_MODELO
+# cambia el modelo sin desplegar codigo.
+RESPALDO_POR_PROVEEDOR = {"anthropic": "claude-sonnet-5", "openai": "gpt-4.1-mini"}
 
 
 def cliente_respaldo(cfg: Any) -> Any | None:
@@ -210,8 +234,15 @@ def cliente_respaldo(cfg: Any) -> Any | None:
     otro = "openai" if principal == "anthropic" else "anthropic"
     if not (getattr(cfg, f"{otro}_api_key", "") or os.environ.get(f"{otro.upper()}_API_KEY")):
         return None
+    # El modelo de la configuracion es del principal; el respaldo lleva el suyo.
+    modelo = os.environ.get("TEXTO_LLM_RESPALDO_MODELO") or RESPALDO_POR_PROVEEDOR[otro]
+    if otro == "openai":
+        from openai import AsyncOpenAI
+
+        return OpenAIComoAnthropic(
+            AsyncOpenAI(api_key=getattr(cfg, "openai_api_key", "") or None, timeout=TIMEOUT_SEG, max_retries=1),
+            modelo=modelo,
+        )
     cliente = cliente_texto(cfg, otro)
-    if otro == "anthropic":
-        # El modelo de la configuracion puede ser de OpenAI; el respaldo lleva el suyo.
-        cliente.modelo = "claude-haiku-4-5"
+    cliente.modelo = modelo
     return cliente

@@ -41,13 +41,10 @@ class Leidos(Modelo):
 async def registrar(cuerpo: Dispositivo, identidad: UsuarioActual) -> None:
     """El push llega por todos los negocios del usuario (el envío resuelve por membresía);
     tenant_id queda como el negocio desde el que se registró."""
+    # Funcion definidora: si el iPhone era de otra cuenta, el renglon no se ve
+    # desde esta y el upsert chocaba con RLS. El usuario sale de app.usuario.
     await base.execute(
-        """insert into dispositivo (token, tenant_id, user_id, plataforma, entorno, activo, visto)
-           select $1, $2, $3, 'ios', $4, true, now()
-            where exists (select 1 from tenant_member where tenant_id = $2 and user_id = $3)
-           on conflict (token) do update set tenant_id = excluded.tenant_id, user_id = excluded.user_id,
-                 entorno = excluded.entorno, activo = true, visto = now()""",
-        cuerpo.token.lower(), cuerpo.tenant_id, identidad.user_id, cuerpo.entorno,
+        "select dispositivo_registrar($1, $2, $3)", cuerpo.token.lower(), cuerpo.tenant_id, cuerpo.entorno
     )
 
 

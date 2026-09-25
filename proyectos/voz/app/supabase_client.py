@@ -4,6 +4,9 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
@@ -79,6 +82,82 @@ def _tenant(fila: asyncpg.Record | None) -> Tenant | None:
     return Tenant(**d)
 
 
+# El negocio de la tarea en curso. Con roles sin BYPASSRLS (app_voz,
+# app_texto, app_cron) cada consulta corre en una transaccion con
+# `app.tenant` fijado; sin negocio fijado la base truena en vez de devolver
+# datos de otro. Se fija al resolver el negocio (tenant_por_*) y las tareas
+# hijas lo heredan (asyncio copia el contexto al crearlas).
+negocio_en_curso: ContextVar[uuid.UUID | None] = ContextVar("negocio_en_curso", default=None)
+
+
+def fijar_negocio(tenant_id: uuid.UUID | str) -> None:
+    negocio_en_curso.set(uuid.UUID(str(tenant_id)))
+
+
+@contextmanager
+def en_negocio(tenant_id: uuid.UUID | str) -> Iterator[None]:
+    """Para el despachador: un tramo de trabajo sobre un negocio y de vuelta."""
+    ficha = negocio_en_curso.set(uuid.UUID(str(tenant_id)))
+    try:
+        yield
+    finally:
+        negocio_en_curso.reset(ficha)
+
+
+class _PoolDelNegocio:
+    """El pool de asyncpg, pero con `app.tenant` fijado en cada consulta.
+
+    set_config(..., true) vive lo que la transaccion: con el pooler de
+    Supabase en modo transaccion, un SET de sesion se filtraria a otra
+    conexion. Sin negocio fijado la consulta sale tal cual (lo global:
+    numero -> negocio, la cola del despachador).
+    """
+
+    # BEGIN y set_config van en un solo viaje: 2 extra por consulta (el de
+    # BEGIN+set_config y el COMMIT) en vez de 3. Sin parametros para que salga
+    # como consulta simple, que acepta varias sentencias; el tenant pasa por
+    # uuid.UUID antes de entrar al texto, asi que no hay nada que inyectar.
+    # ponytail: con Fly en dfw y la base en us-east-1 son ~2 RTT por consulta;
+    # medir el p95 por turno antes de pasar la voz a app_voz y, si pesa,
+    # mover slots_libres y reservar a funciones que fijen app.tenant por dentro.
+
+    def __init__(self, pool: asyncpg.Pool) -> None:
+        self._pool = pool
+
+    def __getattr__(self, nombre: str):
+        return getattr(self._pool, nombre)
+
+    async def _correr(self, metodo: str, sql: str, *args, **kwargs):
+        tenant = negocio_en_curso.get()
+        if tenant is None:
+            return await getattr(self._pool, metodo)(sql, *args, **kwargs)
+        tenant = uuid.UUID(str(tenant))
+        async with self._pool.acquire() as con:
+            await con.execute(f"begin; select set_config('app.tenant', '{tenant}', true)")
+            try:
+                resultado = await getattr(con, metodo)(sql, *args, **kwargs)
+            except Exception:
+                # Sin tapar el error original. Si la conexion ya no sirve, el
+                # pool la descarta; si se cancela aqui, su reset hace el ROLLBACK.
+                with suppress(Exception):
+                    await con.execute("rollback")
+                raise
+            await con.execute("commit")
+            return resultado
+
+    async def fetch(self, sql: str, *args, **kwargs):
+        return await self._correr("fetch", sql, *args, **kwargs)
+
+    async def fetchrow(self, sql: str, *args, **kwargs):
+        return await self._correr("fetchrow", sql, *args, **kwargs)
+
+    async def fetchval(self, sql: str, *args, **kwargs):
+        return await self._correr("fetchval", sql, *args, **kwargs)
+
+    async def execute(self, sql: str, *args, **kwargs):
+        return await self._correr("execute", sql, *args, **kwargs)
+
+
 class Agenda:
     """Un pool por event loop.
 
@@ -92,12 +171,12 @@ class Agenda:
     def __init__(self) -> None:
         self._pools: dict[int, asyncpg.Pool] = {}
 
-    async def conectar(self) -> None:
+    async def conectar(self, dsn: str | None = None) -> None:
         llave = id(asyncio.get_running_loop())
         if llave not in self._pools:
             cfg = settings()
             self._pools[llave] = await asyncpg.create_pool(
-                cfg.pg_dsn,
+                dsn or cfg.pg_dsn,
                 min_size=cfg.pg_pool_min,
                 max_size=cfg.pg_pool_max,
                 statement_cache_size=0,
@@ -116,21 +195,19 @@ class Agenda:
             await pool.close()
 
     @property
-    def pool(self) -> asyncpg.Pool:
+    def pool(self) -> _PoolDelNegocio:
         pool = self._pools.get(id(asyncio.get_running_loop()))
         if pool is None:
             raise RuntimeError("llama conectar() antes")
-        return pool
+        return _PoolDelNegocio(pool)
 
 
     async def tenant_por_telefono(self, numero: str) -> Tenant | None:
-        fila = await self.pool.fetchrow(
-            f"""select {COLUMNAS_TENANT}
-                  from tenant where activo
-                   and id = (select tenant_id from public.tenant_por_numero($1))""",
-            numero,
+        """Resuelve el negocio del numero marcado y lo deja fijado para la tarea."""
+        tenant_id = await self.pool.fetchval(
+            "select tenant_id from public.tenant_por_numero($1)", numero
         )
-        return _tenant(fila)
+        return await self.tenant_por_id(tenant_id) if tenant_id else None
 
     async def plantilla_vertical(self, clave: str) -> dict | None:
         fila = await self.pool.fetchrow(
@@ -217,10 +294,9 @@ class Agenda:
 
     async def outbox_entrega(self, externo_id: str, estado: str, error: str | None) -> None:
         """Estado de entrega que reporta Meta (sent → delivered → read, o failed)."""
+        # Llega por wamid, sin negocio: la funcion cruza negocios solo para esto.
         await self.pool.execute(
-            "update outbox set entrega = $2, entrega_error = $3, entrega_en = now() where externo_id = $1"
-            " and (entrega is distinct from 'read' or $2 = 'failed')",
-            externo_id, estado, error,
+            "select outbox_entrega_registrar($1, $2, $3)", externo_id, estado, error
         )
 
     async def outbox_marcar_error(self, outbox_id: uuid.UUID, error: str) -> None:
@@ -262,6 +338,18 @@ class Agenda:
             "on conflict do nothing returning true",
             canal, externo_id,
         ))
+
+    async def mensaje_respondido(self, canal: str, externo_id: str) -> None:
+        """La respuesta salió o quedó en la cola: el vigilante deja de contarlo."""
+        await self.pool.execute(
+            "update mensaje_entrante set respondido = now() "
+            "where canal = $1 and externo_id = $2 and respondido is null",
+            canal, externo_id,
+        )
+
+    async def latido(self, componente: str) -> None:
+        """Anota que el proceso sigue vivo (salud_operacion lo lee)."""
+        await self.pool.execute("select latido_registrar($1)", componente)
 
     async def outbox_respuesta(
         self, tenant_id: uuid.UUID, canal: str, destino: str, texto: str
@@ -485,6 +573,8 @@ class Agenda:
         return json.loads(crudo) if isinstance(crudo, str) else crudo
 
     async def tenant_por_id(self, tenant_id: uuid.UUID) -> Tenant | None:
+        """Lee el negocio y lo deja fijado para el resto de la tarea."""
+        fijar_negocio(tenant_id)
         fila = await self.pool.fetchrow(
             f"select {COLUMNAS_TENANT} from tenant where id = $1 and activo",
             tenant_id,
@@ -632,6 +722,68 @@ class Agenda:
             motivo, booking_id,
             json.dumps(transcripcion or []), json.dumps(latencias or {}), fin_motivo,
         )
+
+    async def sesion_tomar(
+        self, tenant_id: uuid.UUID, canal: str, contacto: str, version: int,
+        dueno: uuid.UUID, ttl_seg: int, candado_seg: int,
+    ) -> dict:
+        """{'tomada', 'version', 'estado'}; estado None si la version no cambio."""
+        fila = await self.pool.fetchrow(
+            "select * from sesion_tomar($1,$2,$3,$4,$5,$6,$7)",
+            tenant_id, canal, contacto, version, dueno, ttl_seg, candado_seg,
+        )
+        d = dict(fila)
+        if isinstance(d["estado"], str):
+            d["estado"] = json.loads(d["estado"])
+        return d
+
+    async def sesion_guardar(
+        self, tenant_id: uuid.UUID, canal: str, contacto: str, dueno: uuid.UUID, estado: dict
+    ) -> int | None:
+        return await self.pool.fetchval(
+            "select sesion_guardar($1,$2,$3,$4,$5)",
+            tenant_id, canal, contacto, dueno, json.dumps(estado),
+        )
+
+    async def anclaje_registrar(
+        self, call_session_id: str, call_control_id: str, numero_negocio: str,
+        llamante: str | None, tenant_id: uuid.UUID | None, destino_respaldo: str | None,
+    ) -> bool:
+        """False si la llamada ya estaba registrada (Telnyx reintento el webhook)."""
+        return bool(await self.pool.fetchval(
+            """insert into llamada_anclaje (call_session_id, call_control_id, numero_negocio,
+                                            llamante, tenant_id, destino_respaldo)
+               values ($1,$2,$3,$4,$5,$6) on conflict do nothing returning true""",
+            call_session_id, call_control_id, numero_negocio, llamante, tenant_id, destino_respaldo,
+        ))
+
+    async def anclaje(self, call_session_id: str) -> dict | None:
+        fila = await self.pool.fetchrow(
+            "select * from llamada_anclaje where call_session_id = $1", call_session_id
+        )
+        return dict(fila) if fila else None
+
+    async def anclaje_resolver(self, call_session_id: str, estado: str) -> dict | None:
+        fila = await self.pool.fetchrow(
+            "select * from anclaje_resolver($1,$2)", call_session_id, estado
+        )
+        return dict(fila) if fila else None
+
+    async def anclaje_reabrir(self, call_session_id: str) -> None:
+        """El desvío no salió: la llamada vuelve a 'timbrando' para que el
+        siguiente intento (reintento de Telnyx o del temporizador) lo repita."""
+        await self.pool.execute(
+            """update llamada_anclaje set estado = 'timbrando', actualizada = now()
+                where call_session_id = $1 and estado = 'desviada'""",
+            call_session_id,
+        )
+
+    async def base_viva(self, tope_seg: float = 2.0) -> bool:
+        """Para /salud: un select 1 con tope corto, sin tronar si la base no contesta."""
+        try:
+            return await asyncio.wait_for(self.pool.fetchval("select 1"), tope_seg) == 1
+        except Exception:
+            return False
 
 
 agenda = Agenda()

@@ -17,7 +17,7 @@ from datetime import date, datetime
 from dotenv import load_dotenv
 from livekit import api
 from livekit.agents import (
-    Agent, AgentSession, JobContext, JobProcess, RoomInputOptions,
+    Agent, AgentSession, JobContext, JobProcess, JobRequest, RoomInputOptions,
     JobExecutorType, RunContext, WorkerOptions, cli, function_tool, llm, stt, tts,
 )
 from livekit.plugins import deepgram, elevenlabs, openai, silero
@@ -27,7 +27,7 @@ from app import prompt as prompt_mod
 from app.franjas import franja_a_horas
 from app.cierre import ModeloNoContesto, resumir
 from app.config import settings
-from app.supabase_client import Tenant, agenda
+from app.supabase_client import Tenant, agenda, fijar_negocio
 from app.telefonos import normalizar
 
 load_dotenv()
@@ -634,7 +634,8 @@ async def transferir(sala: str, identidad: str, destino: str) -> bool:
 
 
 async def colgar_con_respaldo(
-    ctx: JobContext, identidad: str, tenant: Tenant | None, telefono: str, call_id: str
+    ctx: JobContext, identidad: str, tenant: Tenant | None, telefono: str, call_id: str,
+    asunto: str = "La llamada se cortó por una falla técnica. Devuélvale la llamada.",
 ) -> str:
     """El modelo, la voz o la base fallaron y ya nadie va a contestar.
 
@@ -654,7 +655,7 @@ async def colgar_con_respaldo(
             res = await agenda.registrar_recado(
                 tenant_id=tenant.id,
                 telefono=telefono,
-                asunto="La llamada se cortó por una falla técnica. Devuélvale la llamada.",
+                asunto=asunto,
                 nombre=None,
                 detalle=None,
                 call_id=call_id,
@@ -683,7 +684,7 @@ def construir_llm(tenant: Tenant | None = None):
         principal = _construir_llm(tenant)
     except Exception:
         log.exception("no se pudo construir el LLM del negocio; usando el base")
-        principal, proveedor = openai.LLM(model=cfg.llm_model, temperature=0.4), "openai"
+        principal, proveedor = _llm("openai", cfg.llm_model), "openai"
     respaldos = []
     for otro, llave in (
         ("openai", cfg.openai_api_key),
@@ -716,10 +717,35 @@ def _llm(proveedor: str, modelo: str):
             model=modelo, temperature=0.4, api_key=cfg.google_api_key or None
         )
     if proveedor == "anthropic":
-        from livekit.plugins import anthropic
+        return _claude(modelo)
+    # Los gpt-5 razonan y solo aceptan la temperatura de fabrica.
+    extra = {"temperature": 0.4} if modelo.startswith("gpt-4") else {}
+    return openai.LLM(model=modelo, **extra)
 
-        return anthropic.LLM(model=modelo, temperature=0.4)
-    return openai.LLM(model=modelo, temperature=0.4)
+
+def _claude(modelo: str):
+    """Claude sin temperatura y sin razonamiento.
+
+    Con el SDK de Anthropic 1.x el plugin no arrancaba: arma su cliente con un
+    httpx que el SDK ya no acepta (TypeError al construirlo), asi que el
+    respaldo de Claude nunca existio y un negocio con Claude caia al modelo
+    base. Se le da el cliente hecho. Tampoco `temperature`: el SDK 1.x la
+    quito. Y sin `thinking` explicito, Sonnet 5 y posteriores razonan por su
+    cuenta y le suman segundos a cada respuesta de voz.
+    """
+    from anthropic import AsyncAnthropic
+    from livekit.plugins import anthropic
+
+    class ClaudeSinRazonar(anthropic.LLM):
+        def chat(self, **kw: Any):
+            extra = kw.get("extra_kwargs")
+            kw["extra_kwargs"] = {"thinking": {"type": "disabled"}, **(extra if isinstance(extra, dict) else {})}
+            return super().chat(**kw)
+
+    llave = cfg.anthropic_api_key
+    # Sin reintentos: FallbackAdapter pasa al siguiente proveedor.
+    cliente = AsyncAnthropic(api_key=llave or None, max_retries=0, timeout=30.0)
+    return ClaudeSinRazonar(model=modelo, api_key=llave, client=cliente)
 
 
 def construir_tts(tenant: Tenant):
@@ -895,6 +921,122 @@ async def esperar_contestacion(
         room.off("participant_disconnected", al_salir)
 
 
+ATRIBUTO_SOBRECUPO = "dimia.sobrecupo"
+OCUPADO_TRANSFIERE = "Todas nuestras líneas están ocupadas. Le comunico con alguien del equipo."
+OCUPADO_RECADO = (
+    "Todas nuestras líneas están ocupadas. Le vamos a devolver la llamada a este "
+    "número en cuanto se libere una línea."
+)
+_servidor: list[Any] = []
+
+
+def carga_por_llamadas(servidor: Any) -> float:
+    """load_fnc: lugares ocupados sobre el total, sobrecupo incluido.
+
+    Con CAPACIDAD_LLAMADAS=12 y LUGARES_SOBRECUPO=2 el worker se declara lleno
+    en 14; de la 13 en adelante contesta que no hay lineas. Se guarda el
+    servidor porque request_fnc no lo recibe y necesita contar las activas.
+    """
+    if not _servidor:
+        _servidor.append(servidor)
+    return len(servidor.active_jobs) / max(cfg.capacidad_llamadas + cfg.lugares_sobrecupo, 1)
+
+
+def llamadas_en_curso() -> int:
+    """Activas mas las ya aceptadas que aun no arrancan, sin contar la que se decide."""
+    if not _servidor:
+        return 0
+    servidor = _servidor[0]
+    return len(servidor.active_jobs) + max(getattr(servidor, "_reserved_slots", 1) - 1, 0)
+
+
+def en_sobrecupo(en_curso: int, capacidad: int) -> bool:
+    return capacidad > 0 and en_curso >= capacidad
+
+
+async def aceptar_o_sobrecupo(req: JobRequest) -> None:
+    """request_fnc: con el worker lleno, la llamada no se queda timbrando.
+
+    ponytail: el sobrecupo vive en cada worker. Con varios workers, LiveKit
+    elige al de menor carga, asi que uno en sobrecupo solo recibe llamadas si
+    los demas estan igual de llenos; si reparte de otro modo, puede contestar
+    «ocupado» con lugares libres en otro worker. El pool de sobrecupo aparte
+    (§3.3, voz-sobrecupo) quita ese limite cuando haya mas de un worker.
+    """
+    if not en_sobrecupo(llamadas_en_curso(), cfg.capacidad_llamadas):
+        await req.accept()
+        return
+    sala = req.room
+    if _saliente_de_metadatos(sala.metadata) or sala.name.startswith("prueba-"):
+        # Una campaña o una prueba del panel pueden esperar a otro worker.
+        log.warning("sala %s rechazada por capacidad", sala.name)
+        await req.reject(terminate=False)
+        return
+    log.warning("sala %s entra en sobrecupo", sala.name)
+    await req.accept(attributes={ATRIBUTO_SOBRECUPO: "1"})
+
+
+def es_sobrecupo(ctx: JobContext) -> bool:
+    aceptado = getattr(getattr(ctx, "_info", None), "accept_arguments", None)
+    return (getattr(aceptado, "attributes", None) or {}).get(ATRIBUTO_SOBRECUPO) == "1"
+
+
+async def atender_sobrecupo(ctx: JobContext, participante: Any, llamante: str, marcado: str) -> None:
+    """Sin modelo ni oido: una frase, y transferencia o recado. Luego se cuelga."""
+    tenant = None
+    try:
+        await agenda.conectar()
+        tenant = await agenda.tenant_por_telefono(marcado) if marcado else None
+    except Exception:
+        log.exception("sobrecupo: no se pudo cargar el negocio de %s", marcado)
+    if tenant is not None:
+        try:
+            session = AgentSession(tts=construir_voz(tenant))
+            await session.start(
+                agent=Agent(instructions=""),
+                room=ctx.room,
+                room_input_options=RoomInputOptions(
+                    audio_enabled=False, text_enabled=False, close_on_disconnect=False
+                ),
+            )
+            frase = OCUPADO_TRANSFIERE if tenant.telefono_escalamiento else OCUPADO_RECADO
+            await session.say(frase, allow_interruptions=False)
+        except Exception:
+            log.exception("sobrecupo: no se pudo decir el aviso en %s", ctx.room.name)
+    hecho = await colgar_con_respaldo(
+        ctx, participante.identity, tenant, llamante, uuid.uuid4().hex,
+        asunto="Llamó cuando todas las líneas estaban ocupadas. Devuélvale la llamada.",
+    )
+    log.warning("sala %s en sobrecupo: %s", ctx.room.name, hecho)
+    try:
+        await agenda.cerrar()
+    except Exception:
+        log.exception("no se pudo cerrar el pool")
+
+
+# `headers_to_attributes` de la troncal entrante: X-Dimia-Sesion -> dimia.sesion.
+ATRIBUTO_ANCLAJE = "dimia.sesion"
+
+
+async def anclar_agente(sesion: str | None) -> bool:
+    """Avisa a channels/telnyx.py que un agente ya atiende la llamada.
+
+    False solo si el plazo ya venció y la llamada se desvió al negocio. Con la
+    base caída se atiende igual: la persona ya está en la sala.
+    """
+    if not sesion:
+        return True
+    try:
+        await agenda.conectar()
+        if await agenda.anclaje_resolver(sesion, "agente") is not None:
+            return True
+        fila = await agenda.anclaje(sesion)
+        return fila is None or fila["estado"] == "agente"
+    except Exception:
+        log.exception("no se pudo anclar la llamada %s", sesion)
+        return True
+
+
 async def entrypoint(ctx: JobContext) -> None:
     """Una sala, una conversacion.
 
@@ -908,6 +1050,13 @@ async def entrypoint(ctx: JobContext) -> None:
     participante = await ctx.wait_for_participant()
     attrs = participante.attributes or {}
     llamante, marcado = quien_llama(attrs, participante.identity)
+    if not await anclar_agente(attrs.get(ATRIBUTO_ANCLAJE)):
+        log.warning("sala %s: la llamada ya se desvió al negocio", ctx.room.name)
+        await ctx.room.disconnect()
+        return
+    if es_sobrecupo(ctx):
+        await atender_sobrecupo(ctx, participante, llamante, marcado)
+        return
 
     tenant = None
     saliente = _saliente_de_metadatos(ctx.room.metadata)
@@ -1031,6 +1180,8 @@ async def entrypoint(ctx: JobContext) -> None:
         tarea.add_done_callback(escrituras.discard)
 
     async def _registrar_turno(autor: str, texto: str, externo_id: str | None) -> None:
+        # Al cerrar, LiveKit emite los ultimos turnos desde fuera del entrypoint.
+        fijar_negocio(tenant.id)
         try:
             await agenda.mensaje_registrar(
                 tenant.id, "llamada", llamante, autor, texto,
@@ -1086,6 +1237,7 @@ async def entrypoint(ctx: JobContext) -> None:
         log.error("sala %s: la sesion se cerro por %s", ctx.room.name, recepcionista.fin_motivo)
 
         async def respaldo() -> None:
+            fijar_negocio(tenant.id)
             hecho = await colgar_con_respaldo(
                 ctx, participante.identity, tenant, llamante, recepcionista.call_id
             )
@@ -1163,6 +1315,11 @@ async def entrypoint(ctx: JobContext) -> None:
         que termino. Fuera del camino en vivo, por eso va aqui. Si el modelo no
         contesta, el call_log se queda sin cierre pero la campaña si se entera
         del resultado."""
+        # LiveKit corre los callbacks de apagado desde el padre del entrypoint
+        # (job_proc_lazy_main._run_job_task): no heredan el negocio que fijo
+        # tenant_por_*, y como app_voz toda escritura tronaria con 42501.
+        # Cada callback es su propia tarea: fijarlo aqui no sale de ella.
+        fijar_negocio(tenant.id)
         try:
             # La fila de 'en_curso' y el plan B van primero: si no, pisarian el cierre.
             await asyncio.gather(*escrituras, return_exceptions=True)
@@ -1209,6 +1366,16 @@ async def entrypoint(ctx: JobContext) -> None:
     ctx.add_shutdown_callback(al_colgar)
 
 
+def opciones_de_capacidad() -> dict[str, Any]:
+    if cfg.capacidad_llamadas > 0:
+        return {
+            "load_fnc": carga_por_llamadas,
+            "load_threshold": 1.0,
+            "request_fnc": aceptar_o_sobrecupo,
+        }
+    return {"load_threshold": cfg.umbral_carga} if cfg.umbral_carga is not None else {}
+
+
 def latencias(turnos_ms: list[float]) -> dict:
     """p50 y p95 voz a voz de la llamada, como los lee el runbook."""
     if not turnos_ms:
@@ -1227,6 +1394,11 @@ if __name__ == "__main__":
     # veinte segundos despues. En hilos no pasa. En Linux (Fly) se queda el
     # esquema de procesos, que aisla mejor una llamada de otra.
     en_mac = sys.platform == "darwin"
+    # Solo en producción (`start`): en `dev` y `console` la sonda usa un puerto al azar.
+    if "start" in sys.argv:
+        from agent import latido
+
+        latido.arrancar(cfg.pg_dsn)
     cli.run_app(
         WorkerOptions(
             entrypoint_fnc=entrypoint,
@@ -1236,8 +1408,9 @@ if __name__ == "__main__":
             # un vCPU compartido eso pasa de los 10 s por defecto: el job fallaba sin otro worker.
             initialize_process_timeout=30.0,
             job_executor_type=JobExecutorType.THREAD if en_mac else JobExecutorType.PROCESS,
-            # Capacidad por entorno (UMBRAL_CARGA, MEMORIA_MAX_LLAMADA_MB), sin redesplegar código.
-            **({"load_threshold": cfg.umbral_carga} if cfg.umbral_carga is not None else {}),
+            # Capacidad por entorno (CAPACIDAD_LLAMADAS o UMBRAL_CARGA, MEMORIA_MAX_LLAMADA_MB),
+            # sin redesplegar código.
+            **opciones_de_capacidad(),
             job_memory_limit_mb=cfg.memoria_max_llamada_mb,
             # Vacio = despacho automatico (lo de hoy). Con nombre, solo recibe las salas
             # que la regla de despacho de LiveKit le mande a ese agente.

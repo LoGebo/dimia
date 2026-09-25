@@ -9,6 +9,9 @@
       "REEMPLAZAR_CON_RANGOS_SIP_DE_TELNYX/24"
     ],
     "allowed_numbers": [],
+    "headers_to_attributes": {
+      "X-Dimia-Sesion": "dimia.sesion"
+    },
     "krisp_enabled": false,
     "media_encryption": "SIP_MEDIA_ENCRYPT_DISABLE"
   }

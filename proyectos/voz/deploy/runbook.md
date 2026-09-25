@@ -117,6 +117,23 @@ Con 1-20 clientes no montes Prometheus. Una consulta programada cada 15 minutos
 La tercera es la que más veces salva: detecta el número mal configurado y la
 troncal caída sin instrumentar nada.
 
+### Vigilante externo (self-healing nivel 0)
+
+`.github/workflows/vigilante.yml` sondea cada 5 min desde fuera de Fly y abre un
+issue `Incidente: <huella>` tras dos fallas seguidas. El mínimo del nivel 0 son
+tres secretos, los tres obligatorios; si falta uno, el vigilante abre su propia
+huella:
+
+- `SALUD_TOKEN` (el mismo de `fly secrets set` en dimia-api) y `WHATSAPP_VERIFY_TOKEN`.
+- `VIGILANTE_LATIDO_URL`: el *dead man's switch* (healthchecks.io o latido de
+  PagerDuty, periodo 5 min, gracia 15 min). No es un extra: GitHub apaga los cron
+  de un repo sin actividad en 60 días y salta corridas con carga. Sin él, el
+  vigilante puede morir en silencio.
+
+Los issues y los logs de Actions son públicos si el repo lo es: el vigilante solo
+publica el código HTTP y el nombre de la señal. Aun así dice quién cae y cuándo;
+antes de cargar los secretos, decida si el vigilante vive en un repo privado.
+
 ---
 
 ## 2. Escalar de 1 a N workers
@@ -233,6 +250,7 @@ revés.
 | `LIVEKIT_API_KEY` / `SECRET` | Agrega la segunda pareja en `livekit.yaml` (acepta varias), reinicia LiveKit, mueve los workers a la nueva, quita la vieja |
 | `SUPABASE_SERVICE_KEY` | *Project Settings → API → Rotate*. Rota también en n8n y en cualquier panel |
 | Contraseña de Postgres (`PG_DSN`) | *Settings → Database → Reset password*, actualiza el DSN en todos lados; corta conexiones vivas, hazlo fuera de horario |
+| Contraseñas de `app_voz`, `app_texto`, `app_cron`, `app_api`, `app_panel` | `alter role app_x with password '…'`, actualiza el `PG_DSN` de ese servicio y redespliega. Un rol a la vez; las conexiones vivas siguen hasta que se cierran |
 | Credenciales de Telnyx | *Auth → API Keys*, y revisa que ninguna troncal use credenciales en vez de IP |
 | `GHCR_TOKEN` del despliegue | Token de GitHub con `write:packages`, guardado como secreto del repo |
 
@@ -307,6 +325,75 @@ select conname from pg_constraint where conrelid = 'booking'::regclass and conty
 
 Si esa consulta no devuelve nada, el producto perdió su única garantía dura.
 Detén todo y restaura.
+
+### Roles por superficie (RLS)
+
+Desde `20260925040000_roles_por_superficie.sql` cada servicio tiene su rol, sin
+BYPASSRLS. Solo ve el negocio que fija en `app.tenant` dentro de cada
+transacción. Si no lo fija, la consulta truena.
+
+| Servicio | Rol | Secreto que cambia |
+|---|---|---|
+| Worker de voz (`agente-voz`) | `app_voz` | `PG_DSN` |
+| Webhooks de texto y Telnyx (`fly-webhooks`) | `app_texto` | `PG_DSN` |
+| Despachador (proceso `despachador` de `fly-webhooks`) | `app_cron` | `PG_DSN_DESPACHADOR` |
+| dimia-api (`fly-api`) | `app_api` | `PG_DSN` |
+| Panel (Vercel) | `app_panel` | `PG_DSN` |
+| Migraciones, `api/onboarding.py`, `dimia-agentes` | `postgres` | sin cambio |
+
+Los roles nacen sin login. La contraseña se asigna en el editor SQL, nunca
+en el repo:
+
+```sql
+alter role app_voz with login password '<generada, 32+ caracteres>';
+```
+
+El despachador vive en la misma app que los webhooks. En `fly-webhooks`,
+`PG_DSN` es de los webhooks (`app_texto`) y `PG_DSN_DESPACHADOR` es del
+despachador (`app_cron`). Si pones `app_cron` en `PG_DSN`, los webhooks pierden
+`mensaje_entrante`, `llamada_anclaje` y las sesiones, y cruzan negocios en la
+cola.
+
+**Conexiones, antes del primer cambio.** En Supavisor el Pool Size aplica a
+cada par usuario y base. Hoy todo entra como `postgres.<ref>`, que es un solo
+pool. Con cinco roles pueden ser cinco pools. Revisa:
+
+```sql
+show max_connections;
+```
+
+y el Pool Size del dashboard (Database, Connection pooling). Baja el Pool Size
+hasta que `5 × pool_size + conexiones directas (migraciones, dimia-agentes,
+onboarding) + 10 de margen` quede debajo de `max_connections`. Después de
+cada cambio de DSN, vigila:
+
+```sql
+select usename, count(*) from pg_stat_activity group by 1 order by 2 desc;
+```
+
+En el pooler (modo transacción, 6543) el usuario es `app_voz.<ref>`. Cambia un
+servicio a la vez. Primero una llamada o un mensaje de prueba, después el
+siguiente servicio. Antes de la API y del panel verifica:
+
+```sql
+select pg_has_role('app_panel', 'authenticated', 'member'),  -- debe ser true
+       has_table_privilege('app_panel', 'auth.users', 'insert'),  -- debe ser true
+       has_table_privilege('app_api', 'auth.users', 'delete');   -- debe ser true
+```
+
+Si alguno sale `false`, la migración solo dejó un WARNING (en Supabase
+`postgres` a veces no puede otorgar sobre `auth`). No cambies el DSN de la API
+ni del panel. Sin ese grant, el alta local del panel, el alta de la API y el
+borrado de cuenta truenan. Otórgalo desde el editor SQL con un rol que
+pueda hacerlo y vuelve a verificar.
+
+Reversa: regresa el `PG_DSN` anterior (`postgres`) a ese servicio y
+redespliega. Los roles y las políticas pueden quedarse. `postgres` los ignora
+porque tiene BYPASSRLS.
+
+Tabla nueva con `tenant_id`: al final de su migración va
+`select public.aislar_por_negocio();` más los `grant` al rol que la usa. Si
+falta, `tests/test_rls_roles.py` falla.
 
 ---
 

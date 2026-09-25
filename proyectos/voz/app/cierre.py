@@ -19,7 +19,7 @@ RESULTADOS = (
     "transferida", "sin_resultado",
 )
 
-MODELO = "claude-haiku-4-5-20251001"
+MODELO = "claude-sonnet-5"
 MAX_TURNOS = 60
 MAX_CARACTERES_TURNO = 400
 

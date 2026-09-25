@@ -18,7 +18,7 @@ from dataclasses import dataclass, field, replace
 from datetime import tzinfo
 from typing import Any
 
-from app.supabase_client import Agenda, Tenant
+from app.supabase_client import Agenda, Tenant, fijar_negocio
 from app.supabase_client import agenda as agenda_global
 from channels import nucleo
 from channels.social.config import SocialSettings, social_settings
@@ -78,7 +78,7 @@ class AgenteSocial:
         self.respaldo = respaldo
         self.agenda = agenda_global if agenda is None else agenda
         self.cfg = social_settings() if cfg is None else cfg
-        self.registro = RegistroSesiones(self.cfg) if registro is None else registro
+        self.registro = RegistroSesiones(self.cfg, self.agenda) if registro is None else registro
         self._contextos: dict[str, ContextoNegocio] = {}
 
     async def _contexto(
@@ -87,6 +87,8 @@ class AgenteSocial:
         clave = f"{canal}:{cuenta_id}"
         vigente = self._contextos.get(clave)
         if vigente and time.monotonic() - vigente.cargado < TTL_CONTEXTO_SEG:
+            # Del cache no pasa por tenant_por_*: se fija aqui el negocio de la tarea.
+            fijar_negocio(vigente.tenant.id)
             return vigente
 
         tenant = await self.agenda.tenant_por_red(canal, cuenta_id)
@@ -130,10 +132,9 @@ class AgenteSocial:
         if confirmada is not None:
             entrante = confirmada
 
-        sesion = self.registro.obtener(
-            contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil
-        )
-        async with sesion.lock:
+        async with self.registro.tomar(
+            contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil, entrante.canal
+        ) as sesion:
             herramientas = Herramientas(
                 self.agenda, contexto.tenant, contexto.servicios, sesion,
                 herramientas_giro=contexto.herramientas_giro,
@@ -210,9 +211,10 @@ class AgenteSocial:
             if cita is None:
                 return None
             if accion == "cambiar":
-                self.registro.obtener(
-                    tenant_id, entrante.remitente_id, entrante.nombre_perfil
-                ).mover_booking_id = uuid.UUID(cita["id"])
+                async with self.registro.tomar(
+                    tenant_id, entrante.remitente_id, entrante.nombre_perfil, entrante.canal
+                ) as sesion:
+                    sesion.mover_booking_id = uuid.UUID(cita["id"])
                 momento = _momento(cita.get("inicio"), contexto.tenant.tz)
                 return replace(
                     entrante,
@@ -264,10 +266,10 @@ class AgenteSocial:
         )
         if respuesta is None:
             return None
-        sesion = self.registro.obtener(
-            contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil
-        )
-        nucleo.anotar_turno_fijo(sesion, entrante.texto or "", respuesta)
+        async with self.registro.tomar(
+            contexto.tenant.id, entrante.remitente_id, entrante.nombre_perfil, entrante.canal
+        ) as sesion:
+            nucleo.anotar_turno_fijo(sesion, entrante.texto or "", respuesta)
         await nucleo.registrar_turno(
             self.agenda,
             tenant_id=contexto.tenant.id,

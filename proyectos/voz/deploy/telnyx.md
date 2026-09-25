@@ -149,3 +149,58 @@ Antes de facturar: la LFPDPPP obliga a avisar que la llamada es atendida por un
 asistente virtual y a obtener consentimiento si se graba. Va en el saludo, en
 `app/prompt.py`, no aquí — pero es requisito de producción, no un pendiente
 cosmético.
+
+## 7. Anclaje con Call Control (fase 0, apagado)
+
+Hoy el número va directo de la SIP Connection a LiveKit. Si LiveKit acepta la
+llamada y ningún agente entra, la persona oye timbrar hasta colgar. Con Call
+Control, Telnyx conserva la llamada y el webhook `channels/telnyx.py` decide:
+
+```
+quien llama → Telnyx (Call Control) ──transfer + X-Dimia-Sesion──→ LiveKit SIP → sala
+                  ↑                                                       │
+                  └── si en TELNYX_ANCLAJE_SEG no hay agente ─────────────┘
+                      (llamada_anclaje sigue en 'timbrando'): transfer al
+                      telefono_escalamiento del negocio
+```
+
+Encenderlo (solo tras la prueba P1 de planeacion/aws-arquitectura-meta.md):
+
+1. Migración `20260925030000_voz_texto_f0.sql` aplicada.
+2. En la troncal entrante de LiveKit, `headers_to_attributes`
+   (`X-Dimia-Sesion` → `dimia.sesion`), ya en `deploy/livekit/troncal-entrante.json`.
+3. En Telnyx: *Voice → Call Control Applications → Create*, webhook
+   `https://<agente-webhooks>/webhook/telnyx`, API v2. Outbound Voice Profile
+   con México permitido (el desvío marca al negocio).
+4. Secretos de `agente-webhooks`: `TELNYX_API_KEY`, `TELNYX_PUBLIC_KEY`
+   (Account Settings → Keys, base64), `TELNYX_LIVEKIT_SIP_HOST` y al final
+   `TELNYX_CALL_CONTROL_ACTIVO=true`.
+5. Mover **un** número de prueba de la SIP Connection a la aplicación de Call
+   Control. Reversa: regresarlo a la SIP Connection.
+6. En la misma Call Control Application, llenar la **failover URL** del
+   webhook con otra ruta a `agente-webhooks` (p. ej. el hostname `.fly.dev` si
+   la principal es un dominio propio). Si el webhook no contesta, Telnyx
+   reintenta ahí antes de rendirse. Con la base caída el webhook ya degrada
+   solo: pasa la llamada a LiveKit sin temporizador, como antes de Call Control.
+
+Lo que P1 debe confirmar antes de mover números reales: que `transfer` sobre
+una llamada entrante sin contestar pasa los `custom_headers` a LiveKit, que un
+segundo `transfer` sobre la pierna A (el desvío) corta la pierna hacia LiveKit,
+y qué código SIP devuelve LiveKit cuando vence su `ringing_timeout`.
+
+P1 también mide los desvíos falsos, no solo los rescates. El worker marca
+`agente` hasta después del INVITE, el despacho, el arranque del job (en frío
+puede pasar de 10 s en shared vCPU) y la espera del participante; con un plazo
+corto, una llamada sana se desvía al negocio a media bienvenida. Con llamadas
+sanas, incluido un arranque en frío, medir:
+
+```sql
+select percentile_cont(0.99) within group (
+         order by extract(epoch from actualizada - creada)) as p99_seg,
+       count(*)
+  from llamada_anclaje
+ where estado = 'agente' and creada > now() - interval '1 day';
+```
+
+`actualizada` la fija `anclaje_resolver` al pasar a `agente`. Fijar
+`TELNYX_ANCLAJE_SEG` en ese p99 más 2-3 s de margen (por omisión 12).

@@ -1,0 +1,8 @@
+# Copie a comun.tfvars (ignorado por git). En CI se arma desde la variable INFRA_COMUN_TFVARS.
+# Cada pila toma solo las variables que declara.
+llave_estado_arn     = "arn:aws:kms:us-east-2:<id de compartido>:key/mrk-<id>"
+bucket_estado_arn    = "arn:aws:s3:::dimia-tofu-estado-<id de compartido>"
+flow_logs_bucket_arn = "arn:aws:s3:::[ bucket de flow logs en log-archivo ]"
+correos_alertas      = ["[ correo de la guardia ]"]
+dominio_correo       = "[ dominio de Dimia ]"
+sandbox_cuenta_id    = "<id de sandbox-agente>"
