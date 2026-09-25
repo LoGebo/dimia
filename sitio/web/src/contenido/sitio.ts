@@ -12,7 +12,7 @@ export const FIRMA = {
   telefonoHref: "tel:+528115188129",
   // [ URL de la página de Dimia en LinkedIn por confirmar ]: vacío, el pie no pinta el enlace.
   linkedin: "",
-  ciudad: "Ciudad de México",
+  ciudad: "Monterrey",
   anio: 2026,
 } as const;
 
