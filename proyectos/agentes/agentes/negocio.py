@@ -396,23 +396,29 @@ async def sincronizar(tenant: str, m, reiniciar: bool = False) -> None:
         await _sincronizar(tenant, m, reiniciar)
 
 
-_TANDA = 96_000  # ponytail: tope por exec; Fly rechaza cuerpos grandes (PayloadTooLarge). Un archivo solo más grande va en su propia tanda.
+_TANDA = 12_000  # ponytail: medido el 2026-09-25, Fly rechaza un exec de ~32 KB (PayloadTooLarge) y acepta 16 KB
 
 
 async def _escribir(referencia: str, archivos: dict[str, str], borrar=()) -> tuple[int, str, str]:
-    """Escribe los archivos en tandas que caben en un exec de Fly; se detiene en la primera que falla."""
-    tandas: list[dict[str, str]] = [{}]
+    """Escribe los archivos en tandas que caben en un exec de Fly; los que no caben solos van por
+    pedazos. Se detiene en el primer exec que falla."""
+    cmds: list[list[str]] = []
+    tanda: dict[str, str] = {}
     tam = 0
     for ruta, contenido in archivos.items():
         n = len(contenido.encode()) * 4 // 3 + len(ruta) + 200  # base64 + el resto del paso
-        if tandas[-1] and tam + n > _TANDA:
-            tandas.append({})
-            tam = 0
-        tandas[-1][ruta] = contenido
+        if n > _TANDA:
+            cmds += hermes.comandos_archivo_grande(ruta, contenido.encode(), _TANDA * 3 // 4 - 400)
+            continue
+        if tanda and tam + n > _TANDA:
+            cmds.append(hermes.comando_escribir(tanda))
+            tanda, tam = {}, 0
+        tanda[ruta] = contenido
         tam += n
+    cmds.insert(0, hermes.comando_escribir(tanda, borrar))  # borrar primero: lo nuevo no debe caer en lo que se borra
     r = (0, "", "")
-    for i, t in enumerate(tandas):
-        r = await proveedor().ejecutar(referencia, hermes.comando_escribir(t, borrar if i == 0 else ()), timeout=60)
+    for c in cmds:
+        r = await proveedor().ejecutar(referencia, c, timeout=60)
         if r[0] != 0:
             break
     return r

@@ -197,13 +197,30 @@ def mcp_tareas(token: str) -> dict:
     return {"tareas": {"url": f"{config.PUBLICO_URL}/mcp-tareas/", "headers": {"Authorization": f"Bearer {token}"}}}
 
 
+def modo_archivo(ruta: str) -> str:
+    return "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials", "dimia.json", "llave_maquina")) else "644"  # config lleva llaves de MCP
+
+
+def comandos_archivo_grande(ruta: str, contenido: bytes, pedazo: int) -> list[list[str]]:
+    """Un archivo que no cabe en un exec: se arma por pedazos en .tmp y se mueve al final."""
+    q = shlex.quote(ruta)
+    cmds = []
+    for i in range(0, len(contenido), pedazo):
+        b64 = base64.b64encode(contenido[i:i + pedazo]).decode()
+        red = ">" if i == 0 else ">>"
+        pre = f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && " if i == 0 else ""
+        cmds.append(["sh", "-c", f"{pre}printf %s {b64} | base64 -d {red} {q}.tmp"])
+    cmds.append(["sh", "-c", f"chmod {modo_archivo(ruta)} {q}.tmp && mv {q}.tmp {q} && chown {UID}:{UID} {q}"])
+    return cmds
+
+
 def comando_escribir(archivos: dict[str, str], borrar: list[str] = ()) -> list[str]:
     """Un solo `sh -c` que deja los archivos en su lugar con el dueño correcto.
     ponytail: base64 en la línea de comando; suficiente para archivos de KB."""
     pasos = [f"rm -rf {shlex.quote(r)}" for r in borrar if r.startswith(HOME + "/agentes/")]
     for ruta, contenido in archivos.items():
         b64 = base64.b64encode(contenido.encode()).decode()
-        modo = "600" if ruta.endswith((".env", "auth.json", "config.yaml", ".anthropic_oauth.json", ".git-credentials", "dimia.json", "llave_maquina")) else "644"  # config lleva llaves de MCP
+        modo = modo_archivo(ruta)
         pasos.append(f"mkdir -p {shlex.quote(ruta.rsplit('/', 1)[0])} && printf %s {b64} | base64 -d > {shlex.quote(ruta)}.tmp && chmod {modo} {shlex.quote(ruta)}.tmp && mv {shlex.quote(ruta)}.tmp {shlex.quote(ruta)}")
     pasos.append(f"chown -R {UID}:{UID} {HOME}")
     return ["sh", "-c", " && ".join(pasos)]

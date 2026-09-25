@@ -448,12 +448,12 @@ def test_escribir_parte_en_tandas_y_falla_si_fly_rechaza():
     viejo = negocio.proveedor
     negocio.proveedor = lambda: Prov()
     try:
-        archivos = {f"/opt/data/agentes/x/f{i}": "a" * 40_000 for i in range(5)}
+        archivos = {f"/opt/data/agentes/x/f{i}": "a" * 6_000 for i in range(5)} | {"/opt/data/agentes/x/grande": "b" * 50_000}
         codigo, _, _ = asyncio.run(negocio._escribir("m", archivos))
     finally:
         negocio.proveedor = viejo
     assert codigo == 1 and len(llamadas) == 2  # parte en tandas y se detiene en la que falla
-    assert all(n < 200_000 for n in llamadas)
+    assert all(n < 16_000 for n in llamadas)  # Fly rechaza ~32 KB
 
 
 def test_fly_ejecutar_trata_rechazo_como_error():
