@@ -12,7 +12,7 @@ import time
 import uuid
 from dataclasses import replace
 from typing import Any
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from dotenv import load_dotenv
 from livekit import api
@@ -33,6 +33,8 @@ from app.telefonos import normalizar
 load_dotenv()
 log = logging.getLogger("agente")
 cfg = settings()
+
+NOMBRES_DE_RELLENO = {"", "cliente", "paciente", "usuario", "desconocido", "sin nombre", "n/a"}
 
 ESPERA_CONTESTACION_SEG = 45
 TOPE_HERRAMIENTA_SEG = 8
@@ -166,14 +168,12 @@ class Recepcionista(Agent):
                     for s in elegidas
                 )
                 return (
-                    f"A esa hora no hay, pero el {fecha} si hay: {opciones}. "
+                    f"A esa hora no hay, pero el {prompt_mod.dia_hablado(dia)} ({fecha}) si hay: {opciones}. "
                     "Dile con naturalidad que a la hora que pidio no tienes, y "
                     "ofrecele estas."
                 )
         if not slots:
-            return (
-                f"No hay nada libre el {fecha}. Ofrecele buscar otro dia cercano."
-            )
+            return await self._sin_lugar(dia, uuid.UUID(servicio_id), personas)
 
         elegidas = slots[:: max(1, len(slots) // 3)][:3]
         opciones = " | ".join(
@@ -182,8 +182,31 @@ class Recepcionista(Agent):
             for s in elegidas
         )
         return (
-            f"Libre el {fecha}: {opciones}. "
-            "Ofrecele DOS de estas hablando natural. No leas los ids."
+            f"Libre el {prompt_mod.dia_hablado(dia)} ({fecha}): {opciones}. "
+            "Ofrecele DOS de estas hablando natural, diciendo el dia tal cual. No leas los ids."
+        )
+
+    async def _sin_lugar(self, dia: date, servicio_id: uuid.UUID, personas: int) -> str:
+        """Los dias cercanos que si tienen lugar, ya consultados y con su nombre.
+
+        Con "ofrecele otro dia" a secas el modelo calculaba el dia de la semana
+        por su cuenta: a Rogelio le ofrecio "el martes" buscando el sabado.
+        """
+        con_lugar = []
+        for delta in range(1, 8):
+            otro = dia + timedelta(days=delta)
+            if await agenda.slots_libres(self.tenant.id, servicio_id, otro, personas, limite=1):
+                con_lugar.append(f"{prompt_mod.dia_hablado(otro)} ({otro.isoformat()})")
+            if len(con_lugar) == 3:
+                break
+        pedido = f"el {prompt_mod.dia_hablado(dia)} ({dia.isoformat()})"
+        if not con_lugar:
+            return f"No hay nada libre {pedido} ni en la semana siguiente. Ofrece tomar recado."
+        return (
+            f"No hay nada libre {pedido}. Los dias mas cercanos con lugar son: "
+            + ", ".join(con_lugar)
+            + ". Ofrecele SOLO esos dias, con ese nombre de dia; no inventes otros."
+            " Si elige uno, consulta ese dia antes de dar horas."
         )
 
     @function_tool
@@ -210,6 +233,8 @@ class Recepcionista(Agent):
         servicio = self._servicio(servicio_id)
         if servicio is None:
             return "Servicio invalido."
+        if nombre_cliente.strip().lower() in NOMBRES_DE_RELLENO or sum(c.isalpha() for c in nombre_cliente) < 2:
+            return "Todavia no sabes su nombre. Pideselo y luego reserva."
 
         # La misma persona no debe acumular citas sin darse cuenta: si ya tiene
         # una vigente, el modelo se entera ANTES de apartar otra y pregunta si
@@ -238,11 +263,18 @@ class Recepcionista(Agent):
                 )
 
         try:
+            inicio = datetime.fromisoformat(inicio_iso)
+            recurso = await self._recurso(recurso_id, uuid.UUID(servicio_id), inicio, personas)
+            if recurso is None:
+                return (
+                    "Ese horario ya no aparece libre. Vuelve a llamar "
+                    "consultar_disponibilidad y ofrece uno de los que devuelva."
+                )
             res = await agenda.reservar(
                 tenant_id=self.tenant.id,
                 servicio_id=uuid.UUID(servicio_id),
-                recurso_id=uuid.UUID(recurso_id),
-                inicio=datetime.fromisoformat(inicio_iso),
+                recurso_id=recurso,
+                inicio=inicio,
                 nombre=nombre_cliente,
                 telefono=self.telefono or "desconocido",
                 personas=personas,
@@ -272,6 +304,24 @@ class Recepcionista(Agent):
             f"Listo, quedo apartado. Confirmaselo con calidez y dale el codigo "
             f"deletreado: {codigo}. Dile que le llega confirmacion por WhatsApp."
         )
+
+    async def _recurso(
+        self, recurso_id: str, servicio_id: uuid.UUID, inicio: datetime, personas: int
+    ) -> uuid.UUID | None:
+        """El recurso_id tal cual, o el libre a esa hora si el modelo lo copio mal.
+
+        Con un id mal copiado la reserva tronaba y la llamada acababa en
+        "problema tecnico" con la hora aun libre.
+        """
+        try:
+            return uuid.UUID(recurso_id)
+        except ValueError:
+            pass
+        dia = inicio.astimezone(self.tenant.tz).date()
+        for slot in await agenda.slots_libres(self.tenant.id, servicio_id, dia, personas, limite=200):
+            if slot.inicio == inicio:
+                return slot.resource_id
+        return None
 
     @function_tool
     @a_prueba_de_fallas
@@ -854,8 +904,13 @@ def _construir_tts(tenant: Tenant):
 
 
 def prewarm(proc: JobProcess) -> None:
-    """Carga el VAD una vez por proceso, no por llamada."""
+    """Carga el VAD y el plugin de Google una vez por proceso, no por llamada.
+
+    El import de Google congelaba el event loop 1.9 s justo antes del saludo.
+    """
     proc.userdata["vad"] = silero.VAD.load()
+    if cfg.google_api_key:
+        from livekit.plugins import google  # noqa: F401
 
 
 def quien_llama(attrs: dict, identidad: str) -> tuple[str, str]:

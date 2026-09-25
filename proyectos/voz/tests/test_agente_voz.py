@@ -212,6 +212,74 @@ async def test_una_herramienta_con_la_base_caida_ofrece_transferir(agente, monke
     assert respuesta == agente.FALLA_TECNICA
 
 
+class _AgendaCerradaElSabado:
+    async def slots_libres(self, tenant_id, servicio_id, dia, personas=1, limite=12, desde_hora=None, hasta_hora=None):
+        from datetime import UTC, datetime
+
+        if dia.weekday() >= 5:
+            return []
+        inicio = datetime(dia.year, dia.month, dia.day, 16, 30, tzinfo=UTC)
+        return [types.SimpleNamespace(inicio=inicio, resource_id="r1", hablado=lambda tz: "10 y media de la manana")]
+
+
+async def test_un_dia_sin_lugar_ofrece_los_cercanos_con_su_nombre(agente, monkeypatch):
+    """A Rogelio le dijo «el martes» cuando buscaba el sabado: el modelo sacaba
+    el dia de la semana por su cuenta."""
+    import uuid
+
+    r = _recepcionista(agente, monkeypatch, _AgendaCerradaElSabado())
+    servicio = str(uuid.uuid4())
+    r._servicio = lambda _id: {"id": servicio}
+
+    respuesta = await r.consultar_disponibilidad(None, servicio, "2026-09-26", franja="10:30")
+
+    assert "sabado 26 de septiembre (2026-09-26)" in respuesta
+    assert "lunes 28 de septiembre (2026-09-28)" in respuesta
+    assert "martes 29 de septiembre (2026-09-29)" in respuesta
+    assert "domingo" not in respuesta.split("son:")[1]
+
+
+class _AgendaQueReserva(_AgendaCerradaElSabado):
+    def __init__(self) -> None:
+        self.reservas: list[dict] = []
+
+    async def reservar(self, **datos):
+        self.reservas.append(datos)
+        return {"ok": True, "booking_id": "00000000-0000-0000-0000-000000000001", "codigo": "G4PW"}
+
+
+def _para_reservar(agente, monkeypatch, agenda):
+    import uuid
+    from zoneinfo import ZoneInfo
+
+    r = _recepcionista(agente, monkeypatch, agenda)
+    r.tenant.tz = ZoneInfo("America/Mexico_City")
+    r._duplicado_avisado, r.telefono = True, ""
+    servicio = str(uuid.uuid4())
+    r._servicio = lambda _id: {"id": servicio}
+    return r, servicio
+
+
+async def test_no_reserva_a_nombre_de_cliente(agente, monkeypatch):
+    agenda = _AgendaQueReserva()
+    r, servicio = _para_reservar(agente, monkeypatch, agenda)
+
+    for relleno in ("Cliente", "?", ""):
+        respuesta = await r.reservar(None, servicio, "r1", "2026-09-28T16:30:00+00:00", relleno)
+        assert "nombre" in respuesta
+    assert agenda.reservas == []
+
+
+async def test_un_recurso_mal_copiado_se_resuelve_por_la_hora(agente, monkeypatch):
+    agenda = _AgendaQueReserva()
+    r, servicio = _para_reservar(agente, monkeypatch, agenda)
+
+    respuesta = await r.reservar(None, servicio, "72044b43-49ee", "2026-09-28T16:30:00+00:00", "Aurelio Prado")
+
+    assert respuesta.startswith("Listo")
+    assert agenda.reservas[0]["recurso_id"] == "r1"
+
+
 def test_las_latencias_de_la_llamada_quedan_como_las_lee_el_runbook(agente):
     assert agente.latencias([]) == {}
     assert agente.latencias([900, 1200, 800, 3000]) == {

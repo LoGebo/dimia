@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from app.supabase_client import Tenant
 
@@ -116,6 +116,25 @@ SALUDOS = {
 
 
 DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+MESES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)
+DIAS_EN_CALENDARIO = 14
+
+
+def dia_hablado(dia: date) -> str:
+    return f"{DIAS[dia.weekday()]} {dia.day} de {MESES[dia.month - 1]}"
+
+
+def _calendario(hoy: date) -> list[str]:
+    nombres = {0: "hoy", 1: "manana", 2: "pasado manana"}
+    return [
+        f"  - {dia_hablado(d)} = {d.isoformat()}"
+        + (f" ({nombres[i]})" if i in nombres else "")
+        for i in range(DIAS_EN_CALENDARIO)
+        for d in [hoy + timedelta(days=i)]
+    ]
 
 
 def _reloj(valor) -> str:
@@ -187,11 +206,14 @@ def construir(
 
     lineas.append(f"\nNEGOCIO: {tenant.nombre}")
     lineas.append(
-        "AHORA MISMO: "
-        + ahora.strftime("%A %d de %B de %Y, %H:%M").lower()
-        + f" (hora de {tenant.zona_horaria})."
-        " Usa esto para entender 'manana', 'el viernes', 'la proxima semana'."
+        f"AHORA MISMO: {dia_hablado(ahora.date())} de {ahora.year}, {ahora:%H:%M}"
+        f" (hora de {tenant.zona_horaria})."
     )
+    lineas.append(
+        "CALENDARIO (saca la fecha y el dia de la semana SIEMPRE de aqui, nunca"
+        " los calcules; 'manana', 'el viernes' o 'la proxima semana' se buscan aqui):"
+    )
+    lineas.extend(_calendario(ahora.date()))
 
     if servicios:
         lineas.append("\nSERVICIOS (usa el id exacto al llamar herramientas):")

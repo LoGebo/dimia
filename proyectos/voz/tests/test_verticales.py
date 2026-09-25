@@ -150,3 +150,26 @@ def test_giro_sin_agenda_no_trae_instrucciones_de_reservar():
     assert "pedido" not in recepcion.lower()
     assert "COMO AGENDAS" in pm.construir(t, [], [], plantilla={"herramientas": ["agendar"]})
     assert "COMO AGENDAS" in pm.construir(t, [], [])
+
+
+def test_el_prompt_trae_el_calendario_en_espanol():
+    """«friday 25 de september» obligaba al modelo a sacar el dia de la semana
+    por su cuenta, y fallaba."""
+    import uuid
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app import prompt as pm
+    from app.supabase_client import Tenant
+
+    t = Tenant(
+        id=uuid.uuid4(), nombre="Dimia", vertical="generico",
+        zona_horaria="America/Mexico_City", telefono_escalamiento=None,
+        voz_id=None, tts_proveedor="azure", tts_ajustes={},
+        instrucciones_extra=None, llm_proveedor="openai", llm_modelo=None,
+    )
+    texto = pm.construir(t, [], [], ahora=datetime(2026, 9, 25, 13, 0, tzinfo=ZoneInfo("America/Mexico_City")))
+    assert "AHORA MISMO: viernes 25 de septiembre de 2026, 13:00" in texto
+    assert "sabado 26 de septiembre = 2026-09-26 (manana)" in texto
+    assert "martes 29 de septiembre = 2026-09-29" in texto
+    assert "friday" not in texto and "september" not in texto

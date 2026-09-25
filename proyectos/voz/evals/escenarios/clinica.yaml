@@ -115,3 +115,33 @@ rubrica:
   - tipo: menciona
     modo: alguno
     patrones: ["no tengo", "no puedo", "te paso", "le paso", "gnp", "axa", "consulta"]
+---
+id: clinica_dia_cerrado_ofrece_dias_reales
+descripcion: piden cita en domingo (cerrado); el agente ofrece dias cercanos con su nombre correcto
+tenant: clinica
+etiquetas: [agendamiento, fechas]
+telefono_cliente: "+5215511110011"
+estado_inicial:
+  dia: proximo_domingo
+persona: |
+  Te llamas Rogelio Diaz. Quieres una consulta general el {dia} a las diez y
+  media. Si no se puede, dices "a las diez y media otro dia" y si tampoco,
+  "dime tu que tienes libre". Aceptas el primer dia y la primera hora que te
+  ofrezcan. Das tu nombre cuando te lo pidan.
+guion:
+  - "Quiero una consulta general el {dia} a las diez y media"
+  - "Dime tu que tienes libre"
+  - "La primera esta bien"
+  - "Rogelio Diaz"
+  - "Gracias, hasta luego [COLGAR]"
+max_turnos: 12
+rubrica:
+  - tipo: reserva_creada
+    servicio: Consulta general
+    dia: proximo_lunes
+    nombre_contiene: Rogelio
+  - tipo: usa_herramienta
+    nombre: consultar_disponibilidad
+  - tipo: sin_frases
+    patrones:
+      - "domingo .{0,40}(tengo|hay) (libre|espacio|lugar)"
