@@ -524,7 +524,7 @@ async def _sincronizar(tenant: str, m, reiniciar: bool, solo_revisar: bool = Fal
     await db.ejecutar("update maquina_negocio set perfiles = $2, version_token = $3, configs = $4::jsonb where tenant_id = $1", tenant, list(instalados | set(nuevos)), t["version"], json.dumps(configs_nuevos))
     _al_dia[tenant] = (m["referencia"], firma)
     # Ningún reinicio de máquina: el supervisor levanta o reinicia el Hermes de cada agente al ver sus archivos.
-    if reiniciados:
+    if reiniciados or (nuevos and instalados == set()):  # reescritura completa: el Hermes que ya corría debe reiniciar antes del turno
         await asyncio.sleep(7)  # el supervisor revisa cada 5 s y mata el Hermes viejo; si no se espera, el turno cae en el reinicio
     for aid, n in pantallas.items():
         if aid in nuevos or aid in reiniciados or reiniciar:
