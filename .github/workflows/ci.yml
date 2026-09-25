@@ -90,7 +90,7 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt -c requirements.lock  # sin el lock pip retrocede grpcio hasta resolution-too-deep
           pip install -r requirements-dev.txt
 
       - name: Stub de auth (Supabase gestiona este esquema en produccion)
