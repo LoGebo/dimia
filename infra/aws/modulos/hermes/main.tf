@@ -235,6 +235,13 @@ data "aws_iam_policy_document" "orquestador" {
     }
   }
 
+  # La plantilla toma la AMI de AL2023 de un parámetro público de SSM (resolve:ssm:).
+  statement {
+    sid       = "ResolverLaAmi"
+    actions   = ["ssm:GetParameters", "ssm:GetParameter"]
+    resources = ["arn:${local.particion}:ssm:${local.region}::parameter/aws/service/ami-amazon-linux-latest/*"]
+  }
+
   statement {
     sid       = "Leer"
     actions   = ["ec2:DescribeInstances", "ec2:DescribeVolumes", "ec2:DescribeSubnets"]

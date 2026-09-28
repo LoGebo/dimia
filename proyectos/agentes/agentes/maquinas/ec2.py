@@ -108,7 +108,7 @@ class Ec2:
     def __init__(self) -> None:
         if not (config.EC2_PLANTILLA and config.EC2_SUBREDES and config.EC2_ENTORNO):
             raise RuntimeError("Faltan EC2_PLANTILLA, EC2_SUBREDES o EC2_ENTORNO")
-        self.ec2 = boto3.client("ec2")
+        self.ec2 = boto3.client("ec2", region_name=config.EC2_REGION)
         self._etiquetas: dict[str, tuple[str, str]] = {}  # referencia -> (etiqueta, ip)
         self._zonas: dict[str, str] = {}  # subred -> AZ
 
