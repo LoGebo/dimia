@@ -555,3 +555,36 @@ def test_en_ec2_hermes_escucha_por_ipv4(monkeypatch):
     assert "host: 0.0.0.0" in hermes.config_yaml("k" * 20, 1) and "API_SERVER_HOST=0.0.0.0" in hermes.env("k" * 20, 1)
     monkeypatch.setattr(config, "PROVEEDOR_MAQUINAS", "fly")
     assert "API_SERVER_HOST=::" in hermes.env("k" * 20, 1)
+
+
+def test_ec2_arrancar_espera_a_la_que_se_esta_durmiendo(monkeypatch):
+    """StartInstances rechaza una instancia en stopping: arrancar espera a stopped y luego la prende."""
+    from agentes.maquinas import ec2
+
+    monkeypatch.setattr(config, "EC2_PLANTILLA", "lt-x")
+    monkeypatch.setattr(config, "EC2_SUBREDES", "subnet-a")
+    monkeypatch.setattr(config, "EC2_ENTORNO", "prueba")
+    p = ec2.Ec2()
+    estados = ["stopping", "stopping", "stopped", "stopped", "pending", "running", "running", "running"]
+    llamadas = []
+
+    async def describir(ref):
+        e = estados.pop(0) if len(estados) > 1 else estados[0]
+        return {"InstanceId": ref, "State": {"Name": e}, "PrivateIpAddress": "10.0.0.1", "Tags": []}
+
+    async def api(metodo, **kw):
+        llamadas.append(metodo)
+        return {}
+
+    async def exec_listo(ref, segundos):
+        llamadas.append("exec")
+
+    async def nada(_):
+        pass
+
+    monkeypatch.setattr(p, "_describir", describir)
+    monkeypatch.setattr(p, "_api", api)
+    monkeypatch.setattr(p, "_esperar_exec", exec_listo)
+    monkeypatch.setattr(ec2.asyncio, "sleep", nada)
+    m = asyncio.run(p.arrancar("i-1"))
+    assert llamadas == ["start_instances", "exec"] and m.encendida

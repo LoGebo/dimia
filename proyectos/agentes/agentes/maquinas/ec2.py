@@ -181,8 +181,15 @@ class Ec2:
         return self._maquina(i)
 
     async def arrancar(self, referencia):
+        i = await self._describir(referencia)
+        estado = i["State"]["Name"] if i else ""
+        if estado == "stopping":  # el que la durmió no ha terminado: StartInstances la rechaza
+            await self._esperar_estado(referencia, "stopped")
+        elif estado == "pending":  # otro turno ya la está prendiendo
+            await self._esperar_estado(referencia, "running")
         m = await self.obtener(referencia)
         if m.encendida:
+            await self._esperar_exec(referencia, segundos=240)
             return m
         for espera in (5, 10, 15, None):  # capacidad del tipo en la AZ del disco
             try:
