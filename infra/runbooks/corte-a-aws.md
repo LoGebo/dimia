@@ -26,3 +26,31 @@ panel ya viven en `usuario_panel` (bcrypt), así que Supabase Auth no se migra.
 
 Hasta el paso 6 basta con volver a escalar Fly a 1 y apuntar de nuevo el callback de Meta. Supabase
 no se toca durante el corte: es la copia de seguridad hasta que pasen 7 días sin incidentes.
+
+## Hecho el 2026-09-28 (17:49–18:25 UTC)
+
+- Escrituras congeladas 17:49, datos copiados 17:52 (51 tablas, conteos iguales), voz en EKS 17:56.
+- Producción: EKS `c01-mx` + Aurora `c01-mx` (Serverless v2, 1-8 ACU, writer y lector) en `prod-celda-01`.
+  CloudFront: panel `d2s3aekyu4un1a`, API `d2c11rta2rotk`, webhooks `d66g9koakperc`, agentes `d170r8qyvi0h3w`.
+- Callback de WhatsApp de la app «Dimia Linea» → `https://d66g9koakperc.cloudfront.net/webhook/whatsapp`.
+- `panel.dimia.mx` sigue en Vercel pero con `PANEL_ORIGEN` reenvía todo al panel de AWS.
+- Las apps de Fly `agente-webhooks`, `dimia-api` y `dimia-agentes` son relevos (`proyectos/relevo`) hacia
+  CloudFront; `dimia-agentes` marca con `RELEVO_SECRETO` lo que llega por la 6PN (las máquinas Hermes siguen
+  en Fly hasta la fase 8). `agente-voz` está detenida.
+- Vigilante apuntado a CloudFront (variables `VIGILANTE_*_URL`).
+
+## Reversa (hasta 7 días, mientras Supabase no reciba nada nuevo)
+
+1. Voz: `flyctl machine start` de `agente-voz` y `kubectl -n prod scale deploy/voz-worker --replicas=0` (c01-mx).
+2. Base: copiar de Aurora `c01-mx/dimia` a Supabase lo creado desde el corte (mismo script, al revés).
+3. `flyctl deploy` de `agente-webhooks`, `dimia-api` (proyectos/voz/deploy) y `dimia-agentes` (proyectos/agentes).
+4. Callback de WhatsApp de vuelta a `https://agente-webhooks.fly.dev/webhook/whatsapp`; quitar `PANEL_ORIGEN` en Vercel.
+
+## Pendiente
+
+- DNS en el Cloudflare del socio: `panel.dimia.mx`, `api.dimia.mx` y `webhooks.dimia.mx` directo a CloudFront
+  (con ACM en us-east-1 y WAF); después se retiran los relevos de Fly y el panel de Vercel.
+- Webhook de Instagram: cambiarlo en el tablero de Meta (hoy llega por el relevo de `agente-webhooks`).
+- App de iOS: base URL a `api.dimia.mx` cuando exista (hoy `dimia-api.fly.dev`, que es relevo).
+- Fase 8: Hermes a AWS; hasta entonces el orquestador llega a las máquinas por el relevo.
+- A los 7 días sin incidentes: borrar máquinas de `agente-voz` y pausar el proyecto de Supabase.
