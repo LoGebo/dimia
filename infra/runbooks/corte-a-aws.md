@@ -48,8 +48,28 @@ no se toca durante el corte: es la copia de seguridad hasta que pasen 7 días si
 
 ## Pendiente
 
-- DNS en el Cloudflare del socio: `panel.dimia.mx`, `api.dimia.mx` y `webhooks.dimia.mx` directo a CloudFront
-  (con ACM en us-east-1 y WAF); después se retiran los relevos de Fly y el panel de Vercel.
+- DNS en el Cloudflare del socio (el certificado ya está pedido en ACM us-east-1, `PENDING_VALIDATION`).
+  Todos los registros en modo **DNS only** (nube gris): con el proxy de Cloudflare, ACM no valida y
+  CloudFront recibe el tráfico de Cloudflare en lugar del de los clientes.
+  1. Validación (se agregan ya, no cambian nada del tráfico):
+
+     | Tipo | Nombre | Valor |
+     |---|---|---|
+     | CNAME | `_40187450cda237eb46038eaa85017d4f.panel` | `_4a08718899679b3b9a175a2720243a55.wzccmgtwzk.acm-validations.aws` |
+     | CNAME | `_7d20ebf35257d6fcaf2a3cf89a2c8ee2.api` | `_9b938d9a4137943486a93c16af23750c.wzccmgtwzk.acm-validations.aws` |
+     | CNAME | `_a93cf6df04da92307b1f2aaab126615c.webhooks` | `_ca257a3f9b1f2d4aa7548858a630dfb3.wzccmgtwzk.acm-validations.aws` |
+
+  2. Cuando ACM diga `ISSUED`: `dominios_activos = true` en `vivos/celdas/c01/edge/main.tf` (pone alias,
+     certificado y WAF) y, ya aplicado, los CNAME de servicio:
+
+     | Nombre | Hoy | Nuevo |
+     |---|---|---|
+     | `panel` | `cname.vercel-dns.com` | `d2s3aekyu4un1a.cloudfront.net` |
+     | `api` | (A a otro host) | `d2c11rta2rotk.cloudfront.net` |
+     | `webhooks` | (A a otro host) | `d66g9koakperc.cloudfront.net` |
+
+  3. Después: callback de WhatsApp y vigilante a `webhooks.dimia.mx`, iOS a `api.dimia.mx`; se retiran
+     `PANEL_ORIGEN` en Vercel y los relevos de Fly (el de `dimia-api`, hasta que las versiones viejas de iOS salgan).
 - Webhook de Instagram: cambiarlo en el tablero de Meta (hoy llega por el relevo de `agente-webhooks`).
 - App de iOS: ya apunta a la API en CloudFront (`d2c11rta2rotk.cloudfront.net`); pasa a `api.dimia.mx` cuando exista. Las versiones ya instaladas siguen usando el relevo `dimia-api.fly.dev` hasta que se actualicen: no se apaga antes.
 - Fase 8: Hermes a AWS; hasta entonces el orquestador llega a las máquinas por el relevo.
