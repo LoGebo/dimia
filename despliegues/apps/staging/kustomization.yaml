@@ -47,7 +47,7 @@ patches:
         value: { name: HERMES_REDES, value: "10.8.216.0/23,10.8.218.0/23,10.8.220.0/23" }
       - op: add
         path: /spec/template/spec/containers/0/env/-
-        value: { name: HERMES_IMAGEN, value: "197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/hermes:4ec12ec01734" }
+        value: { name: HERMES_IMAGEN, value: "197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/hermes:93ce108bd1ba" }
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value: { name: PROXY_URL, value: "http://agentes-proxy-3d3663a3e1558abe.elb.mx-central-1.amazonaws.com:8080" }
@@ -65,7 +65,7 @@ images:
     newTag: d40fb960370e
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
-    newTag: aa5ee950874f
+    newTag: 3436014248aa
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
     newTag: d40fb960370e
