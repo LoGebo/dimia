@@ -119,7 +119,7 @@ Lo que hace cada workflow:
 
 Las pilas manuales nunca se aplican desde CI.
 
-EKS: el rol de emergencia entra por access entry con su ARN completo (ruta `/aws-reserved/sso.amazonaws.com/us-east-2/`).
+EKS: si un apply de Karpenter falla a medias, el release queda en el clúster y fuera del estado; se recupera con `tofu import module.eks.helm_release.karpenter kube-system/karpenter`. El rol de emergencia entra por access entry con su ARN completo (ruta `/aws-reserved/sso.amazonaws.com/us-east-2/`).
 
 Cada plan con cambios sube un marcador `<id>.cambio`: con un solo artefacto, `download-artifact` lo extrae sin subcarpeta y el detector de pilas no lo veía.
 
