@@ -1,0 +1,49 @@
+# Karpenter de c01-mx (producción) (§2.2, §3.3). La AMI va fija y se sube por PR; el drift rota los nodos.
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: app-mx
+spec:
+  role: eks-c01-mx-karpenter-nodo
+  amiSelectorTerms:
+    - alias: al2023@v20260923
+  subnetSelectorTerms:
+    - tags: { karpenter.sh/discovery: c01-mx }
+  securityGroupSelectorTerms:
+    - tags: { karpenter.sh/discovery: c01-mx }
+  metadataOptions:
+    httpEndpoint: enabled
+    httpTokens: required
+    httpPutResponseHopLimit: 1
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs: { volumeSize: 40Gi, volumeType: gp3, encrypted: true, deleteOnTermination: true }
+  tags:
+    dimia:componente: app
+    dimia:entorno: prod
+---
+# Producción: solo on-demand (los workers de voz no toleran interrupciones de Spot).
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: app-mx
+spec:
+  template:
+    metadata:
+      labels: { dimia.mx/pool: app-mx }
+    spec:
+      nodeClassRef: { group: karpenter.k8s.aws, kind: EC2NodeClass, name: app-mx }
+      expireAfter: 336h
+      requirements:
+        - { key: karpenter.sh/capacity-type, operator: In, values: [on-demand] }
+        - { key: kubernetes.io/arch, operator: In, values: [arm64, amd64] }
+        - { key: karpenter.k8s.aws/instance-category, operator: In, values: [c, m, r] }
+        - { key: karpenter.k8s.aws/instance-generation, operator: Gt, values: ["6"] }
+        - { key: karpenter.k8s.aws/instance-size, operator: In, values: [large, xlarge, 2xlarge] }
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 5m
+  # Techo de la celda: si alguien escala de más, Karpenter no pasa de aquí.
+  limits:
+    cpu: "64"
+    memory: 256Gi

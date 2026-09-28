@@ -1,0 +1,13 @@
+# Arranque de Argo CD administrado (se aplica una vez con kubectl, junto con raiz.yaml y la deploy key):
+# la capacidad no habilita kubernetes.default.svc; el clúster se registra por su ARN.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: c01-mx
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: cluster
+stringData:
+  name: c01-mx
+  server: arn:aws:eks:mx-central-1:345549356068:cluster/c01-mx
+  project: default

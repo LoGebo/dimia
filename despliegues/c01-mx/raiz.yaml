@@ -1,0 +1,18 @@
+# Raíz de c01-mx (app of apps): Argo CD administrado lee despliegues/c01-mx/apps y de ahí
+# instala la plataforma y staging. Se aplica una sola vez con kubectl; lo demás es git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: raiz
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:LoGebo/dimia.git
+    targetRevision: main
+    path: despliegues/c01-mx/apps
+  destination:
+    name: c01-mx
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
