@@ -1,0 +1,18 @@
+# Raíz de noprod-mx (app of apps): Argo CD administrado lee despliegues/noprod-mx/apps y de ahí
+# instala la plataforma y staging. Se aplica una sola vez con kubectl; lo demás es git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: raiz
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:LoGebo/dimia.git
+    targetRevision: main
+    path: despliegues/noprod-mx/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

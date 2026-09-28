@@ -1,0 +1,36 @@
+# Panel (Next.js standalone) con sesión local: sin Supabase Auth.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: panel
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: panel } }
+  template:
+    metadata: { labels: { app: panel } }
+    spec:
+      nodeSelector: { kubernetes.io/arch: arm64, dimia.mx/pool: app-mx }
+      containers:
+        - name: panel
+          image: panel
+          envFrom: [{ secretRef: { name: app } }]
+          env:
+            - { name: AUTH_MODE, value: local }
+            - { name: AGENTES_URL, value: "http://agentes:8080" }
+            - { name: LIVEKIT_AGENT_NAME, value: voz-staging }
+          ports: [{ containerPort: 3000, name: http }]
+          readinessProbe: { tcpSocket: { port: http }, periodSeconds: 10 }
+          livenessProbe: { tcpSocket: { port: http }, initialDelaySeconds: 20, periodSeconds: 30 }
+          resources:
+            requests: { cpu: 250m, memory: 384Mi }
+            limits: { memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: panel
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /entrar
+spec:
+  selector: { app: panel }
+  ports: [{ port: 3000, targetPort: http, name: http }]

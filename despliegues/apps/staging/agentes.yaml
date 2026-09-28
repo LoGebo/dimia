@@ -1,0 +1,34 @@
+# Orquestador de agentes. Las máquinas Hermes siguen en Fly hasta la fase 8; staging no tiene
+# FLY_API_TOKEN, así que no crea máquinas reales.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentes
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: agentes } }
+  template:
+    metadata: { labels: { app: agentes } }
+    spec:
+      nodeSelector: { kubernetes.io/arch: arm64, dimia.mx/pool: app-mx }
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: agentes
+          image: agentes
+          args: ["hypercorn", "agentes.api:app", "-b", "0.0.0.0:8080"]
+          envFrom: [{ secretRef: { name: app } }]
+          env:
+            - { name: PROVEEDOR_MAQUINAS, value: fly }
+          ports: [{ containerPort: 8080, name: http }]
+          readinessProbe: { httpGet: { path: /salud, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /salud, port: http }, initialDelaySeconds: 20, periodSeconds: 30 }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 1Gi }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: agentes }
+spec:
+  selector: { app: agentes }
+  ports: [{ port: 8080, targetPort: http, name: http }]

@@ -1,0 +1,21 @@
+# Staging en noprod-mx: la app completa sobre Aurora noprod-mx (base staging). La etiqueta de imagen
+# es el SHA que construyó el workflow Imagen; se sube por PR.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: staging
+resources:
+  - secretos.yaml
+  - voz.yaml
+  - agentes.yaml
+  - panel.yaml
+  - ingreso.yaml
+images:
+  - name: voz
+    newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz
+    newTag: 30358d9ba5ef
+  - name: agentes
+    newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
+    newTag: 30358d9ba5ef
+  - name: panel
+    newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
+    newTag: 30358d9ba5ef

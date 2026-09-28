@@ -20,7 +20,11 @@ data "aws_iam_policy_document" "external_secrets" {
   statement {
     sid       = "LeerSecretosDelEntorno"
     actions   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret", "secretsmanager:ListSecretVersionIds"]
-    resources = ["arn:${local.particion}:secretsmanager:${local.region}:${local.cuenta}:secret:${var.prefijo_secretos}*"]
+    # Más el secreto maestro de Aurora que crea RDS (rds!cluster-…): de ahí sale el PG_DSN sin copiar la contraseña.
+    resources = [
+      "arn:${local.particion}:secretsmanager:${local.region}:${local.cuenta}:secret:${var.prefijo_secretos}*",
+      "arn:${local.particion}:secretsmanager:${local.region}:${local.cuenta}:secret:rds!cluster-*",
+    ]
   }
 
   statement {
