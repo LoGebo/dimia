@@ -49,6 +49,12 @@
     "entorno": "infra-noprod",
     "plan_en_pr": true
   },
+  "vivos/noprod/hermes": {
+    "cuenta": "265779924721",
+    "aplica": "ci",
+    "entorno": "infra-noprod",
+    "plan_en_pr": true
+  },
   "vivos/celdas/c01/base": {
     "cuenta": "345549356068",
     "aplica": "manual"
@@ -69,6 +75,11 @@
     "entorno": "infra-c01"
   },
   "vivos/celdas/c01/edge": {
+    "cuenta": "345549356068",
+    "aplica": "ci",
+    "entorno": "infra-c01"
+  },
+  "vivos/celdas/c01/hermes": {
     "cuenta": "345549356068",
     "aplica": "ci",
     "entorno": "infra-c01"
