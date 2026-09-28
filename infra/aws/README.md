@@ -1,7 +1,7 @@
 # Cimientos de AWS en OpenTofu
 
 Código de §2.1, §3.1, §4 y §6.1 de [`planeacion/aws-arquitectura-meta.md`](../../planeacion/aws-arquitectura-meta.md).
-**Aplicado el 2026-09-27:** `bootstrap`, `vivos/gestion`, `vivos/finops` y las bases de `operaciones`, `sandbox-agente`, `noprod` y `celdas/c01` (pasos 1-6). Organización `o-56n87zfixz`, cuenta de gestión `172083943768`, estado en `dimia-tofu-estado-197821101689` (compartido). Falta la pila de `log-archivo` (bucket de flow logs y CloudTrail de organización): sin ella las redes no planean, así que `INFRA_AWS_HABILITADA` sigue sin crearse. Los correos raíz usan `prefijo_correo` (hoy un alias de Gmail) hasta que exista `aws-*@dimia.mx`.
+**Aplicado el 2026-09-27:** `bootstrap`, `vivos/gestion`, `vivos/finops` y las bases de `operaciones`, `sandbox-agente`, `noprod` y `celdas/c01` (pasos 1-6). Organización `o-56n87zfixz`, cuenta de gestión `172083943768`, estado en `dimia-tofu-estado-197821101689` (compartido). También `vivos/log-archivo/logs` (CloudTrail con Object Lock y flow logs, en mx) y el trail de organización `dimia-org`. Las redes ya planean; no se han aplicado (NAT con costo fijo, fase 2) y `INFRA_AWS_HABILITADA` sigue sin crearse. Los correos raíz usan `prefijo_correo` (hoy un alias de Gmail) hasta que exista `aws-*@dimia.mx`.
 
 - OpenTofu 1.12.6 y `hashicorp/aws` 6.66.0, versiones fijas en cada pila y hashes en `.terraform.lock.hcl`.
 - No se usan módulos del registro: todos los módulos son locales.
@@ -17,7 +17,8 @@ Código de §2.1, §3.1, §4 y §6.1 de [`planeacion/aws-arquitectura-meta.md`](
 | `modulos/cuenta-base` | OIDC de GitHub, roles `tofu-plan` y `tofu-apply` con límite de permisos, cifrado de EBS, bloqueo público de S3, Access Analyzer y budget | — |
 | `modulos/red-celda` | VPC de doble pila con perfil `mx` (NAT regional o zonal) o `voz` (sin NAT), endpoints gateway, flow logs en Parquet y alarma de NAU | — |
 | `modulos/finops` | Budgets de organización y de red diaria, freno de sandbox, Cost Anomaly Detection, CUR 2.0 y Athena con tope de 1 GB | — |
-| `vivos/gestion`, `vivos/finops` | Cuenta de gestión | Dueño |
+| `vivos/gestion`, `vivos/finops` | Cuenta de gestión (incluye el trail de organización) | Dueño |
+| `vivos/log-archivo/logs` | Bucket de CloudTrail (Object Lock, KMS propio) y de flow logs, en mx | Dueño, antes que el trail |
 | `vivos/*/base` | Base de cada cuenta. `tofu-apply` no puede modificarse a sí mismo | Dueño |
 | `vivos/noprod/red`, `vivos/celdas/c01/red-mx`, `vivos/voz/g1/red` | Redes | CI, con revisor |
 | `politicas/` | SCP, RCP y política declarativa de EC2 en JSON | — |

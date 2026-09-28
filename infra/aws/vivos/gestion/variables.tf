@@ -17,3 +17,13 @@ variable "prefijo_correo" {
   type        = string
   default     = "aws+"
 }
+
+variable "trail_bucket" {
+  description = "Bucket de CloudTrail en log-archivo (salida trail_bucket de vivos/log-archivo/logs)."
+  type        = string
+}
+
+variable "trail_llave_arn" {
+  description = "Llave de CloudTrail en log-archivo (salida trail_llave_arn)."
+  type        = string
+}
