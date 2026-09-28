@@ -63,7 +63,7 @@ async def estado(tenant: str) -> dict:
 def google_url(tenant: str) -> str:
     estado = _firmar({"t": tenant, "s": "google", "exp": int(time.time()) + 600})
     return "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode({
-        "client_id": config.GOOGLE_CLIENT_ID, "redirect_uri": f"{config.PUBLICO_URL}/oauth/google/callback",
+        "client_id": config.GOOGLE_CLIENT_ID, "redirect_uri": f"{config.OAUTH_URL}/oauth/google/callback",
         "response_type": "code", "scope": ALCANCES_GOOGLE, "access_type": "offline", "prompt": "consent", "state": estado})
 
 
@@ -74,7 +74,7 @@ async def google_callback(estado: str, codigo: str) -> str | None:
     async with httpx.AsyncClient(timeout=20) as c:
         r = await c.post("https://oauth2.googleapis.com/token", data={
             "code": codigo, "client_id": config.GOOGLE_CLIENT_ID, "client_secret": config.GOOGLE_CLIENT_SECRET,
-            "redirect_uri": f"{config.PUBLICO_URL}/oauth/google/callback", "grant_type": "authorization_code"})
+            "redirect_uri": f"{config.OAUTH_URL}/oauth/google/callback", "grant_type": "authorization_code"})
         if r.status_code != 200:
             return f"Google no aceptó la autorización ({r.status_code})."
         t = r.json()

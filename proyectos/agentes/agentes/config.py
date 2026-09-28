@@ -49,6 +49,8 @@ PRUEBA_ANTHROPIC_MODELO = os.environ.get("PRUEBA_ANTHROPIC_MODELO", "claude-sonn
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 PUBLICO_URL = os.environ.get("PUBLICO_URL", "https://dimia-agentes.fly.dev")  # para armar las URL de pantalla
+# El redirect de Google está registrado en su consola con este dominio; cambia cuando se registre el nuevo.
+OAUTH_URL = os.environ.get("OAUTH_URL", PUBLICO_URL)
 # Por dónde llegan las máquinas al proxy de credenciales: la red privada de Fly (6PN), nunca la URL
 # pública. Así la llave de máquina no sirve desde internet y los streams no cuentan contra el hard_limit.
 PROXY_URL = os.environ.get("PROXY_URL", "http://dimia-agentes.internal:8080").rstrip("/")
