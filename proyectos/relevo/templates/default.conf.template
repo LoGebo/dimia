@@ -1,0 +1,37 @@
+# ORIGEN es la URL de CloudFront del servicio en AWS (https://dxxxx.cloudfront.net).
+# Lo que llega por la red privada de Fly (sin Fly-Client-IP) va con X-Relevo-Secreto: es lo único que
+# el orquestador en AWS acepta como «red privada». Lo que llega por internet conserva Fly-Client-IP.
+map $http_fly_client_ip $relevo_secreto {
+    ""      "${RELEVO_SECRETO}";
+    default "";
+}
+
+map $http_upgrade $conexion {
+    default upgrade;
+    ""      close;
+}
+
+server {
+    listen 8080;
+    listen [::]:8080;
+    client_max_body_size 20m;
+
+    location = /salud-relevo {
+        return 200 "ok\n";
+    }
+
+    location / {
+        proxy_pass ${ORIGEN};
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${ORIGEN_HOST};
+        proxy_set_header X-Relevo-Secreto $relevo_secreto;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $conexion;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+}

@@ -909,6 +909,12 @@ async def _maquina_autorizada(tenant: str, request: Request) -> None:
     ChatGPT dejó de autorizar»."""
     if "fly-client-ip" in request.headers:
         raise HTTPException(403, "El proxy solo atiende por la red privada.")
+    # En AWS el orquestador no está en la 6PN: el relevo de Fly (relevo/) reenvía lo que le llega por la
+    # red privada con este secreto; lo que entra por internet no lo trae.
+    if config.RELEVO_SECRETO and not hmac.compare_digest(
+        request.headers.get("x-relevo-secreto", "").encode(), config.RELEVO_SECRETO.encode()
+    ):
+        raise HTTPException(403, "El proxy solo atiende por la red privada.")
     token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
     f = await db.uno("select llave from maquina_negocio where tenant_id = $1", tenant) if token else None
     if not f or not hmac.compare_digest(vault.descifrar(f["llave"]).encode(), token.encode()):

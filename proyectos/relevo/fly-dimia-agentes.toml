@@ -1,0 +1,24 @@
+# Relevo de dimia-agentes hacia AWS (runbook corte-a-aws.md). Reversa: flyctl deploy desde su proyecto original.
+app            = "dimia-agentes"
+primary_region = "dfw"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port        = 8080
+  force_https          = true
+  auto_stop_machines   = false
+  auto_start_machines  = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval     = "30s"
+    timeout      = "5s"
+    grace_period = "10s"
+    method       = "GET"
+    path         = "/salud-relevo"
+
+[[vm]]
+  size   = "shared-cpu-1x"
+  memory = "256mb"

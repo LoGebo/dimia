@@ -215,6 +215,18 @@ def test_proxy_no_atiende_desde_internet(api):
     assert subidas == []
 
 
+def test_en_aws_el_proxy_solo_atiende_lo_que_trae_el_relevo(api, monkeypatch):
+    """En AWS no hay 6PN: sin el secreto del relevo de Fly, la llave de máquina sola no abre el proxy."""
+    cliente, subidas, _, _ = api
+    monkeypatch.setattr(config, "RELEVO_SECRETO", "secreto-del-relevo")
+    cab = {"Authorization": f"Bearer {LLAVE_MAQUINA}"}
+    assert cliente.post(f"/proxy/{TENANT}/codex/responses", content=b"{}", headers=cab).status_code == 403
+    assert cliente.post(f"/proxy/{TENANT}/codex/responses", content=b"{}", headers={**cab, "X-Relevo-Secreto": "otro"}).status_code == 403
+    assert subidas == []
+    r = cliente.post(f"/proxy/{TENANT}/codex/responses", content=b'{"model":"gpt"}', headers={**cab, "X-Relevo-Secreto": "secreto-del-relevo"})
+    assert r.status_code == 200 and len(subidas) == 1
+
+
 def test_proxy_rechaza_otra_maquina_y_rutas_raras(api):
     cliente, subidas, _, _ = api
     otro = "99999999-2222-3333-4444-555555555555"

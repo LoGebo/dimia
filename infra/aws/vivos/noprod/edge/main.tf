@@ -4,7 +4,7 @@ module "edge" {
 
   nombre     = "staging"
   alb_nombre = "staging-noprod-mx"
-  servicios  = ["panel", "api", "webhooks"]
+  servicios  = ["panel", "api", "webhooks", "agentes"]
 }
 
 output "urls" {
