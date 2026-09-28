@@ -312,6 +312,11 @@ resource "helm_release" "karpenter" {
   repository_username = data.aws_ecrpublic_authorization_token.this.user_name
   repository_password = data.aws_ecrpublic_authorization_token.this.password
 
+  # El token de ECR Public cambia en cada plan; sin esto el release sale «cambiado» siempre.
+  lifecycle {
+    ignore_changes = [repository_username, repository_password]
+  }
+
   values = [yamlencode({
     settings = {
       clusterName       = aws_eks_cluster.this.name

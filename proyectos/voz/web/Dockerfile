@@ -13,7 +13,10 @@ RUN npm run build
 
 FROM node:22-alpine
 WORKDIR /app
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0 \
+    NODE_EXTRA_CA_CERTS=/app/rds-ca.pem
+# El pg de Node verifica el certificado de Aurora (sslmode=require): va la CA de RDS en la imagen.
+ADD --chmod=644 https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /app/rds-ca.pem
 RUN addgroup -g 10001 panel && adduser -u 10001 -G panel -D panel
 COPY --from=construccion --chown=panel:panel /app/.next/standalone ./
 COPY --from=construccion --chown=panel:panel /app/.next/static ./.next/static
