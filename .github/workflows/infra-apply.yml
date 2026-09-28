@@ -108,7 +108,7 @@ jobs:
       - name: Resumen para el revisor
         if: steps.plan.outputs.cambios == 'true'
         run: |
-          { echo "### ${{ matrix.pila }}"; echo '```'; tofu show -no-color plan.out | tail -c 60000; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### ${{ matrix.pila }}"; echo '```'; tofu show -no-color -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" plan.out | tail -c 60000; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       # Solo las pilas con cambios suben su plan; «cambios» arma con eso la matriz del apply.
       # El plan va cifrado del lado del cliente (bloque encryption de la pila).

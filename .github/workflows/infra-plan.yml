@@ -130,10 +130,10 @@ jobs:
       - name: checkov sobre el plan
         run: |
           pip install checkov==3.3.10
-          tofu show -json plan.out > plan.json
+          tofu show -json -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" plan.out > plan.json
           checkov -f plan.json --framework terraform_plan --compact --quiet --repo-root-for-plan-enrichment "$GITHUB_WORKSPACE/infra/aws"
           rm -f plan.json
 
       - name: Resumen
         run: |
-          { echo "### ${{ matrix.pila }}"; echo '```'; tofu show -no-color plan.out | tail -c 60000; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### ${{ matrix.pila }}"; echo '```'; tofu show -no-color -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" plan.out | tail -c 60000; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

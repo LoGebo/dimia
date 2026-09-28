@@ -119,7 +119,7 @@ Lo que hace cada workflow:
 
 Las pilas manuales nunca se aplican desde CI.
 
-`init` también lleva `-var-file=comun.tfvars`: el cifrado del estado toma la llave de `llave_estado_arn`, y sin ella ni siquiera se inicializa.
+`init` y `show` también llevan `-var-file=comun.tfvars`: el cifrado del estado toma la llave de `llave_estado_arn`, y sin ella ni siquiera se inicializa.
 
 ### 8. Después
 
