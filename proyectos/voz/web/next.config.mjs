@@ -9,6 +9,12 @@ const config = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Sin agente elegido se abre Recepción. Aquí y no en la página: un redirect()
   // dentro del render del panel sale en el streaming y truena al hidratar (React #310).
+  // Corte a AWS: con PANEL_ORIGEN (la URL de CloudFront del panel en AWS) este despliegue de Vercel
+  // solo reenvía todo allá, antes de servir cualquier archivo propio. Sin la variable no hace nada.
+  async rewrites() {
+    const origen = process.env.PANEL_ORIGEN;
+    return origen ? { beforeFiles: [{ source: "/:ruta*", destination: `${origen}/:ruta*` }] } : [];
+  },
   async redirects() {
     return [{ source: "/agentes", destination: "/agentes/recepcion", permanent: false }];
   },
