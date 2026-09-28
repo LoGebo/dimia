@@ -92,7 +92,7 @@ jobs:
           printf '%s\n' "$ESTADO_HCL" > estado.hcl
           printf '%s\n' "$COMUN_TFVARS" > comun.tfvars
 
-      - run: tofu init -input=false -lockfile=readonly -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
+      - run: tofu init -input=false -lockfile=readonly -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
 
       # 0 = sin cambios, 2 = hay cambios; cualquier otro código falla el job.
       - id: plan
@@ -191,7 +191,7 @@ jobs:
           printf '%s\n' "$ESTADO_HCL" > estado.hcl
           printf '%s\n' "$COMUN_TFVARS" > comun.tfvars
 
-      - run: tofu init -input=false -lockfile=readonly -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
+      - run: tofu init -input=false -lockfile=readonly -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
 
       # La llave del cifrado es una variable estática: se vuelve a pasar para leer el plan.
       - run: tofu apply -input=false -lock-timeout=5m -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" plan.out

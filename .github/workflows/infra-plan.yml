@@ -123,7 +123,7 @@ jobs:
           printf '%s\n' "$ESTADO_HCL" > estado.hcl
           printf '%s\n' "$COMUN_TFVARS" > comun.tfvars
 
-      - run: tofu init -input=false -lockfile=readonly -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
+      - run: tofu init -input=false -lockfile=readonly -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -backend-config="$GITHUB_WORKSPACE/infra/aws/estado.hcl"
 
       - run: tofu plan -input=false -lock-timeout=5m -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -out=plan.out
 
