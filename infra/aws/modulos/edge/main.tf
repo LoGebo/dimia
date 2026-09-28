@@ -6,7 +6,17 @@ data "aws_lb" "this" {
   name = var.alb_nombre
 }
 
+# La política declarativa de EC2 bloquea el acceso público de la VPC; CloudFront con origen VPC exige
+# una exclusión bidireccional en las subredes del ALB. El ALB es interno: sin IP pública no queda expuesto.
+resource "aws_vpc_block_public_access_exclusion" "alb" {
+  for_each                        = data.aws_lb.this.subnets
+  subnet_id                       = each.value
+  internet_gateway_exclusion_mode = "allow-bidirectional"
+}
+
 resource "aws_cloudfront_vpc_origin" "this" {
+  depends_on = [aws_vpc_block_public_access_exclusion.alb]
+
   vpc_origin_endpoint_config {
     name                   = var.alb_nombre
     arn                    = data.aws_lb.this.arn
