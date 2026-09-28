@@ -11,7 +11,8 @@ locals {
   region    = data.aws_region.actual.region
 }
 
-# Identity Center crea el rol de emergencia con sufijo aleatorio; la access entry pide el ARN sin ruta.
+# Identity Center crea el rol de emergencia con sufijo aleatorio. Con la instancia multirregión el rol
+# vive en /aws-reserved/sso.amazonaws.com/us-east-2/ y EKS solo lo acepta con la ruta completa.
 data "aws_iam_roles" "emergencia" {
   name_regex  = "AWSReservedSSO_emergencia_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
@@ -20,7 +21,7 @@ data "aws_iam_roles" "emergencia" {
 locals {
   admins = toset(concat(
     var.admins,
-    [for n in data.aws_iam_roles.emergencia.names : "arn:${local.particion}:iam::${local.cuenta}:role/${n}"],
+    tolist(data.aws_iam_roles.emergencia.arns),
   ))
 }
 

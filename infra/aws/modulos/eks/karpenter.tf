@@ -319,7 +319,9 @@ resource "helm_release" "karpenter" {
     }
   })]
 
+  # Sin la política de admin ya asociada, el token de tofu-apply no puede instalar los CRD.
   depends_on = [
+    aws_eks_access_policy_association.admin,
     aws_eks_pod_identity_association.karpenter,
     aws_iam_role_policy.karpenter,
     aws_eks_addon.con_nodos,
