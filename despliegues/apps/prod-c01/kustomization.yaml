@@ -48,6 +48,9 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/env/-
         value: { name: PUBLICO_URL, value: "https://d170r8qyvi0h3w.cloudfront.net" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: OAUTH_URL, value: "https://dimia-agentes.fly.dev" }
   - target: { kind: Service, name: agentes-proxy }
     patch: |-
       - op: add
@@ -59,7 +62,7 @@ images:
     newTag: d40fb960370e
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
-    newTag: 3c44fc386a15
+    newTag: 67f519d2ae09
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
     newTag: d40fb960370e
