@@ -37,7 +37,7 @@ resource "aws_db_subnet_group" "this" {
 
 resource "aws_security_group" "aurora" {
   name        = "aurora-${var.nombre}"
-  description = "Aurora ${var.nombre}: solo el 5432 desde el clúster"
+  description = "Aurora ${var.nombre}: solo el 5432 desde el cluster (AWS no acepta acentos aqui)"
   vpc_id      = var.vpc_id
 }
 
