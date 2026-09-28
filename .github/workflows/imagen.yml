@@ -27,7 +27,7 @@ env:
 jobs:
   imagen:
     name: Imagen · ${{ matrix.nombre }}
-    runs-on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner || 'ubuntu-24.04-arm' }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -36,6 +36,9 @@ jobs:
           - { nombre: voz, contexto: proyectos/voz }
           - { nombre: agentes, contexto: proyectos/agentes }
           - { nombre: panel, contexto: proyectos/voz/web }
+          # La casa de Hermes corre en EC2 x86 (m7i-flex), como en Fly. Su etiqueta es el hash del
+          # árbol imagen/: solo se reconstruye cuando cambia la imagen (tarda ~10 min).
+          - { nombre: hermes, contexto: proyectos/agentes/imagen, runner: ubuntu-24.04, plataforma: linux/amd64, arbol: true }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -55,13 +58,17 @@ jobs:
         env:
           NOMBRE: ${{ matrix.nombre }}
           CONTEXTO: ${{ matrix.contexto }}
+          PLATAFORMA: ${{ matrix.plataforma || 'linux/arm64' }}
+          ARBOL: ${{ matrix.arbol || false }}
         run: |
-          etiqueta="$REGISTRO/dimia/$NOMBRE:${GITHUB_SHA::12}"
-          if aws ecr describe-images --region mx-central-1 --repository-name "dimia/$NOMBRE" --image-ids imageTag="${GITHUB_SHA::12}" >/dev/null 2>&1; then
+          tag="${GITHUB_SHA::12}"
+          if [ "$ARBOL" = true ]; then tag="$(git rev-parse "HEAD:$CONTEXTO" | cut -c1-12)"; fi
+          etiqueta="$REGISTRO/dimia/$NOMBRE:$tag"
+          if aws ecr describe-images --region mx-central-1 --repository-name "dimia/$NOMBRE" --image-ids imageTag="$tag" >/dev/null 2>&1; then
             echo "Ya existe $etiqueta"
             exit 0
           fi
-          docker build --platform linux/arm64 -t "$etiqueta" "$CONTEXTO"
+          docker build --platform "$PLATAFORMA" -t "$etiqueta" "$CONTEXTO"
           docker push "$etiqueta"
           echo "### $NOMBRE" >> "$GITHUB_STEP_SUMMARY"
           echo "\`$etiqueta\`" >> "$GITHUB_STEP_SUMMARY"

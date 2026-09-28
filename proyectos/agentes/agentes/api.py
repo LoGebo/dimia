@@ -10,6 +10,7 @@ import base64
 import hashlib
 import re
 import hmac
+import ipaddress
 import time
 
 import httpx
@@ -902,6 +903,14 @@ async def whatsapp_desvincular(agente_id: uuid.UUID, tenant: str = Depends(negoc
 
 # --- Proxy de credenciales: la máquina del negocio no guarda cuentas ni llaves de plataforma ---
 
+def _desde_hermes(request: Request) -> bool:
+    try:
+        ip = ipaddress.ip_address(request.client.host if request.client else "")
+    except ValueError:
+        return False
+    return any(ip in ipaddress.ip_network(r) for r in config.HERMES_REDES)
+
+
 async def _maquina_autorizada(tenant: str, request: Request) -> None:
     """La máquina entra con su llave de máquina (maquina_negocio.llave), solo para su propio negocio
     y solo por la red privada de Fly: el proxy público siempre pone Fly-Client-IP, así que una llave
@@ -911,7 +920,8 @@ async def _maquina_autorizada(tenant: str, request: Request) -> None:
         raise HTTPException(403, "El proxy solo atiende por la red privada.")
     # En AWS el orquestador no está en la 6PN: el relevo de Fly (relevo/) reenvía lo que le llega por la
     # red privada con este secreto; lo que entra por internet no lo trae.
-    if config.RELEVO_SECRETO and not hmac.compare_digest(
+    # Las casas en EC2 entran por el NLB interno, que conserva su IP (subredes hermes).
+    if config.RELEVO_SECRETO and not _desde_hermes(request) and not hmac.compare_digest(
         request.headers.get("x-relevo-secreto", "").encode(), config.RELEVO_SECRETO.encode()
     ):
         raise HTTPException(403, "El proxy solo atiende por la red privada.")

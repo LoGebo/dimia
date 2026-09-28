@@ -22,6 +22,7 @@ HERMES = "/opt/hermes/.venv/bin/hermes"
 
 procesos: dict[tuple[str, str], subprocess.Popen] = {}
 COMPUERTA = ("", "pantallas")  # de toda la máquina, no de un agente
+EXEC = ("", "exec")  # exec del orquestador en EC2 (pantallas.py --exec), como root: escribe y hace chown
 marcas: dict[str, float] = {}  # mtime del config.yaml que corre cada Hermes
 
 
@@ -38,11 +39,11 @@ def vivo(clave):
     return p is not None and p.poll() is None
 
 
-def lanzar(clave, cmd, env=None, cwd=None):
+def lanzar(clave, cmd, env=None, cwd=None, como=None):
     if vivo(clave):
         return False
     e = {"PATH": "/usr/local/bin:/usr/bin:/bin:/opt/hermes/.venv/bin", "HOME": f"{DATOS}", "LANG": "es_MX.UTF-8", "TZ": zona(), **(env or {})}
-    procesos[clave] = subprocess.Popen(cmd, env=e, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, user=UID, group=UID)
+    procesos[clave] = subprocess.Popen(cmd, env=e, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, user=UID if como is None else como, group=UID if como is None else como)
     return True
 
 
@@ -120,11 +121,13 @@ def apagar(agente: str):
 
 def main():
     while True:
+        if os.path.exists("/run/dimia/llave_exec"):  # antes del mapa: el orquestador lo escribe por exec
+            lanzar(EXEC, ["/opt/hermes/.venv/bin/python", "/opt/dimia/pantallas.py", "--exec"], como=0)
         try:
             with open(ARCHIVO) as f:
                 mapa = json.load(f)
             lanzar(COMPUERTA, ["/opt/hermes/.venv/bin/python", "/opt/dimia/pantallas.py"])
-            for agente in {k[0] for k in procesos if k != COMPUERTA} - set(mapa):
+            for agente in {k[0] for k in procesos if k not in (COMPUERTA, EXEC)} - set(mapa):
                 apagar(agente)
             for agente, n in mapa.items():
                 escritorio(agente, int(n))

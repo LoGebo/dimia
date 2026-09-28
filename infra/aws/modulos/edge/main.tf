@@ -44,6 +44,7 @@ resource "aws_cloudfront_distribution" "this" {
   #checkov:skip=CKV_AWS_68:WAF llega con el dominio propio; staging no tiene tráfico público.
   #checkov:skip=CKV_AWS_86:Logs de acceso de CloudFront llegan con el bucket de logs del borde (fase 5).
   #checkov:skip=CKV_AWS_174:El certificado por omisión de *.cloudfront.net ya exige TLS 1.2; con ACM propio se fija la política.
+  #checkov:skip=CKV_AWS_305:El origen es la app (Next.js y FastAPI), no un bucket: no hay objeto raíz.
   #checkov:skip=CKV_AWS_310:Un solo origen: el ALB interno; no hay grupo de failover en staging.
   #checkov:skip=CKV_AWS_374:Sin restricción geográfica: la app atiende clientes fuera de México también.
   #checkov:skip=CKV2_AWS_32:Los encabezados de seguridad los pone la app (next.config.mjs, FastAPI).

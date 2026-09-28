@@ -3,7 +3,7 @@
 # La aplica el dueño a mano con emergencia: compartido no tiene tofu-apply.
 
 locals {
-  repos = ["voz", "agentes", "panel"]
+  repos = ["voz", "agentes", "panel", "hermes"]
 }
 
 resource "aws_iam_openid_connect_provider" "github" {

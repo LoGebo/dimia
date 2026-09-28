@@ -2,6 +2,7 @@
 plataforma. La máquina solo conoce su llave de máquina (maquina_negocio.llave): con ella entra al
 proxy del orquestador, que agrega la credencial real ya fuera de la máquina, y con ella firma el
 orquestador los pases cortos a sus pantallas. Aquí va la parte pura (sin red ni base) para probarla."""
+import base64
 import hashlib
 import hmac
 import re
@@ -82,4 +83,18 @@ VIDA_PASE = 60  # segundos: el orquestador lo firma justo antes de conectarse
 def firmar_pantalla(llave_maquina: str, tipo: str, n: int, ahora: float | None = None) -> str:
     exp = int((ahora or time.time()) + VIDA_PASE)
     firma = hmac.new(llave_maquina.encode(), f"{tipo}.{int(n)}.{exp}".encode(), hashlib.sha256).hexdigest()
+    return f"{exp}.{firma}"
+
+
+# --- Exec en EC2 (imagen/pantallas.py --exec verifica el mismo formato) ---
+
+def llave_exec(etiqueta: str) -> str:
+    """Derivada, no guardada: el orquestador la recalcula con la etiqueta de la instancia y el host
+    la recibe al crearse. Solo root la lee en la máquina (la llave de máquina la lee el agente)."""
+    return hmac.new(base64.b64decode(config.AGENTES_SECRETO), f"exec:{etiqueta}".encode(), hashlib.sha256).hexdigest()
+
+
+def firmar_exec(llave: str, cuerpo: bytes, ahora: float | None = None) -> str:
+    exp = int((ahora or time.time()) + VIDA_PASE)
+    firma = hmac.new(llave.encode(), f"{exp}.{hashlib.sha256(cuerpo).hexdigest()}".encode(), hashlib.sha256).hexdigest()
     return f"{exp}.{firma}"

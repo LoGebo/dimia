@@ -38,7 +38,17 @@ run "mx_con_nat_regional" {
   }
 
   assert {
-    condition     = length(distinct([for s in aws_subnet.this : s.ipv6_cidr_block])) == 9
+    condition     = [for z in var.zonas : aws_subnet.this["hermes-${z}"].cidr_block] == ["10.20.216.0/23", "10.20.218.0/23", "10.20.220.0/23"]
+    error_message = "hermes debe ser /23 ×3 dentro de la reserva .216/21."
+  }
+
+  assert {
+    condition     = aws_subnet.this["publica-mx-central-1a"].ipv6_cidr_block == "2600:1f00:1234:5606::/64"
+    error_message = "Agregar un tipo de subred no debe mover la /64 de las que ya existen."
+  }
+
+  assert {
+    condition     = length(distinct([for s in aws_subnet.this : s.ipv6_cidr_block])) == 12
     error_message = "Cada subred necesita su propia /64."
   }
 

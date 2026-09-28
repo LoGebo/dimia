@@ -1,6 +1,6 @@
 # VPC de doble pila de una celda o de un grupo de voz (§2.2, §3.1).
 # El plan de direcciones es fijo, sin IPAM:
-#   mx : privada-app /18 ×3 · datos /22 ×3 · pública /22 ×3 · reserva .216/21
+#   mx : privada-app /18 ×3 · datos /22 ×3 · pública /22 ×3 · hermes /23 ×3 (en .216/21) · reserva .222/23
 #   voz: pública-voz /18 ×3 · privada /20 ×3 · reserva .240/20
 
 data "aws_region" "actual" {}
@@ -11,24 +11,28 @@ locals {
   # tipo -> [bits nuevos sobre la /16, primer índice]; la subred de la AZ i usa índice + i.
   plan = {
     mx = {
-      app     = { bits = 2, base = 0, publica = false }
-      datos   = { bits = 6, base = 48, publica = false }
-      publica = { bits = 6, base = 51, publica = true }
+      app     = { bits = 2, base = 0, publica = false, v6 = 0 }
+      datos   = { bits = 6, base = 48, publica = false, v6 = 1 }
+      publica = { bits = 6, base = 51, publica = true, v6 = 2 }
+      # Computadoras de casa de Hermes (§3.6): su propia subred para que el SG y el orquestador
+      # las distingan de los nodos de EKS.
+      hermes = { bits = 7, base = 108, publica = false, v6 = 3 }
     }
     voz = {
-      publica = { bits = 2, base = 0, publica = true }
-      privada = { bits = 4, base = 12, publica = false }
+      publica = { bits = 2, base = 0, publica = true, v6 = 1 }
+      privada = { bits = 4, base = 12, publica = false, v6 = 0 }
     }
   }[var.perfil]
 
-  # Cada subred recibe una /64 distinta de la /56 de Amazon.
+  # Cada subred recibe una /64 distinta de la /56 de Amazon; v6 fija el bloque para que agregar un
+  # tipo no mueva los de los demás.
   subredes = merge([
     for tipo, p in local.plan : {
       for z, i in local.az : "${tipo}-${z}" => {
         tipo    = tipo
         zona    = z
         cidr    = cidrsubnet(var.cidr, p.bits, p.base + i)
-        ipv6    = index(keys(local.plan), tipo) * 3 + i
+        ipv6    = p.v6 * 3 + i
         publica = p.publica
       }
     }

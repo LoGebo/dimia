@@ -483,3 +483,67 @@ def test_fly_ejecutar_trata_rechazo_como_error():
     f.http = httpx.AsyncClient(transport=httpx.MockTransport(responder), base_url="https://api")
     codigo, _, _ = asyncio.run(f.ejecutar("m", ["true"]))
     assert codigo == 1
+
+
+def test_exec_de_ec2_solo_con_la_llave_de_root(monkeypatch, tmp_path):
+    """El exec de la compuerta (EC2) corre lo que firma el orquestador con la llave derivada de la
+    etiqueta; sin firma, con la llave de máquina o con otro cuerpo, 403 y no corre nada."""
+    import threading
+    import urllib.error
+    import urllib.request
+
+    p = _pantallas()
+    llave = credenciales.llave_exec("etiqueta-a")
+    archivo = tmp_path / "llave_exec"
+    archivo.write_text(llave)
+    monkeypatch.setattr(p, "LLAVE_EXEC", str(archivo))
+    monkeypatch.setattr(p, "PUERTO_EXEC", 0)
+    servidor = p.servir_exec()
+    puerto = servidor.server_address[1]
+
+    def post(cuerpo: bytes, firma: str):
+        req = urllib.request.Request(f"http://[::1]:{puerto}/exec", data=cuerpo, headers={"x-firma": firma, "content-type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=5) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return e.code, None
+
+    try:
+        cuerpo = json.dumps({"comando": ["sh", "-c", "echo hola; exit 3"], "timeout": 5}).encode()
+        assert post(cuerpo, credenciales.firmar_exec(llave, cuerpo)) == (200, {"exit_code": 3, "stdout": "hola\n", "stderr": ""})
+        assert post(cuerpo, "")[0] == 403
+        assert post(cuerpo, credenciales.firmar_exec(LLAVE_MAQUINA, cuerpo))[0] == 403
+        assert post(cuerpo, credenciales.firmar_exec(credenciales.llave_exec("etiqueta-b"), cuerpo))[0] == 403
+        otro = json.dumps({"comando": ["id"], "timeout": 5}).encode()
+        assert post(otro, credenciales.firmar_exec(llave, cuerpo))[0] == 403
+        assert post(cuerpo, credenciales.firmar_exec(llave, cuerpo, ahora=time.time() - 3600))[0] == 403
+    finally:
+        servidor.shutdown()
+    archivo.unlink()
+    assert p.servir_exec() is None  # en Fly no hay llave: el puerto ni se abre
+
+
+def test_en_aws_la_casa_entra_al_proxy_desde_su_subred(monkeypatch):
+    from starlette.requests import Request
+
+    from agentes import api
+
+    monkeypatch.setattr(config, "RELEVO_SECRETO", "secreto-del-relevo")
+    monkeypatch.setattr(config, "HERMES_REDES", ["10.20.216.0/23"])
+
+    def req(ip):
+        return Request({"type": "http", "headers": [], "client": (ip, 1234)})
+
+    assert api._desde_hermes(req("10.20.217.9"))
+    assert not api._desde_hermes(req("10.20.0.9"))  # el ALB y los pods viven en las subredes app
+    assert not api._desde_hermes(req("no-es-ip"))
+
+
+def test_datos_de_usuario_de_ec2(monkeypatch):
+    from agentes.maquinas import ec2
+
+    ud = ec2.datos_de_usuario("etq", {"HERMES_HOME": "/opt/data", "MALO": "a\nb"})
+    assert credenciales.llave_exec("etq") in ud and "HERMES_HOME=/opt/data" in ud and "MALO" not in ud
+    assert "$$(cat /etc/dimia/imagen)" in ud and "-p 8600-8601:8600-8601" in ud
+    assert ec2.tipo_para(4608) == "m7i-flex.large" and ec2.tipo_para(8192) == "m7i-flex.large" and ec2.tipo_para(9000) == "m7i-flex.xlarge"

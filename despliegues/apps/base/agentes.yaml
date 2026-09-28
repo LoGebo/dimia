@@ -1,5 +1,10 @@
-# Orquestador de agentes. Las máquinas Hermes siguen en Fly hasta la fase 8; staging no tiene
-# FLY_API_TOKEN, así que no crea máquinas reales.
+# Orquestador de agentes. PROVEEDOR_MAQUINAS elige dónde viven las casas de Hermes: fly (el relevo
+# de Fly llega a la 6PN) o ec2 (infra/aws/modulos/hermes; los permisos llegan por Pod Identity a la
+# service account agentes). Cada overlay pone el suyo.
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: agentes }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,6 +15,7 @@ spec:
   template:
     metadata: { labels: { app: agentes } }
     spec:
+      serviceAccountName: agentes
       nodeSelector: { kubernetes.io/arch: arm64, dimia.mx/pool: app-mx }
       terminationGracePeriodSeconds: 60
       containers:
@@ -19,6 +25,7 @@ spec:
           envFrom: [{ secretRef: { name: agentes } }]
           env:
             - { name: PROVEEDOR_MAQUINAS, value: fly }
+            - { name: AWS_REGION, value: mx-central-1 }
           ports: [{ containerPort: 8080, name: http }]
           readinessProbe: { httpGet: { path: /salud, port: http }, periodSeconds: 10 }
           livenessProbe: { httpGet: { path: /salud, port: http }, initialDelaySeconds: 20, periodSeconds: 30 }
@@ -30,5 +37,23 @@ apiVersion: v1
 kind: Service
 metadata: { name: agentes }
 spec:
+  selector: { app: agentes }
+  ports: [{ port: 8080, targetPort: http, name: http }]
+---
+# Las casas de Hermes en EC2 llegan al proxy de credenciales por este NLB interno. Conserva la IP de
+# origen: el orquestador solo atiende el proxy desde las subredes hermes (HERMES_REDES). Cada overlay
+# pone loadBalancerSourceRanges.
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentes-proxy
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-name: agentes-proxy
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=true
+spec:
+  type: LoadBalancer
   selector: { app: agentes }
   ports: [{ port: 8080, targetPort: http, name: http }]

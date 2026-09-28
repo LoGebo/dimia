@@ -20,6 +20,12 @@ PROVEEDOR_MAQUINAS = os.environ.get("PROVEEDOR_MAQUINAS", "fly")
 FLY_API_TOKEN = os.environ.get("FLY_API_TOKEN", "")
 FLY_APP_CEREBROS = os.environ.get("FLY_APP_CEREBROS", "dimia-cerebros")
 FLY_REGION = os.environ.get("FLY_REGION", "dfw")
+# EC2 (infra/aws/modulos/hermes): plantilla, subredes hermes y el valor de la etiqueta dimia:hermes.
+EC2_PLANTILLA = os.environ.get("EC2_PLANTILLA", "")
+EC2_SUBREDES = os.environ.get("EC2_SUBREDES", "")
+EC2_ENTORNO = os.environ.get("EC2_ENTORNO", "")
+# Redes de las subredes hermes: lo que llega de ahí por el NLB interno es una máquina (api._maquina_autorizada).
+HERMES_REDES = [r for r in os.environ.get("HERMES_REDES", "").split(",") if r]
 HERMES_IMAGEN = os.environ.get("HERMES_IMAGEN", "registry.fly.io/dimia-cerebros:hermes-v15")  # imagen/ : Hermes + pantallas (v15: pantallas solo en localhost + compuerta, sin llaves en la máquina)
 # Cuatro niveles; Jev elige uno por mensaje. Ids tal como los publica el catálogo de Codex de la cuenta
 # (luna «fast and affordable», terra «balanced», sol «reliable agentic workhorse», astra «most capable»).

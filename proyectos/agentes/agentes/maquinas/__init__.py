@@ -1,5 +1,5 @@
 """Quién renta la máquina del negocio. El resto del orquestador solo conoce
-esta interfaz; cambiar de Fly a otro proveedor es escribir otro módulo aquí."""
+esta interfaz; cambiar de Fly a otro proveedor es escribir otro módulo aquí (ec2.py)."""
 import functools
 
 from agentes import config
@@ -11,6 +11,9 @@ def proveedor() -> Maquinas:
     if config.PROVEEDOR_MAQUINAS == "fly":
         from agentes.maquinas.fly import Fly
         return Fly()
+    if config.PROVEEDOR_MAQUINAS == "ec2":
+        from agentes.maquinas.ec2 import Ec2
+        return Ec2()
     raise RuntimeError(f"Proveedor de máquinas desconocido: {config.PROVEEDOR_MAQUINAS}")
 
 
@@ -20,6 +23,8 @@ def tareas() -> Maquinas:
     if config.PROVEEDOR_MAQUINAS == "fly":
         from agentes.maquinas.fly import Fly
         return Fly(app=config.FLY_APP_TAREAS)
+    if config.PROVEEDOR_MAQUINAS == "ec2":  # sin capa 2 todavía: crear_tarea lo dice
+        return proveedor()
     raise RuntimeError(f"Proveedor de máquinas desconocido: {config.PROVEEDOR_MAQUINAS}")
 
 
