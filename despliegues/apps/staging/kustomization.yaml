@@ -27,13 +27,45 @@ patches:
       - op: add
         path: /metadata/annotations/alb.ingress.kubernetes.io~1load-balancer-name
         value: staging-noprod-mx
+  # Casas de Hermes en EC2 (infra/aws/vivos/*/hermes): salidas de esa pila.
+  - target: { kind: Deployment, name: agentes }
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0
+        value: { name: PROVEEDOR_MAQUINAS, value: ec2 }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: EC2_PLANTILLA, value: "lt-02cf3135285a5d2de" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: EC2_SUBREDES, value: "subnet-0d0300865fce489fb,subnet-0807114a8735b4f05,subnet-0bf2e77d0b5dfa044" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: EC2_ENTORNO, value: "staging" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: HERMES_REDES, value: "10.8.216.0/23,10.8.218.0/23,10.8.220.0/23" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: HERMES_IMAGEN, value: "197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/hermes:4ec12ec01734" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: PROXY_URL, value: "http://agentes-proxy-3d3663a3e1558abe.elb.mx-central-1.amazonaws.com:8080" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: PUBLICO_URL, value: "https://d3f9bnf2iwgvoz.cloudfront.net" }
+  - target: { kind: Service, name: agentes-proxy }
+    patch: |-
+      - op: add
+        path: /spec/loadBalancerSourceRanges
+        value: ["10.8.216.0/21"]
 images:
   - name: voz
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz
     newTag: d40fb960370e
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
-    newTag: d40fb960370e
+    newTag: c69f881ca089
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
     newTag: d40fb960370e
