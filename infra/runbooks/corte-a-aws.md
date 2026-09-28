@@ -78,4 +78,9 @@ no se toca durante el corte: es la copia de seguridad hasta que pasen 7 días si
   que se borra solo a los 7 días). Las máquinas y volúmenes de `dimia-cerebros` quedan apagados como
   reversa: se borran a los 7 días junto con el relevo `dimia-agentes`. Las máquinas de tarea (capa 2)
   siguen apagadas (`HERMES_TAREAS_ACTIVO`); en AWS llegan con agent-sandbox.
+  Verificado: la casa de Dimia (1.1 GB) despierta y se sincroniza en ~40 s, los dos Hermes contestan
+  y un turno real pasa por el proxy (NLB) hasta Codex.
+- Google OAuth: el redirect sigue en `https://dimia-agentes.fly.dev/oauth/google/callback` (`OAUTH_URL`),
+  que es el que tiene registrado la consola de Google. Registrar el nuevo (`agentes.dimia.mx` o el de
+  CloudFront `d170r8qyvi0h3w.cloudfront.net`), cambiar `OAUTH_URL` y entonces apagar el relevo.
 - A los 7 días sin incidentes: borrar máquinas de `agente-voz` y pausar el proyecto de Supabase.
