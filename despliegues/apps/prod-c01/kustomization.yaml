@@ -15,12 +15,24 @@ patches:
       - op: add
         path: /metadata/annotations/alb.ingress.kubernetes.io~1load-balancer-name
         value: prod-c01-mx
-  # Producción: 2 workers de voz (capacidad-y-despliegue: 2-3 activos) y PDB para los de HTTP.
+  # Antes del corte: sin worker de voz (tomaría llamadas reales), despachador (mandaría mensajes) ni
+  # orquestador (administraría las mismas máquinas Hermes que el de Fly).
+  # En el corte pasan a 2 y 1 (runbook corte-a-aws.md).
   - target: { kind: Deployment, name: voz-worker }
     patch: |-
       - op: replace
         path: /spec/replicas
-        value: 2
+        value: 0
+  - target: { kind: Deployment, name: agentes }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target: { kind: Deployment, name: despachador }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
 images:
   - name: voz
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz

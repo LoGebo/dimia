@@ -1,5 +1,3 @@
-# Se mueve a apps/prod.yaml en el corte (runbook corte-a-aws.md): antes, el worker de voz sin nombre
-# tomaría llamadas reales contra una base vacía.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
