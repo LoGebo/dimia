@@ -9,7 +9,7 @@ panel ya viven en `usuario_panel` (bcrypt), así que Supabase Auth no se migra.
 1. `vivos/celdas/c01/eks`, `datos` y `edge` aplicados; Argo CD sincroniza `despliegues/c01-mx`.
 2. Secreto `c01/prod/app` en Secrets Manager (c01) con las llaves de producción, incluidos WhatsApp e Instagram.
 3. Staging probado de punta a punta sobre la misma imagen.
-4. En la base de Aurora `dimia`: `.dev/auth_stub.sql` y las migraciones, **sin semilla**.
+4. En la base de Aurora `dimia`: `.dev/auth_stub.sql`, las migraciones y `web/dev/permisos_panel.sql`, **sin semilla**.
 
 ## Corte (de noche, 10-15 min sin escrituras)
 
