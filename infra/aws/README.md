@@ -119,6 +119,8 @@ Lo que hace cada workflow:
 
 Las pilas manuales nunca se aplican desde CI.
 
+Cada plan con cambios sube un marcador `<id>.cambio`: con un solo artefacto, `download-artifact` lo extrae sin subcarpeta y el detector de pilas no lo veía.
+
 `init` y `show` también llevan `-var-file=comun.tfvars`: el cifrado del estado toma la llave de `llave_estado_arn`, y sin ella ni siquiera se inicializa.
 
 ### 8. Después

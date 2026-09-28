@@ -101,7 +101,7 @@ jobs:
           tofu plan -input=false -lock-timeout=5m -detailed-exitcode -var-file="$GITHUB_WORKSPACE/infra/aws/comun.tfvars" -out=plan.out || codigo=$?
           case "$codigo" in
             0) echo "cambios=false" >> "$GITHUB_OUTPUT" ;;
-            2) echo "cambios=true" >> "$GITHUB_OUTPUT" ;;
+            2) echo "cambios=true" >> "$GITHUB_OUTPUT"; touch "${{ matrix.id }}.cambio" ;;
             *) exit "$codigo" ;;
           esac
 
@@ -116,7 +116,9 @@ jobs:
         if: steps.plan.outputs.cambios == 'true'
         with:
           name: plan-${{ matrix.id }}
-          path: infra/aws/${{ matrix.pila }}/plan.out
+          path: |
+            infra/aws/${{ matrix.pila }}/plan.out
+            infra/aws/${{ matrix.pila }}/${{ matrix.id }}.cambio
           overwrite: true
           retention-days: 3
           if-no-files-found: error
@@ -128,7 +130,8 @@ jobs:
     outputs:
       matriz: ${{ steps.cambios.outputs.matriz }}
     steps:
-      # Sin coincidencias no baja nada: ninguna pila cambió.
+      # Sin coincidencias no baja nada: ninguna pila cambió. Con un solo artefacto, download-artifact lo
+      # extrae directo en planes/ (sin subcarpeta); por eso cada plan lleva un marcador <id>.cambio.
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: plan-*
@@ -138,7 +141,7 @@ jobs:
         env:
           MATRIZ: ${{ needs.pilas.outputs.matriz }}
         run: |
-          matriz=$(python3 -c 'import json, os; print(json.dumps([p for p in json.loads(os.environ["MATRIZ"]) if os.path.isfile("planes/plan-" + p["id"] + "/plan.out")]))')
+          matriz=$(python3 -c 'import glob, json, os; ids = {os.path.basename(f)[:-len(".cambio")] for f in glob.glob("planes/**/*.cambio", recursive=True)}; print(json.dumps([p for p in json.loads(os.environ["MATRIZ"]) if p["id"] in ids]))')
           echo "matriz=$matriz" >> "$GITHUB_OUTPUT"
 
   apply:
