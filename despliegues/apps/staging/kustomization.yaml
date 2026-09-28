@@ -1,14 +1,32 @@
-# Staging en noprod-mx: la app completa sobre Aurora noprod-mx (base staging). La etiqueta de imagen
-# es el SHA que construyó el workflow Imagen; se sube por PR.
+# Staging en noprod-mx sobre Aurora noprod-mx (base staging).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: staging
 resources:
+  - ../base
   - secretos.yaml
-  - voz.yaml
-  - agentes.yaml
-  - panel.yaml
-  - ingreso.yaml
+patches:
+  # Staging comparte proyecto de LiveKit con producción: su worker solo toma salas que lo pidan por
+  # nombre y su panel lo pide por ese nombre.
+  - target: { kind: Deployment, name: voz-worker }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: AGENT_NAME, value: voz-staging }
+  - target: { kind: Deployment, name: panel }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: LIVEKIT_AGENT_NAME, value: voz-staging }
+  # El nombre del Ingress no cambia: otro nombre recrearía el ALB y dejaría a CloudFront sin origen.
+  - target: { kind: Ingress, name: app }
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: staging
+      - op: add
+        path: /metadata/annotations/alb.ingress.kubernetes.io~1load-balancer-name
+        value: staging-noprod-mx
 images:
   - name: voz
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz

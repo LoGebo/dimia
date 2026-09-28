@@ -1,13 +1,12 @@
-# Un ALB interno para staging; CloudFront (VPC origin) llega a él y cada distribución pone el
+# Un ALB interno por entorno (el nombre lo pone cada variante); CloudFront (VPC origin) llega a él y cada distribución pone el
 # encabezado X-Dimia-Servicio que elige el servicio. Sin encabezado, 404.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: staging
+  name: app
   annotations:
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/load-balancer-name: staging-noprod-mx
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/healthcheck-path: /salud
     alb.ingress.kubernetes.io/conditions.panel: '[{"field":"http-header","httpHeaderConfig":{"httpHeaderName":"X-Dimia-Servicio","values":["panel"]}}]'

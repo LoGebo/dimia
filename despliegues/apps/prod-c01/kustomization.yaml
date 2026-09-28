@@ -1,0 +1,33 @@
+# Producción en c01-mx sobre Aurora c01-mx (base dimia). El worker de voz no lleva nombre: toma las
+# llamadas que despacha la regla SIP de LiveKit. Los tokens de WhatsApp/Instagram sí van.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prod
+resources:
+  - ../base
+  - secretos.yaml
+patches:
+  - target: { kind: Ingress, name: app }
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: prod
+      - op: add
+        path: /metadata/annotations/alb.ingress.kubernetes.io~1load-balancer-name
+        value: prod-c01-mx
+  # Producción: 2 workers de voz (capacidad-y-despliegue: 2-3 activos) y PDB para los de HTTP.
+  - target: { kind: Deployment, name: voz-worker }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+images:
+  - name: voz
+    newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz
+    newTag: 30358d9ba5ef
+  - name: agentes
+    newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
+    newTag: 30358d9ba5ef
+  - name: panel
+    newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
+    newTag: 30358d9ba5ef

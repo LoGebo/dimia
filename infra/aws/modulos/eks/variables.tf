@@ -76,3 +76,9 @@ variable "prefijo_secretos" {
   description = "External Secrets solo lee secretos de Secrets Manager bajo este prefijo (p. ej. noprod/)."
   type        = string
 }
+
+variable "lectores" {
+  description = "ARN de roles con AmazonEKSAdminViewPolicy (tofu-plan): sin leer los secretos de Helm, el plan cree que los releases no existen."
+  type        = list(string)
+  default     = []
+}

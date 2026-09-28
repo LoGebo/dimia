@@ -17,7 +17,6 @@ spec:
           env:
             - { name: AUTH_MODE, value: local }
             - { name: AGENTES_URL, value: "http://agentes:8080" }
-            - { name: LIVEKIT_AGENT_NAME, value: voz-staging }
           ports: [{ containerPort: 3000, name: http }]
           readinessProbe: { tcpSocket: { port: http }, periodSeconds: 10 }
           livenessProbe: { tcpSocket: { port: http }, initialDelaySeconds: 20, periodSeconds: 30 }

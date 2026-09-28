@@ -1,10 +1,10 @@
-# EKS de noprod (§2.1): dev y staging comparten clúster y se separan por namespace.
-# La red sale de vivos/noprod/red; se busca por nombre para no leer otro estado.
+# EKS de producción de la celda 01 (§2.2).
+# La red sale de vivos/celdas/c01/red-mx; se busca por nombre para no leer otro estado.
 
 data "aws_caller_identity" "actual" {}
 
 data "aws_vpc" "red" {
-  tags = { Name = "noprod-mx" }
+  tags = { Name = "c01-mx" }
 }
 
 data "aws_subnets" "app" {
@@ -14,21 +14,21 @@ data "aws_subnets" "app" {
   }
   filter {
     name   = "tag:Name"
-    values = ["noprod-mx-app-*"]
+    values = ["c01-mx-app-*"]
   }
 }
 
 module "eks" {
-  source    = "../../../modulos/eks"
+  source    = "../../../../modulos/eks"
   providers = { aws = aws, aws.virginia = aws.virginia, helm = helm }
 
-  nombre     = "noprod-mx"
+  nombre     = "c01-mx"
   subredes   = sort(data.aws_subnets.app.ids)
   limite_arn = "arn:aws:iam::${data.aws_caller_identity.actual.account_id}:policy/dimia-limite"
   admins     = ["arn:aws:iam::${data.aws_caller_identity.actual.account_id}:role/tofu-apply"]
   lectores   = ["arn:aws:iam::${data.aws_caller_identity.actual.account_id}:role/tofu-plan"]
 
-  prefijo_secretos = "noprod/"
+  prefijo_secretos = "c01/"
   argocd = {
     idc_instancia_arn = "arn:aws:sso:::instance/ssoins-66844425d7ff1b8c"
     idc_region        = "us-east-2"
@@ -55,9 +55,9 @@ output "eks" {
 }
 
 module "observabilidad" {
-  source = "../../../modulos/observabilidad"
+  source = "../../../../modulos/observabilidad"
 
-  nombre     = "noprod-mx"
+  nombre     = "c01-mx"
   cluster    = module.eks.nombre
   limite_arn = "arn:aws:iam::${data.aws_caller_identity.actual.account_id}:policy/dimia-limite"
 }

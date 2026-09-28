@@ -1,0 +1,9 @@
+# La app completa, igual en todos los entornos; cada variante pone namespace, imágenes, secretos,
+# nombre del ALB y lo propio del entorno.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - voz.yaml
+  - agentes.yaml
+  - panel.yaml
+  - ingreso.yaml
