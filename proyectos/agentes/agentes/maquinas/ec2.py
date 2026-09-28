@@ -89,7 +89,7 @@ Requires=docker.service
 ExecStartPre=/usr/local/bin/hermes-preparar
 ExecStartPre=-/usr/bin/docker rm -f hermes
 # $$: systemd expande $ por su cuenta.
-ExecStart=/bin/sh -c 'exec /usr/bin/docker run --rm --name hermes --shm-size 1g --env-file /etc/dimia/entorno -v /opt/data:/opt/data -v /etc/dimia/llave_exec:/run/dimia/llave_exec:ro -p 8600-8601:8600-8601 -p 8700-8799:8700-8799 "$$(cat /etc/dimia/imagen)"'
+ExecStart=/bin/sh -c 'exec /usr/bin/docker run --rm --name hermes --hostname hermes --shm-size 1g --env-file /etc/dimia/entorno -v /opt/data:/opt/data -v /etc/dimia/llave_exec:/run/dimia/llave_exec:ro -p 8600-8601:8600-8601 -p 8700-8799:8700-8799 "$$(cat /etc/dimia/imagen)"'
 ExecStop=/usr/bin/docker stop -t 20 hermes
 Restart=always
 RestartSec=5

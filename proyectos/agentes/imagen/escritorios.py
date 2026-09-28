@@ -64,6 +64,15 @@ def escritorio(agente: str, n: int):
         time.sleep(0.5)
     lanzar((agente, "dbus"), ["dbus-daemon", "--session", f"--address={bus}", "--nofork", "--nopidfile"], base)
     lanzar((agente, "wm"), ["openbox", "--config-file", "/opt/dimia/openbox-rc.xml"], base)
+    if not vivo((agente, "chromium")):
+        # El candado de perfil guarda el hostname: en EC2 el contenedor cambia de nombre en cada
+        # arranque (y al mudar de Fly traía el de la máquina vieja), y Chromium se queda en
+        # «The profile appears to be in use by another computer» en vez de abrir.
+        for f in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+            try:
+                os.unlink(f"{perfil_nav}/{f}")
+            except FileNotFoundError:
+                pass
     lanzar((agente, "chromium"), [
         "chromium", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
         # Memoria: pocos procesos de renderizado y pestañas en reposo descargadas; sin esto
