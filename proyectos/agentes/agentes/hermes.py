@@ -81,7 +81,7 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
 
 
 def env(llave: str, pantalla: int, ajustes: dict | None = None, proxy: dict | None = None) -> str:
-    base = f"API_SERVER_ENABLED=true\nAPI_SERVER_HOST=::\nAPI_SERVER_PORT={puerto(pantalla)}\nAPI_SERVER_KEY={llave}\n"
+    base = f"API_SERVER_ENABLED=true\nAPI_SERVER_HOST={escucha()}\nAPI_SERVER_PORT={puerto(pantalla)}\nAPI_SERVER_KEY={llave}\n"
     if proxy:  # Codex por el proxy: el token real del cliente nunca entra a la máquina
         base += f"HERMES_CODEX_BASE_URL={proxy['url']}/codex\n"
     wa = (ajustes or {}).get("whatsapp") or {}

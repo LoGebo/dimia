@@ -547,3 +547,11 @@ def test_datos_de_usuario_de_ec2(monkeypatch):
     assert credenciales.llave_exec("etq") in ud and "HERMES_HOME=/opt/data" in ud and "MALO" not in ud
     assert "$$(cat /etc/dimia/imagen)" in ud and "-p 8600-8601:8600-8601" in ud
     assert ec2.tipo_para(4608) == "m7i-flex.large" and ec2.tipo_para(8192) == "m7i-flex.large" and ec2.tipo_para(9000) == "m7i-flex.xlarge"
+
+
+def test_en_ec2_hermes_escucha_por_ipv4(monkeypatch):
+    """Con "::" Hermes solo atiende IPv6: en EC2 el orquestador llega por IPv4 y no conectaba."""
+    monkeypatch.setattr(config, "PROVEEDOR_MAQUINAS", "ec2")
+    assert "host: 0.0.0.0" in hermes.config_yaml("k" * 20, 1) and "API_SERVER_HOST=0.0.0.0" in hermes.env("k" * 20, 1)
+    monkeypatch.setattr(config, "PROVEEDOR_MAQUINAS", "fly")
+    assert "API_SERVER_HOST=::" in hermes.env("k" * 20, 1)
