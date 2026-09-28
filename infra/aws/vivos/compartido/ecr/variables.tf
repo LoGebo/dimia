@@ -8,7 +8,8 @@ variable "org_id" {
   type        = string
 }
 
-variable "repositorio_github" {
-  type    = string
-  default = "LoGebo/dimia"
+variable "github_sub" {
+  description = "Prefijo inmutable del claim sub de GitHub (gh api repos/LoGebo/dimia/actions/oidc/customization/sub)."
+  type        = string
+  default     = "repo:LoGebo@90727612/dimia@1344315354"
 }

@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "confianza_imagen" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.repositorio_github}:ref:refs/heads/main"]
+      values   = ["${var.github_sub}:ref:refs/heads/main"]
     }
   }
 }
