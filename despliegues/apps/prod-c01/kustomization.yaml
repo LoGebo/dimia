@@ -21,13 +21,45 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 2
+  # Casas de Hermes en EC2 (infra/aws/vivos/celdas/c01/hermes): salidas de esa pila.
+  - target: { kind: Deployment, name: agentes }
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0
+        value: { name: PROVEEDOR_MAQUINAS, value: ec2 }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: EC2_PLANTILLA, value: "lt-01b8924359674e48e" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: EC2_SUBREDES, value: "subnet-016768cc6aeb9bec0,subnet-0dcd1d82604fe9cfd,subnet-0d1eff055899e6645" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: EC2_ENTORNO, value: "prod-c01" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: HERMES_REDES, value: "10.20.216.0/23,10.20.218.0/23,10.20.220.0/23" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: HERMES_IMAGEN, value: "197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/hermes:4ec12ec01734" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: PROXY_URL, value: "http://agentes-proxy-a3ea3b2872e1416a.elb.mx-central-1.amazonaws.com:8080" }
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: PUBLICO_URL, value: "https://d170r8qyvi0h3w.cloudfront.net" }
+  - target: { kind: Service, name: agentes-proxy }
+    patch: |-
+      - op: add
+        path: /spec/loadBalancerSourceRanges
+        value: ["10.20.216.0/21"]
 images:
   - name: voz
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz
     newTag: d40fb960370e
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
-    newTag: d40fb960370e
+    newTag: aa5ee950874f
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
     newTag: d40fb960370e
