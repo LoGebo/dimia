@@ -2,7 +2,7 @@
 """Compuerta de pantallas: la única puerta a las pantallas desde fuera de la máquina.
 
 noVNC (websockify 6080+n) y la pantalla en HD (hd.py 7000+n) escuchan solo en 127.0.0.1. Este
-proceso escucha en [::]:8600 y reenvía /vnc/<n> y /hd/<n> a la de ese agente, solo con un pase
+proceso escucha en 8600 (IPv4 e IPv6) y reenvía /vnc/<n> y /hd/<n> a la de ese agente, solo con un pase
 que el orquestador firma con la llave de esta máquina (/opt/data/llave_maquina) y que vence en
 segundos: `?t=<exp>.<hmac-sha256(llave, "tipo.n.exp")>`. Sin llave o sin pase, no pasa nada: otra
 máquina de la red privada de Fly no puede ver ni controlar este escritorio.
@@ -158,7 +158,8 @@ def elegir_subprotocolo(conexion, ofrecidos):
     return "binary" if "binary" in ofrecidos else None
 
 
-def servir(host: str = "::", puerto: int = PUERTO):
+def servir(host: str | None = None, puerto: int = PUERTO):
+    """host None: todas las interfaces, IPv4 e IPv6 (con "::" solo IPv6 y en EC2 se llega por IPv4)."""
     return serve(puente, host, puerto, process_request=revisar, select_subprotocol=elegir_subprotocolo, max_size=None, ping_interval=20)
 
 

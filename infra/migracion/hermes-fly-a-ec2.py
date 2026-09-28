@@ -25,10 +25,22 @@ async def main(tenant: str, put: str, get: str) -> None:
     assert ec2.nombre == "ec2", "el orquestador todavía usa Fly"
 
     await fly.arrancar(m["referencia"])
+    # El exec de Fly no pasa de 60 s: la subida corre sola en la máquina y aquí se espera su marca.
+    # Los procesos del agente se congelan antes de empacar: con Hermes escribiendo, tar sale con 1
+    # y las bases SQLite quedan a medias. La máquina se apaga después, no hay que descongelarlos.
+    subir = f"pkill -STOP -u {hermes.UID}; sleep 1; tar czf /tmp/datos.tgz -C {hermes.HOME} . && ls -l /tmp/datos.tgz > /tmp/mudanza.log && curl -sf -T /tmp/datos.tgz {shlex.quote(put)}"
     c, out, err = await fly.ejecutar(m["referencia"], ["sh", "-c",
-        f"tar czf /tmp/datos.tgz -C {hermes.HOME} . && ls -l /tmp/datos.tgz && curl -sf -T /tmp/datos.tgz {shlex.quote(put)} && rm /tmp/datos.tgz"], timeout=900)
-    assert c == 0, f"no subió el disco: {out} {err}"
-    print("disco en S3:", out.split()[4], "bytes", flush=True)
+        f"rm -f /tmp/mudanza.fin; nohup sh -c {shlex.quote(subir + '; echo $? > /tmp/mudanza.fin')} >/dev/null 2>&1 &"], timeout=30)
+    assert c == 0, f"no arrancó la subida: {out} {err}"
+    for _ in range(180):
+        await asyncio.sleep(5)
+        c, out, _ = await fly.ejecutar(m["referencia"], ["sh", "-c", "cat /tmp/mudanza.fin 2>/dev/null; cat /tmp/mudanza.log 2>/dev/null"], timeout=15)
+        if out.strip():
+            fin, _, log = out.partition("\n")
+            if fin.strip().isdigit():
+                break
+    assert fin.strip() == "0", f"no subió el disco: {out}"
+    print("disco en S3:", log.split()[4] if log.split() else "?", "bytes", flush=True)
     await fly.parar(m["referencia"])
 
     n = len(await negocio._agentes(tenant))
@@ -43,7 +55,10 @@ async def main(tenant: str, put: str, get: str) -> None:
                       "nivel = 'caliente', dormida_desde = null, ultimo_uso = now() where tenant_id = $1",
                       tenant, ec2.nombre, casa.referencia, casa.disco, casa.direccion)
     negocio._al_dia.pop(tenant, None)
-    await negocio.asegurar_maquina(tenant)  # perfiles, tokens y Hermes al día, ya en EC2
+    try:
+        await negocio.asegurar_maquina(tenant)  # perfiles, tokens y Hermes al día, ya en EC2
+    except negocio.SinCodex:  # sin cuenta de ChatGPT no hay perfiles que escribir; el disco ya está
+        print(f"{tenant}: sin cuenta de ChatGPT, la casa queda sin sincronizar", flush=True)
     print(f"{tenant}: fly {m['referencia']} -> ec2 {casa.referencia} ({casa.direccion})", flush=True)
     await ec2.parar(casa.referencia)
 

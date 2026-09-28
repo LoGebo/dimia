@@ -30,6 +30,12 @@ def proxy(tenant: str, llave_maquina: str) -> dict:
     return {"url": f"{config.PROXY_URL}/proxy/{tenant}", "llave": llave_maquina}
 
 
+def escucha() -> str:
+    """Hermes con "::" solo acepta IPv6: sirve en Fly (la 6PN es IPv6), no en EC2, donde el
+    orquestador llega por IPv4 a la red bridge de Docker."""
+    return "0.0.0.0" if config.PROVEEDOR_MAQUINAS == "ec2" else "::"
+
+
 def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str = "codex", ajustes: dict | None = None, local: bool = False, proxy: dict | None = None) -> str:
     modelo = {"default": config.MODELO_CODEX, "provider": "openai-codex"}
     rutas = {n: {"model": m, "provider": "openai-codex"} for n, m in config.MODELOS_CODEX.items()}
@@ -43,7 +49,7 @@ def config_yaml(llave: str, pantalla: int, mcp: dict | None = None, cerebro: str
         "model": modelo,
         "terminal": {"backend": "local"},
         "platform_toolsets": {"api_server": TOOLSETS},
-        "gateway": {"api_server": {"enabled": True, "host": "::", "port": puerto(pantalla), "key": llave, "max_concurrent_runs": 4}, "multiplex_profiles": False},
+        "gateway": {"api_server": {"enabled": True, "host": escucha(), "port": puerto(pantalla), "key": llave, "max_concurrent_runs": 4}, "multiplex_profiles": False},
         # Cuatro alias (ligero, rapido, fuerte, profundo) que el orquestador elige por turno según Jev.
         "platforms": {"api_server": {"extra": {"model_routes": rutas}}},
         "auth": {"adopt_external_logins": False},

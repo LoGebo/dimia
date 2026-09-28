@@ -72,5 +72,10 @@ no se toca durante el corte: es la copia de seguridad hasta que pasen 7 días si
      `PANEL_ORIGEN` en Vercel y los relevos de Fly (el de `dimia-api`, hasta que las versiones viejas de iOS salgan).
 - Webhook de Instagram: cambiarlo en el tablero de Meta (hoy llega por el relevo de `agente-webhooks`).
 - App de iOS: ya apunta a la API en CloudFront (`d2c11rta2rotk.cloudfront.net`); pasa a `api.dimia.mx` cuando exista. Las versiones ya instaladas siguen usando el relevo `dimia-api.fly.dev` hasta que se actualicen: no se apaga antes.
-- Fase 8: Hermes a AWS; hasta entonces el orquestador llega a las máquinas por el relevo.
+- Fase 8 (hecha el 28-sep-2026): las casas de Hermes viven en EC2 (`infra/aws/modulos/hermes`), con
+  disco EBS por negocio; el proxy entra por el NLB interno `agentes-proxy`. Las casas de Fly se mudaron
+  con `infra/migracion/hermes-fly-a-ec2.py` (disco por S3, bucket temporal `dimia-c01-mudanza-hermes-*`
+  que se borra solo a los 7 días). Las máquinas y volúmenes de `dimia-cerebros` quedan apagados como
+  reversa: se borran a los 7 días junto con el relevo `dimia-agentes`. Las máquinas de tarea (capa 2)
+  siguen apagadas (`HERMES_TAREAS_ACTIVO`); en AWS llegan con agent-sandbox.
 - A los 7 días sin incidentes: borrar máquinas de `agente-voz` y pausar el proyecto de Supabase.
