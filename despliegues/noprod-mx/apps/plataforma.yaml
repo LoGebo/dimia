@@ -19,7 +19,7 @@ spec:
         serviceAccount: { name: aws-load-balancer-controller }
         nodeSelector: { dimia.mx/pool: sistema }
         replicaCount: 2
-  destination: { server: https://kubernetes.default.svc, namespace: kube-system }
+  destination: { name: noprod-mx, namespace: kube-system }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
 ---
@@ -42,7 +42,7 @@ spec:
         nodeSelector: { dimia.mx/pool: sistema }
         webhook: { nodeSelector: { dimia.mx/pool: sistema } }
         certController: { nodeSelector: { dimia.mx/pool: sistema } }
-  destination: { server: https://kubernetes.default.svc, namespace: external-secrets }
+  destination: { name: noprod-mx, namespace: external-secrets }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true, ServerSideApply=true]
@@ -62,7 +62,7 @@ spec:
     helm:
       valuesObject:
         nodeSelector: { dimia.mx/pool: sistema }
-  destination: { server: https://kubernetes.default.svc, namespace: kube-system }
+  destination: { name: noprod-mx, namespace: kube-system }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
 ---
@@ -79,7 +79,7 @@ spec:
     targetRevision: main
     path: despliegues/plataforma/karpenter
     directory: { include: noprod-mx.yaml }
-  destination: { server: https://kubernetes.default.svc }
+  destination: { name: noprod-mx }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
 ---
@@ -95,7 +95,7 @@ spec:
     repoURL: git@github.com:LoGebo/dimia.git
     targetRevision: main
     path: despliegues/plataforma/configuracion
-  destination: { server: https://kubernetes.default.svc }
+  destination: { name: noprod-mx }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     retry: { limit: 10, backoff: { duration: 30s, factor: 2, maxDuration: 5m } }
@@ -111,7 +111,7 @@ spec:
     repoURL: git@github.com:LoGebo/dimia.git
     targetRevision: main
     path: despliegues/apps/staging
-  destination: { server: https://kubernetes.default.svc, namespace: staging }
+  destination: { name: noprod-mx, namespace: staging }
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]

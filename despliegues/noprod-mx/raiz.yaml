@@ -12,7 +12,7 @@ spec:
     targetRevision: main
     path: despliegues/noprod-mx/apps
   destination:
-    server: https://kubernetes.default.svc
+    name: noprod-mx
     namespace: argocd
   syncPolicy:
     automated: { prune: true, selfHeal: true }

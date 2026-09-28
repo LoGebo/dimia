@@ -19,9 +19,11 @@ data "aws_iam_roles" "emergencia" {
 }
 
 locals {
+  # Argo CD administrado despliega en el propio clúster con el rol de su capacidad.
   admins = toset(concat(
     var.admins,
     tolist(data.aws_iam_roles.emergencia.arns),
+    var.argocd == null ? [] : ["arn:${local.particion}:iam::${local.cuenta}:role/eks-${var.nombre}-argocd"],
   ))
 }
 
