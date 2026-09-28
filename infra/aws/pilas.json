@@ -58,6 +58,21 @@
     "aplica": "ci",
     "entorno": "infra-c01"
   },
+  "vivos/celdas/c01/eks": {
+    "cuenta": "345549356068",
+    "aplica": "ci",
+    "entorno": "infra-c01"
+  },
+  "vivos/celdas/c01/datos": {
+    "cuenta": "345549356068",
+    "aplica": "ci",
+    "entorno": "infra-c01"
+  },
+  "vivos/celdas/c01/edge": {
+    "cuenta": "345549356068",
+    "aplica": "ci",
+    "entorno": "infra-c01"
+  },
   "vivos/voz/g1/base": {
     "cuenta": "",
     "aplica": "manual"

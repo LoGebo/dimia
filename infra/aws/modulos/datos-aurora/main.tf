@@ -61,9 +61,11 @@ resource "aws_rds_cluster_parameter_group" "this" {
     apply_method = "pending-reboot"
   }
 
+  # Estático: AWS lo guarda como pending-reboot y entra en el siguiente reinicio (los clientes ya van con sslmode=require).
   parameter {
-    name  = "rds.force_ssl"
-    value = "1"
+    name         = "rds.force_ssl"
+    value        = "1"
+    apply_method = "pending-reboot"
   }
 
   parameter {
