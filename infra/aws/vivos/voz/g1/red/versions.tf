@@ -41,6 +41,11 @@ provider "aws" {
   alias  = "use1"
   region = "us-east-1"
 
+  # Las subredes llevan etiquetas que pone la pila de EKS (descubrimiento de Karpenter y del LB).
+  ignore_tags {
+    key_prefixes = ["karpenter.sh/", "kubernetes.io/"]
+  }
+
   default_tags {
     tags = {
       "dimia:componente" = "red"
@@ -52,6 +57,11 @@ provider "aws" {
 provider "aws" {
   alias  = "use2"
   region = "us-east-2"
+
+  # Las subredes llevan etiquetas que pone la pila de EKS (descubrimiento de Karpenter y del LB).
+  ignore_tags {
+    key_prefixes = ["karpenter.sh/", "kubernetes.io/"]
+  }
 
   default_tags {
     tags = {

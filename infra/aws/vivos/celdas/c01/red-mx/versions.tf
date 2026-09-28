@@ -40,6 +40,11 @@ terraform {
 provider "aws" {
   region = "mx-central-1"
 
+  # Las subredes llevan etiquetas que pone la pila de EKS (descubrimiento de Karpenter y del LB).
+  ignore_tags {
+    key_prefixes = ["karpenter.sh/", "kubernetes.io/"]
+  }
+
   default_tags {
     tags = {
       "dimia:componente" = "red"

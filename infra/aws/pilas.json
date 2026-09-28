@@ -37,6 +37,12 @@
     "entorno": "infra-noprod",
     "plan_en_pr": true
   },
+  "vivos/noprod/datos": {
+    "cuenta": "265779924721",
+    "aplica": "ci",
+    "entorno": "infra-noprod",
+    "plan_en_pr": true
+  },
   "vivos/celdas/c01/base": {
     "cuenta": "345549356068",
     "aplica": "manual"
