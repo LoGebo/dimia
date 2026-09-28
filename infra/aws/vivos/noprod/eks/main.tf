@@ -19,7 +19,8 @@ data "aws_subnets" "app" {
 }
 
 module "eks" {
-  source = "../../../modulos/eks"
+  source    = "../../../modulos/eks"
+  providers = { aws = aws, aws.virginia = aws.virginia, helm = helm }
 
   nombre     = "noprod-mx"
   subredes   = sort(data.aws_subnets.app.ids)

@@ -296,6 +296,11 @@ resource "aws_eks_pod_identity_association" "karpenter" {
   role_arn        = aws_iam_role.karpenter.arn
 }
 
+# El token de ECR Public solo se emite en us-east-1.
+data "aws_ecrpublic_authorization_token" "this" {
+  provider = aws.virginia
+}
+
 resource "helm_release" "karpenter" {
   name       = "karpenter"
   namespace  = "kube-system"
@@ -303,6 +308,9 @@ resource "helm_release" "karpenter" {
   chart      = "karpenter"
   version    = var.karpenter_version
   wait       = true
+
+  repository_username = data.aws_ecrpublic_authorization_token.this.user_name
+  repository_password = data.aws_ecrpublic_authorization_token.this.password
 
   values = [yamlencode({
     settings = {

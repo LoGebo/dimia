@@ -52,6 +52,11 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  alias  = "virginia"
+  region = "us-east-1"
+}
+
 # El token sale de la CLI en cada llamada: en CI es el rol tofu-apply, a mano el de emergencia.
 provider "helm" {
   kubernetes = {

@@ -129,6 +129,26 @@ data "aws_iam_policy_document" "estado_plan" {
   }
 }
 
+# Los charts de ECR Public (Karpenter) se bajan autenticados: los runners de GitHub comparten IP y
+# el acceso anónimo topa con 429. ReadOnlyAccess ya da el token; falta el bearer de STS.
+data "aws_iam_policy_document" "ecr_public_plan" {
+  statement {
+    actions   = ["sts:GetServiceBearerToken"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "sts:AWSServiceName"
+      values   = ["ecr-public.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "tofu_plan_ecr_public" {
+  name   = "ecr-public"
+  role   = aws_iam_role.tofu_plan.id
+  policy = data.aws_iam_policy_document.ecr_public_plan.json
+}
+
 resource "aws_iam_role_policy" "tofu_plan_estado" {
   name   = "estado"
   role   = aws_iam_role.tofu_plan.id
