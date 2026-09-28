@@ -16,7 +16,7 @@ spec:
         - name: agentes
           image: agentes
           args: ["hypercorn", "agentes.api:app", "-b", "0.0.0.0:8080"]
-          envFrom: [{ secretRef: { name: app } }]
+          envFrom: [{ secretRef: { name: agentes } }]
           env:
             - { name: PROVEEDOR_MAQUINAS, value: fly }
           ports: [{ containerPort: 8080, name: http }]
