@@ -3,7 +3,7 @@ import Foundation
 /// El cliente de la API. Pone el token, refresca cuando expira y decodifica fechas ISO con fracciones.
 nonisolated final class API: Sendable {
     /// Las pruebas de UI la cambian con el argumento `-api <url>`; si no, producción.
-    static let base = UserDefaults.standard.string(forKey: "api").flatMap { $0.isEmpty ? nil : URL(string: $0) } ?? URL(string: "https://dimia-api.fly.dev")!
+    static let base = UserDefaults.standard.string(forKey: "api").flatMap { $0.isEmpty ? nil : URL(string: $0) } ?? URL(string: "https://d2c11rta2rotk.cloudfront.net")!  // API en AWS (celda 01); pasa a api.dimia.mx cuando exista el DNS
 
     nonisolated(unsafe) static var tokens: Tokens? {
         didSet {

@@ -51,6 +51,6 @@ no se toca durante el corte: es la copia de seguridad hasta que pasen 7 días si
 - DNS en el Cloudflare del socio: `panel.dimia.mx`, `api.dimia.mx` y `webhooks.dimia.mx` directo a CloudFront
   (con ACM en us-east-1 y WAF); después se retiran los relevos de Fly y el panel de Vercel.
 - Webhook de Instagram: cambiarlo en el tablero de Meta (hoy llega por el relevo de `agente-webhooks`).
-- App de iOS: base URL a `api.dimia.mx` cuando exista (hoy `dimia-api.fly.dev`, que es relevo).
+- App de iOS: ya apunta a la API en CloudFront (`d2c11rta2rotk.cloudfront.net`); pasa a `api.dimia.mx` cuando exista. Las versiones ya instaladas siguen usando el relevo `dimia-api.fly.dev` hasta que se actualicen: no se apaga antes.
 - Fase 8: Hermes a AWS; hasta entonces el orquestador llega a las máquinas por el relevo.
 - A los 7 días sin incidentes: borrar máquinas de `agente-voz` y pausar el proyecto de Supabase.
