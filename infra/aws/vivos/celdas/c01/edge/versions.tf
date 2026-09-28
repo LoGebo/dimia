@@ -52,3 +52,16 @@ provider "aws" {
     }
   }
 }
+
+# CloudFront solo toma certificados y WAF de us-east-1.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      "dimia:componente" = "edge"
+      "dimia:entorno"    = "prod"
+    }
+  }
+}

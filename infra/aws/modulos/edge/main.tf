@@ -1,6 +1,7 @@
 # Borde (§2.2): CloudFront con origen VPC hacia el ALB interno; el ALB nunca queda en internet.
-# Cada servicio tiene su distribución y su dominio *.cloudfront.net; el dominio propio (ACM en
-# us-east-1) y WAF se agregan cuando el DNS de dimia.mx se administre desde aquí.
+# Cada servicio tiene su distribución y su dominio *.cloudfront.net. El dominio propio va en dos pasos
+# porque el DNS de dimia.mx vive fuera de AWS: con `dominios` se pide el certificado y la salida
+# `registros_dns` dice qué pegar; con `dominios_activos = true` (ya validado) entran alias y WAF.
 
 data "aws_lb" "this" {
   name = var.alb_nombre
@@ -84,8 +85,142 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
+  aliases    = local.activo && contains(keys(var.dominios), each.key) ? [var.dominios[each.key]] : []
+  web_acl_id = local.activo ? aws_wafv2_web_acl.this[0].arn : null
+
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = !local.activo
+    acm_certificate_arn            = local.activo ? aws_acm_certificate.this[0].arn : null
+    ssl_support_method             = local.activo ? "sni-only" : null
+    minimum_protocol_version       = local.activo ? "TLSv1.2_2021" : null
+  }
+}
+
+locals {
+  activo = var.dominios_activos && length(var.dominios) > 0
+}
+
+# CloudFront solo acepta certificados de us-east-1. Uno solo con todos los nombres.
+resource "aws_acm_certificate" "this" {
+  count                     = length(var.dominios) > 0 ? 1 : 0
+  provider                  = aws.us_east_1
+  domain_name               = values(var.dominios)[0]
+  subject_alternative_names = slice(values(var.dominios), 1, length(var.dominios))
+  validation_method         = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Reglas administradas de AWS. El límite de tamaño del cuerpo (8 KB) solo cuenta: el panel sube
+# archivos y los webhooks de Meta pueden rebasarlo.
+resource "aws_wafv2_web_acl" "this" {
+  #checkov:skip=CKV2_AWS_31:Los logs de WAF llegan con el bucket de logs del borde (fase 5).
+  count    = local.activo ? 1 : 0
+  provider = aws.us_east_1
+  name     = "${var.nombre}-borde"
+  scope    = "CLOUDFRONT"
+
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = "comunes"
+    priority = 1
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesCommonRuleSet"
+        rule_action_override {
+          name = "SizeRestrictions_BODY"
+          action_to_use {
+            count {}
+          }
+        }
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "comunes"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "entradas-maliciosas"
+    priority = 2
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "entradas-maliciosas"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "reputacion-ip"
+    priority = 3
+    override_action {
+      none {}
+    }
+    statement {
+      managed_rule_group_statement {
+        vendor_name = "AWS"
+        name        = "AWSManagedRulesAmazonIpReputationList"
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "reputacion-ip"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # ponytail: tope por IP fijo; si un cliente legítimo lo alcanza, subirlo o excluir su ruta.
+  rule {
+    name     = "tope-por-ip"
+    priority = 4
+    action {
+      block {}
+    }
+    statement {
+      rate_based_statement {
+        limit              = 2000
+        aggregate_key_type = "IP"
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "tope-por-ip"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "${var.nombre}-borde"
+    sampled_requests_enabled   = true
+  }
+}
+
+# Lo que hay que pegar en el DNS de dimia.mx: primero la validación, luego los CNAME.
+output "registros_dns" {
+  value = {
+    validacion = length(var.dominios) > 0 ? { for o in aws_acm_certificate.this[0].domain_validation_options : o.resource_record_name => o.resource_record_value } : {}
+    cname      = { for k, d in var.dominios : d => aws_cloudfront_distribution.this[k].domain_name }
   }
 }
 
