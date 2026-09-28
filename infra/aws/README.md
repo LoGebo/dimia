@@ -119,6 +119,8 @@ Lo que hace cada workflow:
 
 Las pilas manuales nunca se aplican desde CI.
 
+`init` también lleva `-var-file=comun.tfvars`: el cifrado del estado toma la llave de `llave_estado_arn`, y sin ella ni siquiera se inicializa.
+
 ### 8. Después
 
 - Tras 1-2 semanas sin sorpresas en NoProd, ponga `guardarrailes_en_root = true` en `vivos/gestion`. Así las SCP de regiones, perímetro y EC2 pasan a Root.
