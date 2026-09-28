@@ -1,0 +1,14 @@
+variable "nombre" {
+  description = "Prefijo de las distribuciones: staging, c01…"
+  type        = string
+}
+
+variable "alb_nombre" {
+  description = "ALB interno que creó el controlador de balanceadores (load-balancer-name del Ingress)."
+  type        = string
+}
+
+variable "servicios" {
+  description = "Una distribución por servicio; el valor viaja en X-Dimia-Servicio y el ALB elige el destino."
+  type        = set(string)
+}
