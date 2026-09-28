@@ -1,7 +1,7 @@
 # Cimientos de AWS en OpenTofu
 
 Código de §2.1, §3.1, §4 y §6.1 de [`planeacion/aws-arquitectura-meta.md`](../../planeacion/aws-arquitectura-meta.md).
-**Aplicado el 2026-09-27:** `bootstrap`, `vivos/gestion`, `vivos/finops` y las bases de `operaciones`, `sandbox-agente`, `noprod` y `celdas/c01` (pasos 1-6). Organización `o-56n87zfixz`, cuenta de gestión `172083943768`, estado en `dimia-tofu-estado-197821101689` (compartido). También `vivos/log-archivo/logs` (CloudTrail con Object Lock y flow logs, en mx) y el trail de organización `dimia-org`. Las redes ya planean; no se han aplicado (NAT con costo fijo, fase 2) y `INFRA_AWS_HABILITADA` sigue sin crearse. Los correos raíz usan `prefijo_correo` (hoy un alias de Gmail) hasta que exista `aws-*@dimia.mx`.
+**Aplicado el 2026-09-27:** `bootstrap`, `vivos/gestion`, `vivos/finops` y las bases de `operaciones`, `sandbox-agente`, `noprod` y `celdas/c01` (pasos 1-6). Organización `o-56n87zfixz`, cuenta de gestión `172083943768`, estado en `dimia-tofu-estado-197821101689` (compartido). También `vivos/log-archivo/logs` (CloudTrail con Object Lock y flow logs, en mx) y el trail de organización `dimia-org`. `INFRA_AWS_HABILITADA = true` desde el 2026-09-27: las redes de noprod y de la celda 01 se aplican por CI con aprobación del revisor. Los correos raíz usan `prefijo_correo` (hoy un alias de Gmail) hasta que exista `aws-*@dimia.mx`.
 
 - OpenTofu 1.12.6 y `hashicorp/aws` 6.66.0, versiones fijas en cada pila y hashes en `.terraform.lock.hcl`.
 - No se usan módulos del registro: todos los módulos son locales.
