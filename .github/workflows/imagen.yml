@@ -1,0 +1,67 @@
+name: Imagen
+
+# Construye y sube a ECR (compartido, mx-central-1) las imágenes que corren en EKS (§4, paso 3).
+# ARM64 nativo, como los nodos. La etiqueta es el SHA del commit: inmutable, y es lo que fija
+# despliegues/ para que Argo CD la despliegue.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "proyectos/voz/**"
+      - "proyectos/agentes/**"
+      - ".github/workflows/imagen.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: imagen-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRO: 197821101689.dkr.ecr.mx-central-1.amazonaws.com
+
+jobs:
+  imagen:
+    name: Imagen · ${{ matrix.nombre }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nombre: voz, contexto: proyectos/voz }
+          - { nombre: agentes, contexto: proyectos/agentes }
+          - { nombre: panel, contexto: proyectos/voz/web }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::197821101689:role/imagen-push
+          role-session-name: imagen-${{ github.run_id }}
+          aws-region: mx-central-1
+
+      - name: Login a ECR
+        run: aws ecr get-login-password --region mx-central-1 | docker login --username AWS --password-stdin "$REGISTRO"
+
+      # Si la etiqueta ya existe (re-run o cambio que no toca esta imagen) no se reconstruye: son inmutables.
+      - name: Construir y subir
+        env:
+          NOMBRE: ${{ matrix.nombre }}
+          CONTEXTO: ${{ matrix.contexto }}
+        run: |
+          etiqueta="$REGISTRO/dimia/$NOMBRE:${GITHUB_SHA::12}"
+          if aws ecr describe-images --region mx-central-1 --repository-name "dimia/$NOMBRE" --image-ids imageTag="${GITHUB_SHA::12}" >/dev/null 2>&1; then
+            echo "Ya existe $etiqueta"
+            exit 0
+          fi
+          docker build --platform linux/arm64 -t "$etiqueta" "$CONTEXTO"
+          docker push "$etiqueta"
+          echo "### $NOMBRE" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$etiqueta\`" >> "$GITHUB_STEP_SUMMARY"
