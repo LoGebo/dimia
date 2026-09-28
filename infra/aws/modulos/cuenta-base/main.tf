@@ -133,13 +133,9 @@ data "aws_iam_policy_document" "estado_plan" {
 # el acceso anónimo topa con 429. ReadOnlyAccess ya da el token; falta el bearer de STS.
 data "aws_iam_policy_document" "ecr_public_plan" {
   statement {
+    #checkov:skip=CKV_AWS_356:GetServiceBearerToken no admite recursos; la llamada de ECR Public no manda sts:AWSServiceName.
     actions   = ["sts:GetServiceBearerToken"]
     resources = ["*"]
-    condition {
-      test     = "StringEquals"
-      variable = "sts:AWSServiceName"
-      values   = ["ecr-public.amazonaws.com"]
-    }
   }
 }
 
