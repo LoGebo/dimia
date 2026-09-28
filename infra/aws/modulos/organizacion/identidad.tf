@@ -14,9 +14,11 @@ locals {
   sso_instancia  = one(data.aws_ssoadmin_instances.this.arns)
   sso_directorio = one(data.aws_ssoadmin_instances.this.identity_store_ids)
 
+  # Llaves desde la configuración, no desde el estado: así el plan conoce el for_each
+  # de las asignaciones antes de que existan las cuentas.
   miembros = merge(
-    { for k, c in aws_organizations_account.base : k => c.id },
-    { for k, c in module.celda : c.nombre => c.id },
+    { for k in keys(local.cuentas) : k => aws_organizations_account.base[k].id },
+    { for k in keys(module.celda) : "prod-celda-${k}" => module.celda[k].id },
   )
 
   permission_sets = {

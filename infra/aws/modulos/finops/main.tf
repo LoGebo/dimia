@@ -300,7 +300,14 @@ resource "aws_ce_anomaly_monitor" "componente" {
   name         = "dimia-componente"
   monitor_type = "CUSTOM"
   monitor_specification = jsonencode({
-    Tags = { Key = "dimia:componente", Values = var.componentes, MatchOptions = ["EQUALS"] }
+    # AWS guarda las etiquetas de costo con el prefijo user:; sin él el monitor se reemplaza en cada plan.
+    # Los nulos son los que AWS devuelve; sin ellos el plan nunca queda vacío.
+    And            = null
+    CostCategories = null
+    Dimensions     = null
+    Not            = null
+    Or             = null
+    Tags           = { Key = "user:dimia:componente", Values = var.componentes, MatchOptions = ["EQUALS"] }
   })
 }
 

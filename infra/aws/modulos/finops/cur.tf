@@ -166,6 +166,8 @@ resource "aws_bcmdataexports_export" "cur" {
           INCLUDE_RESOURCES                     = "TRUE"
           INCLUDE_SPLIT_COST_ALLOCATION_DATA    = "TRUE"
           INCLUDE_MANUAL_DISCOUNT_COMPATIBILITY = "FALSE"
+          # AWS lo agrega solo; sin declararlo, el provider falla con «inconsistent result».
+          BILLING_VIEW_ARN = "arn:aws:billing::${data.aws_caller_identity.actual.account_id}:billingview/primary"
         }
       }
     }

@@ -12,7 +12,7 @@ locals {
 
 resource "aws_organizations_account" "this" {
   name                       = local.nombre
-  email                      = "aws+celda${local.nn}@${var.dominio_correo}"
+  email                      = "${var.prefijo_correo}celda${local.nn}@${var.dominio_correo}"
   parent_id                  = var.ou_id
   iam_user_access_to_billing = "ALLOW" # Budgets y Cost Explorer en la cuenta, ver organizacion
   close_on_deletion          = false

@@ -4,6 +4,7 @@ module "organizacion" {
   source = "../../modulos/organizacion"
 
   dominio_correo        = var.dominio_correo
+  prefijo_correo        = var.prefijo_correo
   guardarrailes_en_root = var.guardarrailes_en_root
   celdas                = [1]
 }

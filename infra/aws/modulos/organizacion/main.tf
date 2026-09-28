@@ -158,7 +158,7 @@ resource "aws_organizations_account" "base" {
   for_each = local.cuentas
 
   name      = each.key
-  email     = "aws+${each.key}@${var.dominio_correo}"
+  email     = "${var.prefijo_correo}${each.key}@${var.dominio_correo}"
   parent_id = local.ou_ids[each.value]
   # ALLOW: sin él, ningún rol de la cuenta (ni los de Identity Center) usa Budgets ni Cost
   # Explorer. El acceso lo siguen decidiendo las políticas y las SCP.
@@ -190,6 +190,7 @@ module "celda" {
   indice         = each.value
   ou_id          = local.ou_ids["prod-compartidas"]
   dominio_correo = var.dominio_correo
+  prefijo_correo = var.prefijo_correo
 
   depends_on = [aws_organizations_organization.this]
 }

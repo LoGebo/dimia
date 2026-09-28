@@ -1,5 +1,5 @@
 variable "dominio_correo" {
-  description = "Dominio de los correos raíz de las cuentas: aws+<cuenta>@<dominio>."
+  description = "Dominio de los correos raíz de las cuentas: <prefijo_correo><cuenta>@<dominio>."
   type        = string
 
   validation {
@@ -35,4 +35,10 @@ variable "github_sub" {
   description = "Prefijo inmutable del claim sub de GitHub (§3.9). Debe coincidir con el de cuenta-base."
   type        = string
   default     = "repo:LoGebo@90727612/dimia@1344315354"
+}
+
+variable "prefijo_correo" {
+  description = "Parte local antes del nombre de la cuenta: <prefijo><cuenta>@<dominio>. Con Gmail va el usuario y un +, p. ej. jdany041+aws-."
+  type        = string
+  default     = "aws+"
 }

@@ -1,7 +1,7 @@
 # Cimientos de AWS en OpenTofu
 
 Código de §2.1, §3.1, §4 y §6.1 de [`planeacion/aws-arquitectura-meta.md`](../../planeacion/aws-arquitectura-meta.md).
-**Nada de esto está aplicado.** No existe todavía la cuenta de AWS.
+**Aplicado el 2026-09-27:** `bootstrap`, `vivos/gestion`, `vivos/finops` y las bases de `operaciones`, `sandbox-agente`, `noprod` y `celdas/c01` (pasos 1-6). Organización `o-56n87zfixz`, cuenta de gestión `172083943768`, estado en `dimia-tofu-estado-197821101689` (compartido). Falta la pila de `log-archivo` (bucket de flow logs y CloudTrail de organización): sin ella las redes no planean, así que `INFRA_AWS_HABILITADA` sigue sin crearse. Los correos raíz usan `prefijo_correo` (hoy un alias de Gmail) hasta que exista `aws-*@dimia.mx`.
 
 - OpenTofu 1.12.6 y `hashicorp/aws` 6.66.0, versiones fijas en cada pila y hashes en `.terraform.lock.hcl`.
 - No se usan módulos del registro: todos los módulos son locales.

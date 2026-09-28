@@ -18,3 +18,9 @@ variable "ou_id" {
 variable "dominio_correo" {
   type = string
 }
+
+variable "prefijo_correo" {
+  description = "Parte local antes del nombre de la cuenta: <prefijo><cuenta>@<dominio>. Con Gmail va el usuario y un +, p. ej. jdany041+aws-."
+  type        = string
+  default     = "aws+"
+}
