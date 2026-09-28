@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { AccessToken, RoomConfiguration } from "livekit-server-sdk";
+import { AccessToken, RoomAgentDispatch, RoomConfiguration } from "livekit-server-sdk";
 import { usuarioActual } from "@/lib/auth";
 import { conSesion } from "@/lib/db";
 import { configuracionLivekit, variablesFaltantes } from "@/lib/livekit";
@@ -52,10 +52,14 @@ export async function POST(peticion: Request): Promise<NextResponse> {
     canPublishData: true,
     roomCreate: true,
   });
+  // Con LIVEKIT_AGENT_NAME la sala pide ese agente por nombre: así staging, que comparte proyecto de
+  // LiveKit con producción, no toma las salas de producción ni producción las suyas.
+  const agente = process.env.LIVEKIT_AGENT_NAME;
   credencial.roomConfig = new RoomConfiguration({
     emptyTimeout: 120,
     maxParticipants: 4,
     metadata: metadatos,
+    ...(agente ? { agents: [new RoomAgentDispatch({ agentName: agente, metadata: metadatos })] } : {}),
   });
 
   return NextResponse.json({

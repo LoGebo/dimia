@@ -61,3 +61,18 @@ variable "karpenter_version" {
   type    = string
   default = "1.14.1"
 }
+
+variable "argocd" {
+  description = "Argo CD administrado (capacidad de EKS) con acceso por Identity Center; null lo deja fuera."
+  type = object({
+    idc_instancia_arn = string
+    idc_region        = string
+    grupo_admin_id    = string
+  })
+  default = null
+}
+
+variable "prefijo_secretos" {
+  description = "External Secrets solo lee secretos de Secrets Manager bajo este prefijo (p. ej. noprod/)."
+  type        = string
+}

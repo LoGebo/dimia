@@ -27,6 +27,13 @@ module "eks" {
   limite_arn = "arn:aws:iam::${data.aws_caller_identity.actual.account_id}:policy/dimia-limite"
   admins     = ["arn:aws:iam::${data.aws_caller_identity.actual.account_id}:role/tofu-apply"]
 
+  prefijo_secretos = "noprod/"
+  argocd = {
+    idc_instancia_arn = "arn:aws:sso:::instance/ssoins-66844425d7ff1b8c"
+    idc_region        = "us-east-2"
+    grupo_admin_id    = "a1bbe5f0-3041-700c-dcce-5797f9dcca22" # dimia-emergencia
+  }
+
   ami_sistema = "1.36.4-20260923"
   addons = {
     "vpc-cni"                = "v1.22.4-eksbuild.3"
@@ -42,6 +49,7 @@ output "eks" {
     nombre             = module.eks.nombre
     endpoint           = module.eks.endpoint
     rol_nodo_karpenter = module.eks.rol_nodo_karpenter
+    argocd_url         = module.eks.argocd_url
   }
 }
 

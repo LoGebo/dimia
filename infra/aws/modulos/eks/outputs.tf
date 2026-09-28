@@ -18,3 +18,7 @@ output "rol_nodo_karpenter" {
 output "sg_cluster" {
   value = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
 }
+
+output "argocd_url" {
+  value = var.argocd == null ? null : aws_eks_capability.argocd[0].configuration[0].argo_cd[0].server_url
+}
