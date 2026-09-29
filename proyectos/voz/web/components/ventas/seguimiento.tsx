@@ -7,10 +7,14 @@ import { guardarSeguimiento } from "@/lib/acciones-ventas";
 import type { ConfigSeguimiento, PasoSeguimiento } from "@/lib/ventas";
 import { AGENTE } from "@/components/ventas/interesados";
 
+// Pasada la ventana de 24 h, solo WhatsApp y con la plantilla aprobada (seguimiento_solicitud).
+const PLANTILLA = "Hola {nombre}, te escribimos de {negocio} sobre la información que nos pediste. ¿Quieres que te ayudemos a agendar? Si ya no te interesa, responde BAJA.";
+const CON_PLANTILLA: Record<string, number[]> = { suave: [], normal: [48], insistente: [48, 120], propio: [48] };
+
 const NIVELES = [
   { clave: "suave", nombre: "Suave", detalle: "1 mensaje si deja de contestar" },
-  { clave: "normal", nombre: "Normal", detalle: "2 mensajes en el día" },
-  { clave: "insistente", nombre: "Insistente", detalle: "3 mensajes en el día" },
+  { clave: "normal", nombre: "Normal", detalle: "2 mensajes el primer día y 1 a las 48 h" },
+  { clave: "insistente", nombre: "Insistente", detalle: "3 el primer día, a las 48 h y a los 5 días" },
 ] as const;
 
 /** Cómo trabaja el agente a los interesados: un nivel ya armado y, si se quiere, los mensajes a mano. */
@@ -118,7 +122,7 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
       <Tarjeta className="self-start">
         <TarjetaCabecera
           titulo="Lo que escribe si deja de contestar"
-          descripcion="Horas desde su última respuesta. Todo cabe en la ventana de 24 h de WhatsApp."
+          descripcion="Horas desde su última respuesta."
           accion={<Boton variante="contorno" onClick={() => setEditar((v) => !v)}>{editar ? "Listo" : "Personalizar"}</Boton>}
         />
         <ol className="relative space-y-4 p-5">
@@ -129,6 +133,14 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
               {editar
                 ? <textarea value={p.mensaje} onChange={(e) => editarPaso(n, e.target.value)} className="mt-1 w-full rounded-md border border-linea bg-panel p-2 text-[13px]" rows={2} />
                 : <p className="mt-1 text-[13px] text-tinta-2">«{p.mensaje}»</p>}
+            </li>
+          ))}
+          {(CON_PLANTILLA[c.nivel] ?? []).map((h) => (
+            <li key={`p${h}`} className="relative pl-6">
+              <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border border-acento" />
+              <div className="text-[13px] font-semibold tabular-nums text-tinta">A las {h} h · solo WhatsApp</div>
+              <p className="mt-1 text-[13px] text-tinta-2">«{PLANTILLA}»</p>
+              <p className="text-[12px] text-tinta-3">Plantilla aprobada por Meta: el texto no se puede cambiar.</p>
             </li>
           ))}
           <li className="pl-6 text-[12.5px] text-tinta-3">Si no contesta en 24 h más, se da por cerrado. {"{nombre}"} se cambia por el nombre de la persona.</li>

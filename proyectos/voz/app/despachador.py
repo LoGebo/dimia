@@ -153,6 +153,9 @@ def plantilla_meta(fila: dict) -> PlantillaMeta | None:
         return PlantillaMeta("confirmacion_cita", [nombre, negocio, fecha, hora, codigo], [])
     if plantilla == "resena":
         return PlantillaMeta("resena", [nombre, negocio], [])
+    if plantilla == "seguimiento" and payload.get("fuera_ventana"):
+        # Ventas: pasada la ventana de 24 h solo sale con plantilla de utilidad aprobada.
+        return PlantillaMeta("seguimiento_solicitud", [str(payload.get("cliente") or nombre or "qué tal"), negocio], [])
     if plantilla == "pago":
         return PlantillaMeta(
             "pago_pendiente",

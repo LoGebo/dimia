@@ -111,3 +111,56 @@ async def test_proponer_sin_opciones_utiles_no_propone():
 
     assert await proponer(_Modelo({"pregunta": "x", "opciones": [{"titulo": "a", "mensaje": "hola"}]}), [{"autor": "cliente", "texto": "hola"}], None) is None
     assert await proponer(_Modelo({}), [], None) is None
+
+
+def test_fuera_de_ventana_sale_con_plantilla():
+    from app.despachador import plantilla_meta
+
+    meta = plantilla_meta({"plantilla": "seguimiento", "payload": {"fuera_ventana": True, "cliente": "Laura", "negocio": "Clínica"}})
+    assert meta and meta.nombre == "seguimiento_solicitud" and meta.parametros == ["Laura", "Clínica"]
+    assert plantilla_meta({"plantilla": "seguimiento", "payload": {"mensaje": "hola"}}) is None
+
+
+@pytest.mark.asyncio
+async def test_pasada_la_ventana_sigue_con_plantilla_y_luego_cierra():
+    admin = await asyncpg.connect(DSN)
+    contacto = f"+52181{uuid.uuid4().int % 10**7:07d}"
+    tenant = str(await admin.fetchval("select id from tenant order by nombre limit 1"))
+    try:
+        await admin.execute(
+            """insert into seguimiento_config (tenant_id, activo, nivel, hora_inicio, hora_fin, dias)
+               values ($1, true, 'normal', '00:00', '23:59', 'todos')
+               on conflict (tenant_id) do update set activo = true, nivel = 'normal', pasos = null, hora_inicio = '00:00', hora_fin = '23:59', dias = 'todos'""",
+            uuid.UUID(tenant))
+        conv = (await _en("app_texto", tenant,
+            "insert into conversacion (tenant_id, canal, contacto, contacto_nombre, estado) values ($1, 'whatsapp', $2, 'Luis Prueba', 'abierta') returning id",
+            uuid.UUID(tenant), contacto))[0]["id"]
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Info')", conv, uuid.UUID(tenant))
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'agente', 'Claro')", conv, uuid.UUID(tenant))
+        iid = await admin.fetchval("select id from interesado where contacto = $1", contacto)
+
+        async def motor():
+            cron = await asyncpg.connect(_como("app_cron"), statement_cache_size=0)
+            try:
+                await cron.fetchval("select public.interesado_seguimientos(50)")
+            finally:
+                await cron.close()
+
+        # Su último mensaje fue hace 30 h: el texto libre ya no cabe, se programa la plantilla a las 48 h.
+        await admin.execute("update interesado set ultimo_mensaje_cliente_en = now() - interval '30 hours', proxima_accion_en = now() - interval '1 minute' where id = $1", iid)
+        await motor()
+        i = await admin.fetchrow("select paso, proxima_accion_en > now() + interval '17 hours' as espera from interesado where id = $1", iid)
+        assert i["paso"] == 2 and i["espera"]
+        await admin.execute("update interesado set proxima_accion_en = now() - interval '1 minute' where id = $1", iid)
+        await motor()
+        fila = await admin.fetchrow("select payload from outbox where interesado_id = $1", iid)
+        assert fila and '"fuera_ventana": true' in fila["payload"]
+        await admin.execute("update interesado set proxima_accion_en = now() - interval '1 minute' where id = $1", iid)
+        await motor()
+        assert await admin.fetchval("select etapa::text from interesado where id = $1", iid) == "perdido"
+    finally:
+        await admin.execute("delete from outbox where destino = $1", contacto)
+        await admin.execute("delete from consentimiento where contacto = $1", contacto)
+        await admin.execute("delete from interesado where contacto = $1", contacto)
+        await admin.execute("delete from conversacion where contacto = $1", contacto)
+        await admin.close()
