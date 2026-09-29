@@ -1805,13 +1805,6 @@ export async function hiloNuevoAgente(agenteId: string): Promise<void> {
   await orquestador(`/agentes/${agenteId}/hilo-nuevo`, { method: "POST" });
 }
 
-export async function urlPantalla(agenteId: string): Promise<{ url: string; modo?: "vnc" | "hd" } | { error: string }> {
-  const r = await orquestador(`/agentes/${agenteId}/pantalla`, { method: "POST" });
-  if (r.status === 409) return { error: "Conecte su cuenta de ChatGPT para encender la computadora." };
-  if (!r.ok) return { error: "La computadora no respondió. Intente en un momento." };
-  return r.json();
-}
-
 export type Cuotas = { plan: string; nombre: string; uso: Record<"agentes" | "turnos" | "pasos" | "minutos", number>; techos: Record<"agentes" | "turnos" | "pasos" | "minutos", number> };
 export async function cuotasNegocio(): Promise<Cuotas | null> {
   const r = await orquestador("/cuotas");

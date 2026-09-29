@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Monitor, X } from "lucide-react";
-import { urlPantalla } from "@/lib/acciones";
 
 type Estado = "apagada" | "conectando" | "en_vivo" | "error";
 
@@ -72,9 +71,9 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
       setEstado("conectando");
       // La vista grande recibe la URL de la miniatura: la computadora ya está encendida, solo se conecta.
       // Si la conexión se cayó (el pase dura 10 min; la red va y viene), se pide un pase nuevo.
-      let r: Awaited<ReturnType<typeof urlPantalla>>;
+      let r: { url: string; modo?: "vnc" | "hd" } | { error: string };
       try {
-        r = url && !nuevoPase ? { url } : await urlPantalla(agenteId);
+        r = url && !nuevoPase ? { url } : await (await fetch(`/api/agentes/${agenteId}/pantalla`, { method: "POST" })).json();
       } catch {
         // Despertar la computadora puede tardar más que la red entre el navegador y el panel: la
         // petición se corta pero la máquina sigue encendiéndose. Se vuelve a pedir en vez de quedarse

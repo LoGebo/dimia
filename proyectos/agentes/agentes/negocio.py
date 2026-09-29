@@ -770,6 +770,13 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
     if tope:
         yield {"evento": "cuota", "texto": tope}
         return
+    # Se guarda antes de despertar la computadora (~40 s): si el dueño recarga mientras, su mensaje
+    # ya está en el hilo y el panel se engancha al turno en curso.
+    nombres = [f"[{ad.get('tipo')}: {ad.get('nombre', '')}]" for ad in adjuntos or []]
+    texto_guardado = texto + ("\n" + " ".join(nombres) if nombres else "")
+    ultimo = await db.uno("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 1", agente_id)
+    if not (ultimo and ultimo["de"] == "yo" and ultimo["texto"] == texto_guardado):  # ya se guardó al formarse en la cola
+        await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente_id, texto_guardado)
     try:
         http, m = await _cliente(tenant, agente, httpx.Timeout(10, read=600))
     except SinCodex:
@@ -786,7 +793,8 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
         return
     if m:
         await _esperar_hermes(_host(m), agente["pantalla"])
-    previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4", agente["id"])
+    # offset 1: el mensaje de este turno ya se guardó arriba y Jev lo recibe aparte.
+    previos = await db.todos("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 4 offset 1", agente["id"])
     historial = [f"{'Dueño' if p['de'] == 'yo' else 'Agente'}: {p['texto'][:300]}" for p in reversed(previos)]
     fa = await db.uno("select trabajo, ajustes from agente where id = $1", agente["id"])
     aj = fa["ajustes"] if isinstance(fa["ajustes"], dict) else json.loads(fa["ajustes"] or "{}")
@@ -799,11 +807,6 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
     inicio = time.perf_counter()
     pasos = 0
     ok = False
-    nombres = [f"[{ad.get('tipo')}: {ad.get('nombre', '')}]" for ad in adjuntos or []]
-    texto_guardado = texto + ("\n" + " ".join(nombres) if nombres else "")
-    ultimo = await db.uno("select de, texto from agente_mensaje where agente_id = $1 order by id desc limit 1", agente["id"])
-    if not (ultimo and ultimo["de"] == "yo" and ultimo["texto"] == texto_guardado):  # ya se guardó al formarse en la cola
-        await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente["id"], texto_guardado)
     llave = vault.descifrar(agente["llave"] or (await db.uno("select llave from agente where id = $1", agente["id"]))["llave"])
     respuesta: list[str] = []
     traza: list[dict] = []  # herramientas del turno, para enseñar después «lo que hizo»
