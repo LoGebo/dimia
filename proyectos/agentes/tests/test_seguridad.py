@@ -588,3 +588,29 @@ def test_ec2_arrancar_espera_a_la_que_se_esta_durmiendo(monkeypatch):
     monkeypatch.setattr(ec2.asyncio, "sleep", nada)
     m = asyncio.run(p.arrancar("i-1"))
     assert llamadas == ["start_instances", "exec"] and m.encendida
+
+
+def test_ec2_parar_hiberna_y_si_no_puede_apaga(monkeypatch):
+    from botocore.exceptions import ClientError
+
+    from agentes.maquinas import ec2
+
+    monkeypatch.setattr(config, "EC2_PLANTILLA", "lt-x")
+    monkeypatch.setattr(config, "EC2_SUBREDES", "subnet-a")
+    monkeypatch.setattr(config, "EC2_ENTORNO", "prueba")
+    p = ec2.Ec2()
+    llamadas = []
+
+    async def api(metodo, **kw):
+        llamadas.append(kw.get("Hibernate"))
+        if kw.get("Hibernate") and falla:
+            raise ClientError({"Error": {"Code": "UnsupportedHibernationConfiguration"}}, "StopInstances")
+        return {}
+
+    monkeypatch.setattr(p, "_api", api)
+    falla = False
+    asyncio.run(p.parar("i-1"))
+    assert llamadas == [True]
+    falla, llamadas[:] = True, []
+    asyncio.run(p.parar("i-1"))
+    assert llamadas == [True, False]

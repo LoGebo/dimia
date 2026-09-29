@@ -41,6 +41,7 @@ def datos_de_usuario(etiqueta: str, entorno: dict[str, str]) -> str:
     return f"""#!/bin/bash
 set -euxo pipefail
 dnf install -y docker
+dnf install -y ec2-hibinit-agent && systemctl enable --now hibinit-agent || true  # sin él, parar apaga en frío
 mkdir -p /etc/docker /etc/dimia /opt/data
 cat > /etc/docker/daemon.json <<'EOF'
 {{"userland-proxy": false, "log-driver": "json-file", "log-opts": {{"max-size": "20m", "max-file": "3"}}}}
@@ -204,11 +205,18 @@ class Ec2:
         return await self.obtener(referencia)
 
     async def parar(self, referencia):
-        try:
-            await self._api("stop_instances", InstanceIds=[referencia])
-        except ClientError as e:
-            if e.response["Error"]["Code"] != "IncorrectInstanceState":
-                raise
+        """Hiberna: al despertar Hermes y Chromium siguen vivos (~10 s contra ~35 s en frío). Si la
+        instancia no puede (se creó sin hibernación o el agente aún no la prepara), apagado normal."""
+        for hibernar in (True, False):
+            try:
+                await self._api("stop_instances", InstanceIds=[referencia], Hibernate=hibernar)
+                return
+            except ClientError as e:
+                codigo = e.response["Error"]["Code"]
+                if codigo == "IncorrectInstanceState":
+                    return
+                if not hibernar or codigo not in ("UnsupportedHibernationConfiguration", "UnsupportedOperation", "InvalidParameterCombination"):
+                    raise
 
     async def reiniciar(self, referencia):
         await self._api("reboot_instances", InstanceIds=[referencia])

@@ -160,6 +160,12 @@ resource "aws_launch_template" "casa" {
     enabled = true
   }
 
+  # Dormir = hibernar: la RAM va al disco de sistema (cifrado, 30 GB > 8 GB de RAM) y al despertar
+  # Hermes, Chromium y el escritorio siguen vivos. Solo se puede fijar al crear la instancia.
+  hibernation_options {
+    configured = true
+  }
+
   tag_specifications {
     resource_type = "instance"
     tags          = local.etiqueta
