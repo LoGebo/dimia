@@ -145,6 +145,123 @@ Pruebas A/B asignadas por lead, con grupo de control. Un negocio pequeño no jun
 diferencias finas, así que se prueban cambios grandes (llamar en 1 minuto contra 30) o se agrupan
 negocios del mismo giro.
 
+## Cómo se ve en el panel
+
+Decidido con el dueño el 29-sep-2026. Es una sección propia de Dimia, no un agente Hermes: usa
+directo la voz, WhatsApp y la agenda, está siempre encendida y sigue reglas fijas (tope, horario,
+consentimiento). Los agentes Hermes lo usan como herramienta (por ejemplo, Marketer manda
+interesados de una campaña y el seguimiento los trabaja).
+
+### Menú
+
+```
+Hoy
+Mensajes
+Ventas          ← nuevo
+  Interesados
+  Seguimiento
+  Campañas      ← se muda desde Clientes
+  Resultados
+Agentes
+Clientes        ← queda como directorio
+Dinero
+Ajustes
+```
+
+Se dice «interesados» y no «leads» (regla de marca: sin anglicismos donde hay palabra en español).
+
+### Ventas › Interesados
+
+Lista de pendientes ordenada por lo que requiere atención, con el detalle a la derecha.
+
+```
+Ventas › Interesados                    [Nuevos 4] [En seguimiento 12] [Con cita 7] [Perdidos]
+┌──────────────────────────────────────────┬─────────────────────────────────────┐
+│ ● Requiere a una persona (2)             │ Laura Méndez · WhatsApp · anuncio   │
+│   Laura Méndez   pregunta de precio  3m  │ Paso 2 de 6 · siguiente: llamada    │
+│   Tienda Sol     pidió hablar con...  1h │ en 1 h 40 min                       │
+│ ● Nuevos (4)                             │─────────────────────────────────────│
+│   Pedro Ruiz     formulario · 12 s       │ 10:02 Llegó por anuncio «Limpieza»  │
+│ ● En seguimiento (12)                    │ 10:02 Agente: WhatsApp enviado      │
+│ ● Con cita (7)                           │ 10:03 Agente llamó · no contestó    │
+│                                          │ 10:40 Laura: «¿cuánto cuesta?»      │
+│                                          │ 10:41 Pasado a una persona          │
+│                                          │ [Tomar conversación] [Agendar]      │
+└──────────────────────────────────────────┴─────────────────────────────────────┘
+```
+
+Grupos, en este orden: requiere a una persona, nuevos, en seguimiento, con cita, perdidos.
+
+Detalle de un interesado:
+
+- Datos, origen (campaña, anuncio, canal) y consentimiento registrado.
+- Línea de tiempo de todo lo que pasó: mensajes, llamadas, pasos del agente.
+- Paso actual de la secuencia y cuándo toca el siguiente.
+- Acciones:
+  - **Tomar la conversación:** pausa al agente con ese interesado; el dueño escribe o llama.
+  - **Escuchar llamadas:** grabación y transcripción de cada llamada del agente.
+  - **Agendar a mano:** abre la agenda desde el detalle.
+  - **Marcar resultado:** vendido, no le interesa o no es cliente ideal. Alimenta Resultados.
+
+### Ventas › Seguimiento
+
+Niveles que ya traen cadencia, canales y horario; «Personalizar pasos» abre el editor para quien
+quiera más control.
+
+```
+Ventas › Seguimiento
+
+¿Qué tanto insiste el agente?
+( ) Suave        3 intentos · solo WhatsApp
+(●) Normal       6 llamadas + 3 WhatsApp en 6 días
+( ) Insistente   8 llamadas + 4 WhatsApp en 10 días
+
+Canales          [x] Llamada  [x] WhatsApp  [ ] Correo
+Horario          Lun–Sáb  9:00 – 20:00  (hora del interesado)
+Objetivo         [Agendar cita ▾]
+Preguntas        1. ¿Qué servicio busca?
+                 2. ¿Para cuándo lo necesita?
+                 3. ¿En qué sucursal?        [+ Agregar]
+Pasar a persona  si pregunta precio especial, se enoja o lo pide
+
+                                  [Personalizar pasos ›]
+```
+
+El editor de pasos es una línea de tiempo (minuto 0, +2 h, día 1…) con canal, espera y texto de
+cada paso. Los textos traen variables (`{nombre}`, `{servicio}`) y el agente los adapta a la
+conversación.
+
+### Ventas › Campañas
+
+La pantalla actual de campañas (no-show, inactivos, reseñas, cobranza, manual), movida a Ventas.
+Cada campaña puede usar el seguimiento del negocio o uno propio.
+
+### Ventas › Resultados
+
+```
+Ventas › Resultados                         [Últimos 30 días ▾]  [Por campaña ▾]
+
+ Tiempo al primer contacto   18 s (p50) · 41 s (p90)
+
+ Interesados   Contactados   Calificados   Con cita   Asistieron   Vendidos
+     120    →      86     →      51     →     34    →     27     →    [ ]
+               72 %          59 %          67 %        79 %
+
+ Costo por cita que sí ocurrió    [ dato por confirmar ]
+ Pasados a una persona            9  ·  Bajas 2  ·  Calidad WhatsApp: verde
+
+ De dónde vienen las citas        Anuncio «Limpieza» 14 · WhatsApp 11 · Formulario 9
+```
+
+Las cifras del ejemplo son ilustrativas: en producción salen de los datos del negocio.
+
+### Fuera de Ventas
+
+- **Hoy:** una tarjeta «Interesados que requieren a una persona».
+- **Avisos:** notificación cuando un interesado pide a una persona o agenda.
+- **Agentes:** herramienta «mandar a seguimiento» para que un agente Hermes entregue interesados.
+- **Clientes:** cuando un interesado agenda o compra, pasa a ser cliente con su historial.
+
 ## Arquitectura
 
 ```
