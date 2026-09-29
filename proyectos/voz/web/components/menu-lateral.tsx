@@ -29,6 +29,10 @@ import {
   Voicemail,
   Wallet,
   MessageCircle,
+  Inbox,
+  Repeat,
+  Target,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { useBarra } from "@/components/barra-lateral";
@@ -38,6 +42,7 @@ import type { Herramienta } from "@/lib/tipos";
 const ICONO_SECCION: Record<string, LucideIcon> = {
   Hoy: House,
   Mensajes: MessageSquareText,
+  Ventas: Target,
   Agentes: Bot,
   Clientes: Users,
   Dinero: Wallet,
@@ -53,6 +58,9 @@ const ICONO_PANTALLA: Record<string, LucideIcon> = {
   "/agentes": Bot,
   "/clientes": Users,
   "/campanas": Megaphone,
+  "/ventas": Inbox,
+  "/ventas/seguimiento": Repeat,
+  "/ventas/resultados": TrendingUp,
   "/cobros": Receipt,
   "/resumen": BarChart3,
   "/agente": Bot,

@@ -4,7 +4,7 @@ export type Pestana = { href: string; nombre: string };
 export type Seccion = { href: string; nombre: string; detalle: string; pestanas: Pestana[] };
 
 /**
- * Seis lugares, con nombres de a pie. Cada uno agrupa pantallas como pestañas;
+ * Siete lugares, con nombres de a pie. Cada uno agrupa pantallas como pestañas;
  * el menú no crece aunque el producto crezca.
  */
 export function secciones(herramientas: Herramienta[]): Seccion[] {
@@ -19,9 +19,14 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   const mensajes: Pestana[] = [{ href: "/bandeja", nombre: "Conversaciones" }];
   if (recados) mensajes.push({ href: "/recados", nombre: "Recados" });
 
-  const clientes: Pestana[] = [
-    { href: "/clientes", nombre: "Clientes" },
+  const clientes: Pestana[] = [{ href: "/clientes", nombre: "Clientes" }];
+
+  // Todo lo que busca vender o reactivar: interesados, cómo los sigue el agente, campañas y resultados.
+  const ventas: Pestana[] = [
+    { href: "/ventas", nombre: "Interesados" },
+    { href: "/ventas/seguimiento", nombre: "Seguimiento" },
     { href: "/campanas", nombre: "Campañas" },
+    { href: "/ventas/resultados", nombre: "Resultados" },
   ];
 
   const dinero: Pestana[] = [];
@@ -42,6 +47,7 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
   return [
     { href: "/hoy", nombre: "Hoy", detalle: "Lo que pasa ahora", pestanas: hoy },
     { href: "/bandeja", nombre: "Mensajes", detalle: "Lo que le dijeron", pestanas: mensajes },
+    { href: "/ventas", nombre: "Ventas", detalle: "Quién puede comprarle", pestanas: ventas },
     { href: "/agentes", nombre: "Agentes", detalle: "Quién trabaja por usted", pestanas: [{ href: "/agentes", nombre: "Agentes" }] },
     { href: "/clientes", nombre: "Clientes", detalle: "Quién es quién", pestanas: clientes },
     { href: dinero[0]!.href, nombre: "Dinero", detalle: "Lo que entra", pestanas: dinero },

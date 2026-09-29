@@ -264,38 +264,148 @@ Las cifras del ejemplo son ilustrativas: en producción salen de los datos del n
 
 ## Arquitectura
 
+Investigación del 29-sep-2026 (Anthropic y OpenAI sobre agentes, caso 11x, LiveKit, Telnyx, Meta,
+DENUE, Google Places, LFPC, LFPDPPP). Principio: **las reglas deciden cuándo y por qué canal; el
+modelo decide qué decir y qué entendió.** Todo vive en el Aurora de la celda, sin motores nuevos.
+
+### Por qué así
+
+- **Flujo determinista con pasos de modelo, no un agente autónomo.** Es lo que recomiendan
+  Anthropic y OpenAI, y lo que confirmó 11x: su primer agente con 10–20 herramientas se confundía
+  y entraba en ciclos; terminó con flujos acotados y un supervisor.
+- **Cadencias en Postgres, no Temporal ni Step Functions.** El estado del interesado ya vive en
+  Aurora; cada temporizador es una fila con índice y pausar la secuencia es un `UPDATE` en la misma
+  transacción que guarda el mensaje entrante. Otro motor duplicaría el estado. Si algún día hace
+  falta, DBOS (Python sobre el mismo Postgres) antes que Temporal.
+- **El despachador actual ya tiene el patrón correcto** (`SKIP LOCKED`, `disponible_en`, llave
+  única en el outbox): se generaliza, no se reemplaza.
+
+### Datos nuevos (Aurora, RLS por negocio)
+
+| Tabla | Para qué |
+|---|---|
+| `secuencia` | Pasos por negocio: canal, espera, franja, tope, objetivo, preguntas, reglas de escalamiento |
+| `secuencia_interesado` | Estado, paso, `proxima_accion_en` (índice parcial), `pausada_hasta`, versión |
+| `decision_dueno` | Pregunta del agente, opciones A/B/C, vencimiento, opción por omisión, elegida |
+| `consentimiento` | Solo inserción: canal, finalidad, texto y versión del aviso, evidencia, otorgado y revocado |
+| `supresion` | Bajas de cualquier canal; suprimen todos los canales de ese negocio |
+| `repep` | Lista comprada a Profeco (hash de números), solo para contacto publicitario sin consentimiento |
+| `evento_interesado` | Solo inserción: cada paso del embudo con canal, costo, modelo y `trace_id` |
+| `experimento_asignacion` | Variante por interesado (hash determinista) con grupo de control |
+
+`lead` y `outbox` se extienden: origen de anuncio (`ctwa_clid`), zona horaria, puntuación, y llave
+única `(secuencia_interesado, paso, intento)` en el outbox.
+
+### Servicios
+
 ```
-lead / mensaje / llamada perdida
-        │
-        ▼
-  secuencia (nueva) ── estado por lead: paso, siguiente_intento, resultado, consentimiento
-        │  reutiliza el motor de campana_contacto y el despachador
-        ├──► voz saliente (salientes.py + guion por giro)
-        ├──► WhatsApp (outbox, plantillas de utilidad)
-        └──► agenda (booking) ──► recordatorios
-        │
-        ▼
-  panel: configurar secuencia · bandeja de leads · tablero de embudo · pasar a humano
+entrantes (WhatsApp, IG, formularios, llamadas perdidas)
+   │ webhook → deduplica por id → en la MISMA transacción: pausa la secuencia + encola al intérprete
+   ▼
+intérprete (modelo chico, salida estructurada)
+   │ intención, datos, ¿requiere persona? → PROPONE transición; el código la valida
+   │ dentro de la ventana de 24 h redacta la respuesta con herramientas acotadas
+   ▼
+motor de secuencias (determinista, el despachador generalizado)
+   │ reclama vencidas con SKIP LOCKED → revalida: horario local, consentimiento, supresión,
+   │ REPEP, ventana de WhatsApp, cupos por número y troncal → outbox o llamada → siguiente acción
+   ├──► WhatsApp (plantillas de utilidad fuera de ventana; texto libre dentro)
+   ├──► voz saliente (LiveKit + detección de buzón + clasificación después de la llamada)
+   ├──► decisiones del dueño (panel + WhatsApp, con vencimiento y opción por omisión)
+   └──► evento_interesado → embudo, costo por cita, experimentos
+Hermes (solo fase de prospección): investiga un negocio y devuelve una ficha; nunca contacta.
 ```
 
-- **Datos nuevos:** `secuencia` (pasos, canales, horario, tope, objetivo) y `lead_estado` (paso
-  actual, intentos, consentimiento, resultado, tiempos de cada etapa). El esquema final se decide
-  al construir.
-- **Latencia de voz:** hoy el turno completo mide ~0.96 s en producción (29-sep-2026). Meta:
-  p50 < 0.8 s y p95 < 1.2 s, con alerta.
-- **Buzón:** detectarlo y dejar un mensaje de menos de 20 s que remita a WhatsApp.
+### Reglas del agente
+
+- **El modelo nunca cambia el estado.** Propone una transición en JSON con esquema; el código
+  decide.
+- **Herramientas pocas y por estado:** `ofrecer_horarios`, `agendar`, `enviar_plantilla(id)`,
+  `escalar(motivo)`, `registrar_baja`. No existe «mandar texto libre fuera de la ventana».
+- **Precios y promesas solo del catálogo**, por herramienta. Si la respuesta trae un monto que no
+  está en el catálogo, se bloquea y se escala.
+- **Inyección de instrucciones:** lo que escribe el interesado o lo que Hermes lee en la web entra
+  como dato, nunca como instrucción. Un mensaje no puede disparar acciones fuera de las permitidas
+  para el estado actual.
+- **Memoria por interesado:** ficha resumida (qué pidió, objeciones, qué se prometió) más los
+  últimos turnos, regenerada al cerrar cada conversación (`app/cierre.py`).
+- **Modelos por tarea:** chico para clasificar, gpt-4.1-mini en voz (ya calibrado a ~1 s), mediano
+  para redactar decisiones al dueño, Hermes para investigar. Cada llamada registra costo y modelo.
+- **Decisiones A/B/C** son un estado: la secuencia se pausa hasta que el dueño elige o vence.
+
+### Voz saliente
+
+- **Detección de buzón:** la de LiveKit Agents (humano, buzón, IVR, incierto). LiveKit reporta
+  94.7 % de exactitud y 840 ms de mediana, sin decir si probó en español
+  `[ calibrar con ~500 llamadas propias etiquetadas ]`. Lo incierto va al camino conservador.
+- **Buzón:** audio corto pregrabado y aprobado por el negocio, o colgar y mandar WhatsApp.
+- **Reputación del número:** STIR/SHAKEN y la reputación de Telnyx no cubren México. La marca de
+  «spam» la ponen apps como Truecaller e Hiya. Mitigación: llamar en caliente, WhatsApp antes o al
+  mismo tiempo, números locales, tope diario por número, medir la tasa de contestación por número.
+- **Después de cada llamada:** grabación con aviso, transcripción y clasificación estructurada
+  (cita, devolver llamada, no interesa, número equivocado, baja) que alimenta el estado.
+- **LiveKit SIP:** fijar versiones; hay un problema reportado con `wait_until_answered` en la
+  versión 1.9.11 del servidor.
+
+### WhatsApp
+
+- Plantillas de **utilidad** estrictamente sobre la solicitud del interesado; Meta recategoriza sola
+  las que parecen marketing. Biblioteca pequeña por giro, reutilizable entre negocios.
+- `ventana_hasta` por conversación: el despachador (no el modelo) decide si va texto libre o
+  plantilla.
+- Anuncios *Click-to-WhatsApp*: si se contesta en 24 h se abren 72 h sin costo; la cadencia inicial
+  se concentra ahí.
+- Error 131049: no reintentar antes de 24 h; marcar el paso y seguir por otro canal.
+- **Riesgo:** desde octubre de 2025 los límites de envío son por portafolio. Si los números de los
+  clientes viven en el portafolio de Dimia, comparten un solo límite. Hay que revisar la topología
+  de WABA antes de escalar.
+- Webhooks: responder 200 de inmediato, deduplicar por id con restricción única, estados solo
+  avanzan.
+
+### Prospección (fase final)
+
+- **DENUE (INEGI):** API gratuita con más de 5 millones de establecimientos por actividad, zona y
+  tamaño. Es la base natural para prospectar negocios pequeños.
+- **Google Places:** no permite guardar datos salvo `place_id`; sirve para consultar en el momento,
+  no como base.
+- **Hermes** investiga cada negocio (qué ofrece, señales de necesidad) y devuelve una ficha. No
+  guarda datos personales de personas físicas sin base legal.
+- **Correo** como canal secundario: dominio aparte, SPF/DKIM/DMARC, calentamiento, volumen bajo.
+- Contacto publicitario sin consentimiento propio: verificar el REPEP antes. **Revisión legal antes
+  de esta fase** (alcance del REPEP en WhatsApp y en negocios).
+
+### Medición y pruebas
+
+- Embudo desde `evento_interesado`: tiempo al primer toque (p50 y p90), contacto, calificación,
+  cita, asistencia, venta y **costo por cita que sí ocurrió** (telefonía + WhatsApp + modelo + voz).
+- Trazas OpenTelemetry (LiveKit ya las trae): una por turno de voz y una por decisión de secuencia,
+  unidas por interesado.
+- **Pruebas de regresión con clientes simulados** por giro (indeciso, pregunta el precio, enojado,
+  pide baja, intenta manipular al agente) en el CI, sobre el arnés de `reportes/evals-*`. Sirven
+  para detectar errores, no para estimar conversión.
+- Experimentos: asignación por interesado con grupo de control; recompensa intermedia (respuesta en
+  24 h) porque la cita tarda días. Puntuación primero con reglas, luego con modelo agrupando
+  negocios del mismo giro.
 
 ## Fases
 
 | Fase | Entrega | Criterio para pasar |
 |---|---|---|
-| 1. Velocidad | Primer toque automático < 60 s por el canal de origen; consentimiento guardado | p90 de primer toque < 60 s en un negocio real |
-| 2. Cadencia | Secuencia configurable, tope y paro automático; recordatorios de cita | Cero contactos después de una baja o una cita |
-| 3. Calificación y agenda | Preguntas por giro y agendado en la conversación | `[ dato por confirmar ]`: tasa de citas por lead de referencia |
-| 4. Tablero y A/B | Embudo completo y pruebas por lead | Costo por cita que sí ocurrió visible por negocio |
-| 5. Humano en el ciclo | Bandeja de escalados con resumen | Tiempo de respuesta humana medido |
+| 1. Velocidad y base | Interesados por WhatsApp e IG, primer toque < 60 s, consentimiento, supresión y embudo desde el día uno | p90 de primer toque < 60 s en un negocio real |
+| 2. Voz y cadencia | Llamadas con detección de buzón calibrada, devolver llamadas perdidas, cadencia con tope, decisiones A/B/C, costo por cita | Cero contactos después de una baja o una cita |
+| 3. Aprender | Experimentos con control, puntuación, prueba del Calling API de WhatsApp, correo opcional | Costo por cita que sí ocurrió visible por negocio |
+| 4. Prospectar | DENUE + Hermes, REPEP integrado, revisión legal previa | Aprobación legal |
 
-Primer piloto: Dimia misma o un cliente actual con volumen de leads `[ por definir con Javier ]`.
+### Riesgos
+
+| Riesgo | Mitigación |
+|---|---|
+| Límite de WhatsApp compartido entre clientes | Revisar la topología de WABA, tope de marketing, monitoreo de calidad |
+| Números marcados como spam | Llamar en caliente, WhatsApp previo, tope diario, medir contestación por número |
+| El agente promete un precio o da un consejo clínico | Catálogo por herramienta, validación de salida, escalamiento, pruebas de regresión |
+| Manipulación del agente por un mensaje o una página web | Herramientas por estado, el texto de fuera es dato |
+| Incumplimiento de REPEP o LFPDPPP | Validación en el despachador, registro de consentimiento, aviso de perfilamiento, revisión legal |
+| Doble contacto por condiciones de carrera | Pausa transaccional, relectura bajo candado, llave única en el outbox |
 
 ## Preguntas para Javier
 
