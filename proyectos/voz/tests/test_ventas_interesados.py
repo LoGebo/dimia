@@ -164,3 +164,38 @@ async def test_pasada_la_ventana_sigue_con_plantilla_y_luego_cierra():
         await admin.execute("delete from interesado where contacto = $1", contacto)
         await admin.execute("delete from conversacion where contacto = $1", contacto)
         await admin.close()
+
+
+@pytest.mark.asyncio
+async def test_con_llamada_el_primer_seguimiento_tambien_marca():
+    admin = await asyncpg.connect(DSN)
+    contacto = f"+52181{uuid.uuid4().int % 10**7:07d}"
+    tenant = str(await admin.fetchval("select id from tenant order by nombre limit 1"))
+    try:
+        await admin.execute(
+            """insert into seguimiento_config (tenant_id, activo, nivel, hora_inicio, hora_fin, dias, canales)
+               values ($1, true, 'normal', '00:00', '23:59', 'todos', '{"whatsapp": true, "llamada": true}')
+               on conflict (tenant_id) do update set activo = true, nivel = 'normal', pasos = null, hora_inicio = '00:00',
+                 hora_fin = '23:59', dias = 'todos', canales = '{"whatsapp": true, "llamada": true}'""", uuid.UUID(tenant))
+        conv = (await _en("app_texto", tenant,
+            "insert into conversacion (tenant_id, canal, contacto, contacto_nombre, estado) values ($1, 'whatsapp', $2, 'Ana Prueba', 'abierta') returning id",
+            uuid.UUID(tenant), contacto))[0]["id"]
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Quiero ortodoncia')", conv, uuid.UUID(tenant))
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'agente', 'Claro, ¿para cuándo?')", conv, uuid.UUID(tenant))
+        iid = await admin.fetchval("select id from interesado where contacto = $1", contacto)
+        await admin.execute("update interesado set proxima_accion_en = now() - interval '1 minute' where id = $1", iid)
+        cron = await asyncpg.connect(_como("app_cron"), statement_cache_size=0)
+        try:
+            await cron.fetchval("select public.interesado_seguimientos(50)")
+        finally:
+            await cron.close()
+        filas = {f["canal"]: f for f in await admin.fetch("select canal, payload from outbox where interesado_id = $1", iid)}
+        assert set(filas) == {"llamada", "whatsapp"}
+        assert "Quiero ortodoncia" in filas["llamada"]["payload"]
+    finally:
+        await admin.execute("update seguimiento_config set canales = '{\"whatsapp\": true, \"llamada\": false}' where tenant_id = $1", uuid.UUID(tenant))
+        await admin.execute("delete from outbox where destino = $1", contacto)
+        await admin.execute("delete from consentimiento where contacto = $1", contacto)
+        await admin.execute("delete from interesado where contacto = $1", contacto)
+        await admin.execute("delete from conversacion where contacto = $1", contacto)
+        await admin.close()

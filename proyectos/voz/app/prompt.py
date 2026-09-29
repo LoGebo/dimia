@@ -326,6 +326,13 @@ def guion_saliente(saliente: dict) -> str:
     )
 
 
+def mensaje_buzon(tenant: Tenant, saliente: dict) -> str:
+    """Lo que se deja en el buzón: menos de 20 s y remite a WhatsApp, que sí se lee."""
+    nombre = (saliente.get("cliente") or "").split(" ")[0]
+    saludo = f"Hola {nombre}, " if nombre else "Hola, "
+    return f"{saludo}le llamamos de {tenant.nombre} sobre la información que nos pidió. Le escribimos por WhatsApp para agendar. Gracias."
+
+
 def apertura_saliente(tenant: Tenant, saliente: dict) -> str:
     nombre = (saliente.get("cliente") or "").split(" ")[0]
     quien = f"¿Hablo con {nombre}? " if nombre else ""

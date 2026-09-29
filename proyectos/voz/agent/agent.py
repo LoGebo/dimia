@@ -916,6 +916,23 @@ def _construir_tts(tenant: Tenant):
     )
 
 
+async def detectar_buzon(session: AgentSession, identidad: str, tope_s: float = 12.0) -> str | None:
+    """La categoría de la detección de buzón de LiveKit (human, machine-vm, machine-ivr,
+    machine-unavailable, uncertain) o None si no se pudo. Con duda se trata como persona:
+    colgarle a alguien real es peor que saludar a un buzón."""
+    try:
+        from livekit.agents import AMD
+
+        async with AMD(session, llm=None, stt=None, participant_identity=identidad, ivr_detection=False) as detector:
+            resultado = await asyncio.wait_for(detector.execute(), tope_s)
+        categoria = getattr(resultado.category, "value", str(resultado.category))
+        log.info("detección de buzón: %s (%s)", categoria, getattr(resultado, "reason", ""))
+        return categoria
+    except Exception:
+        log.warning("no se pudo detectar buzón; se trata como persona", exc_info=True)
+        return None
+
+
 async def calentar_modelo(modelo, agente: Agent) -> None:
     """Una petición mínima con el mismo prompt y las mismas herramientas que el primer turno:
     deja abierta la conexión y el prefijo en la caché de prompts del proveedor. Se corta en
@@ -1396,6 +1413,23 @@ async def entrypoint(ctx: JobContext) -> None:
             if final:
                 raise
             log.exception("no se pudo registrar la llamada al contestar")
+
+    # Saliente: ¿contestó una persona o un buzón? Antes de hablar, con la detección de LiveKit.
+    if saliente and cfg.amd_saliente:
+        veredicto = await detectar_buzon(session, participante.identity)
+        if veredicto in ("machine-vm", "machine-unavailable", "machine-ivr"):
+            log.info("saliente a %s: %s en %s", llamante, veredicto, ctx.room.name)
+            if veredicto == "machine-vm":
+                await session.say(prompt_mod.mensaje_buzon(tenant, saliente), allow_interruptions=False)
+            await _llamada(fin_motivo="buzon", final=True)
+            if contacto_campana:
+                try:
+                    await agenda.campana_contacto_resultado(contacto_campana, "sin_respuesta", "buzón", recepcionista.call_id)
+                except Exception:
+                    log.exception("no se pudo anotar el buzón")
+            await session.aclose()
+            await ctx.delete_room()
+            return
 
     # Al contestar ya queda la fila: si el worker se cae a media llamada, el
     # dueño la ve 'en_curso' en vez de no ver nada.

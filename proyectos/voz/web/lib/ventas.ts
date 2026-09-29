@@ -136,6 +136,7 @@ export function interesados(): Promise<{ lista: InteresadoReal[]; resumen: Resum
 export type PasoSeguimiento = { horas: number; mensaje: string };
 export type ConfigSeguimiento = {
   activo: boolean; nivel: "suave" | "normal" | "insistente" | "propio"; dias: "lun-vie" | "lun-sab" | "todos";
+  canales: { whatsapp: boolean; llamada: boolean; correo: boolean };
   hora_inicio: string; hora_fin: string; objetivo: string; trato: "usted" | "tu"; preguntas: string[]; escalar: string[];
   pasos: PasoSeguimiento[] | null;
 };
@@ -144,7 +145,7 @@ export type ConfigSeguimiento = {
 export function seguimiento(): Promise<{ config: ConfigSeguimiento; niveles: Record<string, Record<"usted" | "tu", PasoSeguimiento[]>> }> {
   return datos(async (q, negocioId) => {
     const [fila] = await q<ConfigSeguimiento>(
-      `select activo, nivel, dias, to_char(hora_inicio, 'HH24:MI') hora_inicio, to_char(hora_fin, 'HH24:MI') hora_fin,
+      `select activo, nivel, canales, dias, to_char(hora_inicio, 'HH24:MI') hora_inicio, to_char(hora_fin, 'HH24:MI') hora_fin,
               objetivo, trato, preguntas, escalar, pasos
          from seguimiento_config where tenant_id = $1`, [negocioId]);
     const niveles = await q<{ nivel: string; trato: "usted" | "tu"; pasos: PasoSeguimiento[] }>(
@@ -156,7 +157,7 @@ export function seguimiento(): Promise<{ config: ConfigSeguimiento; niveles: Rec
     for (const n of niveles) (mapa[n.nivel] ??= { usted: [], tu: [] })[n.trato] = n.pasos;
     return {
       config: fila ?? {
-        activo: false, nivel: "normal", dias: "lun-sab", hora_inicio: "09:00", hora_fin: "20:00", objetivo: "agendar", trato: "usted",
+        activo: false, nivel: "normal", canales: { whatsapp: true, llamada: false, correo: false }, dias: "lun-sab", hora_inicio: "09:00", hora_fin: "20:00", objetivo: "agendar", trato: "usted",
         preguntas: ["¿Qué servicio busca?", "¿Para cuándo lo necesita?"],
         escalar: ["Pregunta un precio fuera del catálogo", "Se molesta o se queja", "Pide hablar con una persona"], pasos: null,
       },

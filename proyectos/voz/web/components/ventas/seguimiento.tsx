@@ -63,7 +63,7 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
             <div className="flex flex-wrap items-center gap-4">
               <span className="w-36 text-tinta-2">Canales</span>
               <label className="flex items-center gap-2 text-tinta"><input type="checkbox" checked readOnly /> WhatsApp e Instagram</label>
-              <label className="flex items-center gap-2 text-tinta-3"><input type="checkbox" disabled /> Llamada <span className="text-[12px]">(pronto)</span></label>
+              <label className="flex items-center gap-2 text-tinta"><input type="checkbox" checked={!!c.canales?.llamada} onChange={() => cambiar({ canales: { ...c.canales, llamada: !c.canales?.llamada } })} /> Llamada <span className="text-[12px] text-tinta-3">(en el primer seguimiento)</span></label>
               <label className="flex items-center gap-2 text-tinta-3"><input type="checkbox" disabled /> Correo <span className="text-[12px]">(pronto)</span></label>
             </div>
             <div className="flex flex-wrap items-center gap-2">

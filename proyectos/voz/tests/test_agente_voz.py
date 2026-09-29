@@ -431,3 +431,26 @@ def test_con_turno_por_stt_el_oido_es_flux_en_espanol(monkeypatch):
     assert isinstance(oido, STTv2)
     assert visto["model"] == "flux-general-multi" and visto["language_hint"] == ["es"] and visto["keyterm"] == ["Dimia"]
     assert visto["eager_eot_threshold"] <= visto["eot_threshold"]
+
+
+def test_deteccion_de_buzon_con_falla_se_trata_como_persona(monkeypatch):
+    """Si la detección de LiveKit no está o falla, se saluda: colgarle a una persona es peor."""
+    import asyncio
+
+    from agent import agent as ag
+
+    class Roto:
+        def __init__(self, *a, **k):
+            raise RuntimeError("sin AMD")
+
+    import livekit.agents as lka
+    monkeypatch.setattr(lka, "AMD", Roto, raising=False)
+    assert asyncio.run(ag.detectar_buzon(object(), "cliente-1")) is None
+
+
+def test_mensaje_de_buzon_es_corto_y_remite_a_whatsapp():
+    from app import prompt as prompt_mod
+
+    t = type("T", (), {"nombre": "Clínica Sonrisa"})()
+    m = prompt_mod.mensaje_buzon(t, {"cliente": "Laura Méndez"})
+    assert m.startswith("Hola Laura") and "WhatsApp" in m and len(m.split()) <= 40

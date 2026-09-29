@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # Deepgram Flux decide el fin de turno dentro del mismo reconocimiento (~300 ms) en lugar del
     # detector aparte (~600 ms). Se enciende por entorno para probarlo antes en staging.
     turno_por_stt: bool = False
+    # Detección de buzón en llamadas salientes (LiveKit AMD) antes de saludar.
+    amd_saliente: bool = True
     flux_eot: float = 0.75
     flux_eot_anticipado: float = 0.5  # arranca el modelo antes de confirmar el fin (preemptive)
     flux_eot_tope_ms: int = 1500

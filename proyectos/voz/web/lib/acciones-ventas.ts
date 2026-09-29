@@ -25,13 +25,14 @@ export async function guardarSeguimiento(c: ConfigSeguimiento): Promise<EstadoVe
   try {
     await datos((q, negocioId) =>
       q(
-        `insert into seguimiento_config (tenant_id, activo, nivel, dias, hora_inicio, hora_fin, objetivo, trato, preguntas, escalar, pasos, actualizado)
-         values ($1, $2, $3, $4, $5::time, $6::time, $7, $8, $9::jsonb, $10::jsonb, $11::jsonb, now())
-         on conflict (tenant_id) do update set activo = excluded.activo, nivel = excluded.nivel, dias = excluded.dias,
+        `insert into seguimiento_config (tenant_id, activo, nivel, dias, hora_inicio, hora_fin, objetivo, trato, preguntas, escalar, pasos, canales, actualizado)
+         values ($1, $2, $3, $4, $5::time, $6::time, $7, $8, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, now())
+         on conflict (tenant_id) do update set activo = excluded.activo, nivel = excluded.nivel, dias = excluded.dias, canales = excluded.canales,
            hora_inicio = excluded.hora_inicio, hora_fin = excluded.hora_fin, objetivo = excluded.objetivo, trato = excluded.trato,
            preguntas = excluded.preguntas, escalar = excluded.escalar, pasos = excluded.pasos, actualizado = now()`,
         [negocioId, c.activo, c.nivel, c.dias, c.hora_inicio, c.hora_fin, c.objetivo || "agendar", c.trato === "tu" ? "tu" : "usted",
-         JSON.stringify(preguntas), JSON.stringify(escalar), pasos ? JSON.stringify(pasos) : null],
+         JSON.stringify(preguntas), JSON.stringify(escalar), pasos ? JSON.stringify(pasos) : null,
+         JSON.stringify({ whatsapp: true, llamada: !!c.canales?.llamada, correo: false })],
       ),
     );
   } catch {
