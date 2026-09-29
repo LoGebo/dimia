@@ -4,6 +4,7 @@ from __future__ import annotations
 import sys
 
 import asyncio
+import importlib
 import functools
 import json
 import logging
@@ -940,10 +941,15 @@ def prewarm(proc: JobProcess) -> None:
     proc.userdata["vad"] = silero.VAD.load()
     if cfg.google_api_key:
         from livekit.plugins import google  # noqa: F401
-    try:  # el detector de turno lo importaba al contestar: 392 ms de loop congelado en el saludo
-        import huggingface_hub._local_folder  # noqa: F401
-    except ImportError:
-        pass
+    # Imports perezosos que se disparaban al contestar la primera llamada de cada proceso y
+    # congelaban el loop justo en el saludo: detector de turno (392 ms), HTTP/2 de las
+    # herramientas (1 s) y tipos del cliente de OpenAI (337 ms).
+    for modulo in ("huggingface_hub._local_folder", "hpack.huffman_table", "h2.connection",
+                   "openai.types.beta.chatkit.chat_session_chatkit_configuration"):
+        try:
+            importlib.import_module(modulo)
+        except ImportError:
+            pass
     if cfg.azure_speech_key:  # la voz de respaldo: su import congelaba 424 ms al contestar
         try:
             from livekit.plugins import azure  # noqa: F401
