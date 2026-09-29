@@ -72,7 +72,16 @@ export function PantallaVivo({ agenteId, nombre, grande = false, ocultar, cerrar
       setEstado("conectando");
       // La vista grande recibe la URL de la miniatura: la computadora ya está encendida, solo se conecta.
       // Si la conexión se cayó (el pase dura 10 min; la red va y viene), se pide un pase nuevo.
-      const r = url && !nuevoPase ? { url } : await urlPantalla(agenteId);
+      let r: Awaited<ReturnType<typeof urlPantalla>>;
+      try {
+        r = url && !nuevoPase ? { url } : await urlPantalla(agenteId);
+      } catch {
+        // Despertar la computadora puede tardar más que la red entre el navegador y el panel: la
+        // petición se corta pero la máquina sigue encendiéndose. Se vuelve a pedir en vez de quedarse
+        // en «Encendiendo…» para siempre.
+        if (vivo && reintentos++ < 20) setTimeout(() => { if (vivo) void conectar(true); }, 4000);
+        return;
+      }
       if (!vivo) return;
       if ("error" in r) { setAviso(r.error); setEstado("error"); return; }
       setUrlActual(r.url);

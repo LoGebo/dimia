@@ -62,6 +62,10 @@ resource "aws_cloudfront_distribution" "this" {
 
     vpc_origin_config {
       vpc_origin_id = aws_cloudfront_vpc_origin.this.id
+      # Despertar la computadora de un negocio tarda ~40 s y CloudFront cortaba a los 30 (el máximo
+      # sin pedir aumento de cuota es 60). El ALB espera 60 s por omisión.
+      origin_read_timeout      = 60
+      origin_keepalive_timeout = 60
     }
 
     custom_header {
