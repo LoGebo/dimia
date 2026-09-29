@@ -296,11 +296,6 @@ resource "aws_eks_pod_identity_association" "karpenter" {
   role_arn        = aws_iam_role.karpenter.arn
 }
 
-# El token de ECR Public solo se emite en us-east-1.
-data "aws_ecrpublic_authorization_token" "this" {
-  provider = aws.virginia
-}
-
 resource "helm_release" "karpenter" {
   name       = "karpenter"
   namespace  = "kube-system"
@@ -309,13 +304,9 @@ resource "helm_release" "karpenter" {
   version    = var.karpenter_version
   wait       = true
 
-  repository_username = data.aws_ecrpublic_authorization_token.this.user_name
-  repository_password = data.aws_ecrpublic_authorization_token.this.password
-
-  # El token de ECR Public cambia en cada plan; sin esto el release sale «cambiado» siempre.
-  lifecycle {
-    ignore_changes = [repository_username, repository_password]
-  }
+  # El login a ECR Public lo hace el proveedor de Helm con un token fresco en cada corrida
+  # (registries en vivos/*/eks): guardado aquí, el estado se quedaba con uno vencido y el refresh
+  # de cada plan fallaba con 403.
 
   values = [yamlencode({
     settings = {

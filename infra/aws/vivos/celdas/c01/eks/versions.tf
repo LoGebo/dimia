@@ -68,4 +68,16 @@ provider "helm" {
       args        = ["eks", "get-token", "--cluster-name", module.eks.nombre, "--region", "mx-central-1"]
     }
   }
+
+  # Karpenter viene de ECR Public; sin login el CI topa el límite anónimo (429).
+  registries = [{
+    url      = "oci://public.ecr.aws"
+    username = data.aws_ecrpublic_authorization_token.helm.user_name
+    password = data.aws_ecrpublic_authorization_token.helm.password
+  }]
+}
+
+# El token de ECR Public solo se emite en us-east-1; se pide en cada corrida.
+data "aws_ecrpublic_authorization_token" "helm" {
+  provider = aws.virginia
 }
