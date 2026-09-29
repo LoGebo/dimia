@@ -413,3 +413,21 @@ def test_calentar_modelo_manda_el_mismo_prompt_y_herramientas_y_no_truena():
     assert ctx.items[0].role == "system" and "PROMPT DEL NEGOCIO" in ctx.items[0].text_content
     asyncio.run(ag.calentar_modelo(Modelo(falla=True), Agente()))  # no sube la excepción
     asyncio.run(ag.calentar_modelo(None, Agente()))
+
+
+def test_con_turno_por_stt_el_oido_es_flux_en_espanol(monkeypatch):
+    """Flux decide el fin de turno; va en español, sin respaldo (el respaldo no marca turnos)."""
+    from agent import agent as ag
+
+    visto = {}
+
+    class STTv2:
+        def __init__(self, **kw):
+            visto.update(kw)
+
+    monkeypatch.setattr(ag.cfg, "turno_por_stt", True)
+    monkeypatch.setattr(ag.deepgram, "STTv2", STTv2, raising=False)
+    oido = ag.construir_oido(["Dimia"], vad=None)
+    assert isinstance(oido, STTv2)
+    assert visto["model"] == "flux-general-multi" and visto["language_hint"] == ["es"] and visto["keyterm"] == ["Dimia"]
+    assert visto["eager_eot_threshold"] <= visto["eot_threshold"]

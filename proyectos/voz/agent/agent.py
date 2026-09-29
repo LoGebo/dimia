@@ -834,7 +834,19 @@ def construir_voz(tenant: Tenant):
 
 
 def construir_oido(terminos: list[str], vad: Any):
-    """Deepgram y, si hay llave de OpenAI, su transcripcion de respaldo."""
+    """Deepgram y, si hay llave de OpenAI, su transcripcion de respaldo.
+
+    Con turno_por_stt es Flux, que además marca el fin de turno; sin respaldo, porque el
+    respaldo no sabe marcarlo y la sesión se quedaría esperando."""
+    if cfg.turno_por_stt:
+        return deepgram.STTv2(
+            model="flux-general-multi",
+            language_hint=[cfg.stt_language.split("-")[0]],
+            eot_threshold=cfg.flux_eot,
+            eager_eot_threshold=cfg.flux_eot_anticipado,
+            eot_timeout_ms=cfg.flux_eot_tope_ms,
+            **({"keyterm": terminos} if terminos else {}),
+        )
     principal = deepgram.STT(
         model=cfg.stt_model,
         language=cfg.stt_language,
@@ -1219,7 +1231,7 @@ async def entrypoint(ctx: JobContext) -> None:
         stt=construir_oido(terminos, ctx.proc.userdata["vad"]),
         llm=construir_llm(tenant),
         tts=construir_voz(tenant),
-        turn_detection=MultilingualModel(),
+        turn_detection="stt" if cfg.turno_por_stt else MultilingualModel(),
         preemptive_generation=True,
         min_endpointing_delay=cfg.espera_minima_turno,
         max_endpointing_delay=cfg.espera_maxima_turno,

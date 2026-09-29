@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     deepgram_api_key: str = ""
     stt_model: str = "nova-3"
     stt_language: str = "es-MX"
+    # Deepgram Flux decide el fin de turno dentro del mismo reconocimiento (~300 ms) en lugar del
+    # detector aparte (~600 ms). Se enciende por entorno para probarlo antes en staging.
+    turno_por_stt: bool = False
+    flux_eot: float = 0.75
+    flux_eot_anticipado: float = 0.5  # arranca el modelo antes de confirmar el fin (preemptive)
+    flux_eot_tope_ms: int = 1500
     deepgram_voz: str = "aura-2-javier-es"
     azure_voz: str = "es-MX-DaliaNeural"
     procesos_precalentados: int = 2
