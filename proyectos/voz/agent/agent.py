@@ -928,6 +928,10 @@ def prewarm(proc: JobProcess) -> None:
     proc.userdata["vad"] = silero.VAD.load()
     if cfg.google_api_key:
         from livekit.plugins import google  # noqa: F401
+    try:  # el detector de turno lo importaba al contestar: 392 ms de loop congelado en el saludo
+        import huggingface_hub._local_folder  # noqa: F401
+    except ImportError:
+        pass
     if cfg.azure_speech_key:  # la voz de respaldo: su import congelaba 424 ms al contestar
         try:
             from livekit.plugins import azure  # noqa: F401
