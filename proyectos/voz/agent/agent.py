@@ -903,6 +903,23 @@ def _construir_tts(tenant: Tenant):
     )
 
 
+async def calentar_modelo(modelo, agente: Agent) -> None:
+    """Una petición mínima con el mismo prompt y las mismas herramientas que el primer turno:
+    deja abierta la conexión y el prefijo en la caché de prompts del proveedor. Se corta en
+    cuanto llega el primer pedazo; si falla, la llamada sigue igual (solo se pierde el ahorro)."""
+    if modelo is None:
+        return
+    contexto = llm.ChatContext.empty()
+    contexto.add_message(role="system", content=agente.instructions)
+    contexto.add_message(role="user", content="Hola")
+    try:
+        async with modelo.chat(chat_ctx=contexto, tools=list(agente.tools)) as flujo:
+            async for _ in flujo:
+                break
+    except Exception:
+        log.debug("no se pudo calentar el modelo", exc_info=True)
+
+
 def prewarm(proc: JobProcess) -> None:
     """Carga el VAD y el plugin de Google una vez por proceso, no por llamada.
 
@@ -911,6 +928,11 @@ def prewarm(proc: JobProcess) -> None:
     proc.userdata["vad"] = silero.VAD.load()
     if cfg.google_api_key:
         from livekit.plugins import google  # noqa: F401
+    if cfg.azure_speech_key:  # la voz de respaldo: su import congelaba 424 ms al contestar
+        try:
+            from livekit.plugins import azure  # noqa: F401
+        except ImportError:
+            pass
 
 
 def quien_llama(attrs: dict, identidad: str) -> tuple[str, str]:
@@ -1363,6 +1385,11 @@ async def entrypoint(ctx: JobContext) -> None:
         prompt_mod.apertura_saliente(tenant, saliente) if saliente
         else prompt_mod.saludo(tenant, plantilla)
     )
+    # Mientras suena el saludo se calienta el modelo: la primera respuesta de la llamada
+    # tardaba 1.6 s (conexión nueva a OpenAI y el prompt sin caché) contra ~0.45 s en caliente.
+    calentado = asyncio.create_task(calentar_modelo(session.llm, recepcionista))
+    escrituras.add(calentado)
+    calentado.add_done_callback(escrituras.discard)
     await session.say(apertura, allow_interruptions=True)
 
     async def al_colgar() -> None:

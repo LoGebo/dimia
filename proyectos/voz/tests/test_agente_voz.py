@@ -367,3 +367,49 @@ async def test_la_llamada_queda_en_call_log_desde_que_contesta(pool, negocio):
     assert (en_curso["duracion_seg"], en_curso["fin_motivo"]) == (None, "en_curso")
     assert (final["duracion_seg"], final["fin_motivo"], final["resuelto"]) == (42, "error_tts", True)
     assert eventos == 1
+
+
+def test_calentar_modelo_manda_el_mismo_prompt_y_herramientas_y_no_truena():
+    """El calentamiento debe usar exactamente el prompt y las herramientas del primer turno
+    (si no, no deja nada en la caché) y nunca tumbar la llamada si el proveedor falla."""
+    import asyncio
+
+    from agent import agent as ag
+
+    class Flujo:
+        def __init__(self, falla):
+            self.falla = falla
+
+        async def __aenter__(self):
+            if self.falla:
+                raise RuntimeError("proveedor caído")
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            return "pedazo"
+
+    class Modelo:
+        def __init__(self, falla=False):
+            self.falla, self.visto = falla, None
+
+        def chat(self, chat_ctx, tools):
+            self.visto = (chat_ctx, tools)
+            return Flujo(self.falla)
+
+    class Agente:
+        instructions = "PROMPT DEL NEGOCIO"
+        tools = ["reservar", "consultar"]
+
+    m = Modelo()
+    asyncio.run(ag.calentar_modelo(m, Agente()))
+    ctx, tools = m.visto
+    assert tools == ["reservar", "consultar"]
+    assert ctx.items[0].role == "system" and "PROMPT DEL NEGOCIO" in ctx.items[0].text_content
+    asyncio.run(ag.calentar_modelo(Modelo(falla=True), Agente()))  # no sube la excepción
+    asyncio.run(ag.calentar_modelo(None, Agente()))
