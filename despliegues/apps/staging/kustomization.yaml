@@ -65,10 +65,10 @@ patches:
 images:
   - name: voz
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz
-    newTag: efd8ba946471
+    newTag: ece3ba713921
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
     newTag: f227bdeee466
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
-    newTag: efd8ba946471
+    newTag: ece3ba713921
