@@ -453,6 +453,10 @@ class Agenda:
         crudo = await self.pool.fetchval("select public.resena_responder($1, $2, $3)", tenant_id, telefono, texto)
         return json.loads(crudo) if isinstance(crudo, str) else dict(crudo or {})
 
+    async def interesado_seguimientos(self, limite: int = 50) -> int:
+        """Encola los seguimientos vencidos de Ventas (la función fija el negocio de cada uno)."""
+        return await self.pool.fetchval("select public.interesado_seguimientos($1)", limite) or 0
+
     async def campana_encolar(self, limite: int = 50) -> int:
         return await self.pool.fetchval("select public.campana_encolar($1)", limite) or 0
 

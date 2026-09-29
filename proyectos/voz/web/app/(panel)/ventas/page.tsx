@@ -1,10 +1,13 @@
 import { Encabezado } from "@/components/encabezado";
 import { Interesados } from "@/components/ventas/interesados";
-import { Prototipo } from "@/components/ventas/prototipo";
 import { exigirSeccion } from "@/lib/sesion";
+import { interesados, seguimiento } from "@/lib/ventas";
+
+export const dynamic = "force-dynamic";
 
 export default async function Ventas() {
   const giro = await exigirSeccion("/ventas");
+  const [{ lista, resumen }, { config }] = await Promise.all([interesados(), seguimiento()]);
   return (
     <>
       <Encabezado
@@ -12,8 +15,7 @@ export default async function Ventas() {
         descripcion="Su agente de ventas contesta a cada persona en segundos y le da seguimiento hasta agendar. Aquí ve qué hace y en qué lo necesita."
         giro={giro.nombre}
       />
-      <Prototipo />
-      <Interesados />
+      <Interesados lista={lista} resumen={resumen} activo={config.activo} />
     </>
   );
 }

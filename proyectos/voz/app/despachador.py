@@ -22,6 +22,8 @@ Lo que gobiernan las constantes:
 - `CADA_CIERRE_SEG` y `CONVERSACION_FRIA_MIN`: una conversación de texto se da
   por terminada cuando lleva dos horas sin mensajes; ahí se escribe su cierre.
 - `CADA_CAMPANA_SEG`: cada cuánto se revisa qué campañas tienen a quién hablarle.
+- `CADA_SEGUIMIENTO_SEG`: cada cuánto se encolan los seguimientos a interesados que
+  dejaron de contestar (Ventas; solo negocios que lo activaron).
 
 Las llamadas salientes no reintentan por el outbox. La fila queda terminal
 tras el primer intento y el siguiente lo decide `campana_contacto` con
@@ -54,6 +56,7 @@ HORAS_CANCELAR_SIN_CONFIRMAR = 2
 CADA_CIERRE_SEG = 600
 CONVERSACION_FRIA_MIN = 120
 CADA_CAMPANA_SEG = 300
+CADA_SEGUIMIENTO_SEG = 60
 MAX_INTENTOS_OUTBOX = 6
 # Llamadas salientes marcando a la vez. Compiten con las entrantes por el mismo
 # worker de voz y la misma cuota del modelo; las demás esperan su turno.
@@ -242,7 +245,7 @@ def redactar(plantilla: str, payload: dict) -> str:
             f"Puedes pagar aquí: {payload.get('enlace_url', '')}"
         )
 
-    if plantilla == "campana":
+    if plantilla in ("campana", "seguimiento"):
         return str(payload.get("mensaje") or "").strip()
 
     if plantilla == "confirmacion":
@@ -305,6 +308,7 @@ class Despachador:
         self._ultimo_recordatorio = float("-inf")
         self._ultimo_cierre = float("-inf")
         self._ultima_campana = float("-inf")
+        self._ultimo_seguimiento = float("-inf")
         self._salientes: set[asyncio.Task] = set()
         self._en_vuelo = asyncio.Semaphore(LLAMADAS_EN_VUELO)
         self._cierres: asyncio.Task | None = None
@@ -521,6 +525,12 @@ class Despachador:
                     encolados = await self.campanas()
                     if encolados:
                         log.info("%d contactos de campaña encolados", encolados)
+
+                if ahora - self._ultimo_seguimiento >= CADA_SEGUIMIENTO_SEG:
+                    self._ultimo_seguimiento = ahora
+                    seguidos = await self.agenda.interesado_seguimientos()
+                    if seguidos:
+                        log.info("%d seguimientos a interesados encolados", seguidos)
 
                 if ahora - self._ultimo_cierre >= CADA_CIERRE_SEG and (
                     self._cierres is None or self._cierres.done()

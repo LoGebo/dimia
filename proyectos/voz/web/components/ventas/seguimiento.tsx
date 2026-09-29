@@ -1,58 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { AvatarAgente } from "@/components/avatar-agente";
 import { Boton, Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
+import { guardarSeguimiento } from "@/lib/acciones-ventas";
+import type { ConfigSeguimiento, PasoSeguimiento } from "@/lib/ventas";
+import { AGENTE } from "@/components/ventas/interesados";
 
-type Nivel = "suave" | "normal" | "insistente";
-type Paso = { cuando: string; acciones: string[]; texto?: string };
+const NIVELES = [
+  { clave: "suave", nombre: "Suave", detalle: "1 mensaje si deja de contestar" },
+  { clave: "normal", nombre: "Normal", detalle: "2 mensajes en el día" },
+  { clave: "insistente", nombre: "Insistente", detalle: "3 mensajes en el día" },
+] as const;
 
-const NIVELES: { clave: Nivel; nombre: string; detalle: string; pasos: Paso[] }[] = [
-  { clave: "suave", nombre: "Suave", detalle: "3 intentos · solo WhatsApp", pasos: [
-    { cuando: "Minuto 0", acciones: ["WhatsApp"], texto: "Hola {nombre}, soy la asistente virtual de {negocio}. Vi que pidió informes de {servicio}. ¿Para cuándo le gustaría?" },
-    { cuando: "Día 1", acciones: ["WhatsApp"], texto: "¿Sigue interesado en {servicio}? Tengo espacio esta semana." },
-    { cuando: "Día 4", acciones: ["WhatsApp"], texto: "¿Lo dejamos para después? Aquí estoy cuando lo necesite." },
-  ] },
-  { clave: "normal", nombre: "Normal", detalle: "6 llamadas + 3 WhatsApp en 6 días", pasos: [
-    { cuando: "Minuto 0", acciones: ["Llamada", "WhatsApp"], texto: "Hola {nombre}, soy la asistente virtual de {negocio}. Vi que pidió informes de {servicio}…" },
-    { cuando: "+2 horas", acciones: ["Llamada"] },
-    { cuando: "Día 1", acciones: ["WhatsApp", "Llamada en otra franja"], texto: "¿Sigue interesado en {servicio}?" },
-    { cuando: "Día 3", acciones: ["Llamada"] },
-    { cuando: "Día 5", acciones: ["Llamada"] },
-    { cuando: "Día 6", acciones: ["WhatsApp", "Llamada"], texto: "¿Lo dejamos para después?" },
-  ] },
-  { clave: "insistente", nombre: "Insistente", detalle: "8 llamadas + 4 WhatsApp en 10 días", pasos: [
-    { cuando: "Minuto 0", acciones: ["Llamada", "WhatsApp"] },
-    { cuando: "+1 hora", acciones: ["Llamada"] },
-    { cuando: "+4 horas", acciones: ["Llamada"] },
-    { cuando: "Día 1", acciones: ["WhatsApp", "Llamada"] },
-    { cuando: "Día 2", acciones: ["Llamada"] },
-    { cuando: "Día 4", acciones: ["WhatsApp", "Llamada"] },
-    { cuando: "Día 7", acciones: ["Llamada"] },
-    { cuando: "Día 10", acciones: ["WhatsApp", "Llamada"], texto: "¿Lo dejamos para después?" },
-  ] },
-];
+/** Cómo trabaja el agente a los interesados: un nivel ya armado y, si se quiere, los mensajes a mano. */
+export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; niveles: Record<string, Record<"usted" | "tu", PasoSeguimiento[]>> }) {
+  const [c, setC] = useState<ConfigSeguimiento>(inicial);
+  const [editar, setEditar] = useState(inicial.nivel === "propio");
+  const [aviso, setAviso] = useState<{ ok?: string; error?: string }>({});
+  const [guardando, iniciar] = useTransition();
+  const pasos: PasoSeguimiento[] = c.nivel === "propio" && c.pasos ? c.pasos : niveles[c.nivel]?.[c.trato] ?? [];
+  const cambiar = (x: Partial<ConfigSeguimiento>) => { setC((v) => ({ ...v, ...x })); setAviso({}); };
 
-/** Cómo trabaja el agente a los interesados: un nivel ya armado y, si se quiere, los pasos a mano. */
-export function Seguimiento() {
-  const [nivel, setNivel] = useState<Nivel>("normal");
-  const [canales, setCanales] = useState({ Llamada: true, WhatsApp: true, Correo: false });
-  const [preguntas, setPreguntas] = useState(["¿Qué servicio busca?", "¿Para cuándo lo necesita?", "¿En qué sucursal le queda mejor?"]);
-  const [editar, setEditar] = useState(false);
-  const elegido = NIVELES.find((n) => n.clave === nivel)!;
+  function editarPaso(n: number, mensaje: string) {
+    cambiar({ nivel: "propio", pasos: pasos.map((p, k) => (k === n ? { ...p, mensaje } : p)) });
+  }
 
   return (
     <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px]">
       <div className="space-y-5">
+        <Tarjeta className="flex flex-wrap items-center gap-4 p-5">
+          <AvatarAgente nombre={AGENTE.nombre} avatar={AGENTE.avatar} tamano={40} activo={c.activo} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold text-tinta">{c.activo ? `${AGENTE.nombre} da seguimiento` : "Seguimiento apagado"}</p>
+            <p className="text-[13px] text-tinta-2">{c.activo ? "Si alguien deja de contestar, le vuelve a escribir según esto." : `${AGENTE.nombre} contesta a todos, pero no le vuelve a escribir a quien deja de responder.`}</p>
+          </div>
+          <button onClick={() => cambiar({ activo: !c.activo })} className={`h-9 rounded-full px-5 text-[14px] font-semibold ${c.activo ? "border border-linea bg-panel text-tinta-2" : "bg-acento text-acento-tinta hover:brightness-110"}`}>
+            {c.activo ? "Apagar" : "Encender"}
+          </button>
+        </Tarjeta>
+
         <Tarjeta>
-          <TarjetaCabecera titulo="¿Qué tanto insiste el agente?" descripcion="Se detiene solo si agenda, si le dicen que no o si piden no ser contactados." />
+          <TarjetaCabecera titulo="¿Qué tanto insiste?" descripcion="Se detiene solo si agenda, si le dicen que no, si piden baja o si usted toma la conversación." />
           <div className="grid gap-3 p-5 sm:grid-cols-3">
             {NIVELES.map((n) => (
-              <button key={n.clave} onClick={() => setNivel(n.clave)} className={`rounded-lg border p-4 text-left ${nivel === n.clave ? "border-acento bg-acento-suave" : "border-linea hover:bg-panel-2"}`}>
+              <button key={n.clave} onClick={() => { cambiar({ nivel: n.clave, pasos: null }); setEditar(false); }} className={`rounded-lg border p-4 text-left ${c.nivel === n.clave ? "border-acento bg-acento-suave" : "border-linea hover:bg-panel-2"}`}>
                 <div className="text-[15px] font-bold text-tinta">{n.nombre}</div>
                 <div className="mt-1 text-[12.5px] text-tinta-2">{n.detalle}</div>
               </button>
             ))}
           </div>
+          {c.nivel === "propio" ? <p className="px-5 pb-4 text-[13px] text-tinta-2">Con mensajes propios.</p> : null}
         </Tarjeta>
 
         <Tarjeta>
@@ -60,26 +58,23 @@ export function Seguimiento() {
           <div className="space-y-4 p-5 text-[13.5px]">
             <div className="flex flex-wrap items-center gap-4">
               <span className="w-36 text-tinta-2">Canales</span>
-              {(Object.keys(canales) as (keyof typeof canales)[]).map((c) => (
-                <label key={c} className="flex items-center gap-2 text-tinta">
-                  <input type="checkbox" checked={canales[c]} onChange={() => setCanales((x) => ({ ...x, [c]: !x[c] }))} /> {c}
-                </label>
-              ))}
+              <label className="flex items-center gap-2 text-tinta"><input type="checkbox" checked readOnly /> WhatsApp e Instagram</label>
+              <label className="flex items-center gap-2 text-tinta-3"><input type="checkbox" disabled /> Llamada <span className="text-[12px]">(pronto)</span></label>
+              <label className="flex items-center gap-2 text-tinta-3"><input type="checkbox" disabled /> Correo <span className="text-[12px]">(pronto)</span></label>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="w-36 text-tinta-2">Horario</span>
-              <select className="h-8 rounded-md border border-linea bg-panel px-2"><option>Lunes a sábado</option><option>Lunes a viernes</option><option>Todos los días</option></select>
-              <input type="time" defaultValue="09:00" className="h-8 rounded-md border border-linea bg-panel px-2 tabular-nums" /> a
-              <input type="time" defaultValue="20:00" className="h-8 rounded-md border border-linea bg-panel px-2 tabular-nums" />
-              <span className="text-tinta-3">hora del interesado</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="w-36 text-tinta-2">Objetivo</span>
-              <select className="h-8 rounded-md border border-linea bg-panel px-2"><option>Agendar cita</option><option>Mandar cotización</option><option>Visita a sucursal</option></select>
+              <select value={c.dias} onChange={(e) => cambiar({ dias: e.target.value as ConfigSeguimiento["dias"] })} className="h-8 rounded-md border border-linea bg-panel px-2">
+                <option value="lun-sab">Lunes a sábado</option><option value="lun-vie">Lunes a viernes</option><option value="todos">Todos los días</option>
+              </select>
+              <input type="time" value={c.hora_inicio} onChange={(e) => cambiar({ hora_inicio: e.target.value })} className="h-8 rounded-md border border-linea bg-panel px-2 tabular-nums" /> a
+              <input type="time" value={c.hora_fin} onChange={(e) => cambiar({ hora_fin: e.target.value })} className="h-8 rounded-md border border-linea bg-panel px-2 tabular-nums" />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="w-36 text-tinta-2">Trato</span>
-              <select className="h-8 rounded-md border border-linea bg-panel px-2"><option>Usted</option><option>Tú</option></select>
+              <select value={c.trato} onChange={(e) => cambiar({ trato: e.target.value as "usted" | "tu", ...(c.nivel === "propio" ? {} : { pasos: null }) })} className="h-8 rounded-md border border-linea bg-panel px-2">
+                <option value="usted">Usted</option><option value="tu">Tú</option>
+              </select>
             </div>
           </div>
         </Tarjeta>
@@ -87,50 +82,56 @@ export function Seguimiento() {
         <Tarjeta>
           <TarjetaCabecera titulo="Preguntas antes de agendar" descripcion="Máximo 4. El agente las hace en orden natural, no como encuesta." />
           <div className="space-y-2 p-5">
-            {preguntas.map((p, n) => (
+            {c.preguntas.map((p, n) => (
               <div key={n} className="flex items-center gap-2">
                 <span className="w-5 text-right text-[13px] tabular-nums text-tinta-3">{n + 1}.</span>
-                <input value={p} onChange={(e) => setPreguntas((l) => l.map((x, k) => (k === n ? e.target.value : x)))} className="h-8 flex-1 rounded-md border border-linea bg-panel px-2 text-[13.5px]" />
-                <button onClick={() => setPreguntas((l) => l.filter((_, k) => k !== n))} className="text-[12.5px] text-tinta-3 hover:text-critico">Quitar</button>
+                <input value={p} onChange={(e) => cambiar({ preguntas: c.preguntas.map((x, k) => (k === n ? e.target.value : x)) })} className="h-8 flex-1 rounded-md border border-linea bg-panel px-2 text-[13.5px]" />
+                <button onClick={() => cambiar({ preguntas: c.preguntas.filter((_, k) => k !== n) })} className="text-[12.5px] text-tinta-3 hover:text-critico">Quitar</button>
               </div>
             ))}
-            {preguntas.length < 4 ? <Boton variante="fantasma" onClick={() => setPreguntas((l) => [...l, ""])}>+ Agregar pregunta</Boton> : null}
+            {c.preguntas.length < 4 ? <Boton variante="fantasma" onClick={() => cambiar({ preguntas: [...c.preguntas, ""] })}>+ Agregar pregunta</Boton> : null}
           </div>
         </Tarjeta>
 
         <Tarjeta>
-          <TarjetaCabecera titulo="Cuándo pasa a una persona" descripcion="Le llega un aviso con el resumen y la conversación completa." />
-          <div className="flex flex-wrap gap-2 p-5 text-[13px]">
-            {["Pregunta un precio fuera del catálogo", "Se molesta o se queja", "Pide hablar con una persona", "Pregunta algo médico o legal"].map((r) => (
-              <label key={r} className="flex items-center gap-2 rounded-md border border-linea px-3 py-1.5"><input type="checkbox" defaultChecked /> {r}</label>
+          <TarjetaCabecera titulo="Cuándo pasa a una persona" descripcion="Le llega el aviso con la conversación completa." />
+          <div className="space-y-2 p-5">
+            {c.escalar.map((r, n) => (
+              <div key={n} className="flex items-center gap-2">
+                <input value={r} onChange={(e) => cambiar({ escalar: c.escalar.map((x, k) => (k === n ? e.target.value : x)) })} className="h-8 flex-1 rounded-md border border-linea bg-panel px-2 text-[13.5px]" />
+                <button onClick={() => cambiar({ escalar: c.escalar.filter((_, k) => k !== n) })} className="text-[12.5px] text-tinta-3 hover:text-critico">Quitar</button>
+              </div>
             ))}
-            <Boton variante="fantasma">+ Otra regla</Boton>
+            <Boton variante="fantasma" onClick={() => cambiar({ escalar: [...c.escalar, ""] })}>+ Otra regla</Boton>
           </div>
         </Tarjeta>
+
+        <div className="flex items-center gap-3">
+          <button disabled={guardando} onClick={() => iniciar(async () => setAviso(await guardarSeguimiento({ ...c, pasos: c.nivel === "propio" ? pasos : null })))} className="h-10 rounded-full bg-acento px-6 text-[14.5px] font-semibold text-acento-tinta hover:brightness-110 disabled:opacity-60">
+            {guardando ? "Guardando…" : "Guardar"}
+          </button>
+          {aviso.ok ? <span className="text-[13.5px] text-bueno">{aviso.ok}</span> : null}
+          {aviso.error ? <span className="text-[13.5px] text-critico">{aviso.error}</span> : null}
+        </div>
       </div>
 
       <Tarjeta className="self-start">
         <TarjetaCabecera
-          titulo={`Pasos · ${elegido.nombre}`}
-          descripcion="Así sigue a cada interesado."
-          accion={<Boton variante="contorno" onClick={() => setEditar((v) => !v)}>{editar ? "Listo" : "Personalizar pasos"}</Boton>}
+          titulo="Lo que escribe si deja de contestar"
+          descripcion="Horas desde su última respuesta. Todo cabe en la ventana de 24 h de WhatsApp."
+          accion={<Boton variante="contorno" onClick={() => setEditar((v) => !v)}>{editar ? "Listo" : "Personalizar"}</Boton>}
         />
         <ol className="relative space-y-4 p-5">
-          {elegido.pasos.map((p, n) => (
+          {pasos.map((p, n) => (
             <li key={n} className="relative pl-6">
-              <span className="absolute left-0 top-1.5 h-2.5 w-2.5 bg-acento" />
-              {n < elegido.pasos.length - 1 ? <span className="absolute left-[4px] top-4 h-[calc(100%+4px)] w-px bg-linea" /> : null}
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-semibold tabular-nums text-tinta">{p.cuando}</span>
-                <span className="text-[12.5px] text-tinta-2">{p.acciones.filter((a) => canales[a.split(" ")[0] as keyof typeof canales] !== false).join(" + ")}</span>
-              </div>
-              {p.texto ? (editar
-                ? <textarea defaultValue={p.texto} className="mt-1 w-full rounded-md border border-linea bg-panel p-2 text-[12.5px]" rows={2} />
-                : <p className="mt-1 text-[12.5px] text-tinta-3">«{p.texto}»</p>) : null}
+              <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-acento" />
+              <div className="text-[13px] font-semibold tabular-nums text-tinta">A las {p.horas} h</div>
+              {editar
+                ? <textarea value={p.mensaje} onChange={(e) => editarPaso(n, e.target.value)} className="mt-1 w-full rounded-md border border-linea bg-panel p-2 text-[13px]" rows={2} />
+                : <p className="mt-1 text-[13px] text-tinta-2">«{p.mensaje}»</p>}
             </li>
           ))}
-          <li className="pl-6 text-[12.5px] text-tinta-3">Fin: pasa a novedades mensuales solo si aceptó recibirlas.</li>
-          {editar ? <li className="pl-6"><Boton variante="fantasma">+ Agregar paso</Boton></li> : null}
+          <li className="pl-6 text-[12.5px] text-tinta-3">Si no contesta en 24 h más, se da por cerrado. {"{nombre}"} se cambia por el nombre de la persona.</li>
         </ol>
       </Tarjeta>
     </div>
