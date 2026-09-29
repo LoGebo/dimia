@@ -56,10 +56,16 @@ patches:
       - op: add
         path: /spec/loadBalancerSourceRanges
         value: ["10.20.216.0/21"]
+  # Deepgram Flux decide el fin de turno (~250 ms contra ~630 ms del detector aparte).
+  - target: { kind: Deployment, name: voz-worker }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value: { name: TURNO_POR_STT, value: "true" }
 images:
   - name: voz
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/voz
-    newTag: b520ea06156f
+    newTag: 83c1b98d5516
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
     newTag: 31f5b3d43272
