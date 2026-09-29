@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { MessageSquareText } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { marcarResultado, tomarInteresado } from "@/lib/acciones-ventas";
+import { elegirDecision, marcarResultado, tomarInteresado } from "@/lib/acciones-ventas";
 import type { Grupo, InteresadoReal, Resumen } from "@/lib/ventas";
 
 export const AGENTE = { nombre: "Vendedora", avatar: "pastilla:#3fb68b" };
@@ -37,6 +37,7 @@ function enCuanto(t: string): string {
 export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[]; resumen: Resumen; activo: boolean }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
+  const [avisoDecision, setAvisoDecision] = useState<{ ok?: string; error?: string }>({});
   const necesitan = lista.filter((i) => i.grupo === "persona");
   const [vista, setVista] = useState<"necesita" | "todos">(necesitan.length ? "necesita" : "todos");
   const visibles = vista === "necesita" ? necesitan : lista;
@@ -134,12 +135,31 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                     </div>
                   );
                 })}
-                {elegido.grupo === "persona" ? (
+                {elegido.decision ? (
+                  <div className="flex items-start gap-2 pt-2">
+                    <AvatarAgente nombre={AGENTE.nombre} avatar={AGENTE.avatar} tamano={28} />
+                    <div className="w-full max-w-[560px] rounded-2xl border border-acento/40 bg-acento-suave/50 p-4">
+                      <p className="text-[15px] leading-snug text-tinta">{elegido.decision.pregunta}</p>
+                      <div className="mt-3 space-y-2">
+                        {elegido.decision.opciones.map((o) => (
+                          <button key={o.letra} disabled={pendiente} onClick={() => iniciar(async () => { setAvisoDecision(await elegirDecision(elegido.decision!.id, o.letra)); router.refresh(); })}
+                            className="flex w-full items-start gap-3 rounded-xl border border-linea bg-panel px-3 py-2.5 text-left hover:border-acento/60 disabled:opacity-60">
+                            <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-linea text-[12.5px] font-semibold text-tinta">{o.letra}</span>
+                            <span><span className="block text-[14.5px] text-tinta">{o.titulo}</span>{o.mensaje ? <span className="text-[13px] text-tinta-3">«{o.mensaje}»</span> : <span className="text-[13px] text-tinta-3">Usted le escribe desde Mensajes</span>}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                {avisoDecision.ok ? <p className="text-center text-[13.5px] text-bueno">{avisoDecision.ok}</p> : null}
+                {avisoDecision.error ? <p className="text-center text-[13.5px] text-critico">{avisoDecision.error}</p> : null}
+                {elegido.grupo === "persona" && !elegido.decision ? (
                   <div className="flex items-start gap-2 pt-2">
                     <AvatarAgente nombre={AGENTE.nombre} avatar={AGENTE.avatar} tamano={28} />
                     <div className="w-full max-w-[560px] rounded-2xl border border-acento/40 bg-acento-suave/50 p-4">
                       <p className="text-[15px] leading-snug text-tinta">
-                        {primer} necesita a una persona{elegido.lectura ? `: ${elegido.lectura}` : "."} Yo ya no le escribo; contéstele usted desde Mensajes.
+                        {primer} necesita a una persona{elegido.lectura ? `: ${elegido.lectura}` : "."} {elegido.tomado ? "La conversación la lleva usted." : "Estoy preparando opciones de respuesta para usted; mientras, puede contestarle desde Mensajes."}
                       </p>
                       {elegido.conversacionId ? (
                         <Link href={`/bandeja/${elegido.conversacionId}`} className="mt-3 inline-flex h-9 items-center rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta hover:brightness-110">Contestarle</Link>

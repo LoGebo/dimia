@@ -31,6 +31,7 @@ export type InteresadoReal = {
   primerToqueSeg: number | null;
   consentimiento: string | null;
   hilo: EventoHilo[];
+  decision: { id: string; pregunta: string; opciones: { letra: string; titulo: string; mensaje: string }[] } | null;
 };
 
 export type Resumen = { activos: number; seguimientos: number; hoy: number; citasHoy: number; p50: number | null; proximo: { nombre: string; en: string } | null };
@@ -68,6 +69,10 @@ export function interesados(): Promise<{ lista: InteresadoReal[]; resumen: Resum
     );
     const ids = filas.map((f) => f.id);
     const convs = filas.map((f) => f.conversacion_id).filter(Boolean) as string[];
+    const decisiones = ids.length
+      ? await q<{ id: string; interesado_id: string; pregunta: string; opciones: { letra: string; titulo: string; mensaje: string }[] }>(
+          "select id, interesado_id, pregunta, opciones from decision_dueno where interesado_id = any($1::uuid[]) and elegida is null", [ids])
+      : [];
     const [mensajes, eventos, resumen] = await Promise.all([
       convs.length
         ? q<{ conversacion_id: string; autor: string; texto: string; creado: string; herramienta: string | null }>(
@@ -113,6 +118,7 @@ export function interesados(): Promise<{ lista: InteresadoReal[]; resumen: Resum
         proxima: f.proxima_accion_en, creado: f.creado,
         primerToqueSeg: f.primer_toque_en ? Math.round((+new Date(f.primer_toque_en) - +new Date(f.creado)) / 1000) : null,
         consentimiento: f.consentimiento, hilo: hilo.map(({ t: _t, ...h }) => h),
+        decision: (() => { const d = decisiones.find((x) => x.interesado_id === f.id); return d ? { id: d.id, pregunta: d.pregunta, opciones: d.opciones } : null; })(),
       };
     });
     const r = resumen[0]!;

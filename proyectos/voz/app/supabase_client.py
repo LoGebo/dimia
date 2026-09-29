@@ -453,6 +453,17 @@ class Agenda:
         crudo = await self.pool.fetchval("select public.resena_responder($1, $2, $3)", tenant_id, telefono, texto)
         return json.loads(crudo) if isinstance(crudo, str) else dict(crudo or {})
 
+    async def interesados_por_decidir(self, limite: int = 20) -> list[dict]:
+        """Interesados que esperan a una persona sin opciones propuestas (cruza negocios)."""
+        return [dict(f) for f in await self.pool.fetch("select * from public.interesados_por_decidir($1)", limite)]
+
+    async def decision_guardar(self, tenant_id: uuid.UUID, interesado_id: uuid.UUID, pregunta: str, opciones: list[dict]) -> None:
+        await self.pool.execute(
+            """insert into decision_dueno (tenant_id, interesado_id, pregunta, opciones)
+               values ($1, $2, $3, $4::jsonb) on conflict do nothing""",
+            tenant_id, interesado_id, pregunta, json.dumps(opciones, ensure_ascii=False),
+        )
+
     async def interesado_seguimientos(self, limite: int = 50) -> int:
         """Encola los seguimientos vencidos de Ventas (la función fija el negocio de cada uno)."""
         return await self.pool.fetchval("select public.interesado_seguimientos($1)", limite) or 0

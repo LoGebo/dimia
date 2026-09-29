@@ -73,3 +73,47 @@ export async function marcarResultado(id: string, resultado: string): Promise<Es
   revalidatePath("/ventas");
   return {};
 }
+
+/**
+ * El dueño eligió una de las respuestas que le propuso el agente. Sale como mensaje del agente
+ * (dentro de la ventana de 24 h) y la conversación vuelve al agente. «Le contesto yo» la toma.
+ */
+export async function elegirDecision(decisionId: string, letra: string): Promise<EstadoVentas> {
+  try {
+    return await datos(async (q, negocioId) => {
+      const [d] = await q<{ interesado_id: string; opciones: { letra: string; mensaje: string }[]; conversacion_id: string | null; canal: string | null; contacto: string | null; ultimo: string | null }>(
+        `select d.interesado_id, d.opciones, i.conversacion_id, c.canal::text canal, c.contacto,
+                i.ultimo_mensaje_cliente_en ultimo
+           from decision_dueno d join interesado i on i.id = d.interesado_id
+           left join conversacion c on c.id = i.conversacion_id
+          where d.id = $1 and d.tenant_id = $2 and d.elegida is null`, [decisionId, negocioId]);
+      if (!d) return { error: "Esa decisión ya se tomó." };
+      const opcion = d.opciones.find((o) => o.letra === letra);
+      if (!opcion) return { error: "Opción no válida." };
+      if (!opcion.mensaje) {
+        await q("update decision_dueno set elegida = $2, resuelta_en = now() where id = $1", [decisionId, letra]);
+        await q("update interesado set tomado_por_persona = true, actualizado = now() where id = $1", [d.interesado_id]);
+        await q("select public.interesado_evento_registrar($1, 'tomado', null, '{}'::jsonb)", [d.interesado_id]);
+        return { ok: "La conversación es suya. Contéstele desde Mensajes." };
+      }
+      if (!d.conversacion_id || !d.canal || !d.contacto) return { error: "No encuentro la conversación de esta persona." };
+      if (!d.ultimo || Date.now() - +new Date(d.ultimo) > 23 * 3600 * 1000) {
+        return { error: "Pasaron más de 24 h desde su último mensaje: WhatsApp ya no deja escribirle libre. Contéstele desde Mensajes." };
+      }
+      await q("update decision_dueno set elegida = $2, resuelta_en = now() where id = $1", [decisionId, letra]);
+      await q(
+        `insert into outbox (tenant_id, interesado_id, canal, destino, plantilla, payload)
+         values ($1, $2, $3, $4, 'seguimiento', jsonb_build_object('mensaje', $5::text, 'interesado_id', $7::text, 'decision', $6::text))`,
+        [negocioId, d.interesado_id, d.canal, d.contacto, opcion.mensaje, decisionId, d.interesado_id]);
+      // Primero la etapa: así el trigger del mensaje ya programa el seguimiento normal.
+      await q("update interesado set etapa = 'en_conversacion', actualizado = now() where id = $1", [d.interesado_id]);
+      await q("update conversacion set estado = 'abierta' where id = $1", [d.conversacion_id]);
+      await q("insert into mensaje (conversacion_id, tenant_id, autor, texto, herramienta) values ($1, $2, 'agente', $3, 'decision')",
+        [d.conversacion_id, negocioId, opcion.mensaje]);
+      await q("select public.interesado_evento_registrar($1, 'decision', $2, jsonb_build_object('letra', $3::text))", [d.interesado_id, d.canal, letra]);
+      return { ok: "Enviado. El agente sigue con la conversación." };
+    }).finally(() => revalidatePath("/ventas"));
+  } catch {
+    return { error: "No se pudo enviar. Intente de nuevo." };
+  }
+}

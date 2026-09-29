@@ -78,3 +78,36 @@ async def test_ciclo_del_interesado():
         await admin.execute("delete from interesado where contacto = $1", contacto)
         await admin.execute("delete from conversacion where contacto = $1", contacto)
         await admin.close()
+
+
+class _Modelo:
+    def __init__(self, entrada):
+        self.entrada = entrada
+        self.messages = self
+
+    async def create(self, **kw):
+        self.kw = kw
+        return type("R", (), {"content": [{"type": "tool_use", "name": "proponer_respuestas", "input": self.entrada}]})()
+
+
+@pytest.mark.asyncio
+async def test_proponer_agrega_contesto_yo_y_letras():
+    from app.decisiones import proponer
+
+    m = _Modelo({"pregunta": "Laura quiere precio familiar. ¿Qué le digo?", "opciones": [
+        {"titulo": "Ofrecer 10 % por 4", "mensaje": "Le hago 10 % por las 4 limpiezas."},
+        {"titulo": "Precio normal", "mensaje": "Cada limpieza cuesta lo mismo."},
+        {"titulo": "", "mensaje": ""},
+    ]})
+    p = await proponer(m, [{"autor": "cliente", "texto": "¿Precio para 4?"}], "precio fuera de catálogo")
+    assert p and [o["letra"] for o in p.opciones] == ["A", "B", "C"]
+    assert p.opciones[-1] == {"titulo": "Le contesto yo", "mensaje": "", "letra": "C"}
+    assert "precio fuera de catálogo" in m.kw["messages"][0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_proponer_sin_opciones_utiles_no_propone():
+    from app.decisiones import proponer
+
+    assert await proponer(_Modelo({"pregunta": "x", "opciones": [{"titulo": "a", "mensaje": "hola"}]}), [{"autor": "cliente", "texto": "hola"}], None) is None
+    assert await proponer(_Modelo({}), [], None) is None

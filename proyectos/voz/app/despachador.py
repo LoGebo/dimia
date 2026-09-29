@@ -450,6 +450,23 @@ class Despachador:
             log.info("%d campañas terminadas", cerradas)
         return await self.agenda.campana_encolar()
 
+    async def decisiones(self) -> int:
+        """A quien el agente pasó a una persona, el dueño le recibe 2-3 respuestas listas (A/B/C)."""
+        if self.llm is None:
+            return 0
+        from app.decisiones import proponer
+
+        hechas = 0
+        for fila in await self.agenda.interesados_por_decidir():
+            with en_negocio(fila["tenant_id"]):
+                turnos = await self.agenda.turnos_de_conversacion(fila["conversacion_id"], limite=40)
+                propuesta = await proponer(self.llm, turnos, fila.get("lectura"))
+                if propuesta is None:
+                    continue
+                await self.agenda.decision_guardar(fila["tenant_id"], fila["id"], propuesta.pregunta, propuesta.opciones)
+                hechas += 1
+        return hechas
+
     async def cierres(self) -> int:
         """Escribe motivo, resultado y resumen de las conversaciones frias.
 
@@ -531,6 +548,9 @@ class Despachador:
                     seguidos = await self.agenda.interesado_seguimientos()
                     if seguidos:
                         log.info("%d seguimientos a interesados encolados", seguidos)
+                    propuestas = await self.decisiones()
+                    if propuestas:
+                        log.info("%d decisiones propuestas al dueño", propuestas)
 
                 if ahora - self._ultimo_cierre >= CADA_CIERRE_SEG and (
                     self._cierres is None or self._cierres.done()
