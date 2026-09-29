@@ -207,7 +207,9 @@ class Ec2:
     async def parar(self, referencia):
         """Hiberna: al despertar Hermes y Chromium siguen vivos (~10 s contra ~35 s en frío). Si la
         instancia no puede (se creó sin hibernación o el agente aún no la prepara), apagado normal."""
-        for hibernar in (True, False):
+        # ponytail: apagada por omisión; en AL2023 la hibernación dejó las casas en «stopping» más
+        # de 10 min (no se pueden despertar mientras). Se prende con EC2_HIBERNAR cuando se pruebe.
+        for hibernar in ((True, False) if config.EC2_HIBERNAR else (False,)):
             try:
                 await self._api("stop_instances", InstanceIds=[referencia], Hibernate=hibernar)
                 return

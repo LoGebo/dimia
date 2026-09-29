@@ -608,9 +608,14 @@ def test_ec2_parar_hiberna_y_si_no_puede_apaga(monkeypatch):
         return {}
 
     monkeypatch.setattr(p, "_api", api)
+    monkeypatch.setattr(config, "EC2_HIBERNAR", True)
     falla = False
     asyncio.run(p.parar("i-1"))
     assert llamadas == [True]
     falla, llamadas[:] = True, []
     asyncio.run(p.parar("i-1"))
     assert llamadas == [True, False]
+    monkeypatch.setattr(config, "EC2_HIBERNAR", False)
+    llamadas[:] = []
+    asyncio.run(p.parar("i-1"))
+    assert llamadas == [False]

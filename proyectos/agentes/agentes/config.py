@@ -24,7 +24,8 @@ FLY_REGION = os.environ.get("FLY_REGION", "dfw")
 EC2_PLANTILLA = os.environ.get("EC2_PLANTILLA", "")
 EC2_SUBREDES = os.environ.get("EC2_SUBREDES", "")
 EC2_ENTORNO = os.environ.get("EC2_ENTORNO", "")
-EC2_REGION = os.environ.get("AWS_REGION", "mx-central-1")  # botocore solo lee AWS_DEFAULT_REGION
+EC2_REGION = os.environ.get("AWS_REGION", "mx-central-1")
+EC2_HIBERNAR = os.environ.get("EC2_HIBERNAR", "") == "1"  # botocore solo lee AWS_DEFAULT_REGION
 # Redes de las subredes hermes: lo que llega de ahí por el NLB interno es una máquina (api._maquina_autorizada).
 HERMES_REDES = [r for r in os.environ.get("HERMES_REDES", "").split(",") if r]
 HERMES_IMAGEN = os.environ.get("HERMES_IMAGEN", "registry.fly.io/dimia-cerebros:hermes-v15")  # imagen/ : Hermes + pantallas (v15: pantallas solo en localhost + compuerta, sin llaves en la máquina)
