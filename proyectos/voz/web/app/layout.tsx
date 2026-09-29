@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { RecargaVersion } from "@/components/recarga-version";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -44,7 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: guionTema }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <RecargaVersion />
+        {children}
+      </body>
     </html>
   );
 }

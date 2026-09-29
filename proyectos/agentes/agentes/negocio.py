@@ -710,7 +710,7 @@ async def mensaje_en_curso(tenant: str, agente_id: str, texto: str, ruta: str | 
                 await db.ejecutar("insert into agente_mensaje (tenant_id, agente_id, de, texto) values ($1, $2, 'yo', $3)", tenant, agente_id, texto)
                 await t.publicar({"evento": "guiado", "texto": texto})
                 return "guiado"
-        except httpx.HTTPError as e:
+        except (httpx.HTTPError, RuntimeError) as e:  # RuntimeError: el turno ya cerró su cliente; se forma
             log.info("steer %s: %s", agente_id, e)
     _colas.setdefault(agente_id, []).append((texto, ruta, adjuntos))
     nombres = [f"[{ad.get('tipo')}: {ad.get('nombre', '')}]" for ad in adjuntos or []]
