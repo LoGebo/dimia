@@ -27,6 +27,7 @@ from channels.whatsapp import deterministas, plantilla
 from channels.whatsapp.agente import NO_SOPORTADO, _accion_de_confirmacion, _momento, opcion_escrita
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas
+from channels.whatsapp.plantilla import ventas_de
 from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
 
 log = logging.getLogger("social.agente")
@@ -63,6 +64,7 @@ class ContextoNegocio:
     plantilla: dict | None = None
     herramientas_giro: list[str] = field(default_factory=list)
     reglas: list[dict] = field(default_factory=list)
+    ventas: dict | None = None
 
 
 class AgenteSocial:
@@ -95,15 +97,17 @@ class AgenteSocial:
         if tenant is None:
             return None
 
-        servicios, faq, catalogo, plantilla_giro, reglas = await asyncio.gather(
+        servicios, faq, catalogo, plantilla_giro, reglas, ventas = await asyncio.gather(
             self.agenda.servicios(tenant.id),
             self.agenda.faq(tenant.id),
             self.agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
             self.agenda.plantilla_vertical(tenant.vertical),
             self.agenda.wa_reglas(tenant.id),
+            ventas_de(self.agenda, tenant.id),
         )
         contexto = ContextoNegocio(
             tenant, servicios, faq, time.monotonic(),
+            ventas=ventas,
             catalogo=catalogo,
             plantilla=plantilla_giro,
             herramientas_giro=list((plantilla_giro or {}).get("herramientas", [])),
@@ -148,6 +152,7 @@ class AgenteSocial:
                 contexto.tenant, contexto.servicios, contexto.faq,
                 catalogo=contexto.catalogo, plantilla=contexto.plantilla,
                 nombre_cliente=nombre_plausible(sesion.nombre_perfil),
+                ventas=contexto.ventas,
             )
             system.append({"type": "text", "text": SE_CONTESTA_CORTO})
 

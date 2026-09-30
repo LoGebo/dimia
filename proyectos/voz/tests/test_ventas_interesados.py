@@ -379,3 +379,10 @@ async def test_si_a_la_pregunta_de_promociones_registra_el_consentimiento():
         await admin.execute("delete from interesado where contacto = $1", contacto)
         await admin.execute("delete from conversacion where contacto = $1", contacto)
         await admin.close()
+
+
+def test_lo_que_fijo_el_dueno_llega_al_prompt():
+    from channels.whatsapp.plantilla import bloque_ventas
+    assert bloque_ventas(None) == "" and bloque_ventas({"objetivo": "agendar", "preguntas": [], "escalar": []}) == ""
+    texto = bloque_ventas({"objetivo": "vender el paquete de limpieza", "preguntas": ["¿Tiene seguro?"], "escalar": ["pide factura"]})
+    assert "paquete de limpieza" in texto and "¿Tiene seguro?" in texto and "pide factura" in texto

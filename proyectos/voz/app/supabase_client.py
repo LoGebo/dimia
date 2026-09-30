@@ -662,6 +662,16 @@ class Agenda:
             for f in filas
         ]
 
+    async def ventas_config(self, tenant_id: uuid.UUID) -> dict | None:
+        """Objetivo, preguntas y reglas de escalamiento que el dueño fijó en Ventas."""
+        fila = await self.pool.fetchrow(
+            "select objetivo, preguntas, escalar from seguimiento_config where tenant_id = $1", tenant_id
+        )
+        if fila is None:
+            return None
+        cargar = lambda v: json.loads(v) if isinstance(v, str) else list(v or [])  # noqa: E731
+        return {"objetivo": fila["objetivo"], "preguntas": cargar(fila["preguntas"]), "escalar": cargar(fila["escalar"])}
+
     async def wa_reglas(self, tenant_id: uuid.UUID) -> list[dict]:
         """Las reglas deterministas de WhatsApp del negocio, en orden."""
         filas = await self.pool.fetch(

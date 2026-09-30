@@ -17,6 +17,7 @@ from channels.whatsapp.cliente import Salida, SalidaLista, SalidaTexto
 from channels.whatsapp.config import WhatsAppSettings, whatsapp_settings
 from channels.whatsapp.herramientas import CATALOGO_EN_PROMPT, Herramientas, fecha_larga, reloj
 from channels.whatsapp.parser import MensajeEntrante
+from channels.whatsapp.plantilla import ventas_de
 from channels.whatsapp.sesion import RegistroSesiones, nombre_plausible
 
 log = logging.getLogger("whatsapp")
@@ -46,6 +47,7 @@ class ContextoNegocio:
     faq: list[dict]
     cargado: float
     reglas: list[dict] = field(default_factory=list)
+    ventas: dict | None = None
     catalogo: list[dict] = field(default_factory=list)
     plantilla: dict | None = None
     herramientas_giro: list[str] = field(default_factory=list)
@@ -154,15 +156,17 @@ class AgenteWhatsApp:
         tenant = await self.agenda.tenant_por_telefono(numero_negocio)
         if tenant is None:
             return None
-        servicios, faq, catalogo, plantilla, reglas = await asyncio.gather(
+        servicios, faq, catalogo, plantilla, reglas, ventas = await asyncio.gather(
             self.agenda.servicios(tenant.id),
             self.agenda.faq(tenant.id),
             self.agenda.catalogo_resumen(tenant.id, CATALOGO_EN_PROMPT),
             self.agenda.plantilla_vertical(tenant.vertical),
             self.agenda.wa_reglas(tenant.id),
+            ventas_de(self.agenda, tenant.id),
         )
         contexto = ContextoNegocio(
             tenant, servicios, faq, time.monotonic(),
+            ventas=ventas,
             reglas=reglas,
             catalogo=catalogo,
             plantilla=plantilla,
@@ -421,6 +425,7 @@ class AgenteWhatsApp:
                 contexto.tenant, contexto.servicios, contexto.faq,
                 catalogo=contexto.catalogo, plantilla=contexto.plantilla,
                 nombre_cliente=nombre_plausible(sesion.nombre_perfil),
+                ventas=contexto.ventas,
             ),
             sesion=sesion,
             herramientas=herramientas,

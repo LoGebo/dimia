@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
+from typing import Any
 
 from app import prompt as prompt_voz
 from app.supabase_client import Tenant
@@ -67,6 +68,7 @@ def contexto(
     catalogo: list[dict] | None = None,
     plantilla: dict | None = None,
     nombre_cliente: str | None = None,
+    ventas: dict | None = None,
 ) -> str:
     """El contexto del negocio, igual al de la llamada menos la base de voz.
 
@@ -84,9 +86,36 @@ def contexto(
         replace(tenant, prompt_base=None), servicios, faq, ahora,
         plantilla=plantilla, catalogo=catalogo,
     ).removeprefix(prompt_voz.BASE)
+    texto += bloque_ventas(ventas)
     if nombre_cliente:
         texto += f"\nCLIENTE: se llama {nombre_cliente} (nombre de su perfil de WhatsApp)."
     return texto
+
+
+async def ventas_de(agenda: Any, tenant_id: Any) -> dict | None:
+    """La config de Ventas; si no se puede leer, el agente sigue sin ella."""
+    try:
+        return await agenda.ventas_config(tenant_id)
+    except Exception:
+        return None
+
+
+def bloque_ventas(ventas: dict | None) -> str:
+    """Lo que el dueño fijó en Ventas: objetivo, preguntas antes de agendar y cuándo escalar."""
+    if not ventas:
+        return ""
+    renglones = []
+    objetivo = str(ventas.get("objetivo") or "").strip()
+    if objetivo and objetivo != "agendar":
+        renglones.append(f"- Objetivo con quien pide informes: {objetivo}")
+    preguntas = [p for p in ventas.get("preguntas") or [] if str(p).strip()]
+    if preguntas:
+        renglones.append("- Antes de agendar averigua esto, una cosa a la vez y en la platica, no como encuesta: "
+                         + "; ".join(preguntas))
+    escalar = [r for r in ventas.get("escalar") or [] if str(r).strip()]
+    if escalar:
+        renglones.append("- Ademas, usa escalar_a_humano si: " + "; ".join(escalar))
+    return "\n\nVENTAS (lo fijo el dueno):\n" + "\n".join(renglones) if renglones else ""
 
 
 def construir(
@@ -111,6 +140,7 @@ def bloques_system(
     catalogo: list[dict] | None = None,
     plantilla: dict | None = None,
     nombre_cliente: str | None = None,
+    ventas: dict | None = None,
 ) -> list[dict]:
     """La base va en su propio bloque para que Anthropic la cachee.
 
@@ -125,7 +155,7 @@ def bloques_system(
         {
             "type": "text",
             "text": contexto(
-                tenant, servicios, faq, ahora, catalogo, plantilla, nombre_cliente
+                tenant, servicios, faq, ahora, catalogo, plantilla, nombre_cliente, ventas
             ),
         },
     ]

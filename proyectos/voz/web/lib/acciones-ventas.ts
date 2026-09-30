@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { datos } from "@/lib/sesion";
-import type { ConfigSeguimiento, PasoSeguimiento } from "@/lib/ventas";
+import { type Ajuste, hablar, type RespuestaVendedora, type TurnoVendedora } from "@/lib/vendedora";
+import { type ConfigSeguimiento, type PasoSeguimiento, resultados, seguimiento } from "@/lib/ventas";
 
 export type EstadoVentas = { error?: string; ok?: string };
 
@@ -152,4 +153,23 @@ export async function terminarExperimento(id: string, adoptar: boolean): Promise
   }
   revalidatePath("/ventas/seguimiento");
   return { ok: adoptar ? "Listo: la versión B es ahora su seguimiento." : "Prueba terminada." };
+}
+
+/** Un turno del chat con la agente de ventas: contesta sobre su trabajo y, si hace falta, propone un ajuste. */
+export async function hablarConVendedora(historial: TurnoVendedora[]): Promise<RespuestaVendedora> {
+  try {
+    const [{ config }, r, [n]] = await Promise.all([seguimiento(), resultados(30),
+      datos((q, negocioId) => q<{ nombre: string }>("select nombre from tenant where id = $1", [negocioId]))]);
+    return await hablar(n?.nombre ?? "el negocio", config, r, historial);
+  } catch {
+    return { texto: "No pude contestar. Intente de nuevo." };
+  }
+}
+
+/** Aplica el ajuste que propuso la agente, ya aprobado, sobre la configuración vigente y con la misma validación. */
+export async function aplicarAjuste(ajuste: Ajuste): Promise<EstadoVentas> {
+  const { config } = await seguimiento();
+  const estado = await guardarSeguimiento({ ...config, ...ajuste.cambios });
+  revalidatePath("/ventas/seguimiento");
+  return estado.error ? estado : { ok: "Listo, ya trabajo así." };
 }
