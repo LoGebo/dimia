@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { datos } from "@/lib/sesion";
-import type { ConfigSeguimiento } from "@/lib/ventas";
+import type { ConfigSeguimiento, PasoSeguimiento } from "@/lib/ventas";
 
 export type EstadoVentas = { error?: string; ok?: string };
 
@@ -117,4 +117,39 @@ export async function elegirDecision(decisionId: string, letra: string): Promise
   } catch {
     return { error: "No se pudo enviar. Intente de nuevo." };
   }
+}
+
+/** Empieza una prueba A/B: la mitad de los interesados recibe estos mensajes y la otra mitad los del nivel. */
+export async function iniciarExperimento(mensajes: PasoSeguimiento[]): Promise<EstadoVentas> {
+  const pasos = mensajes.filter((p) => p.mensaje.trim() && p.horas >= 1 && p.horas <= 23).slice(0, 4)
+    .map((p) => ({ horas: Math.round(p.horas), mensaje: p.mensaje.trim().slice(0, 600) }));
+  if (!pasos.length) return { error: "Escriba al menos un mensaje para la versión B." };
+  try {
+    await datos((q, negocioId) => q(
+      "insert into experimento (tenant_id, nombre, variante_pasos) values ($1, $2, $3::jsonb)",
+      [negocioId, `Prueba del ${new Date().toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" })}`, JSON.stringify(pasos)]));
+  } catch {
+    return { error: "Ya hay una prueba en curso." };
+  }
+  revalidatePath("/ventas/seguimiento");
+  return { ok: "Prueba en marcha: la mitad de los interesados recibe la versión B." };
+}
+
+/** Termina la prueba. Con `adoptar`, la versión B queda como los mensajes del seguimiento. */
+export async function terminarExperimento(id: string, adoptar: boolean): Promise<EstadoVentas> {
+  try {
+    await datos(async (q, negocioId) => {
+      const [e] = await q<{ variante_pasos: PasoSeguimiento[] }>(
+        "update experimento set estado = 'terminado', terminado = now() where id = $1 and tenant_id = $2 and estado = 'activo' returning variante_pasos",
+        [id, negocioId]);
+      if (e && adoptar) {
+        await q("update seguimiento_config set nivel = 'propio', pasos = $2::jsonb, actualizado = now() where tenant_id = $1",
+          [negocioId, JSON.stringify(e.variante_pasos)]);
+      }
+    });
+  } catch {
+    return { error: "No se pudo terminar la prueba." };
+  }
+  revalidatePath("/ventas/seguimiento");
+  return { ok: adoptar ? "Listo: la versión B es ahora su seguimiento." : "Prueba terminada." };
 }

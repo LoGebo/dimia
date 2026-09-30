@@ -206,3 +206,16 @@ export function resultados(dias = 30): Promise<ResultadosVentas> {
     };
   });
 }
+
+export type ResultadoVariante = { variante: "control" | "B"; asignados: number; contestaron: number; agendaron: number };
+export type Experimento = { id: string; nombre: string; creado: string; pasosB: PasoSeguimiento[]; resultados: ResultadoVariante[] } | null;
+
+export function experimentoActivo(): Promise<Experimento> {
+  return datos(async (q, negocioId) => {
+    const [e] = await q<{ id: string; nombre: string; creado: string; variante_pasos: PasoSeguimiento[] }>(
+      "select id, nombre, creado, variante_pasos from experimento where tenant_id = $1 and estado = 'activo'", [negocioId]);
+    if (!e) return null;
+    const resultados = await q<ResultadoVariante>("select * from public.experimento_resultados($1)", [e.id]);
+    return { id: e.id, nombre: e.nombre, creado: e.creado, pasosB: e.variante_pasos, resultados };
+  });
+}

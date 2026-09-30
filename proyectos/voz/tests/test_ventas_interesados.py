@@ -302,3 +302,50 @@ async def test_aplicar_lectura_detiene_suprime_y_retoma():
         await admin.execute("delete from interesado where contacto = $1", contacto)
         await admin.execute("delete from conversacion where contacto = $1", contacto)
         await admin.close()
+
+
+@pytest.mark.asyncio
+async def test_experimento_reparte_y_manda_la_version_b():
+    admin = await asyncpg.connect(DSN)
+    tenant = str(await admin.fetchval("select id from tenant order by nombre limit 1"))
+    contactos = [f"+52181{uuid.uuid4().int % 10**7:07d}" for _ in range(8)]
+    exp = None
+    try:
+        await admin.execute(
+            """insert into seguimiento_config (tenant_id, activo, nivel, hora_inicio, hora_fin, dias, canales)
+               values ($1, true, 'normal', '00:00', '23:59', 'todos', '{"whatsapp": true, "llamada": false}')
+               on conflict (tenant_id) do update set activo = true, nivel = 'normal', pasos = null, hora_inicio = '00:00',
+                 hora_fin = '23:59', dias = 'todos', canales = '{"whatsapp": true, "llamada": false}'""", uuid.UUID(tenant))
+        await admin.execute("update experimento set estado = 'terminado' where tenant_id = $1 and estado = 'activo'", uuid.UUID(tenant))
+        exp = await admin.fetchval(
+            "insert into experimento (tenant_id, nombre, variante_pasos) values ($1, 'prueba', '[{\"horas\": 2, \"mensaje\": \"VERSION B {nombre}\"}]') returning id",
+            uuid.UUID(tenant))
+        for c in contactos:
+            conv = (await _en("app_texto", tenant,
+                "insert into conversacion (tenant_id, canal, contacto, contacto_nombre, estado) values ($1, 'whatsapp', $2, 'Pru Eba', 'abierta') returning id",
+                uuid.UUID(tenant), c))[0]["id"]
+            await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Info')", conv, uuid.UUID(tenant))
+            await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'agente', 'Claro')", conv, uuid.UUID(tenant))
+        await admin.execute("update interesado set proxima_accion_en = now() - interval '1 minute' where contacto = any($1::text[])", contactos)
+        cron = await asyncpg.connect(_como("app_cron"), statement_cache_size=0)
+        try:
+            await cron.fetchval("select public.interesado_seguimientos(50)")
+        finally:
+            await cron.close()
+        filas = await admin.fetch(
+            """select a.variante, o.payload->>'mensaje' mensaje from experimento_asignacion a
+                 join outbox o on o.interesado_id = a.interesado_id where a.experimento_id = $1""", exp)
+        assert len(filas) == len(contactos)
+        assert {f["variante"] for f in filas} == {"control", "B"}  # 8 personas: con este hash caen en las dos
+        for f in filas:
+            assert f["mensaje"].startswith("VERSION B Pru") == (f["variante"] == "B")
+        res = {r["variante"]: r for r in await admin.fetch("select * from public.experimento_resultados($1)", exp)}
+        assert sum(r["asignados"] for r in res.values()) == len(contactos)
+    finally:
+        await admin.execute("delete from outbox where destino = any($1::text[])", contactos)
+        await admin.execute("delete from consentimiento where contacto = any($1::text[])", contactos)
+        await admin.execute("delete from interesado where contacto = any($1::text[])", contactos)
+        await admin.execute("delete from conversacion where contacto = any($1::text[])", contactos)
+        if exp:
+            await admin.execute("delete from experimento where id = $1", exp)
+        await admin.close()
