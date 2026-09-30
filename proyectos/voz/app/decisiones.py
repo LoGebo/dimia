@@ -86,7 +86,7 @@ async def proponer(llm: ClienteLLM, turnos: list[dict], motivo: str | None, *, m
             if len(opciones) < 2:
                 return None
             opciones.append({"titulo": "Le contesto yo", "mensaje": ""})
-            for letra, o in zip("ABCD", opciones):
+            for letra, o in zip("ABCD", opciones, strict=False):
                 o["letra"] = letra
             pregunta = str(datos.get("pregunta", "")).strip()[:300] or "¿Qué le digo?"
             if not pregunta.endswith("?"):

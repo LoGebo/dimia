@@ -453,6 +453,23 @@ class Despachador:
             log.info("%d campañas terminadas", cerradas)
         return await self.agenda.campana_encolar()
 
+    async def interpretar(self) -> int:
+        """Lectura estructurada de cada interesado con mensajes nuevos (intención, urgencia, puntaje)."""
+        if self.llm is None:
+            return 0
+        from app.interprete import interpretar
+
+        hechos = 0
+        for fila in await self.agenda.interesados_por_interpretar():
+            with en_negocio(fila["tenant_id"]):
+                turnos = await self.agenda.turnos_de_conversacion(fila["conversacion_id"], limite=40)
+                lectura = await interpretar(self.llm, turnos)
+                if lectura is None:
+                    continue
+                await self.agenda.interesado_aplicar_lectura(fila["id"], lectura, fila["leido_hasta"])
+                hechos += 1
+        return hechos
+
     async def decisiones(self) -> int:
         """A quien el agente pasó a una persona, el dueño le recibe 2-3 respuestas listas (A/B/C)."""
         if self.llm is None:
@@ -551,6 +568,9 @@ class Despachador:
                     seguidos = await self.agenda.interesado_seguimientos()
                     if seguidos:
                         log.info("%d seguimientos a interesados encolados", seguidos)
+                    leidos = await self.interpretar()
+                    if leidos:
+                        log.info("%d interesados interpretados", leidos)
                     propuestas = await self.decisiones()
                     if propuestas:
                         log.info("%d decisiones propuestas al dueño", propuestas)

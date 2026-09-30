@@ -9,11 +9,15 @@ from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import date, datetime, time
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 import asyncpg
 
 from app.config import settings
+
+if TYPE_CHECKING:
+    from app.interprete import Lectura
 
 
 @dataclass(frozen=True, slots=True)
@@ -462,6 +466,16 @@ class Agenda:
             """insert into decision_dueno (tenant_id, interesado_id, pregunta, opciones)
                values ($1, $2, $3, $4::jsonb) on conflict do nothing""",
             tenant_id, interesado_id, pregunta, json.dumps(opciones, ensure_ascii=False),
+        )
+
+    async def interesados_por_interpretar(self, limite: int = 20) -> list[dict]:
+        return [dict(f) for f in await self.pool.fetch("select * from public.interesados_por_interpretar($1)", limite)]
+
+    async def interesado_aplicar_lectura(self, interesado_id: uuid.UUID, lectura: Lectura, leido_hasta: datetime) -> None:
+        await self.pool.execute(
+            "select public.interesado_aplicar_lectura($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            interesado_id, lectura.intencion, lectura.urgencia, lectura.servicio, lectura.lectura, lectura.puntuacion,
+            lectura.no_quiere_contacto, lectura.intencion == "no_interesa", lectura.acepta_promociones, leido_hasta,
         )
 
     async def interesado_seguimientos(self, limite: int = 50) -> int:

@@ -235,3 +235,70 @@ async def test_sin_consentimiento_de_marketing_no_sale_plantilla():
         await admin.execute("delete from interesado where contacto = $1", contacto)
         await admin.execute("delete from conversacion where contacto = $1", contacto)
         await admin.close()
+
+
+def test_puntaje_por_reglas():
+    from app.interprete import Lectura
+
+    base = dict(servicio="", lectura="", acepta_promociones=False)
+    assert Lectura("agendar", "alta", no_quiere_contacto=False, **base).puntuacion == 95
+    assert Lectura("precio", "media", no_quiere_contacto=False, **base).puntuacion == 65
+    assert Lectura("agendar", "alta", no_quiere_contacto=True, **base).puntuacion == 0
+    assert Lectura("no_interesa", "baja", no_quiere_contacto=False, **base).detener
+
+
+@pytest.mark.asyncio
+async def test_interpretar_normaliza_lo_que_devuelve_el_modelo():
+    from app.interprete import interpretar
+
+    class M:
+        def __init__(self):
+            self.messages = self
+
+        async def create(self, **kw):
+            return type("R", (), {"content": [{"type": "tool_use", "name": "leer_interesado", "input": {
+                "intencion": "inventada", "urgencia": "altísima", "lectura": "Quiere ortodoncia pronto",
+                "no_quiere_contacto": False, "acepta_promociones": True}}]})()
+
+    lectura = await interpretar(M(), [{"autor": "cliente", "texto": "Quiero ortodoncia y avísenme de promos"}])
+    assert lectura and lectura.intencion == "otro" and lectura.urgencia == "baja" and lectura.acepta_promociones
+
+
+@pytest.mark.asyncio
+async def test_aplicar_lectura_detiene_suprime_y_retoma():
+    admin = await asyncpg.connect(DSN)
+    contacto = f"+52181{uuid.uuid4().int % 10**7:07d}"
+    tenant = str(await admin.fetchval("select id from tenant order by nombre limit 1"))
+    try:
+        conv = (await _en("app_texto", tenant,
+            "insert into conversacion (tenant_id, canal, contacto, contacto_nombre, estado) values ($1, 'whatsapp', $2, 'Iván Prueba', 'abierta') returning id",
+            uuid.UUID(tenant), contacto))[0]["id"]
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Gracias pero no')", conv, uuid.UUID(tenant))
+        iid = await admin.fetchval("select id from interesado where contacto = $1", contacto)
+
+        async def aplicar(**kw):
+            args = dict(intencion="no_interesa", urgencia="baja", servicio="", lectura="No le interesa", puntuacion=0,
+                        no_quiere_contacto=False, no_interesa=True, acepta=False) | kw
+            await _en("app_cron", tenant, "select public.interesado_aplicar_lectura($1, $2, $3, $4, $5, $6, $7, $8, $9, now())",
+                      iid, args["intencion"], args["urgencia"], args["servicio"], args["lectura"], args["puntuacion"],
+                      args["no_quiere_contacto"], args["no_interesa"], args["acepta"])
+
+        await aplicar()
+        assert await admin.fetchval("select etapa::text from interesado where id = $1", iid) == "perdido"
+        # Vuelve a escribir: se retoma.
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Bueno, sí, ¿qué horarios tienen?')", conv, uuid.UUID(tenant))
+        assert await admin.fetchval("select etapa::text from interesado where id = $1", iid) == "en_conversacion"
+        await aplicar(intencion="agendar", urgencia="alta", puntuacion=95, no_interesa=False, acepta=True, lectura="Quiere horario")
+        fila = await admin.fetchrow("select etapa::text, puntuacion, lectura from interesado where id = $1", iid)
+        assert fila["etapa"] == "en_conversacion" and fila["puntuacion"] == 95 and fila["lectura"] == "Quiere horario"
+        assert await admin.fetchval("select count(*) from consentimiento where contacto = $1 and finalidad = 'marketing'", contacto) == 1
+        await aplicar(no_quiere_contacto=True)
+        assert await admin.fetchval("select etapa::text from interesado where id = $1", iid) == "baja"
+        assert await admin.fetchval("select count(*) from supresion where contacto = $1", contacto) == 1
+        assert await admin.fetchval("select count(*) from consentimiento where contacto = $1 and revocado_en is null", contacto) == 0
+    finally:
+        await admin.execute("delete from supresion where contacto = $1", contacto)
+        await admin.execute("delete from consentimiento where contacto = $1", contacto)
+        await admin.execute("delete from interesado where contacto = $1", contacto)
+        await admin.execute("delete from conversacion where contacto = $1", contacto)
+        await admin.close()

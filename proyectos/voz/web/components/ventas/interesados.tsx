@@ -15,6 +15,17 @@ const ESTADO: Record<Grupo, string> = {
 };
 const CANAL: Record<string, string> = { whatsapp: "WhatsApp", instagram: "Instagram", messenger: "Messenger", sms: "SMS", llamada: "Llamada" };
 
+const QUIERE: Record<string, string> = {
+  agendar: "agendar", reagendar: "cambiar su cita", precio: "saber precios", informacion: "información",
+  queja: "quejarse", no_interesa: "nada por ahora", otro: "otra cosa",
+};
+function interes(p: number | null): { texto: string; color: string } | null {
+  if (p === null) return null;
+  if (p >= 70) return { texto: "Interés alto", color: "text-bueno" };
+  if (p >= 40) return { texto: "Interés medio", color: "text-alerta" };
+  return { texto: "Interés bajo", color: "text-tinta-3" };
+}
+
 function hace(t: string): string {
   const s = Math.max(0, (Date.now() - +new Date(t)) / 1000);
   if (s < 60) return `${Math.round(s)} s`;
@@ -101,7 +112,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                       <span className="flex-none text-[12.5px] tabular-nums text-tinta-3">{hace(i.creado)}</span>
                     </span>
                     <span className="block truncate text-[13.5px] text-tinta-2">{i.grupo === "persona" && i.lectura ? i.lectura : ultimo ? `${ultimo.quien === "agente" ? `${AGENTE.nombre}: ` : ""}${ultimo.texto}` : "Sin mensajes"}</span>
-                    <span className="text-[12.5px] text-tinta-3">{ESTADO[i.grupo]} · {CANAL[i.canal] ?? i.canal}{i.tomado ? " · lo lleva usted" : ""}</span>
+                    <span className="text-[12.5px] text-tinta-3">{ESTADO[i.grupo]} · {CANAL[i.canal] ?? i.canal}{i.tomado ? " · lo lleva usted" : ""}{interes(i.puntuacion) ? <> · <span className={interes(i.puntuacion)!.color}>{interes(i.puntuacion)!.texto}</span></> : null}</span>
                   </span>
                 </button>
               );
@@ -177,6 +188,13 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                 <p className="text-[13px] text-tinta-3">Dónde va</p>
                 <p className="mt-1 leading-snug text-tinta">{ESTADO[elegido.grupo]}{elegido.primerToqueSeg !== null ? ` · le contestó en ${elegido.primerToqueSeg} s` : ""}</p>
                 {elegido.lectura && elegido.grupo !== "persona" ? <p className="mt-1 leading-snug text-tinta-2">{elegido.lectura}</p> : null}
+                {elegido.intencion ? (
+                  <p className="mt-1 text-[13px] text-tinta-3">
+                    Quiere {QUIERE[elegido.intencion] ?? elegido.intencion}{elegido.servicio ? ` (${elegido.servicio})` : ""}
+                    {elegido.urgencia === "alta" ? " · con prisa" : ""}
+                    {interes(elegido.puntuacion) ? <> · <span className={interes(elegido.puntuacion)!.color}>{interes(elegido.puntuacion)!.texto}</span></> : null}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <p className="text-[13px] text-tinta-3">Lo que sigue</p>
