@@ -240,7 +240,7 @@ async def test_sin_consentimiento_de_marketing_no_sale_plantilla():
 def test_puntaje_por_reglas():
     from app.interprete import Lectura
 
-    base = dict(servicio="", lectura="", acepta_promociones=False)
+    base = {"servicio": "", "lectura": "", "acepta_promociones": False}
     assert Lectura("agendar", "alta", no_quiere_contacto=False, **base).puntuacion == 95
     assert Lectura("precio", "media", no_quiere_contacto=False, **base).puntuacion == 65
     assert Lectura("agendar", "alta", no_quiere_contacto=True, **base).puntuacion == 0
@@ -277,8 +277,8 @@ async def test_aplicar_lectura_detiene_suprime_y_retoma():
         iid = await admin.fetchval("select id from interesado where contacto = $1", contacto)
 
         async def aplicar(**kw):
-            args = dict(intencion="no_interesa", urgencia="baja", servicio="", lectura="No le interesa", puntuacion=0,
-                        no_quiere_contacto=False, no_interesa=True, acepta=False) | kw
+            args = {"intencion": "no_interesa", "urgencia": "baja", "servicio": "", "lectura": "No le interesa", "puntuacion": 0,
+                        "no_quiere_contacto": False, "no_interesa": True, "acepta": False} | kw
             await _en("app_cron", tenant, "select public.interesado_aplicar_lectura($1, $2, $3, $4, $5, $6, $7, $8, $9, now())",
                       iid, args["intencion"], args["urgencia"], args["servicio"], args["lectura"], args["puntuacion"],
                       args["no_quiere_contacto"], args["no_interesa"], args["acepta"])

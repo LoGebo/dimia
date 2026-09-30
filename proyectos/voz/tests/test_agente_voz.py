@@ -404,7 +404,7 @@ def test_calentar_modelo_manda_el_mismo_prompt_y_herramientas_y_no_truena():
 
     class Agente:
         instructions = "PROMPT DEL NEGOCIO"
-        tools = ["reservar", "consultar"]
+        tools = ("reservar", "consultar")
 
     m = Modelo()
     asyncio.run(ag.calentar_modelo(m, Agente()))
