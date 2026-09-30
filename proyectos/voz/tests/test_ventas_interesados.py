@@ -349,3 +349,33 @@ async def test_experimento_reparte_y_manda_la_version_b():
         if exp:
             await admin.execute("delete from experimento where id = $1", exp)
         await admin.close()
+
+
+@pytest.mark.asyncio
+async def test_si_a_la_pregunta_de_promociones_registra_el_consentimiento():
+    admin = await asyncpg.connect(DSN)
+    contacto = f"+52182{uuid.uuid4().int % 10**7:07d}"
+    tenant = str(await admin.fetchval("select id from tenant order by nombre limit 1"))
+    t = uuid.UUID(tenant)
+    try:
+        await admin.execute(
+            "insert into seguimiento_config (tenant_id, activo) values ($1, true) on conflict (tenant_id) do update set activo = true", t)
+        conv = (await _en("app_texto", tenant,
+            "insert into conversacion (tenant_id, canal, contacto, estado) values ($1, 'whatsapp', $2, 'abierta') returning id", t, contacto))[0]["id"]
+        assert (await _en("app_texto", tenant, "select public.pedir_promociones($1, $2) p", t, contacto))[0]["p"]
+
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'agente', '¿Le aparto el jueves?')", conv, t)
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Sí')", conv, t)
+        assert await admin.fetchval("select count(*) from consentimiento where contacto = $1 and finalidad = 'marketing'", contacto) == 0
+
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'agente', 'Listo, código ABC. ¿Le avisamos por aquí de promociones? Responda SÍ si quiere.')", conv, t)
+        await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'si, por favor')", conv, t)
+        evidencia = await admin.fetchval("select evidencia from consentimiento where contacto = $1 and finalidad = 'marketing'", contacto)
+        assert evidencia and "promociones" in evidencia
+        # Ya se preguntó: no se vuelve a preguntar.
+        assert not (await _en("app_texto", tenant, "select public.pedir_promociones($1, $2) p", t, contacto))[0]["p"]
+    finally:
+        await admin.execute("delete from consentimiento where contacto = $1", contacto)
+        await admin.execute("delete from interesado where contacto = $1", contacto)
+        await admin.execute("delete from conversacion where contacto = $1", contacto)
+        await admin.close()

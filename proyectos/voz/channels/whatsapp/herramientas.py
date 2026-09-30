@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -10,6 +11,8 @@ from app.franjas import franja_a_horas
 from app.supabase_client import Agenda, Slot, Tenant
 from channels.whatsapp.cliente import OpcionLista
 from channels.whatsapp.sesion import OpcionHorario, SesionWhatsApp, nombre_plausible
+
+log = logging.getLogger(__name__)
 
 DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
 MESES = (
@@ -407,9 +410,18 @@ class Herramientas:
             self.sesion.mover_booking_id = None
             if anterior.get("ok"):
                 movida = " La cita anterior ya quedo cancelada; diselo."
+        promociones = ""
+        try:
+            if await self.agenda.pedir_promociones(self.tenant.id, self.sesion.telefono):
+                promociones = (
+                    " Al final del mensaje, en un renglon aparte y tal cual: "
+                    "«¿Le avisamos por aquí de promociones? Responda SÍ si quiere.»"
+                )
+        except Exception:
+            log.exception("no se pudo revisar si se piden promociones")
         return (
             f"Reservado. Codigo {resultado['codigo']}, {opcion.etiqueta}.{movida} "
-            "Confirmaselo con calidez y dale el codigo."
+            f"Confirmaselo con calidez y dale el codigo.{promociones}"
         )
 
     async def _buscar_reserva(self, argumentos: dict[str, Any]) -> str:

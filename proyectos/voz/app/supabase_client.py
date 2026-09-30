@@ -478,6 +478,9 @@ class Agenda:
             lectura.no_quiere_contacto, lectura.intencion == "no_interesa", lectura.acepta_promociones, leido_hasta,
         )
 
+    async def pedir_promociones(self, tenant_id: uuid.UUID, contacto: str) -> bool:
+        return bool(await self.pool.fetchval("select public.pedir_promociones($1, $2)", tenant_id, contacto))
+
     async def interesado_seguimientos(self, limite: int = 50) -> int:
         """Encola los seguimientos vencidos de Ventas (la función fija el negocio de cada uno)."""
         return await self.pool.fetchval("select public.interesado_seguimientos($1)", limite) or 0

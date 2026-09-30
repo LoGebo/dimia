@@ -140,7 +140,7 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
               <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full border border-acento" />
               <div className="text-[13px] font-semibold tabular-nums text-tinta">A las {h} h · solo WhatsApp</div>
               <p className="mt-1 text-[13px] text-tinta-2">«{PLANTILLA}»</p>
-              <p className="text-[12px] text-tinta-3">Plantilla de marketing aprobada por Meta: solo a quien aceptó recibir promociones, y el texto no se puede cambiar.</p>
+              <p className="text-[12px] text-tinta-3">Plantilla de marketing aprobada por Meta: solo a quien aceptó recibir promociones (el agente lo pregunta al agendar por mensaje), y el texto no se puede cambiar.</p>
             </li>
           ))}
           <li className="pl-6 text-[12.5px] text-tinta-3">Si no contesta en 24 h más, se da por cerrado. {"{nombre}"} se cambia por el nombre de la persona.</li>
