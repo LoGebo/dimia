@@ -413,3 +413,36 @@ Hermes (solo fase de prospección): investiga un negocio y devuelve una ficha; n
 2. ¿Qué giro y qué fuente de leads tiene en mente para el piloto?
 3. ¿El objetivo es cerrar la venta en la llamada o dejar la cita para que cierre una persona?
 4. ¿Hay clientes que ya lo pidieron?
+
+## La Vendedora como agente persistente (Hermes) — 2026-09-30
+
+Decisión: la Vendedora es un agente Hermes con rol `ventas`, **encima** del motor, no en su lugar.
+Lo que se probó en el mercado (11x, Artisan) dice que un agente autónomo que decide solo a quién
+escribir truena en calidad y en cumplimiento; lo que funcionó fue un supervisor con memoria que
+planea sobre ejecutores especializados y reglas fijas.
+
+Tres capas:
+
+1. **Vendedora (Hermes, persistente).** Memoria propia y por interesado (`interesado_nota`).
+   Lee, piensa, anota y ajusta. Despierta por chat o por sus rutinas (cronjob). Nunca escribe
+   a clientes. Herramientas en `proyectos/agentes/agentes/mcp_ventas.py`:
+   - `ventas` (trust untrusted): `resumen_ventas`, `interesados`, `interesado`, `seguimiento`,
+     `ajustar_seguimiento` (pide aprobación en el hilo).
+   - `ventas_memoria` (sin puerta): `anotar`. Es memoria interna y sus rutinas corren sin nadie
+     que apruebe.
+2. **Agente de conversación (rápido).** El de WhatsApp/Instagram de siempre; contesta en segundos.
+3. **Motor (reglas en Postgres).** Consentimiento, bajas, ventana de 24 h, horario, cola de salida.
+   Todo contacto sale de aquí.
+
+Fases:
+
+1. **Hecha.** Rol `ventas`, herramientas, SOUL; «Hablar con Vendedora» abre su hilo en el cajón de
+   agentes (historial guardado en `agente_mensaje`). Se crea la primera vez que el dueño la abre.
+   Sale el chat anterior (`lib/vendedora.ts`, tabla `vendedora_mensaje`).
+2. El agente rápido lee las notas del interesado antes de contestarle. Revisión diaria por rutina.
+3. Propone pruebas A/B (`proponer_prueba`) y las cierra con el veredicto.
+4. Prospección: investiga en DENUE y sitios; lo que encuentra entra como interesados de
+   «prospección» y pasa por el motor y REPEP antes de cualquier contacto.
+
+Riesgo: encender la máquina tarda ~40 s en frío. Si el chat se siente lento, la máquina de Dimia
+queda siempre prendida y las demás despiertan por evento.

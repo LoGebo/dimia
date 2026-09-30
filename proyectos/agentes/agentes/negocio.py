@@ -216,10 +216,13 @@ async def _mcp_de(tenant: str, a) -> tuple[dict | None, set[str], list]:
     integraciones = {i["clave"] for i in inst if i["tipo"] == "integracion"}
     if a["rol"] == "recepcion":
         integraciones |= {"dimia", "whatsapp"}  # Recepción siempre trae la agenda y la línea del negocio
+    if a["rol"] == "ventas":
+        integraciones |= {"dimia", "ventas"}  # la Vendedora: el motor de ventas; nunca la línea de WhatsApp
+        integraciones.discard("whatsapp")
     cuentas = {catalogo.INTEGRACIONES[c]["cuenta"] for c in integraciones if catalogo.INTEGRACIONES.get(c, {}).get("cuenta")}
     # Recepción habla con el público por WhatsApp: nunca crea máquinas ni corre código.
     con_tareas = config.HERMES_TAREAS_ACTIVO and a["rol"] != "recepcion"
-    if integraciones & {"dimia", "whatsapp"} or cuentas or con_tareas:
+    if integraciones & {"dimia", "whatsapp", "ventas"} or cuentas or con_tareas:
         token = a["mcp_token"]
         if not token:
             token = vault.llave_nueva()
@@ -229,6 +232,8 @@ async def _mcp_de(tenant: str, a) -> tuple[dict | None, set[str], list]:
             mcp.update(hermes.mcp_dimia(token))
         if "whatsapp" in integraciones:
             mcp.update(hermes.mcp_whatsapp(token))
+        if "ventas" in integraciones:
+            mcp.update(hermes.mcp_ventas(token))
         if con_tareas:
             mcp.update(hermes.mcp_tareas(token))
         for cuenta in cuentas:  # google (gmail, calendar, drive), notion, slack, higgsfield

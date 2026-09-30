@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUp, ChevronDown, Maximize2, Plus, X } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { aprobarAccion } from "@/lib/acciones";
+import { aprobarAccion, mensajesAgente } from "@/lib/acciones";
 
 type Mensaje = {
   id: number;
@@ -16,7 +16,7 @@ type Mensaje = {
   resultado?: string;
 };
 
-export type AgenteChat = { id: string; nombre: string; trabajo: string | null; avatar?: string | null; activo: boolean; rol?: "general" | "recepcion" };
+export type AgenteChat = { id: string; nombre: string; trabajo: string | null; avatar?: string | null; activo: boolean; rol?: "general" | "recepcion" | "ventas" };
 
 const ANCHO_CAJON = 450;
 const CLAVE_ACUERDO = "chat_agente_acuerdo";
@@ -48,7 +48,9 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
   const conectado = !!agente?.trabajo;
 
   const saludo = (a: AgenteChat): Mensaje =>
-    a.rol === "recepcion"
+    a.rol === "ventas"
+      ? { id: 1, de: "agente", texto: `Soy ${a.nombre}, la agente de ventas de ${negocio}. Pregúnteme cómo van los interesados o dígame cómo quiere que trabaje; los cambios se los propongo y usted los aprueba.` }
+      : a.rol === "recepcion"
       ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes o cobros, o pídame agendar, cancelar o anotar; antes de hacerlo le pido su visto bueno.` }
       : a.trabajo
         ? { id: 1, de: "agente", texto: `Soy ${a.nombre}. ${a.trabajo}` }
@@ -61,12 +63,24 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
   }, []);
 
   useEffect(() => {
+    let vigente = true;
+    let guardado: string | null = null;
     try {
-      const guardado = sessionStorage.getItem(claveHistorial(negocio, agente.id));
-      setMensajes(guardado ? (JSON.parse(guardado) as Mensaje[]) : [saludo(agente)]);
-    } catch {
+      guardado = sessionStorage.getItem(claveHistorial(negocio, agente.id));
+    } catch {}
+    if (guardado) {
+      setMensajes(JSON.parse(guardado) as Mensaje[]);
+    } else {
+      // Sin copia en esta pestaña: el hilo guardado del agente (el mismo de la pestaña Agentes).
       setMensajes([saludo(agente)]);
+      if (agente.trabajo) {
+        mensajesAgente(agente.id).then((l) => {
+          const previos = l.filter((m) => m.de !== "sistema" && m.texto).slice(-30);
+          if (vigente && previos.length) setMensajes(previos.map((m) => ({ id: m.id, de: m.de as "yo" | "agente", texto: m.texto })));
+        }).catch(() => {});
+      }
     }
+    return () => { vigente = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agente.id, negocio]);
 

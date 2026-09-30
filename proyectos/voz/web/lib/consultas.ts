@@ -91,7 +91,7 @@ export function lineaWhatsApp(): Promise<string | null> {
 export type PermisoAgente = "leer" | "navegar" | "anotar" | "escribir" | "agendar" | "formularios";
 export type Agente = {
   id: string; nombre: string; trabajo: string | null; reglas: string | null; avatar: string | null;
-  permisos: PermisoAgente[]; estado: "activo" | "en_pausa"; rol: "general" | "recepcion";
+  permisos: PermisoAgente[]; estado: "activo" | "en_pausa"; rol: "general" | "recepcion" | "ventas";
   personalidad: string | null; ajustes: { trato?: "usted" | "tu"; modelo?: "auto" | "ligero" | "rapido" | "fuerte" | "profundo"; razonamiento?: "bajo" | "medio" | "alto" }; creado: string; donde: "dimia" | "local";
 };
 
@@ -107,7 +107,7 @@ export function agentes(): Promise<Agente[]> {
        on conflict (tenant_id) where rol = 'recepcion' do nothing`,
       [id],
     );
-    return q<Agente>(`${SELECT_AGENTE} where tenant_id = $1 order by (rol = 'recepcion') desc, creado`, [id]);
+    return q<Agente>(`${SELECT_AGENTE} where tenant_id = $1 order by (rol = 'recepcion') desc, (rol = 'ventas') desc, creado`, [id]);
   });
 }
 

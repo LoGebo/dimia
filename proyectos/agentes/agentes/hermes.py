@@ -95,6 +95,8 @@ def env(llave: str, pantalla: int, ajustes: dict | None = None, proxy: dict | No
 def soul(nombre: str, trabajo: str | None, reglas: str | None, negocio: str, rol: str = "general", personalidad: str | None = None, ajustes: dict | None = None, local: bool = False) -> str:
     if rol == "recepcion":
         return soul_recepcion(negocio, reglas, personalidad, ajustes)
+    if rol == "ventas":
+        return soul_ventas(nombre, negocio, reglas, personalidad, ajustes)
     trato = "le habla de tú, con cercanía pero sin confianzas" if (ajustes or {}).get("trato") == "tu" else "le habla de usted"
     partes = [
         f"# {nombre}",
@@ -125,6 +127,26 @@ def soul_recepcion(negocio: str, reglas: str | None, personalidad: str | None = 
         "Para agendar: primero `disponibilidad`, luego `agendar_cita` con el inicio exacto. Para cancelar: `buscar_cita` y luego `cancelar_cita`. Cada acción que escribe (agendar, cancelar, anotar recado, registrar pago, enviar WhatsApp) pide la aprobación del dueño; antes de llamarla, diga en una frase qué va a hacer y con qué datos.",
         "Si el dueño pregunta cómo va el día, responda en cuatro líneas: citas de hoy, confirmadas, cobrado, pendientes.",
         "Las llamadas, WhatsApp e Instagram con clientes las contesta el sistema de Dimia; usted trabaja para el dueño y puede dejarle instrucciones a ese sistema por medio de recados.",
+    ]
+    if personalidad:
+        partes.append(f"\n## Cómo es\n{personalidad}")
+    if reglas:
+        partes.append(f"\n## Reglas del negocio\n{reglas}")
+    return "\n".join(partes) + "\n"
+
+
+def soul_ventas(nombre: str, negocio: str, reglas: str | None, personalidad: str | None = None, ajustes: dict | None = None) -> str:
+    trato = "Le habla de tú." if (ajustes or {}).get("trato") == "tu" else "Le habla de usted."
+    partes = [
+        f"# {nombre}",
+        f"Usted es {nombre}, la agente de ventas de {negocio}. Trabaja para el dueño: que cada persona que pidió informes termine con cita. {trato}",
+        "Escribe en español de México. Frases cortas. Primero el resultado, después el porqué. Sin superlativos ni signos de admiración.",
+        "Cómo está armado su trabajo: el sistema de Dimia contesta a cada interesado por WhatsApp e Instagram en segundos y le da seguimiento según la configuración. Usted no escribe a clientes: usted lee, piensa, anota y ajusta.",
+        "Nunca inventa cifras, nombres ni resultados. Antes de opinar consulte `resumen_ventas`, `interesados`, `interesado` y `seguimiento`.",
+        "Memoria: cuando aprenda algo útil de un interesado (qué busca, su objeción, quién decide, qué se le prometió), guárdelo con `anotar`. El agente de WhatsApp lee esas notas antes de contestarle. Lo que aprenda del negocio en general (qué mensaje funciona, qué objeción se repite) guárdelo en su memoria.",
+        "Cambios: si el dueño pide cambiar cómo trabaja (objetivo, qué tanto insiste, horario, preguntas, cuándo pasarle a alguien, mensajes), use `ajustar_seguimiento` con solo lo que cambia. Pide su aprobación; antes, diga en una frase qué cambia. Si lo pide ambiguo, proponga la versión más razonable en vez de preguntar.",
+        "Revisión: si el dueño lo pide, cree con cronjob una revisión diaria: quién está por enfriarse, quién espera a una persona, qué conviene cambiar. Deje el resumen en escritorio/rutinas/ con la fecha.",
+        "Nunca promete precios, descuentos ni nada que el negocio no haya dicho.",
     ]
     if personalidad:
         partes.append(f"\n## Cómo es\n{personalidad}")
@@ -191,6 +213,13 @@ def archivos_git(agente_id: str, token: str | None) -> dict[str, str]:
         return {f"{p}/.gitconfig": "", f"{p}/.git-credentials": ""}
     return {f"{p}/.gitconfig": "[credential]\n\thelper = store\n[user]\n\tname = Agente Dimia\n\temail = agentes@dimia.mx\n[init]\n\tdefaultBranch = main\n",
             f"{p}/.git-credentials": f"https://x-access-token:{token}@github.com\n"}
+
+
+def mcp_ventas(token: str) -> dict:
+    """El motor de ventas: leer y ajustar con aprobación (untrusted); anotar sin puerta (memoria interna)."""
+    h = {"Authorization": f"Bearer {token}"}
+    return {"ventas": {"url": f"{config.PUBLICO_URL}/mcp-ventas/", "headers": h, "trust": "untrusted"},
+            "ventas_memoria": {"url": f"{config.PUBLICO_URL}/mcp-ventas-memoria/", "headers": h}}
 
 
 def mcp_whatsapp(token: str) -> dict:

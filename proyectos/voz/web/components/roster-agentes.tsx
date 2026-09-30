@@ -8,7 +8,7 @@ import { AvatarAgente } from "@/components/avatar-agente";
 import { AvataresGrupo } from "@/components/avatares-grupo";
 import { crearAgenteVacio, crearGrupo } from "@/lib/acciones";
 
-export type AgenteRoster = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean; rol?: "general" | "recepcion" };
+export type AgenteRoster = { id: string; nombre: string; trabajo: string | null; avatar: string | null; activo: boolean; rol?: "general" | "recepcion" | "ventas" };
 export type GrupoRoster = { id: string; nombre: string; miembros: string[] };
 
 /** La lista de agentes y grupos, como los contactos de una app de mensajes. */
