@@ -356,3 +356,30 @@ a:hover > .avatar-cuerpo, button:hover > .avatar-cuerpo, [data-avatar]:hover .av
 @media (prefers-reduced-motion: reduce) {
   .avatar-cuerpo, .avatar-ojos { animation: none; }
 }
+
+/* El chat con la Vendedora: el panel entra y sale por la derecha, el fondo se oscurece. */
+@keyframes aparece {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sale-derecha {
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes escribe {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chat-fondo { animation: aparece 200ms ease-out both; }
+  .chat-fondo[data-cerrando] { animation: desvanece 200ms ease-in both; }
+  .chat-panel { animation: aparece-derecha 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .chat-panel[data-cerrando] { animation: sale-derecha 200ms ease-in both; }
+  .chat-burbuja { animation: aparece-arriba 300ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .chat-tarjeta { animation: aparece-escala 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .chat-pop { animation: pop 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .chat-punto { animation: escribe 1.1s ease-in-out infinite; }
+}

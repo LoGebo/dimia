@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { datos } from "@/lib/sesion";
-import { type Ajuste, hablar, type RespuestaVendedora, type TurnoVendedora } from "@/lib/vendedora";
+import { type Ajuste, hablar } from "@/lib/vendedora";
 import { type ConfigSeguimiento, type PasoSeguimiento, resultados, seguimiento } from "@/lib/ventas";
 
 export type EstadoVentas = { error?: string; ok?: string };
@@ -155,21 +155,53 @@ export async function terminarExperimento(id: string, adoptar: boolean): Promise
   return { ok: adoptar ? "Listo: la versión B es ahora su seguimiento." : "Prueba terminada." };
 }
 
-/** Un turno del chat con la agente de ventas: contesta sobre su trabajo y, si hace falta, propone un ajuste. */
-export async function hablarConVendedora(historial: TurnoVendedora[]): Promise<RespuestaVendedora> {
+export type MensajeVendedora = { id: string; rol: "usuario" | "asistente"; texto: string; ajuste: Ajuste | null; estado: "aplicado" | "descartado" | null; creado: string };
+
+const COLUMNAS = "id, rol, texto, ajuste, estado, creado";
+
+/** El chat con la Vendedora, del más viejo al más nuevo. */
+export async function historialVendedora(): Promise<MensajeVendedora[]> {
+  return datos((q, negocioId) => q<MensajeVendedora>(
+    `select * from (select ${COLUMNAS} from vendedora_mensaje where tenant_id = $1 order by creado desc limit 80) m order by creado`, [negocioId]));
+}
+
+/** Guarda lo que escribió el dueño, le contesta la Vendedora con el historial y guarda su respuesta. */
+export async function hablarConVendedora(texto: string): Promise<{ usuario?: MensajeVendedora; respuesta?: MensajeVendedora; error?: string }> {
+  const limpio = texto.trim().slice(0, 2000);
+  if (!limpio) return { error: "Escriba algo." };
   try {
-    const [{ config }, r, [n]] = await Promise.all([seguimiento(), resultados(30),
+    const [usuario] = await datos((q, negocioId) => q<MensajeVendedora>(
+      `insert into vendedora_mensaje (tenant_id, rol, texto) values ($1, 'usuario', $2) returning ${COLUMNAS}`, [negocioId, limpio]));
+    const [historial, { config }, r, [n]] = await Promise.all([historialVendedora(), seguimiento(), resultados(30),
       datos((q, negocioId) => q<{ nombre: string }>("select nombre from tenant where id = $1", [negocioId]))]);
-    return await hablar(n?.nombre ?? "el negocio", config, r, historial);
+    const dicho = await hablar(n?.nombre ?? "el negocio", config, r, historial.map((m) => ({ rol: m.rol, texto: m.texto })));
+    const [respuesta] = await datos((q, negocioId) => q<MensajeVendedora>(
+      `insert into vendedora_mensaje (tenant_id, rol, texto, ajuste) values ($1, 'asistente', $2, $3::jsonb) returning ${COLUMNAS}`,
+      [negocioId, dicho.texto, dicho.ajuste ? JSON.stringify(dicho.ajuste) : null]));
+    return { usuario, respuesta };
   } catch {
-    return { texto: "No pude contestar. Intente de nuevo." };
+    return { error: "No pude contestar. Intente de nuevo." };
   }
 }
 
-/** Aplica el ajuste que propuso la agente, ya aprobado, sobre la configuración vigente y con la misma validación. */
-export async function aplicarAjuste(ajuste: Ajuste): Promise<EstadoVentas> {
-  const { config } = await seguimiento();
-  const estado = await guardarSeguimiento({ ...config, ...ajuste.cambios });
+/** Aplica (o descarta) el ajuste que propuso la Vendedora; el ajuste sale del historial guardado, no del navegador. */
+export async function decidirAjuste(id: string, aplicar: boolean): Promise<EstadoVentas> {
+  const [m] = await datos((q, negocioId) => q<{ ajuste: Ajuste | null }>(
+    "select ajuste from vendedora_mensaje where id = $1 and tenant_id = $2 and estado is null", [id, negocioId]));
+  if (!m?.ajuste) return { error: "Ese cambio ya se decidió." };
+  if (aplicar) {
+    const { config } = await seguimiento();
+    const estado = await guardarSeguimiento({ ...config, ...m.ajuste.cambios });
+    if (estado.error) return estado;
+  }
+  await datos((q, negocioId) => q("update vendedora_mensaje set estado = $3 where id = $1 and tenant_id = $2",
+    [id, negocioId, aplicar ? "aplicado" : "descartado"]));
   revalidatePath("/ventas/seguimiento");
-  return estado.error ? estado : { ok: "Listo, ya trabajo así." };
+  return { ok: aplicar ? "Listo, ya trabajo así." : "Descartado." };
+}
+
+/** Borra la conversación con la Vendedora (los cambios ya aplicados se quedan). */
+export async function borrarChatVendedora(): Promise<EstadoVentas> {
+  await datos((q, negocioId) => q("delete from vendedora_mensaje where tenant_id = $1", [negocioId]));
+  return {};
 }
