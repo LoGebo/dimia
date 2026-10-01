@@ -31,8 +31,9 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
   }
 
   return (
-    <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px]">
-      <div className="space-y-5">
+    <div className="@container">
+    <div className="grid gap-5 p-5 @5xl:grid-cols-[1fr_420px]">
+      <div className="@container space-y-5">
         <Tarjeta className="flex flex-wrap items-center gap-4 p-5">
           <AvatarAgente nombre={AGENTE.nombre} avatar={AGENTE.avatar} tamano={40} activo={c.activo} />
           <div className="min-w-0 flex-1">
@@ -46,7 +47,7 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
 
         <Tarjeta>
           <TarjetaCabecera titulo="¿Qué tanto insiste?" descripcion="Se detiene solo si agenda, si le dicen que no, si piden baja o si usted toma la conversación." />
-          <div className="grid gap-3 p-5 sm:grid-cols-3">
+          <div className="grid gap-3 p-5 @xl:grid-cols-3">
             {NIVELES.map((n) => (
               <button key={n.clave} onClick={() => { cambiar({ nivel: n.clave, pasos: null }); setEditar(false); }} className={`rounded-lg border p-4 text-left ${c.nivel === n.clave ? "border-acento bg-acento-suave" : "border-linea hover:bg-panel-2"}`}>
                 <div className="text-[15px] font-bold text-tinta">{n.nombre}</div>
@@ -146,6 +147,7 @@ export function Seguimiento({ inicial, niveles }: { inicial: ConfigSeguimiento; 
           <li className="pl-6 text-[12.5px] text-tinta-3">Si no contesta en 24 h más, se da por cerrado. {"{nombre}"} se cambia por el nombre de la persona.</li>
         </ol>
       </Tarjeta>
+    </div>
     </div>
   );
 }

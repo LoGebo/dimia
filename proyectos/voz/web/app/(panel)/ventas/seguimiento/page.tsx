@@ -20,7 +20,7 @@ export default async function PaginaSeguimiento() {
         principal={<ChatVendedora />}
       />
       <Seguimiento key={JSON.stringify(config)} inicial={config} niveles={niveles} />
-      <div className="px-5 pb-8 xl:max-w-[calc(100%-460px)]"><ExperimentoSeguimiento experimento={experimento} base={base} /></div>
+      <div className="px-5 pb-8 max-w-[860px]"><ExperimentoSeguimiento experimento={experimento} base={base} /></div>
     </>
   );
 }

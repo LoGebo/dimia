@@ -74,7 +74,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}>
+    <div className="@container flex min-h-0 flex-1 flex-col" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}>
       <div className="flex flex-wrap items-center gap-4 border-b border-linea px-6 py-4">
         <AvatarAgente nombre={AGENTE.nombre} avatar={AGENTE.avatar} tamano={44} activo={activo} />
         <div className="min-w-0 flex-1">
@@ -96,8 +96,8 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
           <p className="max-w-[420px] text-[15px] text-tinta-2">Todavía no hay interesados en los últimos 30 días. En cuanto alguien escriba por WhatsApp o Instagram, {AGENTE.nombre} lo atiende y aparece aquí.</p>
         </div>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_1fr_300px]">
-          <aside className="border-r border-linea lg:max-h-[calc(100vh-230px)] lg:overflow-y-auto">
+        <div className="grid min-h-0 flex-1 grid-cols-1 @3xl:grid-cols-[280px_1fr] @6xl:grid-cols-[320px_1fr_300px]">
+          <aside className="border-r border-linea @3xl:max-h-[calc(100vh-230px)] @3xl:overflow-y-auto">
             <div className="flex gap-1 p-3">
               {([["necesita", `Te necesitan ${necesitan.length}`], ["todos", `Todos ${lista.length}`]] as const).map(([v, t]) => (
                 <button key={v} onClick={() => { setVista(v); setElegidoId(null); }} className={`h-8 flex-1 rounded-full text-[13.5px] ${vista === v ? "bg-linea font-semibold text-tinta" : "text-tinta-2 hover:bg-panel-2"}`}>{t}</button>
@@ -123,7 +123,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
           </aside>
 
           {elegido ? (
-            <section className="flex min-w-0 flex-col lg:max-h-[calc(100vh-230px)]">
+            <section className="flex min-w-0 flex-col @3xl:max-h-[calc(100vh-230px)]">
               <div className="flex items-center justify-between gap-3 border-b border-linea px-6 py-3">
                 <div>
                   <div className="text-[16px] font-semibold text-tinta">{elegido.nombre}</div>
@@ -186,7 +186,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
           ) : <section />}
 
           {elegido ? (
-            <aside className="space-y-5 border-l border-linea p-5 text-[14px] lg:max-h-[calc(100vh-230px)] lg:overflow-y-auto">
+            <aside className="space-y-5 border-t border-linea p-5 text-[14px] @3xl:col-span-2 @6xl:col-span-1 @6xl:max-h-[calc(100vh-230px)] @6xl:overflow-y-auto @6xl:border-t-0 @6xl:border-l">
               <div>
                 <p className="text-[13px] text-tinta-3">Dónde va</p>
                 <p className="mt-1 leading-snug text-tinta">{ESTADO[elegido.grupo]}{elegido.primerToqueSeg !== null ? ` · le contestó en ${elegido.primerToqueSeg} s` : ""}</p>

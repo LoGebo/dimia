@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUp, ChevronDown, Maximize2, Plus, X } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { aprobarAccion, mensajesAgente } from "@/lib/acciones";
+import { aprobarAccion, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
 
 type Mensaje = {
   id: number;
@@ -124,7 +124,8 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
   }
 
   function hiloNuevo() {
-    try { sessionStorage.removeItem(claveHistorial(negocio, agente.id)); } catch {}
+    // El agente empieza de cero; lo anterior sigue guardado en su hilo (pestaña Agentes).
+    if (agente.trabajo) void hiloNuevoAgente(agente.id);
     setMensajes([saludo(agente)]);
   }
 
@@ -316,7 +317,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
         ) : (
           <div className="flex-none px-4 pb-4 pt-2">
             <div className="bg-panel p-4 shadow-[0_0_0_1px_var(--linea)]">
-              <p className="text-[13px] leading-relaxed text-tinta-2">El chat guarda la conversación en este navegador. El agente consulta los datos del negocio y no hace nada sin su visto bueno.</p>
+              <p className="text-[13px] leading-relaxed text-tinta-2">La conversación se guarda en su cuenta y la puede ver su equipo. El agente consulta los datos del negocio y no hace nada sin su visto bueno.</p>
               <button type="button" onClick={aceptar} className="mt-3 h-9 bg-tinta px-4 text-[13px] font-medium text-paper transition-[filter] duration-100 hover:brightness-110">De acuerdo</button>
             </div>
           </div>
