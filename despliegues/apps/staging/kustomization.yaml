@@ -71,4 +71,4 @@ images:
     newTag: 1eacfd9687ed
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
-    newTag: e6100ebc2a29
+    newTag: e43da2a160f3
