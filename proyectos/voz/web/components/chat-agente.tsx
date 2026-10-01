@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowUp, ChevronDown, Maximize2, Plus, X } from "lucide-react";
+import { ArrowUp, Check, ChevronDown, Maximize2, Plus, X } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { aprobarAccion, hiloNuevoAgente, mensajesAgente } from "@/lib/acciones";
 
@@ -10,7 +10,7 @@ type Mensaje = {
   id: number;
   de: "agente" | "yo";
   texto: string;
-  pasos?: { herramienta: string; detalle: string }[];
+  hora?: string;
   propuesta?: { run_id: string; request_id: string | null; resumen: string; detalle?: string };
   resuelta?: "aprobada" | "rechazada";
   resultado?: string;
@@ -20,17 +20,25 @@ export type AgenteChat = { id: string; nombre: string; trabajo: string | null; a
 
 const ANCHO_CAJON = 450;
 const ACCION: Record<string, string> = { aplicar_ajuste: "aplicar este cambio a su seguimiento", activar_campana: "activar esta campaña" };
+// Lo que hace mientras piensa, en palabras del dueño (el resto se lee del nombre de la herramienta).
+const HACIENDO: Record<string, string> = {
+  resumen_ventas: "Revisando cómo va la venta", interesados: "Revisando a los interesados", interesado: "Leyendo la conversación",
+  seguimiento: "Revisando su seguimiento", segmentos: "Contando a quién le llegaría", campanas: "Revisando las campañas",
+  anotar: "Anotando lo que aprendió", proponer_ajuste: "Preparando el cambio", crear_campana: "Preparando la campaña",
+  citas: "Revisando la agenda", buscar_cliente: "Buscando al cliente", cobros: "Revisando cobros",
+};
+const SUGERENCIAS: Record<string, string[]> = {
+  ventas: ["¿A quién le doy prioridad hoy?", "¿Cómo va la venta este mes?", "Recupera a quien faltó este mes", "Insiste menos"],
+  recepcion: ["¿Cómo va el día?", "¿Qué citas hay mañana?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?"],
+};
 const CLAVE_ACUERDO = "chat_agente_acuerdo";
 const claveHistorial = (negocio: string, agente: string) => `chat_agente_historial:${negocio}:${agente}`;
-const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
+const ahora = () => new Date().toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
+const herramientaDe = (t: string) => t.replace(/^mcp__[a-z_]+?__/, "");
 
 /**
- * El cajón de agentes: un panel a la derecha, como el de Cloudflare, con el
- * agente elegido arriba y su hilo abajo. Medidas y ritmo copiados de allá
- * (web/design/cajon-agente.css); formas y colores de Dimia.
- *
- * Cada agente contesta desde su Hermes (mismo camino que la pestaña Agentes);
- * el que aún no tiene trabajo lo dice claro.
+ * El cajón de agentes: el agente elegido arriba y su hilo abajo. Cada agente contesta desde su
+ * Hermes (mismo camino que la pestaña Agentes); el hilo se guarda en la cuenta.
  */
 export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: AgenteChat[] }) {
   const router = useRouter();
@@ -42,15 +50,17 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
   const [acuerdo, setAcuerdo] = useState(true);
   const [texto, setTexto] = useState("");
   const [escribiendo, setEscribiendo] = useState(false);
+  const [haciendo, setHaciendo] = useState<string | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const lista = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
   const agente = todos.find((a) => a.id === agenteId) ?? todos[0]!;
   const conectado = !!agente?.trabajo;
+  const sugerencias = SUGERENCIAS[agente?.rol ?? ""] ?? [];
 
   const saludo = (a: AgenteChat): Mensaje =>
     a.rol === "ventas"
-      ? { id: 1, de: "agente", texto: `Soy ${a.nombre}, la agente de ventas de ${negocio}. Pregúnteme cómo van los interesados o dígame cómo quiere que trabaje; los cambios se los propongo y usted los aprueba.` }
+      ? { id: 1, de: "agente", texto: `Soy ${a.nombre}, la agente de ventas de ${negocio}. Pregúnteme cómo van los interesados o pídame una campaña; los cambios se los preparo y usted los aprueba.` }
       : a.rol === "recepcion"
       ? { id: 1, de: "agente", texto: `Soy Recepción, de ${negocio}. Pregúnteme por citas, clientes o cobros, o pídame agendar, cancelar o anotar; antes de hacerlo le pido su visto bueno.` }
       : a.trabajo
@@ -77,7 +87,10 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
       if (agente.trabajo) {
         mensajesAgente(agente.id).then((l) => {
           const previos = l.filter((m) => m.de !== "sistema" && m.texto).slice(-30);
-          if (vigente && previos.length) setMensajes(previos.map((m) => ({ id: m.id, de: m.de as "yo" | "agente", texto: m.texto })));
+          if (vigente && previos.length) {
+            setMensajes(previos.map((m) => ({ id: m.id, de: m.de as "yo" | "agente", texto: m.texto,
+              hora: new Date(m.creado).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" }) })));
+          }
         }).catch(() => {});
       }
     }
@@ -96,10 +109,9 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
       lista.current?.scrollTo({ top: lista.current.scrollHeight, behavior: "smooth" });
       if (acuerdo) campo.current?.focus();
     }
-  }, [abierto, mensajes, escribiendo, acuerdo]);
+  }, [abierto, mensajes, escribiendo, haciendo, acuerdo]);
 
-  // El cajón empuja la pantalla en vez de taparla: el contenido deja el
-  // espacio (ver --cajon en el layout) y todo sigue visible y usable.
+  // El cajón empuja la pantalla en vez de taparla: el contenido deja el espacio (--cajon en el layout).
   useEffect(() => {
     document.documentElement.style.setProperty("--cajon", abierto && window.innerWidth >= 1024 ? `${ANCHO_CAJON}px` : "0px");
     return () => document.documentElement.style.setProperty("--cajon", "0px");
@@ -134,17 +146,19 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
     const t = pregunta.trim();
     if (!t || escribiendo) return;
     setTexto("");
-    const propios = [...mensajes, { id: Date.now(), de: "yo" as const, texto: t }];
-    setMensajes(propios);
+    if (campo.current) campo.current.style.height = "";
+    setMensajes((m) => [...m, { id: Date.now(), de: "yo", texto: t, hora: ahora() }]);
     if (!conectado) {
-      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: `Dígame primero para qué me quiere, en la pestaña Agentes.` }]);
+      setMensajes((m) => [...m, { id: Date.now() + 1, de: "agente", texto: "Dígame primero para qué me quiere, en la pestaña Agentes.", hora: ahora() }]);
       return;
     }
     setEscribiendo(true);
+    setHaciendo(null);
     const idAgente = Date.now() + 1;
     let creada = false;
     const pegar = (texto: string) => {
-      if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto }]); return; }
+      setHaciendo(null);
+      if (!creada) { creada = true; setMensajes((m) => [...m, { id: idAgente, de: "agente", texto, hora: ahora() }]); return; }
       setMensajes((m) => m.map((x) => (x.id === idAgente ? { ...x, texto: x.texto + texto } : x)));
     };
     try {
@@ -163,9 +177,15 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
           if (!linea) continue;
           const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string; detalle?: string; run_id?: string; request_id?: string | null };
           if (e.evento === "texto") pegar(e.texto);
+          else if (e.evento === "herramienta") {
+            const h = herramientaDe(e.texto ?? "");
+            setHaciendo(HACIENDO[h] ?? h.replaceAll("_", " "));
+          }
           else if (e.evento === "aprobacion") {
-            const herramienta = e.texto.replace(/^mcp__[a-z_]+?__/, "");
-            setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: e.run_id!, request_id: e.request_id ?? null, resumen: `${agente.nombre} pide su visto bueno para ${ACCION[herramienta] ?? herramienta.replaceAll("_", " ")}.`, detalle: e.detalle || undefined } }]);
+            const h = herramientaDe(e.texto);
+            setHaciendo(null);
+            creada = false; // lo que diga después va en su propia burbuja, debajo de la tarjeta
+            setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", hora: ahora(), propuesta: { run_id: e.run_id!, request_id: e.request_id ?? null, resumen: `${agente.nombre} pide su visto bueno para ${ACCION[h] ?? h.replaceAll("_", " ")}.`, detalle: e.detalle || undefined } }]);
           }
           else if (e.evento === "error" || e.evento === "cuota" || e.evento === "sin_codex") pegar(e.texto);
         }
@@ -174,6 +194,8 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
       pegar("Se cortó la conexión con mi máquina. Intente de nuevo.");
     } finally {
       setEscribiendo(false);
+      setHaciendo(null);
+      router.refresh();
     }
   }
 
@@ -196,33 +218,40 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
 
   if (ruta.startsWith("/agentes")) return null;
 
+  const ultimoAgente = [...mensajes].reverse().find((m) => m.de === "agente")?.id;
+
   return (
     <>
       <aside
         role="dialog"
         aria-label={`Chat con ${agente.nombre}`}
         aria-hidden={!abierto}
-        className={`fixed top-0 right-0 bottom-0 z-40 flex w-[450px] max-w-full flex-col border-l border-linea bg-paper text-tinta transition-transform duration-300 ease-in-out motion-reduce:transition-none ${abierto ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 bottom-0 z-40 flex w-[450px] max-w-full flex-col border-l border-linea bg-paper text-tinta transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
-        {/* Cabecera: 58 px, el agente como botón que despliega los demás */}
-        <header className="relative flex h-[58px] flex-none items-center justify-between px-4 shadow-[0_1px_0_0_var(--linea)]">
+        {/* Cabecera: el agente con su estado; tocarlo deja elegir a otro */}
+        <header className="relative flex h-16 flex-none items-center justify-between border-b border-linea px-3">
           <button
             type="button"
             onClick={() => setEligiendo((v) => !v)}
             aria-expanded={eligiendo}
-            className="flex h-8 items-center gap-2 px-2 text-[14px] font-medium tracking-[-0.14px] text-tinta transition-colors duration-150 hover:bg-panel-2"
+            className="flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors duration-150 hover:bg-panel-2"
           >
-            <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={22} />
-            {agente.nombre}
-            <ChevronDown size={14} className="text-tinta-3" />
+            <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={32} activo={escribiendo} />
+            <span className="flex min-w-0 flex-col">
+              <span className="flex items-center gap-1 text-[15px] font-semibold tracking-[-0.2px] text-tinta">{agente.nombre}<ChevronDown size={14} className={`text-tinta-3 transition-transform duration-200 ${eligiendo ? "rotate-180" : ""}`} /></span>
+              <span className="flex items-center gap-1.5 text-[12px] text-tinta-3">
+                <i aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${escribiendo ? "late bg-acento" : conectado ? "bg-bueno" : "bg-tinta-3"}`} />
+                {escribiendo ? (haciendo ?? "Pensando…") : conectado ? "Lista" : "Sin trabajo todavía"}
+              </span>
+            </span>
           </button>
           <div className="flex gap-0.5">
-            <button type="button" onClick={hiloNuevo} aria-label="Hilo nuevo" className="flex h-8 w-8 items-center justify-center text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><Plus size={16} /></button>
-            <a href={`/agentes/${agente.id}`} aria-label="Ver al agente" className="flex h-8 w-8 items-center justify-center text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><Maximize2 size={15} /></a>
-            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="flex h-8 w-8 items-center justify-center text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><X size={16} /></button>
+            <button type="button" onClick={hiloNuevo} aria-label="Conversación nueva" title="Conversación nueva" className="flex h-9 w-9 items-center justify-center rounded-lg text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><Plus size={17} /></button>
+            <a href={`/agentes/${agente.id}`} aria-label="Ver al agente" title="Ver al agente" className="flex h-9 w-9 items-center justify-center rounded-lg text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><Maximize2 size={15} /></a>
+            <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="flex h-9 w-9 items-center justify-center rounded-lg text-tinta-3 transition-colors duration-150 hover:bg-panel-2 hover:text-tinta"><X size={17} /></button>
           </div>
           {eligiendo ? (
-            <ul role="listbox" aria-label="Agentes" className="absolute top-[58px] left-3 z-10 w-72 border border-linea bg-panel py-1 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]">
+            <ul role="listbox" aria-label="Agentes" className="aparece-arriba absolute top-[60px] left-3 z-10 w-72 overflow-hidden rounded-xl border border-linea bg-panel py-1">
               {todos.map((a) => (
                 <li key={a.id}>
                   <button
@@ -247,52 +276,56 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
           ) : null}
         </header>
 
-        {/* Hilo: fondo de puntos, 16 de aire, 8 entre mensajes */}
-        <div ref={lista} className="flex flex-1 flex-col gap-2 overflow-y-auto bg-[radial-gradient(circle,rgba(125,125,125,0.1)_1px,transparent_1px)] bg-[size:12px_12px] p-4">
+        {/* Hilo */}
+        <div ref={lista} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-5">
           {mensajes.map((m) => (
-            <article key={m.id} className={`aparece-arriba flex flex-col gap-1 ${m.de === "yo" ? "items-end" : "items-start"}`}>
-              <div className={`max-w-[92%] px-4 py-3 text-[14px] leading-[22.75px] tracking-[-0.16px] whitespace-pre-wrap ${m.de === "yo" ? "bg-panel-2 text-tinta" : "bg-panel text-tinta shadow-[0_0_0_1px_var(--linea),0_1px_2px_0_rgba(0,0,0,0.05)]"}`}>
-                {m.de === "agente" ? <span className="mb-1 block text-[14px] font-medium text-acento">{agente.nombre}</span> : null}
-                {m.texto}
-                {m.pasos?.length ? (
-                  <ul className="mt-2.5 flex flex-col gap-1.5 border-t border-linea pt-2.5 text-[13px] leading-[19px]">
-                    {m.pasos.map((p, i) => (
-                      <li key={i} title={p.detalle} className="flex items-center gap-2 text-tinta-2">
-                        <i aria-hidden="true" className={`h-1.5 w-1.5 flex-none ${p.detalle.startsWith("falló") ? "bg-critico" : "bg-bueno"}`} />
-                        <span className="truncate">{p.herramienta.replace("proponer_", "propuso ").replaceAll("_", " ")}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-              {m.propuesta ? (
-                <div className={`w-[92%] px-4 py-3 text-[14px] leading-[22.75px] tracking-[-0.16px] ${m.resuelta ? "bg-panel shadow-[0_0_0_1px_var(--linea)]" : "bg-panel shadow-[0_0_0_1.5px_var(--laton)]"}`}>
-                  <span className="numeros mb-1 block text-[10px] tracking-[0.14em] text-laton uppercase">Necesita su visto bueno</span>
-                  {m.propuesta.resumen}
-                  {m.propuesta.detalle ? <p className="mt-2 whitespace-pre-wrap bg-panel-2 px-3 py-2 text-[13px] leading-[19px] text-tinta-2">{m.propuesta.detalle}</p> : null}
-                  {m.resuelta ? (
-                    <p className={`mt-2 text-[13px] font-medium ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>{m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}</p>
-                  ) : (
-                    <div className="mt-3 flex gap-2">
-                      <button type="button" onClick={() => aprobar(m.id, m.propuesta!)} className="h-[34px] bg-tinta px-3.5 text-[13px] font-medium text-paper transition-[filter] duration-100 hover:brightness-110">Aprobar</button>
-                      <button type="button" onClick={() => rechazar(m.id)} className="h-[34px] bg-panel px-3.5 text-[13px] text-tinta-2 shadow-[0_0_0_1px_var(--linea)] transition-colors duration-100 hover:text-tinta">Ahora no</button>
-                    </div>
-                  )}
-                </div>
+            <article key={m.id} className={`aparece-arriba group flex gap-2 ${m.de === "yo" ? "justify-end" : "items-end"}`}>
+              {m.de === "agente" ? (
+                <span className={`flex-none ${m.id === ultimoAgente ? "" : "invisible"}`}><AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={26} /></span>
               ) : null}
+              <div className={`flex max-w-[84%] flex-col gap-1 ${m.de === "yo" ? "items-end" : "items-start"}`}>
+                {m.texto ? (
+                  <div className={`px-3.5 py-2.5 text-[14px] leading-[21px] tracking-[-0.1px] whitespace-pre-wrap ${m.de === "yo" ? "rounded-2xl rounded-br-md bg-acento text-acento-tinta" : "rounded-2xl rounded-bl-md bg-panel-2 text-tinta"}`}>
+                    {m.texto}
+                    {escribiendo && m.id === ultimoAgente && !m.propuesta ? <span aria-hidden="true" className="late ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 bg-current" /> : null}
+                  </div>
+                ) : null}
+                {m.propuesta ? (
+                  <div className={`w-full rounded-2xl border px-4 py-3 text-[14px] leading-[21px] ${m.resuelta ? "border-linea bg-panel" : "border-laton/60 bg-panel"}`}>
+                    <span className="numeros block text-[10px] tracking-[0.14em] text-laton uppercase">Necesita su visto bueno</span>
+                    <p className="mt-1 text-tinta">{m.propuesta.resumen}</p>
+                    {m.propuesta.detalle ? <p className="mt-2 rounded-xl bg-panel-2 px-3 py-2 text-[13px] leading-[19px] whitespace-pre-wrap text-tinta-2">{m.propuesta.detalle}</p> : null}
+                    {m.resuelta ? (
+                      <p className={`aparece-arriba mt-2.5 flex items-center gap-1.5 text-[13px] font-medium ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>
+                        {m.resuelta === "aprobada" ? <Check size={14} /> : null}{m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}
+                      </p>
+                    ) : (
+                      <div className="mt-3 flex gap-2">
+                        <button type="button" onClick={() => aprobar(m.id, m.propuesta!)} className="h-9 rounded-full bg-acento px-4 text-[13px] font-semibold text-acento-tinta transition hover:brightness-110 active:scale-95">Aprobar</button>
+                        <button type="button" onClick={() => rechazar(m.id)} className="h-9 rounded-full border border-linea px-4 text-[13px] text-tinta-2 transition-colors hover:text-tinta active:scale-95">Ahora no</button>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+                {m.hora ? <span className="px-1 text-[11px] tabular-nums text-tinta-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100">{m.hora}</span> : null}
+              </div>
             </article>
           ))}
-          {escribiendo ? (
-            <div className="flex items-center gap-1 self-start bg-panel px-4 py-3 shadow-[0_0_0_1px_var(--linea)]" aria-label="Consultando">
-              {[0, 1, 2].map((i) => (
-                <i key={i} aria-hidden="true" className="late h-1.5 w-1.5 bg-tinta-3" style={{ animationDelay: `${i * 180}ms`, animationDuration: "1s" }} />
-              ))}
+          {escribiendo && (haciendo || mensajes[mensajes.length - 1]?.de === "yo") ? (
+            <div className="aparece-arriba flex items-end gap-2" aria-live="polite">
+              <AvatarAgente nombre={agente.nombre} avatar={agente.avatar} tamano={26} activo />
+              <div className="flex items-center gap-2.5 rounded-2xl rounded-bl-md bg-panel-2 px-3.5 py-2.5">
+                <span className="flex gap-1" aria-hidden="true">
+                  {[0, 1, 2].map((i) => <i key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-tinta-3" style={{ animationDelay: `${i * 140}ms` }} />)}
+                </span>
+                {haciendo ? <span className="text-[13px] text-tinta-2">{haciendo}…</span> : null}
+              </div>
             </div>
           ) : null}
-          {acuerdo && conectado && mensajes.length <= 1 && !escribiendo ? (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {SUGERENCIAS.map((s) => (
-                <button key={s} type="button" onClick={() => preguntar(s)} className="h-[26px] bg-panel px-2.5 text-[12px] font-medium text-tinta-2 shadow-[0_0_0_1px_var(--linea),0_1px_2px_0_rgba(0,0,0,0.05)] transition-colors duration-150 hover:text-tinta">{s}</button>
+          {acuerdo && conectado && mensajes.length <= 1 && !escribiendo && sugerencias.length ? (
+            <div className="escalonado mt-1 flex flex-col items-start gap-1.5 pl-[34px]">
+              {sugerencias.map((s) => (
+                <button key={s} type="button" onClick={() => preguntar(s)} className="rounded-full border border-linea bg-panel px-3 py-1.5 text-[13px] text-tinta-2 transition hover:-translate-y-px hover:border-acento hover:text-tinta">{s}</button>
               ))}
             </div>
           ) : null}
@@ -300,30 +333,29 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
 
         {/* Compositor */}
         {acuerdo ? (
-          <form onSubmit={enviar} className="flex flex-none flex-col gap-2 px-4 pb-4 pt-2">
-            <div className="flex flex-col bg-panel shadow-[0_0_0_1px_var(--linea)] transition-shadow duration-150 focus-within:shadow-[0_0_0_1.5px_rgba(31,71,196,0.5)]">
+          <form onSubmit={enviar} className="flex-none px-4 pb-4 pt-2">
+            <div className="flex items-end gap-2 rounded-2xl border border-linea bg-panel px-3 py-2 transition-colors duration-150 focus-within:border-acento">
               <textarea
                 ref={campo}
                 value={texto}
-                onChange={(e) => setTexto(e.target.value)}
+                onChange={(e) => { setTexto(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void preguntar(texto); } }}
-                rows={2}
-                placeholder="Pregunte o pida algo"
+                rows={1}
+                placeholder={`Escríbale a ${agente.nombre}`}
                 aria-label="Mensaje"
-                className="min-h-[58px] resize-none border-0 bg-transparent px-4 pt-4 text-[14px] leading-[21px] tracking-[-0.16px] text-tinta outline-none placeholder:text-tinta-3"
+                className="max-h-40 min-h-8 flex-1 resize-none bg-transparent py-1.5 text-[14px] leading-[21px] text-tinta outline-none placeholder:text-tinta-3"
               />
-              <div className="flex items-center justify-end px-3 pt-2 pb-3">
-                <button type="submit" disabled={!texto.trim() || escribiendo} aria-label="Enviar" className="flex h-[26px] w-[26px] items-center justify-center bg-acento text-acento-tinta shadow-[0_0_0_1px_var(--acento)] transition-[filter] duration-100 hover:brightness-110 disabled:bg-linea disabled:text-tinta-3 disabled:shadow-none">
-                  <ArrowUp size={14} />
-                </button>
-              </div>
+              <button type="submit" disabled={!texto.trim() || escribiendo} aria-label="Enviar" className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-acento text-acento-tinta transition hover:brightness-110 active:scale-90 disabled:bg-linea disabled:text-tinta-3">
+                <ArrowUp size={16} />
+              </button>
             </div>
+            <p className="mt-1.5 text-center text-[11px] text-tinta-3">Enter envía · Shift+Enter, salto de línea</p>
           </form>
         ) : (
           <div className="flex-none px-4 pb-4 pt-2">
-            <div className="bg-panel p-4 shadow-[0_0_0_1px_var(--linea)]">
+            <div className="rounded-2xl border border-linea bg-panel p-4">
               <p className="text-[13px] leading-relaxed text-tinta-2">La conversación se guarda en su cuenta y la puede ver su equipo. El agente consulta los datos del negocio y no hace nada sin su visto bueno.</p>
-              <button type="button" onClick={aceptar} className="mt-3 h-9 bg-tinta px-4 text-[13px] font-medium text-paper transition-[filter] duration-100 hover:brightness-110">De acuerdo</button>
+              <button type="button" onClick={aceptar} className="mt-3 h-9 rounded-full bg-acento px-4 text-[13px] font-semibold text-acento-tinta transition hover:brightness-110">De acuerdo</button>
             </div>
           </div>
         )}

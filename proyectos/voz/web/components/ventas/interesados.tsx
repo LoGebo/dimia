@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { MessageSquareText } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
+import { ResponderInteresado } from "@/components/ventas/responder";
 import { abrirVendedora, elegirDecision, marcarResultado, tomarInteresado } from "@/lib/acciones-ventas";
 import type { Grupo, InteresadoReal, Puntaje, Resumen } from "@/lib/ventas";
 
@@ -159,7 +160,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                           <button key={o.letra} disabled={pendiente} onClick={() => iniciar(async () => { setAvisoDecision(await elegirDecision(elegido.decision!.id, o.letra)); router.refresh(); })}
                             className="flex w-full items-start gap-3 rounded-xl border border-linea bg-panel px-3 py-2.5 text-left hover:border-acento/60 disabled:opacity-60">
                             <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-linea text-[12.5px] font-semibold text-tinta">{o.letra}</span>
-                            <span><span className="block text-[14.5px] text-tinta">{o.titulo}</span>{o.mensaje ? <span className="text-[13px] text-tinta-3">«{o.mensaje}»</span> : <span className="text-[13px] text-tinta-3">Usted le escribe desde Mensajes</span>}</span>
+                            <span><span className="block text-[14.5px] text-tinta">{o.titulo}</span>{o.mensaje ? <span className="text-[13px] text-tinta-3">«{o.mensaje}»</span> : <span className="text-[13px] text-tinta-3">Usted le escribe aquí abajo</span>}</span>
                           </button>
                         ))}
                       </div>
@@ -176,12 +177,16 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                         {primer} necesita a una persona{elegido.lectura ? `: ${elegido.lectura}` : "."} {elegido.tomado ? "La conversación la lleva usted." : "Estoy preparando opciones de respuesta para usted; mientras, puede contestarle desde Mensajes."}
                       </p>
                       {elegido.conversacionId ? (
-                        <Link href={`/bandeja/${elegido.conversacionId}`} className="mt-3 inline-flex h-9 items-center rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta hover:brightness-110">Contestarle</Link>
+                        <button onClick={() => accion(() => tomarInteresado(elegido.id, true))} className="mt-3 inline-flex h-9 items-center rounded-full bg-acento px-4 text-[14px] font-semibold text-acento-tinta hover:brightness-110">Contestarle yo</button>
                       ) : null}
                     </div>
                   </div>
                 ) : null}
               </div>
+              {elegido.conversacionId ? (
+                <ResponderInteresado key={elegido.id} id={elegido.id} nombre={elegido.nombre.split(" ")[0] ?? elegido.nombre} tomado={elegido.tomado}
+                  alTomar={() => accion(() => tomarInteresado(elegido.id, true))} />
+              ) : null}
             </section>
           ) : <section />}
 

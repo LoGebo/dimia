@@ -95,7 +95,7 @@ export async function elegirDecision(decisionId: string, letra: string): Promise
         await q("update decision_dueno set elegida = $2, resuelta_en = now() where id = $1", [decisionId, letra]);
         await q("update interesado set tomado_por_persona = true, actualizado = now() where id = $1", [d.interesado_id]);
         await q("select public.interesado_evento_registrar($1, 'tomado', null, '{}'::jsonb)", [d.interesado_id]);
-        return { ok: "La conversación es suya. Contéstele desde Mensajes." };
+        return { ok: "La conversación es suya. Escríbale aquí abajo." };
       }
       if (!d.conversacion_id || !d.canal || !d.contacto) return { error: "No encuentro la conversación de esta persona." };
       if (!d.ultimo || Date.now() - +new Date(d.ultimo) > 23 * 3600 * 1000) {
@@ -116,6 +116,34 @@ export async function elegirDecision(decisionId: string, letra: string): Promise
     }).finally(() => revalidatePath("/ventas"));
   } catch {
     return { error: "No se pudo enviar. Intente de nuevo." };
+  }
+}
+
+/** Lo escribe una persona del equipo (la conversación la lleva usted): sale como mensaje del negocio. */
+export async function responderInteresado(interesadoId: string, texto: string): Promise<EstadoVentas> {
+  const limpio = texto.trim().slice(0, 1000);
+  if (!limpio) return { error: "Escriba el mensaje." };
+  try {
+    return await datos(async (q, negocioId) => {
+      const [i] = await q<{ conversacion_id: string | null; canal: string | null; contacto: string | null; ultimo: string | null }>(
+        `select i.conversacion_id, c.canal::text canal, c.contacto, i.ultimo_mensaje_cliente_en ultimo
+           from interesado i left join conversacion c on c.id = i.conversacion_id
+          where i.id = $1 and i.tenant_id = $2`, [interesadoId, negocioId]);
+      if (!i?.conversacion_id || !i.canal || !i.contacto) return { error: "No encuentro la conversación de esta persona." };
+      if (!i.ultimo || Date.now() - +new Date(i.ultimo) > 23.5 * 3600 * 1000) {
+        return { error: "Pasaron más de 24 h desde su último mensaje: WhatsApp e Instagram ya no dejan escribirle libre." };
+      }
+      await q(
+        `insert into outbox (tenant_id, interesado_id, canal, destino, plantilla, payload)
+         values ($1, $2, $3, $4, 'seguimiento', jsonb_build_object('mensaje', $5::text, 'interesado_id', $2::text, 'origen', 'equipo'))`,
+        [negocioId, interesadoId, i.canal, i.contacto, limpio]);
+      await q("insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'equipo', $3)", [i.conversacion_id, negocioId, limpio]);
+      return {};
+    });
+  } catch {
+    return { error: "No se pudo enviar. Intente de nuevo." };
+  } finally {
+    revalidatePath("/ventas");
   }
 }
 
