@@ -474,7 +474,7 @@ class Agenda:
     async def interesado_aplicar_lectura(self, interesado_id: uuid.UUID, lectura: Lectura, leido_hasta: datetime) -> None:
         await self.pool.execute(
             "select public.interesado_aplicar_lectura($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-            interesado_id, lectura.intencion, lectura.urgencia, lectura.servicio, lectura.lectura, lectura.puntuacion,
+            interesado_id, lectura.intencion, lectura.urgencia, lectura.servicio, lectura.lectura, None,
             lectura.no_quiere_contacto, lectura.intencion == "no_interesa", lectura.acepta_promociones, leido_hasta,
         )
 

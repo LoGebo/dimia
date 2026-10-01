@@ -61,7 +61,8 @@ async def _lee_anota_y_ajusta():
         assert "Rosa Prueba" in lista and "De otro" not in lista
         rid = lista.split("\n")[[k for k, x in enumerate(lista.split("\n")) if "Rosa Prueba" in x][0]].split(" · ")[0]
         assert await mcp_ventas.anotar(_ctx(token), rid, "Busca limpieza; decide su esposo.") == "Anotado."
-        assert "decide su esposo" in await mcp_ventas.interesado(_ctx(token), rid)
+        ficha = await mcp_ventas.interesado(_ctx(token), rid)
+        assert "decide su esposo" in ficha and "Puntaje " in ficha and "reglas v1" in ficha
         ajeno = (await db.uno("select id from interesado where contacto = $1", ajena))["id"]
         with pytest.raises(MCPError):
             await mcp_ventas.anotar(_ctx(token), str(ajeno), "no debe")

@@ -34,9 +34,12 @@ export type InteresadoReal = {
   intencion: string | null;
   urgencia: string | null;
   servicio: string | null;
-  puntuacion: number | null;
+  puntaje: Puntaje;
   decision: { id: string; pregunta: string; opciones: { letra: string; titulo: string; mensaje: string }[] } | null;
 };
+
+/** El puntaje explicable (public.puntaje_interesado): reglas fijas, cada punto con su razón. */
+export type Puntaje = { total: number; nivel: "A" | "B" | "C" | "D"; confianza: "alta" | "media" | "baja"; version: string; factores: { razon: string; puntos: number }[] };
 
 export type Resumen = { activos: number; seguimientos: number; hoy: number; citasHoy: number; p50: number | null; proximo: { nombre: string; en: string } | null };
 
@@ -58,10 +61,10 @@ export function interesados(): Promise<{ lista: InteresadoReal[]; resumen: Resum
       id: string; nombre: string | null; contacto: string; canal: string; origen: string | null; etapa: Etapa;
       conversacion_id: string | null; lectura: string | null; tomado_por_persona: boolean; paso: number;
       proxima_accion_en: string | null; creado: string; primer_toque_en: string | null; consentimiento: string | null;
-      intencion: string | null; urgencia: string | null; servicio: string | null; puntuacion: number | null;
+      intencion: string | null; urgencia: string | null; servicio: string | null; puntaje: Puntaje;
     }>(
       `select i.id, i.nombre, i.contacto, i.canal, i.origen, i.etapa, i.conversacion_id, i.lectura, i.tomado_por_persona,
-              i.paso, i.proxima_accion_en, i.creado, i.primer_toque_en, i.intencion, i.urgencia, i.servicio, i.puntuacion,
+              i.paso, i.proxima_accion_en, i.creado, i.primer_toque_en, i.intencion, i.urgencia, i.servicio, public.puntaje_interesado(i) puntaje,
               (select c.evidencia || ' · ' || to_char(c.otorgado_en at time zone 'America/Mexico_City', 'DD-MM HH24:MI')
                  from consentimiento c where c.tenant_id = i.tenant_id and c.contacto = i.contacto and c.revocado_en is null
                 order by c.otorgado_en desc limit 1) as consentimiento
@@ -69,7 +72,7 @@ export function interesados(): Promise<{ lista: InteresadoReal[]; resumen: Resum
         where i.tenant_id = $1 and i.creado >= now() - interval '30 days'
         order by case i.etapa when 'requiere_persona' then 0 when 'nuevo' then 1 when 'contactado' then 1
                               when 'en_conversacion' then 2 when 'cita' then 3 else 4 end,
-                 i.puntuacion desc nulls last, i.actualizado desc
+                 (public.puntaje_interesado(i)->>'total')::int desc, i.actualizado desc
         limit 150`,
       [negocioId],
     );
@@ -124,7 +127,7 @@ export function interesados(): Promise<{ lista: InteresadoReal[]; resumen: Resum
         proxima: f.proxima_accion_en, creado: f.creado,
         primerToqueSeg: f.primer_toque_en ? Math.round((+new Date(f.primer_toque_en) - +new Date(f.creado)) / 1000) : null,
         consentimiento: f.consentimiento, hilo: hilo.map(({ t: _t, ...h }) => h),
-        intencion: f.intencion, urgencia: f.urgencia, servicio: f.servicio, puntuacion: f.puntuacion,
+        intencion: f.intencion, urgencia: f.urgencia, servicio: f.servicio, puntaje: f.puntaje,
         decision: (() => { const d = decisiones.find((x) => x.interesado_id === f.id); return d ? { id: d.id, pregunta: d.pregunta, opciones: d.opciones } : null; })(),
       };
     });

@@ -6,7 +6,7 @@ import { useMemo, useState, useTransition } from "react";
 import { MessageSquareText } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
 import { elegirDecision, marcarResultado, tomarInteresado } from "@/lib/acciones-ventas";
-import type { Grupo, InteresadoReal, Resumen } from "@/lib/ventas";
+import type { Grupo, InteresadoReal, Puntaje, Resumen } from "@/lib/ventas";
 
 export const AGENTE = { nombre: "Vendedora", avatar: "pastilla:#3fb68b" };
 
@@ -19,12 +19,15 @@ const QUIERE: Record<string, string> = {
   agendar: "agendar", reagendar: "cambiar su cita", precio: "saber precios", informacion: "información",
   queja: "quejarse", no_interesa: "nada por ahora", otro: "otra cosa",
 };
-function interes(p: number | null): { texto: string; color: string } | null {
-  if (p === null) return null;
-  if (p >= 70) return { texto: "Interés alto", color: "text-bueno" };
-  if (p >= 40) return { texto: "Interés medio", color: "text-alerta" };
-  return { texto: "Interés bajo", color: "text-tinta-3" };
-}
+// La prioridad solo importa mientras sigue abierto; con cita o cerrado ya no se trabaja.
+const ABIERTO = new Set(["nuevo", "contactado", "en_conversacion", "requiere_persona"]);
+
+const NIVEL: Record<Puntaje["nivel"], { texto: string; color: string }> = {
+  A: { texto: "A · prioritario", color: "text-bueno" },
+  B: { texto: "B · prometedor", color: "text-acento" },
+  C: { texto: "C · a observar", color: "text-alerta" },
+  D: { texto: "D · fuera de foco", color: "text-tinta-3" },
+};
 
 function hace(t: string): string {
   const s = Math.max(0, (Date.now() - +new Date(t)) / 1000);
@@ -112,7 +115,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                       <span className="flex-none text-[12.5px] tabular-nums text-tinta-3">{hace(i.creado)}</span>
                     </span>
                     <span className="block truncate text-[13.5px] text-tinta-2">{i.grupo === "persona" && i.lectura ? i.lectura : ultimo ? `${ultimo.quien === "agente" ? `${AGENTE.nombre}: ` : ""}${ultimo.texto}` : "Sin mensajes"}</span>
-                    <span className="text-[12.5px] text-tinta-3">{ESTADO[i.grupo]} · {CANAL[i.canal] ?? i.canal}{i.tomado ? " · lo lleva usted" : ""}{interes(i.puntuacion) ? <> · <span className={interes(i.puntuacion)!.color}>{interes(i.puntuacion)!.texto}</span></> : null}</span>
+                    <span className="text-[12.5px] text-tinta-3">{ESTADO[i.grupo]} · {CANAL[i.canal] ?? i.canal}{i.tomado ? " · lo lleva usted" : ""}{ABIERTO.has(i.etapa) ? <> · <span className={`tabular-nums ${NIVEL[i.puntaje.nivel].color}`}>{i.puntaje.nivel} {i.puntaje.total}</span></> : null}</span>
                   </span>
                 </button>
               );
@@ -192,9 +195,24 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                   <p className="mt-1 text-[13px] text-tinta-3">
                     Quiere {QUIERE[elegido.intencion] ?? elegido.intencion}{elegido.servicio ? ` (${elegido.servicio})` : ""}
                     {elegido.urgencia === "alta" ? " · con prisa" : ""}
-                    {interes(elegido.puntuacion) ? <> · <span className={interes(elegido.puntuacion)!.color}>{interes(elegido.puntuacion)!.texto}</span></> : null}
                   </p>
                 ) : null}
+                {ABIERTO.has(elegido.etapa) ? <details className="mt-2 text-[13px]">
+                  <summary className="cursor-pointer text-tinta-2">
+                    <span className={`font-semibold tabular-nums ${NIVEL[elegido.puntaje.nivel].color}`}>{elegido.puntaje.total} · {NIVEL[elegido.puntaje.nivel].texto}</span>
+                    <span className="text-tinta-3"> · confianza {elegido.puntaje.confianza} · por qué</span>
+                  </summary>
+                  <ul className="mt-2 space-y-1">
+                    {elegido.puntaje.factores.map((f, n) => (
+                      <li key={n} className="flex justify-between gap-3 text-tinta-2">
+                        <span>{f.razon}</span>
+                        <span className={`tabular-nums ${f.puntos > 0 ? "text-bueno" : f.puntos < 0 ? "text-critico" : "text-tinta-3"}`}>{f.puntos > 0 ? `+${f.puntos}` : f.puntos}</span>
+                      </li>
+                    ))}
+                    {elegido.puntaje.factores.length === 0 ? <li className="text-tinta-3">Todavía no hay lectura de la conversación.</li> : null}
+                  </ul>
+                  <p className="mt-1.5 text-[12px] text-tinta-3">Reglas {elegido.puntaje.version}. El modelo solo clasifica lo que quiere; los puntos los ponen estas reglas.</p>
+                </details> : null}
               </div>
               <div>
                 <p className="text-[13px] text-tinta-3">Lo que sigue</p>

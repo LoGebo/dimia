@@ -47,6 +47,10 @@ def _id(texto: str) -> _uuid.UUID:
         raise MCPError(-32602, "Id de interesado inválido: use el id que da `interesados`.") from None
 
 
+def _puntaje(p) -> dict:
+    return json.loads(p) if isinstance(p, str) else dict(p)
+
+
 def _fecha(v) -> str:
     return f"{v:%Y-%m-%d %H:%M}" if v else "—"
 
@@ -77,7 +81,7 @@ async def resumen_ventas(ctx: Context, dias: int = 30) -> str:
     return "\n".join(lineas)
 
 
-@ventas.tool(annotations=SOLO_LECTURA, name="interesados", description="Lista de interesados. filtro: 'activos' (en curso, default), 'necesitan' (esperan a una persona), 'perdidos' o 'todos'. Da id, etapa, intención, urgencia, puntaje, servicio y la lectura del intérprete.")
+@ventas.tool(annotations=SOLO_LECTURA, name="interesados", description="Lista de interesados. filtro: 'activos' (en curso, default), 'necesitan' (esperan a una persona), 'perdidos' o 'todos'. Ordenados por puntaje (reglas fijas, A-D). Da id, etapa, intención, urgencia, puntaje, servicio y la lectura del intérprete; el desglose del puntaje está en `interesado`.")
 async def interesados(ctx: Context, filtro: str = "activos", limite: int = 30) -> str:
     t = await _tenant(ctx)
     cond = {
@@ -87,16 +91,17 @@ async def interesados(ctx: Context, filtro: str = "activos", limite: int = 30) -
         "todos": "true",
     }.get(filtro, "etapa::text = any($2::text[])")
     filas = await db.todos(
-        f"""select id, coalesce(nombre, contacto) nombre, canal, etapa::text etapa, intencion, urgencia, puntuacion, servicio, lectura,
-                   proxima_accion_en, ultimo_mensaje_cliente_en, tomado_por_persona
-              from interesado where tenant_id = $1 and {cond} and ($2::text[] is not null)
-             order by puntuacion desc nulls last, ultimo_mensaje_cliente_en desc nulls last limit $3""",
+        f"""select id, coalesce(nombre, contacto) nombre, canal, etapa::text etapa, intencion, urgencia, servicio, lectura,
+                   proxima_accion_en, ultimo_mensaje_cliente_en, tomado_por_persona, public.puntaje_interesado(i) puntaje
+              from interesado i where tenant_id = $1 and {cond} and ($2::text[] is not null)
+             order by (public.puntaje_interesado(i)->>'total')::int desc, ultimo_mensaje_cliente_en desc nulls last limit $3""",
         t, list(ETAPAS_ACTIVAS), max(1, min(limite, 100)))
     if not filas:
         return "No hay interesados con ese filtro."
+    filas = [{**dict(f), "puntaje": _puntaje(f["puntaje"])} for f in filas]
     return "\n".join(
         f"{f['id']} · {f['nombre']} · {f['canal']} · {f['etapa']}{' · lo lleva una persona' if f['tomado_por_persona'] else ''}"
-        f" · {f['intencion'] or 'sin leer'}/{f['urgencia'] or '—'} · puntaje {f['puntuacion'] if f['puntuacion'] is not None else '—'}"
+        f" · {f['intencion'] or 'sin leer'}/{f['urgencia'] or '—'} · {f['puntaje']['nivel']} {f['puntaje']['total']} (confianza {f['puntaje']['confianza']})"
         f"{' · ' + f['servicio'] if f['servicio'] else ''} · último mensaje {_fecha(f['ultimo_mensaje_cliente_en'])}"
         f" · siguiente seguimiento {_fecha(f['proxima_accion_en'])}{chr(10) + '   ' + f['lectura'] if f['lectura'] else ''}"
         for f in filas)
@@ -105,11 +110,13 @@ async def interesados(ctx: Context, filtro: str = "activos", limite: int = 30) -
 @ventas.tool(annotations=SOLO_LECTURA, name="interesado", description="Todo de un interesado por su id: ficha, la conversación completa (últimos 40 mensajes), lo que ha pasado (eventos) y sus notas.")
 async def interesado(ctx: Context, id: str) -> str:
     t = await _tenant(ctx)
-    i = await db.uno("select * from interesado where id = $1 and tenant_id = $2", _id(id), t)
+    i = await db.uno("select i.*, public.puntaje_interesado(i) puntaje from interesado i where id = $1 and tenant_id = $2", _id(id), t)
     if not i:
         return "No existe ese interesado en este negocio."
     partes = [f"{i['nombre'] or i['contacto']} · {i['canal']} · {i['contacto']} · etapa {i['etapa']} · origen {i['origen'] or '—'}",
-              f"Intención {i['intencion'] or '—'}, urgencia {i['urgencia'] or '—'}, puntaje {i['puntuacion'] if i['puntuacion'] is not None else '—'}, servicio {i['servicio'] or '—'}.",
+              f"Intención {i['intencion'] or '—'}, urgencia {i['urgencia'] or '—'}, servicio {i['servicio'] or '—'}.",
+              (lambda p: f"Puntaje {p['total']} · nivel {p['nivel']} · confianza {p['confianza']} · reglas {p['version']}: "
+                         + ("; ".join(f"{x['razon']} {x['puntos']:+d}" for x in p["factores"]) or "sin lectura todavía"))(_puntaje(i["puntaje"])),
               f"Lectura: {i['lectura'] or '—'}"]
     if i["conversacion_id"]:
         msgs = await db.todos(

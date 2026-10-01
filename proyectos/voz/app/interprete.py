@@ -41,10 +41,6 @@ HERRAMIENTA = {
     },
 }
 
-BASE = {"agendar": 75, "reagendar": 65, "precio": 55, "informacion": 45, "otro": 30, "queja": 20, "no_interesa": 0}
-EXTRA = {"alta": 20, "media": 10, "baja": 0}
-
-
 @dataclass(frozen=True, slots=True)
 class Lectura:
     intencion: str
@@ -53,13 +49,6 @@ class Lectura:
     lectura: str
     no_quiere_contacto: bool
     acepta_promociones: bool
-
-    @property
-    def puntuacion(self) -> int:
-        """0-100 con reglas: lo que quiere hacer pesa más que lo urgente; «no me contacten» es 0."""
-        if self.no_quiere_contacto or self.intencion == "no_interesa":
-            return 0
-        return min(100, BASE.get(self.intencion, 30) + EXTRA.get(self.urgencia, 0))
 
     @property
     def detener(self) -> bool:

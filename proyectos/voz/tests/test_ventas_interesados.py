@@ -5,6 +5,7 @@ el motor (app_cron) manda el seguimiento por el outbox; «baja» suprime; una ci
 """
 from __future__ import annotations
 
+import json
 import os
 import uuid
 
@@ -237,14 +238,12 @@ async def test_sin_consentimiento_de_marketing_no_sale_plantilla():
         await admin.close()
 
 
-def test_puntaje_por_reglas():
+def test_detener_si_no_le_interesa():
     from app.interprete import Lectura
 
     base = {"servicio": "", "lectura": "", "acepta_promociones": False}
-    assert Lectura("agendar", "alta", no_quiere_contacto=False, **base).puntuacion == 95
-    assert Lectura("precio", "media", no_quiere_contacto=False, **base).puntuacion == 65
-    assert Lectura("agendar", "alta", no_quiere_contacto=True, **base).puntuacion == 0
     assert Lectura("no_interesa", "baja", no_quiere_contacto=False, **base).detener
+    assert not Lectura("agendar", "alta", no_quiere_contacto=False, **base).detener
 
 
 @pytest.mark.asyncio
@@ -289,8 +288,12 @@ async def test_aplicar_lectura_detiene_suprime_y_retoma():
         await _en("app_texto", tenant, "insert into mensaje (conversacion_id, tenant_id, autor, texto) values ($1, $2, 'cliente', 'Bueno, sí, ¿qué horarios tienen?')", conv, uuid.UUID(tenant))
         assert await admin.fetchval("select etapa::text from interesado where id = $1", iid) == "en_conversacion"
         await aplicar(intencion="agendar", urgencia="alta", puntuacion=95, no_interesa=False, acepta=True, lectura="Quiere horario")
-        fila = await admin.fetchrow("select etapa::text, puntuacion, lectura from interesado where id = $1", iid)
-        assert fila["etapa"] == "en_conversacion" and fila["puntuacion"] == 95 and fila["lectura"] == "Quiere horario"
+        fila = await admin.fetchrow("select etapa::text, lectura, public.puntaje_interesado(i) puntaje from interesado i where id = $1", iid)
+        puntaje = json.loads(fila["puntaje"])
+        # Agendar 55 + urgencia alta 20 + escribió hoy 15 + nombre 4 = 94, con cada razón a la vista.
+        assert fila["etapa"] == "en_conversacion" and fila["lectura"] == "Quiere horario"
+        assert puntaje["total"] == 94 and puntaje["nivel"] == "A" and puntaje["confianza"] == "alta" and puntaje["version"] == "v1"
+        assert [f["puntos"] for f in puntaje["factores"]] == [55, 20, 15, 4]
         assert await admin.fetchval("select count(*) from consentimiento where contacto = $1 and finalidad = 'marketing'", contacto) == 1
         await aplicar(no_quiere_contacto=True)
         assert await admin.fetchval("select etapa::text from interesado where id = $1", iid) == "baja"
