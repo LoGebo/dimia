@@ -23,6 +23,17 @@ const QUIERE: Record<string, string> = {
 // La prioridad solo importa mientras sigue abierto; con cita o cerrado ya no se trabaja.
 const ABIERTO = new Set(["nuevo", "contactado", "en_conversacion", "requiere_persona"]);
 
+/** El nivel del interesado como insignia junto al nombre: lo primero que se ve. */
+function Calificacion({ p, grande = false }: { p: Puntaje; grande?: boolean }) {
+  const fondo = { A: "bg-bueno/15 text-bueno border-bueno/40", B: "bg-acento/15 text-acento border-acento/40", C: "bg-alerta/15 text-alerta border-alerta/40", D: "bg-linea text-tinta-3 border-linea" }[p.nivel];
+  return (
+    <span title={`${NIVEL[p.nivel].texto} · ${p.total} de 100 · confianza ${p.confianza}`}
+      className={`inline-flex flex-none items-center gap-1 rounded-md border font-semibold tabular-nums ${fondo} ${grande ? "px-2 py-0.5 text-[13px]" : "px-1.5 text-[12px]"}`}>
+      {p.nivel}<span className="font-normal opacity-80">{p.total}</span>
+    </span>
+  );
+}
+
 const NIVEL: Record<Puntaje["nivel"], { texto: string; color: string }> = {
   A: { texto: "A · prioritario", color: "text-bueno" },
   B: { texto: "B · prometedor", color: "text-acento" },
@@ -112,11 +123,11 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
                   <span className="mt-1.5 h-2.5 w-2.5 flex-none rounded-full" style={{ background: i.grupo === "persona" ? "#e2685c" : i.grupo === "cita" ? "#3fb68b" : i.grupo === "nuevo" ? "#4f7cf5" : "transparent" }} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-[15px] font-semibold text-tinta">{i.nombre}</span>
+                      <span className="flex min-w-0 items-center gap-2"><span className="truncate text-[15px] font-semibold text-tinta">{i.nombre}</span>{ABIERTO.has(i.etapa) ? <Calificacion p={i.puntaje} /> : null}</span>
                       <span className="flex-none text-[12.5px] tabular-nums text-tinta-3">{hace(i.creado)}</span>
                     </span>
                     <span className="block truncate text-[13.5px] text-tinta-2">{i.grupo === "persona" && i.lectura ? i.lectura : ultimo ? `${ultimo.quien === "agente" ? `${AGENTE.nombre}: ` : ""}${ultimo.texto}` : "Sin mensajes"}</span>
-                    <span className="text-[12.5px] text-tinta-3">{ESTADO[i.grupo]} · {CANAL[i.canal] ?? i.canal}{i.tomado ? " · lo lleva usted" : ""}{ABIERTO.has(i.etapa) ? <> · <span className={`tabular-nums ${NIVEL[i.puntaje.nivel].color}`}>{i.puntaje.nivel} {i.puntaje.total}</span></> : null}</span>
+                    <span className="text-[12.5px] text-tinta-3">{ESTADO[i.grupo]} · {CANAL[i.canal] ?? i.canal}{i.tomado ? " · lo lleva usted" : ""}</span>
                   </span>
                 </button>
               );
@@ -127,7 +138,7 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
             <section className="flex min-w-0 flex-col @3xl:max-h-[calc(100vh-230px)]">
               <div className="flex items-center justify-between gap-3 border-b border-linea px-6 py-3">
                 <div>
-                  <div className="text-[16px] font-semibold text-tinta">{elegido.nombre}</div>
+                  <div className="flex items-center gap-2 text-[16px] font-semibold text-tinta">{elegido.nombre}{ABIERTO.has(elegido.etapa) ? <Calificacion p={elegido.puntaje} grande /> : null}</div>
                   <div className="text-[13px] text-tinta-3">{elegido.contacto} · {CANAL[elegido.canal] ?? elegido.canal}{elegido.origen ? ` · ${elegido.origen}` : ""}</div>
                 </div>
                 {elegido.conversacionId ? (
