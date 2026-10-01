@@ -13,7 +13,7 @@ from contextlib import suppress
 import re
 import time
 
-from agentes import catalogo, claude, codex, conexiones, config, credenciales, cuotas, db, hermes, jev, red, tunel, vault, vms
+from agentes import catalogo, claude, codex, conexiones, config, credenciales, cuotas, db, hermes, jev, mcp_ventas, red, tunel, vault, vms
 from agentes.maquinas import proveedor
 
 log = logging.getLogger("agentes")
@@ -856,8 +856,9 @@ async def _turno(tenant: str, agente_id: str, texto: str, ruta: str | None = Non
                             yield {"evento": "texto", "texto": t}
                     elif evento == "approval.request":
                         m_tool = re.search(r"MCP tool '([^']+)'", json.dumps(d))
+                        borrador = await mcp_ventas.detalle_aprobacion(tenant, m_tool.group(1)) if m_tool else ""
                         yield {"evento": "aprobacion", "texto": m_tool.group(1) if m_tool else (d.get("tool") or "una acción"),
-                               "detalle": "" if m_tool else str(d.get("command") or d.get("description") or "")[:600],
+                               "detalle": borrador if m_tool else str(d.get("command") or d.get("description") or "")[:600],
                                "run_id": d.get("run_id") or run_id, "request_id": d.get("request_id")}
                     elif evento == "tool.started":
                         pasos += 1

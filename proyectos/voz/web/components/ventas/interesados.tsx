@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { MessageSquareText } from "lucide-react";
 import { AvatarAgente } from "@/components/avatar-agente";
-import { elegirDecision, marcarResultado, tomarInteresado } from "@/lib/acciones-ventas";
+import { abrirVendedora, elegirDecision, marcarResultado, tomarInteresado } from "@/lib/acciones-ventas";
 import type { Grupo, InteresadoReal, Puntaje, Resumen } from "@/lib/ventas";
 
 export const AGENTE = { nombre: "Vendedora", avatar: "pastilla:#3fb68b" };
@@ -85,9 +85,9 @@ export function Interesados({ lista, resumen, activo }: { lista: InteresadoReal[
           </div>
           <div className="text-[13px] text-tinta-3">{dia}</div>
         </div>
-        <Link href="/ventas/seguimiento" className="flex h-9 items-center rounded-full border border-linea bg-panel px-4 text-[14px] text-tinta-2 hover:text-tinta">
-          {activo ? "Ajustar seguimiento" : "Encender seguimiento"}
-        </Link>
+        <button onClick={() => iniciar(async () => { const r = await abrirVendedora(); if (r.id) router.push(`/agentes/${r.id}?ajustes=1`); })} className="flex h-9 items-center rounded-full border border-linea bg-panel px-4 text-[14px] text-tinta-2 hover:text-tinta">
+          {activo ? "Configurar" : "Encender seguimiento"}
+        </button>
       </div>
 
       {lista.length === 0 ? (

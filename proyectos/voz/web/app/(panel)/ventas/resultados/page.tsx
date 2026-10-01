@@ -1,6 +1,8 @@
 import { Encabezado } from "@/components/encabezado";
 import { Tarjeta, TarjetaCabecera } from "@/components/ui/primitivos";
 import { exigirSeccion } from "@/lib/sesion";
+import Link from "next/link";
+import { campanas } from "@/lib/consultas";
 import { resultados } from "@/lib/ventas";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +11,7 @@ const CANAL: Record<string, string> = { whatsapp: "WhatsApp", instagram: "Instag
 
 export default async function Resultados() {
   const giro = await exigirSeccion("/ventas/resultados");
-  const r = await resultados(30);
+  const [r, lista] = await Promise.all([resultados(30), campanas()]);
   const embudo = [
     { nombre: "Interesados", n: r.interesados },
     { nombre: "Contactados", n: r.contactados },
@@ -55,6 +57,20 @@ export default async function Resultados() {
             {r.porCanal.length === 0 ? <li className="text-tinta-3">Todavía sin interesados.</li> : null}
             {r.porCanal.map((o) => (
               <li key={o.canal} className="flex justify-between gap-3"><span className="text-tinta-2">{CANAL[o.canal] ?? o.canal}</span><span className="tabular-nums text-tinta"><b>{o.citas}</b> citas de {o.interesados}</span></li>
+            ))}
+          </ul>
+        </Tarjeta>
+        <Tarjeta className="lg:col-span-3">
+          <TarjetaCabecera titulo="Campañas" descripcion="Se le piden a la Vendedora en su chat: ella prepara el borrador y usted lo aprueba." />
+          <ul className="divide-y divide-linea text-[13.5px]">
+            {lista.length === 0 ? <li className="px-5 py-4 text-tinta-3">Todavía no hay campañas. Pídale a la Vendedora, por ejemplo: «recupera a quien faltó este mes».</li> : null}
+            {lista.slice(0, 10).map((k) => (
+              <li key={k.id}>
+                <Link href={`/campanas/${k.id}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 hover:bg-panel-2">
+                  <span className="text-tinta">{k.nombre} <span className="text-tinta-3">· {k.estado}</span></span>
+                  <span className="tabular-nums text-tinta-2">{k.enviados} enviados · <b className="text-tinta">{k.agendaron}</b> agendaron</span>
+                </Link>
+              </li>
             ))}
           </ul>
         </Tarjeta>

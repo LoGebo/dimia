@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { datos } from "@/lib/sesion";
-import type { ConfigSeguimiento, PasoSeguimiento } from "@/lib/ventas";
+import { type ConfigSeguimiento, type Experimento, type PasoSeguimiento, experimentoActivo, seguimiento } from "@/lib/ventas";
 
 export type EstadoVentas = { error?: string; ok?: string };
 
@@ -171,4 +171,10 @@ export async function abrirVendedora(): Promise<{ id?: string; error?: string }>
   } catch {
     return { error: "No pude encontrar a la Vendedora." };
   }
+}
+
+/** Lo que muestra el engrane de la Vendedora: su seguimiento y la prueba A/B. */
+export async function configVendedora(): Promise<{ config: ConfigSeguimiento; niveles: Record<string, Record<"usted" | "tu", PasoSeguimiento[]>>; experimento: Experimento }> {
+  const [{ config, niveles }, experimento] = await Promise.all([seguimiento(), experimentoActivo()]);
+  return { config, niveles, experimento };
 }

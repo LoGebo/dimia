@@ -1,10 +1,14 @@
 """La Vendedora (rol «ventas»): las funciones del motor de ventas como herramientas.
 
 Dos servidores, por cómo se aprueban:
-- `ventas` (trust untrusted): leer interesados, conversaciones, resultados y la configuración;
-  ajustar el seguimiento pide la aprobación del dueño en el hilo.
-- `ventas_memoria` (sin trust): anotar sobre un interesado. Es su memoria interna, no sale al
-  cliente y sus rutinas corren sin nadie que apruebe; por eso no pasa por la puerta.
+- `ventas` (trust untrusted): leer interesados, conversaciones, resultados, configuración y campañas;
+  aplicar un ajuste y activar una campaña piden la aprobación del dueño en el hilo.
+- `ventas_borradores` (sin trust): anotar, proponer un ajuste, crear una campaña en borrador y
+  pausarla. Nada de esto sale al cliente; sus rutinas corren sin nadie que apruebe.
+
+Hermes, al pedir aprobación, solo dice el nombre de la herramienta. Por eso primero se guarda el
+borrador (ventas_propuesta o la campaña en 'borrador') y aplicar/activar toma el último: el panel
+muestra ese borrador en la tarjeta de aprobación. Lo que se ve es lo que se aplica.
 
 Nada aquí contacta a nadie: cuándo y por qué canal se escribe lo decide el motor
 (proyectos/voz/supabase/migrations/20260929*_ventas_*.sql), con consentimiento, bajas y horario.
@@ -26,10 +30,10 @@ ETAPAS_ACTIVAS = ("nuevo", "contactado", "en_conversacion", "requiere_persona")
 ventas = MCPServer("ventas", instructions=(
     "El motor de ventas del negocio: interesados, sus conversaciones, resultados y cómo se les da seguimiento. "
     "Lea antes de opinar. Usted no manda mensajes: el motor lo hace según la configuración. "
-    "ajustar_seguimiento pide la aprobación del dueño; antes de llamarla diga en una frase qué cambia."))
-memoria = MCPServer("ventas_memoria", instructions=(
-    "Su memoria sobre cada interesado. Anote lo que sirva para venderle mejor: objeciones, qué busca, "
-    "con quién decide, qué se le prometió. El agente que contesta por WhatsApp lee estas notas."))
+    "aplicar_ajuste y activar_campana piden la aprobación del dueño y toman el último borrador."))
+borradores = MCPServer("ventas_borradores", instructions=(
+    "Notas y borradores. Anote lo que sirva para venderle mejor a cada interesado (el agente de WhatsApp lo lee). "
+    "Prepare ajustes y campañas como borrador; nada sale de aquí: el dueño aprueba al aplicar o activar."))
 
 
 async def _tenant(ctx: Context) -> str:
@@ -199,26 +203,67 @@ BASE = {"activo": False, "nivel": "normal", "dias": "lun-sab", "hora_inicio": "0
         "pasos": None, "canales": {"whatsapp": True, "llamada": False, "correo": False}}
 
 
-@ventas.tool(name="ajustar_seguimiento", description=(
-    "Cambia cómo se da seguimiento. Pide la aprobación del dueño. Mande solo lo que cambia: objetivo (una frase), activo, "
-    "nivel (suave|normal|insistente), trato (usted|tu), dias (lun-vie|lun-sab|todos), hora_inicio/hora_fin (HH:MM), "
-    "preguntas (lista completa, máx. 4), escalar (lista completa de casos para pasar a una persona), llamada (en el primer seguimiento), "
-    "mensajes (lista de {horas: 1-23, mensaje} desde su última respuesta; {nombre} se cambia por el nombre)."))
-async def ajustar_seguimiento(ctx: Context, objetivo: str | None = None, activo: bool | None = None, nivel: str | None = None,
-                              trato: str | None = None, dias: str | None = None, hora_inicio: str | None = None, hora_fin: str | None = None,
-                              preguntas: list[str] | None = None, escalar: list[str] | None = None, llamada: bool | None = None,
-                              mensajes: list[dict] | None = None) -> str:
-    t = await _tenant(ctx)
+async def _config_actual(t: str) -> dict:
     f = await db.uno(
         """select activo, nivel, dias, to_char(hora_inicio, 'HH24:MI') hora_inicio, to_char(hora_fin, 'HH24:MI') hora_fin,
                   objetivo, trato, preguntas, escalar, pasos, canales from seguimiento_config where tenant_id = $1""", t)
-    actual = dict(BASE)
-    if f:
-        actual = {k: (json.loads(v) if isinstance(v, str) and k in ("preguntas", "escalar", "pasos", "canales") else v) for k, v in dict(f).items()}
+    if not f:
+        return dict(BASE)
+    return {k: (json.loads(v) if isinstance(v, str) and k in ("preguntas", "escalar", "pasos", "canales") else v) for k, v in dict(f).items()}
+
+
+ETIQUETAS = {"activo": "Seguimiento", "objetivo": "Objetivo", "nivel": "Insistencia", "trato": "Trato", "dias": "Días",
+             "hora_inicio": "Desde", "hora_fin": "Hasta", "preguntas": "Preguntas antes de agendar",
+             "escalar": "Pasa a una persona si", "canales": "Llamada en el primer seguimiento", "pasos": "Mensajes propios"}
+
+
+def diferencias(actual: dict, nuevo: dict) -> list[str]:
+    """Lo que cambia, en palabras del dueño: es lo que ve en la tarjeta de aprobación."""
+    def legible(k, v):
+        if k == "activo":
+            return "encendido" if v else "apagado"
+        if k == "canales":
+            return "sí" if (v or {}).get("llamada") else "no"
+        if k == "pasos":
+            return "; ".join(f"a las {p['horas']} h «{p['mensaje']}»" for p in v or []) or "los del nivel"
+        if isinstance(v, list):
+            return " | ".join(v) or "ninguna"
+        return str(v)
+    return [f"{ETIQUETAS[k]}: {legible(k, actual.get(k))} → {legible(k, nuevo.get(k))}"
+            for k in ETIQUETAS if legible(k, actual.get(k)) != legible(k, nuevo.get(k))]
+
+
+@borradores.tool(name="proponer_ajuste", description=(
+    "Prepara un cambio a cómo se da seguimiento; no lo aplica. Mande solo lo que cambia: objetivo (una frase), activo, "
+    "nivel (suave|normal|insistente), trato (usted|tu), dias (lun-vie|lun-sab|todos), hora_inicio/hora_fin (HH:MM), "
+    "preguntas (lista completa, máx. 4), escalar (lista completa de casos para pasar a una persona), llamada (en el primer seguimiento), "
+    "mensajes (lista de {horas: 1-23, mensaje} desde su última respuesta; {nombre} se cambia por el nombre). "
+    "Después diga al dueño qué cambia y llame aplicar_ajuste: él lo aprueba viendo este borrador."))
+async def proponer_ajuste(ctx: Context, objetivo: str | None = None, activo: bool | None = None, nivel: str | None = None,
+                          trato: str | None = None, dias: str | None = None, hora_inicio: str | None = None, hora_fin: str | None = None,
+                          preguntas: list[str] | None = None, escalar: list[str] | None = None, llamada: bool | None = None,
+                          mensajes: list[dict] | None = None) -> str:
+    t = await _tenant(ctx)
+    actual = await _config_actual(t)
     n = validar_ajuste(actual, {"objetivo": objetivo, "activo": activo, "nivel": nivel, "trato": trato, "dias": dias, "hora_inicio": hora_inicio,
                                 "hora_fin": hora_fin, "preguntas": preguntas, "escalar": escalar, "llamada": llamada, "mensajes": mensajes})
     if isinstance(n, str):
         raise MCPError(-32602, n)
+    cambios = diferencias(actual, n)
+    if not cambios:
+        return "Eso ya está así; no hay nada que cambiar."
+    await db.ejecutar("insert into ventas_propuesta (tenant_id, tipo, resumen, datos) values ($1, 'ajuste', $2, $3::jsonb)",
+                      t, "\n".join(cambios), json.dumps(n, ensure_ascii=False))
+    return "Borrador listo. Cambia:\n" + "\n".join(cambios) + "\nAhora llame aplicar_ajuste; el dueño lo aprueba viendo esto."
+
+
+@ventas.tool(name="aplicar_ajuste", description="Aplica el último ajuste preparado con proponer_ajuste. Pide la aprobación del dueño, que ve exactamente ese borrador.")
+async def aplicar_ajuste(ctx: Context) -> str:
+    t = await _tenant(ctx)
+    p = await db.uno("select id, datos from ventas_propuesta where tenant_id = $1 and tipo = 'ajuste' and aplicada_en is null order by creado desc limit 1", t)
+    if not p:
+        raise MCPError(-32602, "No hay un ajuste pendiente: prepárelo antes con proponer_ajuste.")
+    n = json.loads(p["datos"]) if isinstance(p["datos"], str) else p["datos"]
     await db.ejecutar(
         """insert into seguimiento_config (tenant_id, activo, nivel, dias, hora_inicio, hora_fin, objetivo, trato, preguntas, escalar, pasos, canales, actualizado)
            values ($1, $2, $3, $4, $5::text::time, $6::text::time, $7, $8, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, now())
@@ -228,10 +273,93 @@ async def ajustar_seguimiento(ctx: Context, objetivo: str | None = None, activo:
         t, n["activo"], n["nivel"], n["dias"], n["hora_inicio"], n["hora_fin"], n["objetivo"], n["trato"],
         json.dumps(n["preguntas"], ensure_ascii=False), json.dumps(n["escalar"], ensure_ascii=False),
         json.dumps(n["pasos"], ensure_ascii=False) if n["pasos"] else None, json.dumps(n["canales"]))
-    return "Listo. " + await seguimiento(ctx)
+    await db.ejecutar("update ventas_propuesta set aplicada_en = now() where tenant_id = $1 and aplicada_en is null", t)
+    return "Aplicado. " + await seguimiento(ctx)
 
 
-@memoria.tool(name="anotar", description="Guarda una nota sobre un interesado (por su id): objeción, qué busca, quién decide, qué se le prometió. Corta y concreta; el agente de WhatsApp la lee antes de contestarle.")
+# --- Campañas: salir a buscar a quien ya es cliente (faltó, no ha vuelto, debe) -------------
+
+SEGMENTOS = {
+    "no_show": ("Recuperar a quien faltó", """select count(distinct b.cliente_id) from booking b where b.tenant_id = $1 and b.estado = 'no_asistio'
+        and b.cliente_id is not null and b.inicio >= now() - make_interval(days => $2)
+        and not exists (select 1 from booking f where f.cliente_id = b.cliente_id and f.estado = 'confirmada' and f.inicio > now())"""),
+    "inactivos": ("Traer de vuelta a inactivos", """select count(*) from cliente c where c.tenant_id = $1 and c.telefono is not null
+        and c.ultimo_contacto < now() - make_interval(days => $2)
+        and exists (select 1 from booking b where b.cliente_id = c.id and b.estado = 'completada')"""),
+    "recordatorio_pago": ("Recordar un pago", """select count(distinct cliente_id) from pago where tenant_id = $1 and estado = 'pendiente'
+        and cliente_id is not null and $2::int is not null"""),
+}
+
+
+@ventas.tool(annotations=SOLO_LECTURA, name="segmentos", description="A cuántos clientes alcanzaría cada campaña posible: no_show (faltaron a su cita en los últimos N días y no tienen otra), inactivos (atendidos que no han vuelto en N días), recordatorio_pago (deben un cobro). dias: ventana (default 30; para inactivos conviene 90).")
+async def segmentos(ctx: Context, dias: int = 30) -> str:
+    t = await _tenant(ctx)
+    d = max(1, min(dias, 365))
+    lineas = []
+    for clave, (nombre, sql) in SEGMENTOS.items():
+        n = await db.uno(sql, t, d)
+        lineas.append(f"{clave} · {nombre}: {n[0] if n else 0} personas")
+    return "\n".join(lineas)
+
+
+@ventas.tool(annotations=SOLO_LECTURA, name="campanas", description="Campañas del negocio con su estado y avance: alcanzados, enviados, contestaron, agendaron.")
+async def campanas(ctx: Context) -> str:
+    t = await _tenant(ctx)
+    filas = await db.todos(
+        """select k.nombre, k.tipo::text tipo, k.canal::text canal, k.estado::text estado, k.creado,
+                  count(kc.id) contactos,
+                  count(*) filter (where kc.estado in ('enviado','contestado','agendo','sin_respuesta','rechazo')) enviados,
+                  count(*) filter (where kc.estado in ('contestado','agendo')) contestaron,
+                  count(*) filter (where kc.estado = 'agendo') agendaron
+             from campana k left join campana_contacto kc on kc.campana_id = k.id
+            where k.tenant_id = $1 group by k.id order by k.creado desc limit 20""", t)
+    return "\n".join(f"«{f['nombre']}» · {f['tipo']} por {f['canal']} · {f['estado']} · {f['contactos']} personas, {f['enviados']} enviados, "
+                     f"{f['contestaron']} contestaron, {f['agendaron']} agendaron" for f in filas) or "Todavía no hay campañas."
+
+
+@borradores.tool(name="crear_campana", description=(
+    "Prepara una campaña en borrador (no manda nada). tipo: no_show | inactivos | recordatorio_pago (vea `segmentos`). "
+    "canal: whatsapp (llamada está pausada hasta tener línea de salida). mensaje: corto, de usted, sin inventar precios ni promociones; "
+    "{nombre} y {negocio} se sustituyen solos. dias: ventana del segmento. desde/hasta: horario HH:MM. intentos: 1-5. "
+    "Después diga al dueño a cuántos le llega y qué dice, y llame activar_campana: él la aprueba viendo este borrador."))
+async def crear_campana(ctx: Context, nombre: str, tipo: str, mensaje: str, canal: str = "whatsapp", dias: int = 30,
+                        desde: str = "10:00", hasta: str = "19:00", intentos: int = 2) -> str:
+    t = await _tenant(ctx)
+    if tipo not in SEGMENTOS:
+        raise MCPError(-32602, "tipo debe ser no_show, inactivos o recordatorio_pago.")
+    if canal != "whatsapp":
+        raise MCPError(-32602, "Por ahora solo por WhatsApp: las llamadas de salida están pausadas hasta tener línea.")
+    if not nombre.strip() or not mensaje.strip() or re.search(r"\[[^\]]*\]", mensaje):
+        raise MCPError(-32602, "Falta nombre o mensaje, o el mensaje tiene algo entre corchetes sin completar.")
+    if not HORA.match(desde) or not HORA.match(hasta) or desde >= hasta:
+        raise MCPError(-32602, "Horario inválido: HH:MM y el inicio antes del fin.")
+    c = await db.uno(
+        """insert into campana (tenant_id, nombre, tipo, canal, criterio, mensaje, ventana_inicio, ventana_fin, max_intentos)
+           values ($1, $2, $3::campana_tipo, 'whatsapp', $4::jsonb, $5, $6::text::time, $7::text::time, $8) returning id""",
+        t, nombre.strip()[:120], tipo, json.dumps({"dias": max(1, min(dias, 365))}), mensaje.strip()[:1000], desde, hasta, max(1, min(intentos, 5)))
+    n = await db.uno("select public.campana_poblar($1) n", c["id"])
+    return (f"Borrador listo: «{nombre.strip()}», {SEGMENTOS[tipo][0].lower()}, le llegaría a {n['n'] if n else 0} personas por WhatsApp "
+            f"entre {desde} y {hasta}. Mensaje: «{mensaje.strip()}». Ahora llame activar_campana; el dueño la aprueba viendo esto.")
+
+
+@ventas.tool(name="activar_campana", description="Activa la campaña en borrador (la última preparada con crear_campana). Pide la aprobación del dueño, que ve exactamente ese borrador. Los envíos salen por el motor: consentimiento, bajas y horario.")
+async def activar_campana(ctx: Context) -> str:
+    t = await _tenant(ctx)
+    c = await db.uno("update campana set estado = 'activa', actualizado = now() where id = (select id from campana where tenant_id = $1 and estado = 'borrador' order by creado desc limit 1) returning id, nombre", t)
+    if not c:
+        raise MCPError(-32602, "No hay campaña en borrador: prepárela antes con crear_campana.")
+    await db.uno("select public.campana_poblar($1)", c["id"])
+    return f"Campaña «{c['nombre']}» activa. Los mensajes salen en su horario; el avance se ve con `campanas`."
+
+
+@borradores.tool(name="pausar_campana", description="Pausa una campaña activa por su nombre (exacto o parte). No manda nada; detiene los envíos pendientes.")
+async def pausar_campana(ctx: Context, nombre: str) -> str:
+    t = await _tenant(ctx)
+    filas = await db.todos("update campana set estado = 'pausada', actualizado = now() where tenant_id = $1 and estado = 'activa' and nombre ilike '%' || $2 || '%' returning nombre", t, nombre.strip())
+    return ("Pausada: " + ", ".join(f"«{f['nombre']}»" for f in filas)) if filas else "No encontré una campaña activa con ese nombre."
+
+
+@borradores.tool(name="anotar", description="Guarda una nota sobre un interesado (por su id): objeción, qué busca, quién decide, qué se le prometió. Corta y concreta; el agente de WhatsApp la lee antes de contestarle.")
 async def anotar(ctx: Context, id: str, nota: str) -> str:
     t = await _tenant(ctx)
     texto = nota.strip()[:1000]
@@ -244,6 +372,25 @@ async def anotar(ctx: Context, id: str, nota: str) -> str:
     return "Anotado."
 
 
+async def detalle_aprobacion(tenant: str, herramienta: str) -> str:
+    """El borrador exacto que se aplica o activa, para la tarjeta de aprobación del panel."""
+    try:
+        if herramienta.endswith("aplicar_ajuste"):
+            p = await db.uno("select resumen from ventas_propuesta where tenant_id = $1 and tipo = 'ajuste' and aplicada_en is null order by creado desc limit 1", tenant)
+            return f"Cambia:\n{p['resumen']}" if p else ""
+        if herramienta.endswith("activar_campana"):
+            c = await db.uno(
+                """select k.nombre, k.tipo::text tipo, k.mensaje, to_char(k.ventana_inicio, 'HH24:MI') desde, to_char(k.ventana_fin, 'HH24:MI') hasta,
+                          k.max_intentos, (select count(*) from campana_contacto kc where kc.campana_id = k.id) n
+                     from campana k where k.tenant_id = $1 and k.estado = 'borrador' order by k.creado desc limit 1""", tenant)
+            if c:
+                return (f"«{c['nombre']}» · {SEGMENTOS.get(c['tipo'], (c['tipo'],))[0]}\nLe llega a {c['n']} personas por WhatsApp, "
+                        f"de {c['desde']} a {c['hasta']}, hasta {c['max_intentos']} intentos.\nMensaje: «{c['mensaje']}»")
+    except Exception:  # la tarjeta sale igual, solo sin el borrador
+        return ""
+    return ""
+
+
 def _app(s: MCPServer):
     return s.streamable_http_app(
         streamable_http_path="/", stateless_http=True, json_response=True,
@@ -254,5 +401,5 @@ def app():
     return _app(ventas)
 
 
-def app_memoria():
-    return _app(memoria)
+def app_borradores():
+    return _app(borradores)

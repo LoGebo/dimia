@@ -144,7 +144,9 @@ def soul_ventas(nombre: str, negocio: str, reglas: str | None, personalidad: str
         "Cómo está armado su trabajo: el sistema de Dimia contesta a cada interesado por WhatsApp e Instagram en segundos y le da seguimiento según la configuración. Usted no escribe a clientes: usted lee, piensa, anota y ajusta.",
         "Nunca inventa cifras, nombres ni resultados. Antes de opinar consulte `resumen_ventas`, `interesados`, `interesado` y `seguimiento`.",
         "Memoria: cuando aprenda algo útil de un interesado (qué busca, su objeción, quién decide, qué se le prometió), guárdelo con `anotar`. El agente de WhatsApp lee esas notas antes de contestarle. Lo que aprenda del negocio en general (qué mensaje funciona, qué objeción se repite) guárdelo en su memoria.",
-        "Cambios: si el dueño pide cambiar cómo trabaja (objetivo, qué tanto insiste, horario, preguntas, cuándo pasarle a alguien, mensajes), use `ajustar_seguimiento` con solo lo que cambia. Pide su aprobación; antes, diga en una frase qué cambia. Si lo pide ambiguo, proponga la versión más razonable en vez de preguntar.",
+        "Cambios: si el dueño pide cambiar cómo trabaja (objetivo, qué tanto insiste, horario, preguntas, cuándo pasarle a alguien, mensajes), prepare el cambio con `proponer_ajuste` (solo lo que cambia), dígale en una frase qué cambia y llame `aplicar_ajuste`: él lo aprueba viendo el borrador. Si lo pide ambiguo, proponga la versión más razonable en vez de preguntar.",
+        "Campañas: si el dueño quiere salir a buscar a quien faltó, a quien no ha vuelto o a quien debe, vea a cuántos llega con `segmentos`, prepare el borrador con `crear_campana` (mensaje corto, de usted, sin inventar precios ni promociones), dígale a cuántos le llega y qué dice, y llame `activar_campana`: él la aprueba viendo el borrador. El avance se ve con `campanas`.",
+        "Ahorre: para una pregunta sencilla use la herramienta mínima (normalmente `interesados` o `resumen_ventas`); abra fichas solo si se lo piden o si hace falta para contestar.",
         "Revisión: si el dueño lo pide, cree con cronjob una revisión diaria: quién está por enfriarse, quién espera a una persona, qué conviene cambiar. Deje el resumen en escritorio/rutinas/ con la fecha.",
         "Nunca promete precios, descuentos ni nada que el negocio no haya dicho.",
     ]
@@ -216,10 +218,10 @@ def archivos_git(agente_id: str, token: str | None) -> dict[str, str]:
 
 
 def mcp_ventas(token: str) -> dict:
-    """El motor de ventas: leer y ajustar con aprobación (untrusted); anotar sin puerta (memoria interna)."""
+    """El motor de ventas: leer, aplicar y activar con aprobación (untrusted); notas y borradores sin puerta."""
     h = {"Authorization": f"Bearer {token}"}
     return {"ventas": {"url": f"{config.PUBLICO_URL}/mcp-ventas/", "headers": h, "trust": "untrusted"},
-            "ventas_memoria": {"url": f"{config.PUBLICO_URL}/mcp-ventas-memoria/", "headers": h}}
+            "ventas_borradores": {"url": f"{config.PUBLICO_URL}/mcp-ventas-borradores/", "headers": h}}
 
 
 def mcp_whatsapp(token: str) -> dict:

@@ -57,7 +57,7 @@ app_mcp = mcp_dimia.app()
 app_mcp_wa = mcp_dimia.app_whatsapp()
 app_mcp_tareas = mcp_dimia.app_tareas()
 app_mcp_ventas = mcp_ventas.app()
-app_mcp_ventas_memoria = mcp_ventas.app_memoria()
+app_mcp_ventas_borradores = mcp_ventas.app_borradores()
 apps_servicio = {"google": mcp_servicios.app_google(), "notion": mcp_servicios.app_notion(), "slack": mcp_servicios.app_slack(), "github": mcp_servicios.app_github()}
 
 
@@ -68,7 +68,7 @@ async def vida(_: FastAPI):
     # El transporte MCP montado necesita su propio ciclo de vida (Starlette no lo arranca solo).
     from contextlib import AsyncExitStack
     async with AsyncExitStack() as pila:
-        for a in (app_mcp, app_mcp_wa, app_mcp_tareas, app_mcp_ventas, app_mcp_ventas_memoria, *apps_servicio.values()):
+        for a in (app_mcp, app_mcp_wa, app_mcp_tareas, app_mcp_ventas, app_mcp_ventas_borradores, *apps_servicio.values()):
             await pila.enter_async_context(a.router.lifespan_context(a))
         yield
         # Deploy o reinicio (SIGTERM): los turnos en curso viven solo en memoria; se les da
@@ -86,7 +86,7 @@ app.mount("/mcp", app_mcp)
 app.mount("/mcp-whatsapp", app_mcp_wa)
 app.mount("/mcp-tareas", app_mcp_tareas)
 app.mount("/mcp-ventas", app_mcp_ventas)
-app.mount("/mcp-ventas-memoria", app_mcp_ventas_memoria)
+app.mount("/mcp-ventas-borradores", app_mcp_ventas_borradores)
 for _nombre, _a in apps_servicio.items():
     app.mount(f"/mcp-{_nombre}", _a)
 

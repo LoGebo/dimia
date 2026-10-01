@@ -9,6 +9,7 @@ import { WhatsappAgente } from "@/components/whatsapp-agente";
 import { UsoPlan } from "@/components/uso-plan";
 import { Rutinas } from "@/components/rutinas";
 import { AjustesFinos } from "@/components/ajustes-finos";
+import { ConfigVendedora } from "@/components/ventas/config-vendedora";
 import { HabilidadesAgente } from "@/components/habilidades-agente";
 import { AvatarAgente, COLORES, FORMAS, rasgos } from "@/components/avatar-agente";
 import { actualizarAgente, borrarAgente, type AjustesAgente } from "@/lib/acciones";
@@ -40,6 +41,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
   const [abierto, setAbierto] = useState(true);
   const [visibles, setVisibles] = useState<Set<string>>(new Set(ACCIONES.map((a) => a.clave)));
   const [ajustes, setAjustes] = useState(false);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("ajustes") === "1") setAjustes(true); }, []);
   const [marcados, setMarcados] = useState<Set<string>>(new Set(permisos));
   const [nombre, setNombre] = useState(agente.nombre);
   const [trabajo, setTrabajo] = useState(agente.trabajo ?? "");
@@ -196,6 +198,7 @@ export function PantallaAgente({ agente, negocio, permisos, finos }: { agente: A
                   </>
                 )}
               </div>
+              {agente.rol === "ventas" ? <ConfigVendedora /> : null}
               <div>
                 <p className="mb-2 text-[13px] font-medium text-tinta-2">En su pantalla</p>
                 <ul className="space-y-1">

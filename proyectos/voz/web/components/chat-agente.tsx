@@ -11,7 +11,7 @@ type Mensaje = {
   de: "agente" | "yo";
   texto: string;
   pasos?: { herramienta: string; detalle: string }[];
-  propuesta?: { run_id: string; request_id: string | null; resumen: string };
+  propuesta?: { run_id: string; request_id: string | null; resumen: string; detalle?: string };
   resuelta?: "aprobada" | "rechazada";
   resultado?: string;
 };
@@ -19,6 +19,7 @@ type Mensaje = {
 export type AgenteChat = { id: string; nombre: string; trabajo: string | null; avatar?: string | null; activo: boolean; rol?: "general" | "recepcion" | "ventas" };
 
 const ANCHO_CAJON = 450;
+const ACCION: Record<string, string> = { aplicar_ajuste: "aplicar este cambio a su seguimiento", activar_campana: "activar esta campaña" };
 const CLAVE_ACUERDO = "chat_agente_acuerdo";
 const claveHistorial = (negocio: string, agente: string) => `chat_agente_historial:${negocio}:${agente}`;
 const SUGERENCIAS = ["¿Cómo va el día?", "¿Quién no ha vuelto en 90 días?", "¿Cuánto cobré esta semana?", "¿Qué citas hay mañana?"];
@@ -160,9 +161,12 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
         for (const p of partes) {
           const linea = p.split("\n").find((l) => l.startsWith("data:"));
           if (!linea) continue;
-          const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string; run_id?: string; request_id?: string | null };
+          const e = JSON.parse(linea.slice(5)) as { evento: string; texto: string; detalle?: string; run_id?: string; request_id?: string | null };
           if (e.evento === "texto") pegar(e.texto);
-          else if (e.evento === "aprobacion") setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: e.run_id!, request_id: e.request_id ?? null, resumen: `${agente.nombre} pide su visto bueno para ${e.texto.replace(/^mcp__[a-z_]+?__/, "").replaceAll("_", " ")}.` } }]);
+          else if (e.evento === "aprobacion") {
+            const herramienta = e.texto.replace(/^mcp__[a-z_]+?__/, "");
+            setMensajes((m) => [...m, { id: Date.now() + 2, de: "agente", texto: "", propuesta: { run_id: e.run_id!, request_id: e.request_id ?? null, resumen: `${agente.nombre} pide su visto bueno para ${ACCION[herramienta] ?? herramienta.replaceAll("_", " ")}.`, detalle: e.detalle || undefined } }]);
+          }
           else if (e.evento === "error" || e.evento === "cuota" || e.evento === "sin_codex") pegar(e.texto);
         }
       }
@@ -265,6 +269,7 @@ export function ChatAgente({ negocio, agentes }: { negocio: string; agentes: Age
                 <div className={`w-[92%] px-4 py-3 text-[14px] leading-[22.75px] tracking-[-0.16px] ${m.resuelta ? "bg-panel shadow-[0_0_0_1px_var(--linea)]" : "bg-panel shadow-[0_0_0_1.5px_var(--laton)]"}`}>
                   <span className="numeros mb-1 block text-[10px] tracking-[0.14em] text-laton uppercase">Necesita su visto bueno</span>
                   {m.propuesta.resumen}
+                  {m.propuesta.detalle ? <p className="mt-2 whitespace-pre-wrap bg-panel-2 px-3 py-2 text-[13px] leading-[19px] text-tinta-2">{m.propuesta.detalle}</p> : null}
                   {m.resuelta ? (
                     <p className={`mt-2 text-[13px] font-medium ${m.resuelta === "aprobada" ? "text-bueno" : "text-tinta-3"}`}>{m.resuelta === "aprobada" ? (m.resultado ?? "Hecho.") : "Descartada"}</p>
                   ) : (

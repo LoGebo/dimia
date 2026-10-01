@@ -32,7 +32,7 @@ def test_el_ajuste_valida_como_el_panel():
 
 def test_la_vendedora_no_trae_whatsapp_y_ajustar_pide_aprobacion():
     m = hermes.mcp_ventas("tok")
-    assert m["ventas"]["trust"] == "untrusted" and "trust" not in m["ventas_memoria"]
+    assert m["ventas"]["trust"] == "untrusted" and "trust" not in m["ventas_borradores"]
     soul = hermes.soul("Vendedora", None, None, "Clínica", rol="ventas")
     assert "no escribe a clientes" in soul and "anotar" in soul
 
@@ -66,11 +66,26 @@ async def _lee_anota_y_ajusta():
         ajeno = (await db.uno("select id from interesado where contacto = $1", ajena))["id"]
         with pytest.raises(MCPError):
             await mcp_ventas.anotar(_ctx(token), str(ajeno), "no debe")
-        r = await mcp_ventas.ajustar_seguimiento(_ctx(token), nivel="suave", objetivo="vender el paquete de limpieza")
-        assert "nivel suave" in r and "vender el paquete" in r
+        objetivo = f"vender el paquete {uuid.uuid4().hex[:6]}"
+        borrador = await mcp_ventas.proponer_ajuste(_ctx(token), objetivo=objetivo)
+        assert f"Objetivo: " in borrador and objetivo in borrador
+        # La tarjeta de aprobación muestra el borrador exacto que se va a aplicar.
+        assert objetivo in await mcp_ventas.detalle_aprobacion(str(tenant["id"]), "aplicar_ajuste")
+        assert objetivo in await mcp_ventas.aplicar_ajuste(_ctx(token))
+        with pytest.raises(MCPError):
+            await mcp_ventas.aplicar_ajuste(_ctx(token))  # ya no hay borrador pendiente
+        assert "no_show" in await mcp_ventas.segmentos(_ctx(token))
+        c = await mcp_ventas.crear_campana(_ctx(token), nombre="Prueba faltas", tipo="no_show", mensaje="{nombre}, ¿le reagendamos?")
+        assert "Borrador listo" in c and await db.uno("select 1 from campana where tenant_id = $1 and nombre = 'Prueba faltas' and estado = 'borrador'", tenant["id"])
+        assert "Prueba faltas" in await mcp_ventas.detalle_aprobacion(str(tenant["id"]), "activar_campana")
+        assert "activa" in await mcp_ventas.activar_campana(_ctx(token))
+        assert "Pausada" in await mcp_ventas.pausar_campana(_ctx(token), "Prueba faltas")
         assert "interesados" in await mcp_ventas.resumen_ventas(_ctx(token))
         with pytest.raises(MCPError):
             await mcp_ventas.interesados(_ctx("token-falso"))
     finally:
         await db.ejecutar("delete from interesado where contacto = any($1::text[])", [contacto, ajena])
         await db.ejecutar("delete from agente where id = $1", agente["id"])
+        await db.ejecutar("delete from campana where tenant_id = $1 and nombre = 'Prueba faltas'", tenant["id"])
+        await db.ejecutar("delete from ventas_propuesta where tenant_id = $1", tenant["id"])
+

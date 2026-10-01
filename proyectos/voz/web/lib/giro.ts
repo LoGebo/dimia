@@ -21,11 +21,9 @@ export function secciones(herramientas: Herramienta[]): Seccion[] {
 
   const clientes: Pestana[] = [{ href: "/clientes", nombre: "Clientes" }];
 
-  // Todo lo que busca vender o reactivar: interesados, cómo los sigue el agente, campañas y resultados.
+  // Agent-first: el seguimiento y las campañas se le piden a la Vendedora (su chat y su engrane).
   const ventas: Pestana[] = [
     { href: "/ventas", nombre: "Interesados" },
-    { href: "/ventas/seguimiento", nombre: "Seguimiento" },
-    { href: "/campanas", nombre: "Campañas" },
     { href: "/ventas/resultados", nombre: "Resultados" },
   ];
 

@@ -28,8 +28,9 @@ export function AppAgentes({ agentes, grupos, negocio, children }: { agentes: Ag
   }, []);
   const id = /^\/agentes\/([^/]+)$/.exec(ruta)?.[1];
   const esAgente = !!id && id !== "marketplace";
-  // /agentes/recepcion es un alias del agente con rol recepción (existe siempre).
-  const agente = id === "recepcion" ? agentes.find((a) => a.rol === "recepcion") : agentes.find((a) => a.id === id);
+  // /agentes/recepcion y /agentes/vendedora son alias del agente con ese rol.
+  const agente = id === "recepcion" ? agentes.find((a) => a.rol === "recepcion")
+    : id === "vendedora" ? agentes.find((a) => a.rol === "ventas") : agentes.find((a) => a.id === id);
   return (
     <>
       <RosterAgentes agentes={agentes} grupos={grupos} negocio={negocio} />
