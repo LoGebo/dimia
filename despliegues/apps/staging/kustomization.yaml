@@ -68,7 +68,7 @@ images:
     newTag: a5c1915e0ee1
   - name: agentes
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/agentes
-    newTag: a5c1915e0ee1
+    newTag: 1eacfd9687ed
   - name: panel
     newName: 197821101689.dkr.ecr.mx-central-1.amazonaws.com/dimia/panel
-    newTag: 5c2d57d54d64
+    newTag: 1eacfd9687ed
