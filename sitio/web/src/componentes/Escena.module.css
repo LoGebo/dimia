@@ -1,0 +1,215 @@
+/* Tres tarjetas escalonadas: tinta, panel y papel, sobre el azul. */
+.escena {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.entrante,
+.dialogo,
+.comprobante {
+  position: absolute;
+  transition: opacity 500ms var(--curva), transform 500ms var(--curva);
+}
+
+/* ── 1 · la llamada entra ── */
+
+.entrante {
+  top: 13%;
+  left: 8%;
+  width: min(64%, 360px);
+  padding: 20px 22px;
+  background: var(--tinta);
+  color: var(--hueso);
+}
+
+@keyframes timbre {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.6); opacity: 0.4; }
+}
+
+.etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--bueno);
+}
+
+.etiqueta i {
+  width: 8px;
+  height: 8px;
+  background: var(--bueno);
+  animation: timbre 1.2s ease-in-out infinite;
+}
+
+.entrante[data-estado="colgada"] .etiqueta {
+  color: var(--acero);
+}
+
+.entrante[data-estado="colgada"] .etiqueta i {
+  background: var(--acero);
+  animation: none;
+}
+
+.numero {
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-3);
+  letter-spacing: -0.01em;
+}
+
+.contexto {
+  margin-top: 6px;
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+.contexto span {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--laton);
+  margin-right: 6px;
+}
+
+/* ── 2 · la conversación ── */
+
+.dialogo {
+  top: 33%;
+  left: 14%;
+  width: min(78%, 440px);
+  padding: 22px 24px;
+  background: var(--panel);
+  border-top: 2px solid var(--acento);
+  display: grid;
+  gap: 14px;
+}
+
+.linea {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: var(--t-dialogo);
+  line-height: 1.28;
+  color: var(--hueso);
+  transition: opacity 420ms var(--curva), transform 420ms var(--curva);
+}
+
+.linea[data-quien="cliente"] {
+  color: var(--texto-2);
+}
+
+.linea[data-visible="0"] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.quien {
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--sans);
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--acero);
+}
+
+.linea[data-quien="agente"] .quien {
+  color: var(--acento);
+}
+
+/* ── 3 · el comprobante en papel ── */
+
+.comprobante {
+  bottom: 6%;
+  right: 6%;
+  width: min(50%, 260px);
+  padding: 20px 22px;
+  background: var(--papel);
+  color: var(--papel-texto);
+}
+
+.comprobante[data-visible="0"] {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.compEstado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--papel-bueno);
+}
+
+.compEstado i {
+  width: 8px;
+  height: 8px;
+  background: var(--papel-bueno);
+}
+
+.compHora {
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(40px, 4.4vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.compDia {
+  margin-top: 8px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+}
+
+.compPie {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--papel-linea);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--t-nota);
+  color: var(--papel-texto-2);
+}
+
+.compPie span {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* En teléfono las tarjetas se apilan en escalera, sin encimarse. */
+@media (max-width: 640px) {
+  .escena {
+    display: grid;
+    gap: 12px;
+    padding: 32px 16px 40px;
+  }
+
+  .entrante,
+  .dialogo,
+  .comprobante {
+    position: static;
+    width: auto;
+    padding: 16px;
+  }
+
+  .entrante {
+    margin-right: 15%;
+  }
+
+  .dialogo {
+    margin-left: 6%;
+    gap: 10px;
+  }
+
+  .comprobante {
+    margin-left: 30%;
+  }
+
+  .linea {
+    font-size: 18px;
+  }
+}

@@ -8,12 +8,14 @@ type Props = {
   titular: string;
   entrada: string;
   children: React.ReactNode;
+  /** Color del capítulo: tiñe el número, el filete superior y el fondo. */
+  tono?: "azul" | "laton" | "papel";
 };
 
 /** Capítulo del producto: rótulo numerado, titular a la izquierda, entrada a la derecha y la pieza debajo. */
-export function Capitulo({ id, numero, nombre, titular, entrada, children }: Props) {
+export function Capitulo({ id, numero, nombre, titular, entrada, children, tono = "azul" }: Props) {
   return (
-    <section id={id} className={ui.seccion}>
+    <section id={id} className={`${ui.seccion} ${tono === "papel" ? ui.tonoPapel : ""} ${css.capitulo}`} data-tono={tono}>
       <div className={ui.contenedor}>
         <p className={ui.capitulo}>
           <b>{numero}</b>

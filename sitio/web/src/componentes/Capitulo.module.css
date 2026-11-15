@@ -1,3 +1,23 @@
+/* Cada capítulo lleva su color: un filete arriba, el número y un velo apenas teñido. */
+section.capitulo {
+  --color: var(--acento);
+  border-top: 2px solid var(--color);
+  background: color-mix(in srgb, var(--color) 9%, var(--tinta));
+}
+
+section.capitulo[data-tono="laton"] {
+  --color: var(--laton);
+}
+
+section.capitulo[data-tono="papel"] {
+  --color: var(--acento-hondo);
+  background: var(--papel);
+}
+
+.capitulo :global(b) {
+  color: var(--color);
+}
+
 .cabeza {
   margin-top: 24px;
   display: grid;

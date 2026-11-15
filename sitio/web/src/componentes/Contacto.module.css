@@ -1,10 +1,16 @@
+/* El cierre en el azul de la marca: el teléfono es el botón más grande del sitio. */
 .cartel {
   display: grid;
   gap: 12px;
   margin-top: clamp(32px, 4vw, 56px);
-  padding: clamp(24px, 3vw, 40px) 0;
-  border-top: 1px solid var(--linea);
-  border-bottom: 1px solid var(--linea);
+  padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 56px);
+  background: var(--acento);
+  color: var(--tinta);
+  transition: background-color 200ms var(--curva);
+}
+
+.cartel:hover {
+  background: var(--hueso);
 }
 
 .telefono {
@@ -14,17 +20,13 @@
   line-height: 1;
   letter-spacing: -0.04em;
   white-space: nowrap;
-  color: var(--hueso);
-  transition: color 150ms var(--curva);
-}
-
-.cartel:hover .telefono {
-  color: var(--acento);
+  color: var(--tinta);
 }
 
 .nota {
   font-size: var(--t-cuerpo);
-  color: var(--acero);
+  font-weight: 500;
+  color: var(--tinta);
 }
 
 .columnas {

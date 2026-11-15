@@ -28,7 +28,7 @@
      (las líneas que dice el agente y las citas). Plex Mono solo para cifras y horas. */
   --t-1: clamp(44px, 6vw, 84px);     /* titular de portada · Archivo 600 */
   --t-2: clamp(32px, 3.8vw, 56px);   /* titular de sección · Archivo 600 */
-  --t-cartel: clamp(28px, 8.6vw, 136px); /* el teléfono como anuncio · Plex Mono */
+  --t-cartel: clamp(24px, 7.6vw, 120px); /* el teléfono como anuncio · Plex Mono */
   --t-dialogo: clamp(20px, 1.8vw, 26px); /* lo que dice el agente · Newsreader 300 */
   --t-entrada: clamp(18px, 1.6vw, 22px); /* párrafo de entrada · Archivo 400 */
   --t-3: 18px;                       /* subtítulo · Archivo 600 */

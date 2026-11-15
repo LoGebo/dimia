@@ -7,6 +7,7 @@ import { Conversacion } from "@/componentes/Conversacion";
 import { Dia } from "@/componentes/Dia";
 import { Garantia } from "@/componentes/Garantia";
 import { Confirma } from "@/componentes/Confirma";
+import { PanelDemo } from "@/componentes/PanelDemo";
 import { Firma } from "@/componentes/Firma";
 import { Metodo } from "@/componentes/Metodo";
 import { Practica } from "@/componentes/Practica";
@@ -30,15 +31,19 @@ export default function Inicio() {
           <Conversacion />
         </Capitulo>
 
-        <Capitulo id="agenda" {...CAPITULOS.agenda}>
+        <Capitulo id="agenda" {...CAPITULOS.agenda} tono="laton">
           <div className={css.bento}>
             <Dia />
             <Garantia />
           </div>
         </Capitulo>
 
-        <Capitulo id="confirma" {...CAPITULOS.confirma}>
+        <Capitulo id="confirma" {...CAPITULOS.confirma} tono="papel">
           <Confirma />
+        </Capitulo>
+
+        <Capitulo id="panel" {...CAPITULOS.panel}>
+          <PanelDemo />
         </Capitulo>
 
         <Firma />

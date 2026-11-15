@@ -1,3 +1,12 @@
+/* Franja azul: la tesis sobre el color de la marca. */
+section.franja {
+  background: var(--acento-hondo);
+  border-top: 0;
+  --acero: color-mix(in srgb, var(--hueso) 62%, var(--acento-hondo));
+  --texto-2: color-mix(in srgb, var(--hueso) 80%, var(--acento-hondo));
+  --acento: var(--hueso);
+}
+
 .tesis {
   max-width: 24ch;
 }
@@ -20,7 +29,7 @@
 .punto i {
   width: 8px;
   height: 8px;
-  background: var(--acento);
+  background: var(--hueso);
   margin-bottom: 12px;
 }
 

@@ -5,7 +5,7 @@ import css from "./Declaracion.module.css";
 /** La tesis en dos tonos y tres razones debajo. */
 export function Declaracion() {
   return (
-    <section className={ui.seccion}>
+    <section className={`${ui.seccion} ${css.franja}`}>
       <div className={ui.contenedor}>
         <h2 className={`${ui.titulo} ${css.tesis}`}>
           {DECLARACION.fuerte} <span className={ui.apagado}>{DECLARACION.resto}</span>

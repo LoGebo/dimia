@@ -615,6 +615,13 @@ export const CAPITULOS = {
     entrada:
       "Al colgar, el cliente recibe su cita por WhatsApp y puede confirmarla con una respuesta. En el panel usted ve quién confirmó y quién sigue sin hacerlo.",
   },
+  panel: {
+    numero: "4.0",
+    nombre: "Revisa",
+    titular: "Todo su día, en un solo panel.",
+    entrada:
+      "Cada llamada queda registrada con lo que se dijo y cómo terminó. Toque una llamada para ver la conversación.",
+  },
 } as const;
 
 /** Mensaje de WhatsApp de ejemplo, con botones de respuesta rápida. */

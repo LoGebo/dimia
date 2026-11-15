@@ -59,7 +59,7 @@
 .respuesta {
   justify-self: end;
   background: var(--acento);
-  color: var(--tinta);
+  color: #ffffff;
   font-weight: 600;
 }
 

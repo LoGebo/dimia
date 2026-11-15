@@ -19,6 +19,7 @@
   --linea: var(--papel-linea);
   --linea-2: var(--papel-texto-2);
   --panel: #ffffff;
+  --panel-2: color-mix(in srgb, var(--papel-linea) 55%, #ffffff);
   --acento: var(--acento-hondo);
   --tinta: var(--papel);
   --bueno: var(--papel-bueno);
