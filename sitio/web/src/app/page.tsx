@@ -1,22 +1,33 @@
 import { Navegacion } from "@/componentes/Navegacion";
 import { Hero } from "@/componentes/Hero";
 import { Carrusel } from "@/componentes/Carrusel";
-import { Declaracion } from "@/componentes/Declaracion";
-import { Capitulo } from "@/componentes/Capitulo";
+import { Seccion } from "@/componentes/Seccion";
+import { Funciones } from "@/componentes/Funciones";
 import { Conversacion } from "@/componentes/Conversacion";
-import { Dia } from "@/componentes/Dia";
-import { Garantia } from "@/componentes/Garantia";
 import { Confirma } from "@/componentes/Confirma";
-import { Firma } from "@/componentes/Firma";
-import { Metodo } from "@/componentes/Metodo";
-import { Practica } from "@/componentes/Practica";
+import { Garantia } from "@/componentes/Garantia";
+import { Dia } from "@/componentes/Dia";
+import { Integraciones, Pasos } from "@/componentes/Pasos";
 import { Planes } from "@/componentes/Planes";
+import { Practica } from "@/componentes/Practica";
 import { Preguntas } from "@/componentes/Preguntas";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
-import { CAPITULOS, MOSTRAR_CARRUSEL } from "@/contenido/sitio";
+import {
+  FUNCIONES,
+  GIROS,
+  INTEGRACIONES,
+  MOSTRAR_CARRUSEL,
+  PASOS,
+  WHATSAPP,
+} from "@/contenido/sitio";
 import css from "./page.module.css";
 
+/*
+ * Estructura de venta, en el orden en que un dueño decide:
+ * qué es · qué hace · si sirve para mi giro · cómo confirma · con qué se conecta ·
+ * cómo empiezo · cuánto cuesta · dudas · contacto.
+ */
 export default function Inicio() {
   return (
     <>
@@ -24,28 +35,40 @@ export default function Inicio() {
       <main>
         <Hero />
         {MOSTRAR_CARRUSEL && <Carrusel />}
-        <Declaracion />
 
-        <Capitulo id="agente" {...CAPITULOS.contesta}>
+        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
+          <Funciones />
+        </Seccion>
+
+        <Seccion id="giros" titular={GIROS.titular} entrada={GIROS.entrada}>
           <Conversacion />
-        </Capitulo>
+        </Seccion>
 
-        <Capitulo id="agenda" {...CAPITULOS.agenda} tono="laton">
+        <Seccion id="whatsapp" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada}>
+          <Confirma />
+        </Seccion>
+
+        <Seccion
+          id="agenda"
+          titular="Una agenda que nunca se encima."
+          entrada="El agente no decide si hay lugar: lo decide la base de datos. Un horario ocupado no se puede volver a dar."
+        >
           <div className={css.bento}>
             <Dia />
             <Garantia />
           </div>
-        </Capitulo>
+        </Seccion>
 
-        <Capitulo id="confirma" {...CAPITULOS.confirma} tono="papel">
-          <Confirma />
-        </Capitulo>
+        <Seccion id="integraciones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada>
+          <Integraciones />
+        </Seccion>
 
+        <Seccion id="pasos" titular={PASOS.titular} entrada={PASOS.entrada} centrada>
+          <Pasos />
+        </Seccion>
 
-        <Firma />
-        <Metodo />
-        <Practica />
         <Planes />
+        <Practica />
         <Preguntas />
         <Contacto />
       </main>

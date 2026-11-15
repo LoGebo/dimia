@@ -1,0 +1,19 @@
+.cabeza {
+  display: grid;
+  gap: 18px;
+  max-width: 720px;
+}
+
+.cabeza[data-centrada="1"] {
+  margin: 0 auto;
+  text-align: center;
+  justify-items: center;
+}
+
+.cabeza p {
+  max-width: 56ch;
+}
+
+.pieza {
+  margin-top: clamp(48px, 6vw, 72px);
+}

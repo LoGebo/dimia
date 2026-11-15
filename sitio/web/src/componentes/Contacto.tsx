@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CIERRE, FIRMA } from "@/contenido/sitio";
+import { CIERRE, CIERRE_CTA, FIRMA } from "@/contenido/sitio";
 import ui from "./ui.module.css";
 import css from "./Contacto.module.css";
 
@@ -71,7 +71,8 @@ export function Contacto() {
   return (
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
-        <h2 className={ui.titulo}>{CIERRE.titular}</h2>
+        <h2 className={ui.titulo}>{CIERRE_CTA.titular}</h2>
+        <p className={`${ui.entrada} ${css.bajada}`}>{CIERRE_CTA.entrada}</p>
 
         {/* El teléfono es la demostración: contesta el propio agente. */}
         <a href={FIRMA.telefonoHref} className={css.cartel}>

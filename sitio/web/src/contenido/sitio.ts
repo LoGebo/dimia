@@ -18,21 +18,23 @@ export const FIRMA = {
 
 
 export const NAVEGACION = [
-  { href: "#agente", texto: "Producto" },
-  { href: "#metodo", texto: "Cómo trabajamos" },
-  { href: "#servicios", texto: "Servicios" },
+  { href: "#funciones", texto: "Qué hace" },
+  { href: "#giros", texto: "Por giro" },
+  { href: "#pasos", texto: "Cómo empezar" },
   { href: "#precios", texto: "Precios" },
   { href: "#preguntas", texto: "Preguntas" },
 ] as const;
 
 export const HERO = {
-  titular: "Contestamos lo que su negocio no alcanza a contestar.",
+  aviso: "Agente de voz para negocios con agenda",
+  titular: "Nunca pierda otra cita por no contestar el teléfono.",
+  entrada:
+    "Instalamos un agente de voz en su número: contesta las 24 horas, agenda la cita en su calendario y la confirma por WhatsApp. Nosotros lo configuramos y lo operamos.",
+  ctaPrimario: "Agendar demostración",
+  llamada: "Hable con el agente",
   hora: "21:04",
   contexto: "Su negocio ya cerró. El agente contesta.",
-  entrada:
-    "Un agente de voz atiende su número las 24 horas, agenda la cita en firme y la confirma por WhatsApp. Nosotros lo instalamos, lo operamos y respondemos por él.",
-  ctaPrimario: "Agendar demostración",
-  llamada: "O llame ahora: contesta el agente",
+  garantias: ["Sin costo de activación", "Desde $2,990 MXN al mes", "Español de México, de usted"],
 } as const;
 
 export const LA_FIRMA = {
@@ -632,4 +634,94 @@ export const WHATSAPP_DEMO = {
   botones: ["Confirmar", "Cambiar"],
   respuestaHora: "21:07",
   confirmacion: "Gracias. Su reserva está confirmada.",
+} as const;
+
+/** Lo que hace el agente. Cada tarjeta lleva una ilustración de interfaz. */
+export const FUNCIONES = {
+  titular: "Un agente que atiende su teléfono como lo haría su mejor recepcionista.",
+  entrada: "Contesta, entiende lo que le piden y deja la cita escrita antes de colgar.",
+  tarjetas: [
+    {
+      clave: "contesta",
+      titulo: "Contesta las 24 horas",
+      texto: "En plena operación, a la hora de comida o después de cerrar. Ninguna llamada se queda sin respuesta.",
+    },
+    {
+      clave: "agenda",
+      titulo: "Agenda en su calendario",
+      texto: "Ofrece solo horarios libres. Si alguien ya tomó el lugar, propone el siguiente en la misma llamada.",
+    },
+    {
+      clave: "whatsapp",
+      titulo: "Confirma por WhatsApp",
+      texto: "Al colgar, el cliente recibe su cita por WhatsApp y la confirma con un botón.",
+    },
+    {
+      clave: "responde",
+      titulo: "Responde preguntas",
+      texto: "Horarios, precios, ubicación y servicios, con la información que usted registra. No inventa nada.",
+    },
+    {
+      clave: "transfiere",
+      titulo: "Pasa la llamada a su equipo",
+      texto: "Si el cliente pide hablar con alguien o el agente no entiende dos veces, transfiere la llamada.",
+    },
+    {
+      clave: "panel",
+      titulo: "Todo queda en su panel",
+      texto: "Cada llamada con su resumen y su estado: confirmada, sin confirmar o atendida por su equipo.",
+    },
+  ],
+} as const;
+
+export const GIROS = {
+  titular: "Funciona para cualquier negocio que vive de su agenda.",
+  entrada: "Elija su giro y escuche cómo contesta el agente una llamada fuera de horario.",
+} as const;
+
+export const WHATSAPP = {
+  titular: "Confirmaciones por WhatsApp, sin que nadie las mande.",
+  entrada:
+    "El cliente recibe su cita al colgar y la confirma con un botón. Usted ve en el panel quién confirmó y quién sigue sin hacerlo, y decide qué pasa con las citas sin respuesta.",
+} as const;
+
+export const INTEGRACIONES = {
+  titular: "Se conecta con lo que ya usa.",
+  entrada: "No tiene que cambiar su forma de trabajar.",
+  lista: [
+    { nombre: "Su número de teléfono", texto: "El agente contesta en su línea por telefonía SIP." },
+    { nombre: "WhatsApp", texto: "Confirmaciones y avisos con plantillas aprobadas por Meta." },
+    { nombre: "Calendario", texto: "Las citas quedan en la agenda que usted ya revisa." },
+    { nombre: "CRM", texto: "Cada cliente y cada llamada, registrados donde los necesita." },
+  ],
+} as const;
+
+export const PASOS = {
+  titular: "Empiece en tres pasos.",
+  entrada: "Usted no instala ni administra nada. Nosotros lo hacemos.",
+  lista: [
+    {
+      titulo: "Demostración",
+      texto: "Le mostramos el agente contestando con el caso de su negocio y resolvemos sus dudas.",
+    },
+    {
+      titulo: "Configuración",
+      texto: "Cargamos sus horarios, servicios, precios y la forma en que quiere que se atienda a sus clientes.",
+    },
+    {
+      titulo: "En operación",
+      texto: "Conectamos su número y el agente empieza a contestar. Nosotros lo vigilamos y lo ajustamos.",
+    },
+  ],
+} as const;
+
+export const MAS_SERVICIOS = {
+  titular: "Además del agente.",
+  entrada:
+    "Somos una consultora mexicana. Cuando el agente ya está operando, también trabajamos en los datos, las automatizaciones y la medición de su negocio.",
+} as const;
+
+export const CIERRE_CTA = {
+  titular: "Cada llamada sin contestar es un cliente que llama a otro lado.",
+  entrada: "Llame ahora a nuestro número y hable con el agente, o agende una demostración.",
 } as const;

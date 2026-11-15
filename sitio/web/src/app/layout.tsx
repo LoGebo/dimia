@@ -36,7 +36,7 @@ const DESCRIPCION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO),
   title: {
-    default: "Dimia Consulting — Contestamos lo que su negocio no alcanza a contestar",
+    default: "Dimia — Agente de voz que contesta, agenda y confirma sus citas",
     template: "%s · Dimia Consulting",
   },
   description: DESCRIPCION,
@@ -60,13 +60,13 @@ export const metadata: Metadata = {
     locale: "es_MX",
     url: SITIO,
     siteName: FIRMA.nombre,
-    title: "Dimia Consulting — Contestamos lo que su negocio no alcanza a contestar",
+    title: "Dimia — Agente de voz que contesta, agenda y confirma sus citas",
     description: DESCRIPCION,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: FIRMA.nombre }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dimia Consulting — Contestamos lo que su negocio no alcanza a contestar",
+    title: "Dimia — Agente de voz que contesta, agenda y confirma sus citas",
     description: DESCRIPCION,
     images: ["/og.png"],
   },

@@ -172,3 +172,5 @@
 .formulario { border-radius: var(--radio); border-color: var(--borde-fuerte); }
 .entrada { border-radius: var(--radio-chico); border-color: var(--borde-fuerte); }
 .aviso { border-radius: var(--radio-chico); }
+
+.bajada { margin-top: 16px; }

@@ -87,6 +87,32 @@
   gap: 12px;
 }
 
+.garantias {
+  list-style: none;
+  padding: 0;
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+.garantias li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.garantias li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bueno);
+}
+
 .numero {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;

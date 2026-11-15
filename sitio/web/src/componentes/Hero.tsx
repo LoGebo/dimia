@@ -10,9 +10,9 @@ export function Hero() {
       <div className={css.luz} aria-hidden="true" />
 
       <div className={css.contenedor}>
-        <a href="#agente" className={css.aviso}>
+        <a href="#funciones" className={css.aviso}>
           <span className={css.avisoPunto} aria-hidden="true" />
-          Agente de voz para negocios con agenda
+          {HERO.aviso}
           <span className={css.avisoFlecha} aria-hidden="true">
             →
           </span>
@@ -26,10 +26,16 @@ export function Hero() {
             {HERO.ctaPrimario}
           </a>
           <a href={FIRMA.telefonoHref} className={ui.botonSecundario}>
-            Llamar al agente
+            {HERO.llamada}
             <span className={css.numero}>{FIRMA.telefono}</span>
           </a>
         </div>
+
+        <ul className={css.garantias}>
+          {HERO.garantias.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
       </div>
 
       <div className={css.escenario}>
