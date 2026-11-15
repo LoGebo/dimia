@@ -1,53 +1,33 @@
-import { HERO } from "@/contenido/sitio";
-import { FondoConSelector } from "./FondoConSelector";
-import { Flecha } from "./Iconos";
+import { FIRMA, HERO } from "@/contenido/sitio";
+import { PanelLlamada } from "./PanelLlamada";
+import ui from "./ui.module.css";
 import css from "./Hero.module.css";
 
 export function Hero() {
   return (
     <section id="inicio" className={css.hero}>
-      <FondoConSelector />
-
-      <div className={css.cuerpo}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          data-anima="1"
-          src="/marca/lockup-tinta.svg"
-          alt="Dimia Consulting"
-          width={3017}
-          height={1101}
-          className={css.lockup}
-        />
-
-        <div className={css.columnas}>
-          <h1 data-anima="1" className={css.titular}>
-            {HERO.titular}
-            <i className={css.cuadradoTitular} />
+      <div className={css.contenedor}>
+        <div className={css.texto}>
+          <h1 className={css.titular}>
+            {HERO.titular.replace(/\.$/, "")}
+            <i className={css.cuadrado} aria-hidden="true" />
           </h1>
+          <p className={css.entrada}>{HERO.entrada}</p>
 
-          <div data-anima="1" className={css.derecha}>
-            <p className={css.bajada}>
-              {HERO.bajadaAntes}
-              <strong className={css.fuerte}>{HERO.bajadaFuerte}</strong>
-              {HERO.bajadaDespues}
-            </p>
-            <div className={css.acciones}>
-              <a href="#contacto" className={css.primario}>
-                {HERO.ctaPrimario}
-              </a>
-              <a href="#practica" className={css.secundario}>
-                {HERO.ctaSecundario}
-                <Flecha />
-              </a>
-            </div>
+          <div className={css.acciones}>
+            <a href="#contacto" className={ui.botonPrimario}>
+              {HERO.ctaPrimario}
+            </a>
           </div>
-        </div>
-      </div>
 
-      <div data-anima="1" className={css.pie}>
-        <div className={css.pieInterior}>
-          <p className={css.pieTexto}>{HERO.pie}</p>
-          <span data-anima="1" aria-hidden="true" className={css.filete} />
+          <a href={FIRMA.telefonoHref} className={css.llamada}>
+            <span className={css.llamadaNota}>{HERO.llamada}</span>
+            <span className={css.telefono}>{FIRMA.telefono}</span>
+          </a>
+        </div>
+
+        <div className={css.demo}>
+          <PanelLlamada />
         </div>
       </div>
     </section>

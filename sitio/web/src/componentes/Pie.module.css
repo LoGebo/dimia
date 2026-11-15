@@ -1,108 +1,74 @@
-/* El pie queda fijo al fondo, detrás de <main> (ver globals.css): al terminar la
-   página, el contenido sube y lo descubre. */
 .pie {
-  position: sticky;
-  bottom: 0;
-  z-index: 0;
-  background: var(--panel);
+  border-top: 1px solid var(--linea);
 }
 
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(48px, 6vw, 88px) var(--margen) clamp(20px, 2.4vw, 32px);
-}
-
-.columnas {
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 2fr) minmax(0, 3fr);
-  gap: 32px clamp(32px, 4vw, 72px);
-  align-items: start;
-}
-
-.frase {
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(22px, 2.4vw, 32px);
-  line-height: 1.18;
-  letter-spacing: -0.012em;
-  color: var(--hueso);
-  margin: 0;
-  max-width: 28ch;
-}
-
-.grupo {
-  display: flex;
-  flex-direction: column;
-}
-
-.enlace,
-.enlaceMono {
-  font-size: 15px;
-  color: var(--acero);
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-  transition: color 150ms ease-out;
-}
-
-.enlaceMono {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 14px;
-}
-
-.enlace:hover,
-.enlaceMono:hover {
-  color: var(--hueso);
+  padding: clamp(64px, 8vw, 104px) var(--margen) 32px;
 }
 
 .logotipo {
-  width: 100%;
+  width: min(320px, 60vw);
   height: auto;
-  margin: clamp(48px, 7vw, 112px) 0 clamp(24px, 3vw, 40px);
 }
 
-.cierre {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 20px;
-  border-top: 1px solid var(--linea);
+.columnas {
+  margin-top: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
 }
 
-.legal,
-.legalEnlace {
-  font-size: 13.5px;
-  color: var(--acero-2);
-  margin: 0;
+.frase {
+  font-size: var(--t-entrada);
+  line-height: 1.5;
+  color: var(--hueso);
+  max-width: 30ch;
 }
 
-.legalEnlace {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+.grupo {
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
-.legalEnlace:hover {
+.enlace,
+.enlaceDato {
+  font-size: var(--t-nota);
+  color: var(--acero);
+  transition: color 150ms var(--curva);
+  justify-self: start;
+}
+
+.enlaceDato {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.enlace:hover,
+.enlaceDato:hover {
   color: var(--hueso);
 }
 
-@media (max-width: 760px) {
+.cierre {
+  margin-top: 64px;
+  padding-top: 24px;
+  border-top: 1px solid var(--linea);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+@media (max-width: 800px) {
   .columnas {
     grid-template-columns: 1fr 1fr;
   }
 
   .frase {
     grid-column: 1 / -1;
-  }
-}
-
-/* Si la pantalla es más baja que el pie, se queda en su lugar sin taparse. */
-@media (max-height: 640px) {
-  .pie {
-    position: relative;
   }
 }

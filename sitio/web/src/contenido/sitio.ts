@@ -16,46 +16,49 @@ export const FIRMA = {
   anio: 2026,
 } as const;
 
-/**
- * Fondo del hero. En local se comparan con ?fondo=color|onda.
- *   color · cada celda recorre su ciclo, sin patrón
- *   onda  · las celdas se encienden en diagonal
- */
-export const FONDO_HERO = "color" as const;
 
 export const NAVEGACION = [
-  { href: "#practica", texto: "Práctica" },
-  { href: "#metodo", texto: "Método" },
-  { href: "#productos", texto: "Productos" },
-  { href: "#planes", texto: "Planes" },
-  { href: "#firma", texto: "Firma" },
+  { href: "#agente", texto: "El agente" },
+  { href: "#metodo", texto: "Cómo trabajamos" },
+  { href: "#servicios", texto: "Servicios" },
+  { href: "#precios", texto: "Precios" },
+  { href: "#preguntas", texto: "Preguntas" },
 ] as const;
 
 export const HERO = {
-  titular:
-    "Dimia es la plataforma de operación inteligente que convierte cada conversación con sus clientes en acciones, oportunidades y datos para hacer crecer su negocio.",
-  bajadaAntes: "El punto donde el dato deja de informar y empieza a ",
-  bajadaFuerte: "decidir",
-  bajadaDespues: ".",
-  ctaPrimario: "Agendar una demostración",
-  ctaSecundario: "Ver cómo funciona",
-  pie: "Datos · Inteligencia artificial · Automatización · Operación",
+  titular: "Contestamos lo que su negocio no alcanza a contestar.",
+  entrada:
+    "Un agente de voz atiende su número las 24 horas, agenda la cita en firme y la confirma por WhatsApp. Nosotros lo instalamos, lo operamos y respondemos por él.",
+  ctaPrimario: "Agendar demostración",
+  llamada: "O llame ahora: contesta el agente",
 } as const;
 
 export const LA_FIRMA = {
-  rotulo: "La firma",
-  entrada:
-    "Contestamos lo que su negocio no alcanza a atender: la llamada que entra en plena operación, la cita que alguien pide a las nueve de la noche y los números del día que nadie revisó.",
+  titular: "Lo que hoy se pierde en su negocio no es falta de clientes.",
+  problemas: [
+    {
+      titulo: "La llamada en plena operación",
+      texto: "Entra mientras atiende a alguien más. Nadie contesta y el cliente marca al siguiente de la lista.",
+    },
+    {
+      titulo: "La cita de las nueve de la noche",
+      texto: "Alguien quiere agendar cuando ya cerró. Mañana ya no se acuerda de volver a llamar.",
+    },
+    {
+      titulo: "Los números que nadie revisó",
+      texto: "Cuántas llamadas entraron, cuántas se volvieron cita y cuántas se perdieron. El dato existe, pero nadie lo usa.",
+    },
+  ],
   cuerpo:
-    "Somos una consultora. Trabajamos con dueños y directores de empresas mexicanas que ya tienen operación y datos, pero no un sistema que los use. Entramos por el problema, no por la herramienta, y nos quedamos operando lo que instalamos.",
+    "Somos una consultora. Trabajamos con dueños de consultorios, clínicas, restaurantes, salones y despachos que ya tienen clientes y operación, pero no un sistema que los atienda a tiempo.",
   pilares: [
     {
       rotulo: "Diseñamos",
-      texto: "Definimos qué decisión hay que resolver y con qué dato se sostiene.",
+      texto: "Definimos qué hay que resolver primero y con qué dato se mide.",
     },
     {
       rotulo: "Construimos",
-      texto: "Bases, integraciones, automatizaciones y producto, en producción.",
+      texto: "Instalamos el agente, las integraciones y las automatizaciones, en producción.",
     },
     {
       rotulo: "Operamos",
@@ -179,19 +182,17 @@ export const CLIENTES: Cliente[] = [
   { nombre: "UERRE", logo: "/marca/clientes/uerre.png", alto: 30 },
 ];
 
-export const NOTA_CLIENTES = "Organizaciones con las que hemos trabajado.";
+export const NOTA_CLIENTES = "Equipos con los que hemos trabajado";
 
 export const PRODUCTO = {
-  estado: "En operación",
-  nombre: "Agente de voz Dimia",
-  resumen:
-    "Un número que contesta 24/7, entiende, agenda en firme y avisa por WhatsApp. La cita queda escrita antes de colgar.",
+  titular: "Un número que contesta, agenda y confirma",
+  entrada:
+    "El agente se presenta como asistente de su negocio, entiende lo que le piden y escribe la cita antes de colgar. Después se la confirma al cliente por WhatsApp.",
   fichas: [
-    { rotulo: "Qué resuelve", valor: "La llamada que nadie alcanza a contestar", mono: false },
-    { rotulo: "Para quién", valor: "Negocios con agenda y volumen telefónico", mono: false },
-    { rotulo: "Integra con", valor: "Telefonía SIP · WhatsApp · Calendario · CRM", mono: true },
+    { rotulo: "Qué resuelve", valor: "La llamada que nadie alcanza a contestar" },
+    { rotulo: "Para quién", valor: "Negocios con agenda y volumen telefónico" },
+    { rotulo: "Se conecta con", valor: "Su línea telefónica, WhatsApp, su calendario y su CRM" },
   ],
-  cta: "Solicitar demostración",
 } as const;
 
 export const PROXIMOS = [
@@ -249,8 +250,7 @@ export const GARANTIA = {
 } as const;
 
 export const PLANES = {
-  rotulo: "Planes iniciales",
-  titular: "Precios claros, comparación directa",
+    titular: "Precios mensuales, sin costo de activación",
   razones: [
     "Configuración adaptada a su negocio",
     "Datos organizados en su panel",
@@ -296,9 +296,10 @@ export const PLANES = {
   ],
   premium: {
     texto:
-      "Agrega una voz más natural y un modelo con mayor capacidad para conversaciones complejas.",
+      "Premium agrega una voz más natural y un modelo con mayor capacidad para conversaciones complejas.",
   },
   condiciones: [
+    "Personalización, plataforma y datos incluidos en todos los planes.",
     "Sin costo de activación.",
     "Bloque adicional de 100 minutos: $590 MXN.",
     "Precios mensuales y antes de impuestos.",
@@ -388,7 +389,35 @@ export const SOCIOS = [
 ] as const;
 
 export const CIERRE = {
-  titular: "Donde el dato decide.",
-  notaTelefono: "Este número contesta con el agente de voz de Dimia.",
+  titular: "Hable con el agente o agende una demostración.",
+  notaTelefono: "Este número lo contesta el agente de voz de Dimia, a cualquier hora.",
   declaracion: "Sistemas de decisión para empresas que ya no alcanzan a contestar.",
 } as const;
+
+/** Preguntas frecuentes. Cada respuesta sale del manual de marca o de los planes: nada inventado. */
+export const PREGUNTAS = [
+  {
+    p: "¿El agente se hace pasar por una persona?",
+    r: "No. Desde el inicio de la llamada se presenta como asistente de su negocio.",
+  },
+  {
+    p: "¿Qué pasa si no entiende lo que le piden?",
+    r: "A la segunda confusión ofrece pasar la llamada con una persona de su equipo.",
+  },
+  {
+    p: "¿Puede dar una cita en un horario que ya está ocupado?",
+    r: "No. La disponibilidad la decide la base de datos, no la conversación. Si el horario está tomado, la reserva se rechaza y el agente ofrece el siguiente espacio libre en la misma llamada.",
+  },
+  {
+    p: "¿Puede inventar horarios o precios?",
+    r: "No. El agente solo ofrece lo que está registrado en su agenda y en su catálogo.",
+  },
+  {
+    p: "¿Hay costo de activación?",
+    r: "No. Paga el plan mensual que elija. Los precios son antes de impuestos.",
+  },
+  {
+    p: "¿Qué pasa si se terminan los minutos del mes?",
+    r: "Puede agregar bloques de 100 minutos por $590 MXN cada uno.",
+  },
+] as const;

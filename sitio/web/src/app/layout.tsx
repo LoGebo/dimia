@@ -12,8 +12,8 @@ const archivo = Archivo({
 
 const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
+  weight: ["300"],
+  style: ["normal"],
   variable: "--fuente-display",
   display: "swap",
 });
@@ -32,12 +32,12 @@ const SITIO =
   process.env.NEXT_PUBLIC_SITIO ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://dimia.mx");
 const DESCRIPCION =
-  "Consultora mexicana que diseña, construye y opera sistemas de decisión: datos confiables, inteligencia artificial aplicada, automatización y medición contra ingreso real.";
+  "Consultora mexicana que instala y opera agentes de voz: contestan su número las 24 horas, agendan la cita en firme y la confirman por WhatsApp. También datos, automatización y medición contra ingreso.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO),
   title: {
-    default: "Dimia Consulting — Donde el dato decide",
+    default: "Dimia Consulting — Contestamos lo que su negocio no alcanza a contestar",
     template: "%s · Dimia Consulting",
   },
   description: DESCRIPCION,
@@ -61,13 +61,13 @@ export const metadata: Metadata = {
     locale: "es_MX",
     url: SITIO,
     siteName: FIRMA.nombre,
-    title: "Dimia Consulting — Donde el dato decide",
+    title: "Dimia Consulting — Contestamos lo que su negocio no alcanza a contestar",
     description: DESCRIPCION,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: FIRMA.nombre }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dimia Consulting — Donde el dato decide",
+    title: "Dimia Consulting — Contestamos lo que su negocio no alcanza a contestar",
     description: DESCRIPCION,
     images: ["/og.png"],
   },

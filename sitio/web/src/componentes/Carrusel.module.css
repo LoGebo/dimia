@@ -1,99 +1,65 @@
 .seccion {
-  background: var(--panel-2);
-  border-bottom: 1px solid var(--linea);
+  border-top: 1px solid var(--linea);
 }
 
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(48px, 6vw, 88px) var(--margen) 0;
+  padding: 40px var(--margen);
+  display: flex;
+  align-items: center;
+  gap: 48px;
 }
 
 .titulo {
-  margin: 0;
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(22px, 2.2vw, 30px);
-  line-height: 1.2;
-  letter-spacing: -0.012em;
+  flex: 0 0 auto;
+  max-width: 20ch;
+  font-size: var(--t-nota);
+  line-height: 1.4;
   color: var(--acero);
 }
 
-.ventana {
-  overflow: hidden;
-  padding: clamp(36px, 4vw, 56px) 0 clamp(52px, 6vw, 88px);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-}
-
-@keyframes desliza {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-.pista {
-  display: flex;
-  width: max-content;
-  animation: desliza 40s linear infinite;
-}
-
-.tramo {
+.logos {
+  flex: 1 1 auto;
+  list-style: none;
+  padding: 0;
   display: flex;
   align-items: center;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  justify-content: space-between;
+  gap: 32px 40px;
+  flex-wrap: wrap;
 }
 
 .celda {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 clamp(40px, 5vw, 88px);
-  min-height: 72px;
 }
 
-/* Logotipos oficiales en una sola tinta clara (ver public/marca/clientes/LEEME.txt). */
 .logo {
-  display: block;
   width: auto;
-  max-width: none;
-  opacity: 0.92;
-  transition: opacity 150ms ease-out;
-}
-
-.celda:hover .logo {
-  opacity: 1;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.75;
 }
 
 .nombre {
-  font-family: var(--fuente-sans), system-ui, sans-serif;
+  font-size: var(--t-3);
   font-weight: 600;
-  font-size: clamp(24px, 2.6vw, 36px);
-  letter-spacing: -0.02em;
-  color: var(--hueso);
-  white-space: nowrap;
+  color: var(--acero);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ventana {
-    -webkit-mask-image: none;
-    mask-image: none;
+@media (max-width: 900px) {
+  .contenedor {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
   }
 
-  .pista {
-    animation: none;
-    width: auto;
-    justify-content: center;
+  .titulo {
+    max-width: none;
   }
 
-  .tramo {
-    flex-wrap: wrap;
-    justify-content: center;
-    row-gap: 24px;
-  }
-
-  .tramo[aria-hidden="true"] {
-    display: none;
+  .logos {
+    width: 100%;
+    justify-content: flex-start;
   }
 }

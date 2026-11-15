@@ -1,66 +1,81 @@
-.declaracion {
-  margin: 0;
-  max-width: 24ch;
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(32px, 4.4vw, 66px);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: var(--hueso);
-  text-wrap: pretty;
+.problemas {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--linea);
 }
 
-.columnas {
-  margin-top: clamp(56px, 7vw, 112px);
+.problema {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 32px 32px 0 0;
+}
+
+.problema + .problema {
+  padding-left: 32px;
+  border-left: 1px solid var(--linea);
+}
+
+.cuadro {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: var(--acento);
+  margin-bottom: 8px;
+}
+
+.firma {
+  margin-top: clamp(72px, 8vw, 112px);
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: clamp(32px, 6vw, 112px);
+  gap: clamp(40px, 6vw, 96px);
   align-items: start;
 }
 
-.cuerpo {
-  margin: 0;
-  max-width: 44ch;
-  font-size: 18px;
-  line-height: 1.62;
-  color: var(--acero);
+.declaracion {
+  font-size: var(--t-entrada);
+  line-height: 1.55;
+  color: var(--hueso);
+  max-width: 40ch;
 }
 
 .pilares {
-  margin: 0;
-  border-top: 1px solid var(--linea-2);
+  display: grid;
+  border-top: 1px solid var(--linea);
 }
 
 .pilar {
   display: grid;
-  grid-template-columns: minmax(150px, 2fr) minmax(0, 3fr);
+  grid-template-columns: 160px minmax(0, 1fr);
   gap: 8px 32px;
-  align-items: baseline;
-  padding: 24px 0;
+  padding: 20px 0;
   border-bottom: 1px solid var(--linea);
 }
 
-.verbo {
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(26px, 2.6vw, 38px);
-  line-height: 1;
-  letter-spacing: -0.016em;
-  color: var(--hueso);
-}
-
-.pilarTexto {
-  margin: 0;
-  font-size: 16.5px;
-  line-height: 1.55;
-  color: var(--acero);
-}
-
-@media (max-width: 860px) {
-  .columnas {
+@media (max-width: 900px) {
+  .problemas {
     grid-template-columns: 1fr;
   }
 
+  .problema,
+  .problema + .problema {
+    padding: 28px 0;
+    border-left: 0;
+  }
+
+  .problema + .problema {
+    border-top: 1px solid var(--linea);
+  }
+
+  .firma {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
   .pilar {
     grid-template-columns: 1fr;
   }

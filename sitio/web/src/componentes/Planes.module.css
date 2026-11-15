@@ -1,293 +1,170 @@
-/* Planes: una sola tabla. Los precios encabezan cada columna; el detalle se lee por renglón. */
-
 .cabeza {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
   justify-content: space-between;
-  gap: 28px 48px;
-  margin-bottom: clamp(40px, 5vw, 72px);
+  align-items: flex-end;
+  gap: 32px 64px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(48px, 6vw, 80px);
 }
 
-/* Control Estándar / Con Premium: un cuadro que se desliza bajo la opción activa. */
+.cabeza > div:first-child {
+  margin-bottom: 0;
+}
+
+.interruptor {
+  display: grid;
+  gap: 12px;
+  max-width: 340px;
+}
+
 .toggle {
-  position: relative;
   display: inline-flex;
   border: 1px solid var(--linea-2);
-}
-
-.indicador {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 50%;
-  background: var(--hueso);
-  transition: transform 320ms var(--curva);
-}
-
-.toggle[data-premium="1"] .indicador {
-  transform: translateX(100%);
+  justify-self: start;
 }
 
 .opcion {
-  position: relative;
-  z-index: 1;
-  appearance: none;
-  min-width: 140px;
-  min-height: 46px;
+  min-height: 44px;
   padding: 0 20px;
   background: transparent;
   border: 0;
-  color: var(--acero);
-  font-size: 15px;
+  font-size: var(--t-nota);
   font-weight: 600;
+  color: var(--acero);
   cursor: pointer;
-  transition: color 200ms var(--curva);
+  transition: background-color 150ms var(--curva), color 150ms var(--curva);
 }
 
 .opcion[data-activo="1"] {
+  background: var(--hueso);
   color: var(--tinta);
 }
 
-.opcion:focus-visible {
-  outline: 2px solid var(--acento);
-  outline-offset: 3px;
-}
-
-/* ── tabla ── */
-
-.tablaEnvoltura {
-  overflow-x: auto;
-  border-top: 1px solid var(--linea-2);
-}
-
-.tabla {
-  width: 100%;
-  min-width: 760px;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.tabla th,
-.tabla td {
-  text-align: left;
-  vertical-align: top;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--linea);
-}
-
-.tabla thead th,
-.tabla thead td {
-  padding-top: 32px;
-  padding-bottom: 32px;
-  border-bottom-color: var(--linea-2);
-}
-
-.tabla thead th + th,
-.tabla tbody td {
-  border-left: 1px solid var(--linea);
-}
-
-.esquina {
-  width: 28%;
-  padding-left: 0 !important;
-}
-
 .premiumNota {
-  margin: 0;
-  max-width: 30ch;
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--acero-2);
-}
-
-.plan {
-  font-weight: 400;
-}
-
-.nombre {
-  display: block;
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(26px, 2.2vw, 34px);
-  line-height: 1;
-  letter-spacing: -0.012em;
-  color: var(--hueso);
-  margin-bottom: 20px;
-}
-
-.precio {
-  display: block;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  font-size: clamp(32px, 3vw, 46px);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--hueso);
-}
-
-.periodo {
-  display: block;
-  min-height: 1.5em;
-  margin-top: 10px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 12.5px;
-  color: var(--acero-2);
-}
-
-.paraQuien {
-  display: block;
-  min-height: 4.6em;
-  margin: 18px 0 22px;
-  font-size: 14.5px;
+  font-size: var(--t-nota);
   line-height: 1.5;
   color: var(--acero);
 }
 
-.cta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--linea-2);
-  font-size: 14px;
+.planes {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--linea);
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+}
+
+.plan + .plan {
+  border-left: 1px solid var(--linea);
+}
+
+.plan[data-elegido="1"] {
+  background: var(--panel);
+  outline: 1px solid var(--acento);
+  outline-offset: -1px;
+  position: relative;
+}
+
+.planCabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.sello {
+  font-size: var(--t-nota);
   font-weight: 600;
+  color: var(--acento);
+}
+
+.precio {
+  margin-top: 24px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-2);
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--hueso);
-  transition: background 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
 }
 
-.cta:hover {
-  background: var(--acento);
-  border-color: var(--acento);
-  color: var(--tinta);
-}
-
-.tabla tbody th {
-  padding-left: 0;
-  font-size: 15px;
-  font-weight: 400;
+.periodo {
+  margin-top: 10px;
+  font-size: var(--t-nota);
   color: var(--acero);
 }
 
-.tabla tbody td {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 14.5px;
+.paraQuien {
+  margin-top: 20px;
+  min-height: 3.2em;
+  font-size: var(--t-cuerpo);
+  line-height: 1.5;
   color: var(--hueso);
 }
 
+.detalle {
+  margin: 24px 0 32px;
+  border-top: 1px solid var(--linea);
+  flex: 1;
+}
+
+.renglon {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--linea);
+  font-size: var(--t-nota);
+}
+
+.renglon dt {
+  color: var(--acero);
+}
+
+.renglon dd {
+  color: var(--hueso);
+  text-align: right;
+}
+
+.renglon dd.cifra {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .condiciones {
+  list-style: none;
+  padding: 0;
+  margin-top: 24px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px 32px;
-  margin: 24px 0 0;
-  padding: 0;
-  list-style: none;
-  font-size: 14px;
-  color: var(--acero-2);
+  font-size: var(--t-nota);
+  color: var(--acero);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .indicador {
-    transition: none;
-  }
-}
-
-/* ── móvil: bloques por plan ── */
-
-.movil,
-.premiumMovil {
-  display: none;
-}
-
-@media (max-width: 760px) {
-  .tablaEnvoltura {
-    display: none;
+@media (max-width: 1000px) {
+  .planes {
+    grid-template-columns: 1fr;
   }
 
-  .cabeza {
-    margin-bottom: 28px;
-  }
-
-  .toggle {
-    width: 100%;
-  }
-
-  .opcion {
-    flex: 1 1 50%;
-    min-width: 0;
-  }
-
-  .premiumMovil {
-    display: block;
-    margin: 0 0 28px;
-    font-size: 15px;
-    line-height: 1.55;
-    color: var(--acero-2);
-  }
-
-  .movil {
-    display: grid;
-    gap: 16px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .planMovil {
-    display: flex;
-    flex-direction: column;
-    padding: 24px 20px;
-    background: var(--panel);
-    border: 1px solid var(--linea);
-  }
-
-  .planMovil .nombre {
-    margin-bottom: 14px;
-  }
-
-  .planMovil .paraQuien {
-    min-height: 0;
-    margin: 14px 0 18px;
-  }
-
-  .detalleMovil {
-    margin: 0 0 22px;
+  .plan + .plan {
+    border-left: 0;
     border-top: 1px solid var(--linea);
   }
 
-  .renglonMovil {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 16px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--linea);
+  .paraQuien {
+    min-height: 0;
   }
+}
 
-  .renglonMovil dt {
-    font-size: 14.5px;
-    color: var(--acero);
-  }
-
-  .renglonMovil dd {
-    margin: 0;
-    font-family: var(--fuente-mono), ui-monospace, monospace;
-    font-variant-numeric: tabular-nums;
-    font-size: 14px;
-    color: var(--hueso);
-    text-align: right;
-  }
-
-  .planMovil .cta {
-    justify-content: center;
-    min-height: 48px;
-  }
-
-  .condiciones {
-    flex-direction: column;
+@media (max-width: 560px) {
+  .plan {
+    padding: 28px 20px;
   }
 }

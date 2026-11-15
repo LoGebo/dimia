@@ -1,17 +1,12 @@
-/* Piezas compartidas por todas las secciones */
+/* Piezas compartidas. Todos los tamaños salen de la escala de globals.css. */
 
 .seccion {
-  border-bottom: 1px solid var(--linea);
   position: relative;
+  border-top: 1px solid var(--linea);
 }
 
-/* Tonos alternos para dar ritmo al bajar, dentro de la familia de tinta. */
 .tonoPanel {
   background: var(--panel);
-}
-
-.tonoPanel2 {
-  background: var(--panel-2);
 }
 
 .contenedor {
@@ -20,149 +15,116 @@
   padding: var(--seccion) var(--margen);
 }
 
-/* Encabezado de sección: solo el titular, alineado a la izquierda. */
+/* Encabezado de sección: titular serif y, si hace falta, una entrada debajo. */
 .encabezado {
-  margin-bottom: clamp(40px, 5vw, 80px);
+  display: grid;
+  gap: 20px;
+  max-width: 760px;
+  margin-bottom: clamp(48px, 6vw, 80px);
 }
 
 .titulo {
-  font-family: var(--fuente-display), Georgia, serif;
+  font-family: var(--serif);
   font-weight: 300;
-  font-size: clamp(34px, 4.4vw, 68px);
-  line-height: 1.04;
-  letter-spacing: -0.02em;
+  font-size: var(--t-2);
+  line-height: 1.1;
+  letter-spacing: -0.012em;
   text-wrap: balance;
-  margin: 0;
   color: var(--hueso);
-  max-width: 20ch;
 }
 
-/* El cuadrado que remataba cada titular se retiró: leía como adorno redundante. */
-.cuadrado {
-  display: none;
+.entrada {
+  font-size: var(--t-entrada);
+  line-height: 1.55;
+  color: var(--acero);
+  max-width: 60ch;
 }
 
-/* La animación de marca: el titular entra y 200 ms después aterriza su
-   cuadrado. Sin rebote, sin giro. Solo corre cuando el titular se reveló:
-   sin JS o con movimiento reducido, el cuadrado ya está en su sitio. */
-@keyframes aterriza {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: none; }
+.subtitulo {
+  font-size: var(--t-3);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--hueso);
 }
 
-[data-visible="1"] .cuadrado {
-  animation: aterriza 260ms var(--curva) 200ms both;
+.cuerpo {
+  font-size: var(--t-cuerpo);
+  line-height: 1.62;
+  color: var(--acero);
+  max-width: 64ch;
 }
 
-/* Botones y enlaces */
-.botonPrimario {
+.nota {
+  font-size: var(--t-nota);
+  line-height: 1.5;
+  color: var(--acero);
+}
+
+.dato {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-dato);
+}
+
+/* ── Botones: dos y nada más ── */
+
+.botonPrimario,
+.botonSecundario {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  padding: 0 26px;
-  background: var(--acento);
-  color: #0b0f17;
-  border: 0;
-  font-size: 15px;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 24px;
+  font-size: var(--t-cuerpo);
   font-weight: 600;
   letter-spacing: -0.01em;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 150ms var(--curva);
+  transition: background-color 150ms var(--curva), border-color 150ms var(--curva), color 150ms var(--curva);
+}
+
+.botonPrimario {
+  background: var(--acento);
+  color: var(--tinta);
+  border: 1px solid var(--acento);
 }
 
 .botonPrimario:hover {
   background: var(--hueso);
-  color: #0b0f17;
+  border-color: var(--hueso);
 }
 
-.enlaceSubrayado {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  padding: 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+.botonSecundario {
+  background: transparent;
   color: var(--hueso);
-  border-bottom: 1px solid var(--linea-2);
-  transition: color 150ms var(--curva), border-color 150ms var(--curva);
+  border: 1px solid var(--linea-2);
 }
 
-.enlaceSubrayado:hover {
-  color: var(--acento);
-  border-color: var(--acento);
-}
-
-.enlaceAcento {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--acento);
-  transition: color 150ms var(--curva);
-}
-
-.enlaceAcento:hover {
-  color: var(--hueso);
-}
-
-/* Fichas: rótulo mono a la izquierda, valor a la derecha */
-.fichas {
-  display: flex;
-  flex-direction: column;
-}
-
-.ficha {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 32px;
-  padding: 20px 0;
-  border-top: 1px solid var(--linea);
-}
-
-.fichaRotulo {
-  flex: 0 0 170px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-}
-
-.fichaValor {
-  flex: 1 1 300px;
-  font-size: 16.5px;
-  line-height: 1.62;
-  color: var(--acero);
-  max-width: 54ch;
-}
-
-.fichaDato {
-  flex: 1 1 300px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 15px;
-  color: var(--hueso);
-  max-width: 54ch;
+.botonSecundario:hover {
+  border-color: var(--hueso);
 }
 
 /* Estado con cuadrado de color */
 .estado {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 13px;
-  font-weight: 500;
+  gap: 8px;
+  font-size: var(--t-nota);
+  font-weight: 600;
 }
 
 .punto {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   display: block;
   flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .botonPrimario,
+  .botonSecundario {
+    width: 100%;
+  }
 }

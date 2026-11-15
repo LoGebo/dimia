@@ -1,35 +1,29 @@
 import { Navegacion } from "@/componentes/Navegacion";
 import { Hero } from "@/componentes/Hero";
-import { Firma } from "@/componentes/Firma";
-import { Practica } from "@/componentes/Practica";
-import { Metodo } from "@/componentes/Metodo";
 import { Carrusel } from "@/componentes/Carrusel";
+import { Firma } from "@/componentes/Firma";
 import { Productos } from "@/componentes/Productos";
+import { Metodo } from "@/componentes/Metodo";
+import { Practica } from "@/componentes/Practica";
 import { Planes } from "@/componentes/Planes";
-import { Garantia } from "@/componentes/Garantia";
+import { Preguntas } from "@/componentes/Preguntas";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
-import { Revelar } from "@/componentes/Revelar";
-import { ProgresoScroll } from "@/componentes/ProgresoScroll";
-import { FondoRejilla } from "@/componentes/FondoRejilla";
 import { MOSTRAR_CARRUSEL } from "@/contenido/sitio";
 
 export default function Inicio() {
   return (
     <>
-      <Revelar />
-      <ProgresoScroll />
-      <FondoRejilla />
       <Navegacion />
       <main>
         <Hero />
-        <Firma />
-        <Practica />
-        <Metodo />
         {MOSTRAR_CARRUSEL && <Carrusel />}
+        <Firma />
         <Productos />
+        <Metodo />
+        <Practica />
         <Planes />
-        <Garantia />
+        <Preguntas />
         <Contacto />
       </main>
       <Pie />

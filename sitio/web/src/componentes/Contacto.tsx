@@ -8,7 +8,7 @@ import css from "./Contacto.module.css";
 type Estado = "reposo" | "enviando" | "enviado" | "error" | "sinConexion";
 
 const AVISOS: Record<Exclude<Estado, "reposo" | "enviando">, { color: string; titulo: string }> = {
-  enviado: { color: "var(--bueno)", titulo: "Recibido" },
+  enviado: { color: "var(--bueno)", titulo: "Demostración solicitada" },
   error: { color: "var(--critico)", titulo: "No se pudo enviar" },
   sinConexion: { color: "var(--alerta)", titulo: "Pendiente" },
 };
@@ -64,50 +64,41 @@ export function Contacto() {
   }
 
   const textoBoton =
-    estado === "enviando" ? "Enviando…" : estado === "enviado" ? "Enviar otra solicitud" : "Agendar una demostración";
+    estado === "enviando" ? "Enviando…" : estado === "enviado" ? "Enviar otra solicitud" : "Agendar demostración";
 
   const aviso = estado === "reposo" || estado === "enviando" ? null : AVISOS[estado];
 
   return (
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
-        <h2 className={css.titular}>
-          {CIERRE.titular}
-        </h2>
-
         <div className={css.columnas}>
           <div className={css.izquierda}>
+            <h2 className={ui.titulo}>{CIERRE.titular}</h2>
+
             {/* El teléfono es la demostración: contesta el propio agente. */}
             <a href={FIRMA.telefonoHref} className={css.llamada}>
-              <span className={css.llamadaEstado}>
-                {CIERRE.notaTelefono}
-              </span>
               <span className={css.telefono}>{FIRMA.telefono}</span>
+              <span className={css.nota}>{CIERRE.notaTelefono}</span>
             </a>
 
-            <div className={css.correoFila}>
-              <span className={css.rotuloDato}>Correo</span>
-              <a href={`mailto:${FIRMA.correo}`} className={css.correo}>
-                {FIRMA.correo}
-              </a>
-            </div>
+            <p className={css.correo}>
+              También puede escribirnos a <a href={`mailto:${FIRMA.correo}`}>{FIRMA.correo}</a>
+            </p>
           </div>
 
           <div className={css.derecha}>
-            <p className={css.formularioTitulo}>Agendar una demostración</p>
-
             <form onSubmit={enviar} className={css.formulario}>
               <label className={css.campo}>
                 <span className={css.etiqueta}>Nombre</span>
                 <input name="nombre" type="text" required autoComplete="name" className={css.entrada} />
               </label>
               <label className={css.campo}>
-                <span className={css.etiqueta}>Empresa</span>
+                <span className={css.etiqueta}>Negocio</span>
                 <input name="empresa" type="text" required autoComplete="organization" className={css.entrada} />
               </label>
-              <label className={`${css.campo} ${css.campoAncho}`}>
+              <label className={css.campo}>
                 <span className={css.etiqueta}>Teléfono o correo</span>
-                <input name="contacto" type="text" required className={css.entradaMono} />
+                <input name="contacto" type="text" required className={css.entrada} />
               </label>
               {/* Trampa para robots: una persona nunca la llena */}
               <input
@@ -118,14 +109,15 @@ export function Contacto() {
                 aria-hidden="true"
                 className={css.trampa}
               />
-              <button type="submit" disabled={estado === "enviando"} className={css.boton}>
+              <button type="submit" disabled={estado === "enviando"} className={`${ui.botonPrimario} ${css.boton}`}>
                 {textoBoton}
               </button>
+              <p className={css.aclaracion}>Le contestamos el mismo día hábil.</p>
             </form>
 
             {aviso && (
               <div className={css.aviso} style={{ borderLeftColor: aviso.color }} role="status" aria-live="polite">
-                <p className={ui.estado} style={{ color: aviso.color, marginBottom: 10 }}>
+                <p className={ui.estado} style={{ color: aviso.color }}>
                   <i className={ui.punto} style={{ background: aviso.color }} />
                   {aviso.titulo}
                 </p>
