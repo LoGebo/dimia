@@ -1,59 +1,60 @@
 .hero {
   position: relative;
+  overflow: hidden;
 }
 
 .contenedor {
+  position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(128px, 16vh, 176px) var(--margen) clamp(80px, 9vw, 120px);
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-  gap: clamp(40px, 6vw, 96px);
-  align-items: center;
-}
-
-.texto {
-  min-width: 0;
+  padding: clamp(120px, 15vh, 168px) var(--margen) clamp(80px, 9vw, 128px);
 }
 
 .titular {
   font-family: var(--serif);
   font-weight: 300;
   font-size: var(--t-1);
-  line-height: 1.04;
-  letter-spacing: -0.018em;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
   text-wrap: balance;
   color: var(--hueso);
+  max-width: 15ch;
 }
 
-/* El cuadrado azul es el punto final del titular, como en el logotipo. */
 .cuadrado {
   display: inline-block;
-  width: 0.13em;
-  height: 0.13em;
-  margin-left: 0.06em;
+  width: 0.12em;
+  height: 0.12em;
+  margin-left: 0.05em;
   background: var(--acento);
 }
 
+.fila {
+  margin-top: clamp(32px, 4vw, 56px);
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: 32px clamp(40px, 6vw, 96px);
+  align-items: end;
+}
+
 .entrada {
-  margin-top: 28px;
   font-size: var(--t-entrada);
   line-height: 1.55;
   color: var(--acero);
-  max-width: 50ch;
+  max-width: 52ch;
 }
 
 .acciones {
-  margin-top: 40px;
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 20px 32px;
+  justify-content: flex-end;
 }
 
 .llamada {
-  margin-top: 28px;
-  display: inline-grid;
-  gap: 4px;
+  display: grid;
+  gap: 2px;
 }
 
 .llamadaNota {
@@ -66,42 +67,34 @@
   font-variant-numeric: tabular-nums;
   font-size: var(--t-3);
   color: var(--hueso);
-  border-bottom: 1px solid var(--linea-2);
-  padding-bottom: 4px;
-  transition: border-color 150ms var(--curva), color 150ms var(--curva);
+  transition: color 150ms var(--curva);
 }
 
 .llamada:hover .telefono {
   color: var(--acento);
-  border-color: var(--acento);
 }
 
 .demo {
-  min-width: 0;
+  margin-top: clamp(56px, 7vw, 96px);
 }
 
-@media (max-width: 1080px) {
-  .contenedor {
+@media (max-width: 900px) {
+  .fila {
     grid-template-columns: 1fr;
-    padding-top: 120px;
   }
 
-  .demo {
-    max-width: 640px;
+  .acciones {
+    justify-content: flex-start;
   }
 }
 
 @media (max-width: 640px) {
   .contenedor {
     padding-top: 112px;
-    gap: 48px;
-  }
-
-  .entrada {
-    margin-top: 20px;
   }
 
   .acciones {
-    margin-top: 32px;
+    flex-direction: column;
+    align-items: stretch;
   }
 }

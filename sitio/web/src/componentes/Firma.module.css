@@ -1,82 +1,42 @@
-.problemas {
-  list-style: none;
-  padding: 0;
+.columnas {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  border-top: 1px solid var(--linea);
-}
-
-.problema {
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  padding: 32px 32px 0 0;
-}
-
-.problema + .problema {
-  padding-left: 32px;
-  border-left: 1px solid var(--linea);
-}
-
-.cuadro {
-  display: block;
-  width: 8px;
-  height: 8px;
-  background: var(--acento);
-  margin-bottom: 8px;
-}
-
-.firma {
-  margin-top: clamp(72px, 8vw, 112px);
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
   gap: clamp(40px, 6vw, 96px);
   align-items: start;
 }
 
-.declaracion {
-  font-size: var(--t-entrada);
-  line-height: 1.55;
-  color: var(--hueso);
-  max-width: 40ch;
+.columnas > div:first-child {
+  margin-bottom: 0;
 }
 
 .pilares {
+  list-style: none;
+  padding: 0;
   display: grid;
-  border-top: 1px solid var(--linea);
 }
 
 .pilar {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: 8px 32px;
-  padding: 20px 0;
+  gap: 8px;
+  padding: 28px 0;
+  border-top: 1px solid var(--linea);
+}
+
+.pilar:last-child {
   border-bottom: 1px solid var(--linea);
 }
 
-@media (max-width: 900px) {
-  .problemas {
-    grid-template-columns: 1fr;
-  }
-
-  .problema,
-  .problema + .problema {
-    padding: 28px 0;
-    border-left: 0;
-  }
-
-  .problema + .problema {
-    border-top: 1px solid var(--linea);
-  }
-
-  .firma {
-    grid-template-columns: 1fr;
-  }
+/* Los tres verbos en la serif de titular: son la tesis de la firma. */
+.verbo {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: var(--t-dialogo);
+  line-height: 1.2;
+  color: var(--hueso);
 }
 
-@media (max-width: 560px) {
-  .pilar {
+@media (max-width: 900px) {
+  .columnas {
     grid-template-columns: 1fr;
   }
 }

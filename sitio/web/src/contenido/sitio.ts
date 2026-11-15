@@ -27,6 +27,8 @@ export const NAVEGACION = [
 
 export const HERO = {
   titular: "Contestamos lo que su negocio no alcanza a contestar.",
+  hora: "21:04",
+  contexto: "Su negocio ya cerró. El agente contesta.",
   entrada:
     "Un agente de voz atiende su número las 24 horas, agenda la cita en firme y la confirma por WhatsApp. Nosotros lo instalamos, lo operamos y respondemos por él.",
   ctaPrimario: "Agendar demostración",
@@ -34,7 +36,7 @@ export const HERO = {
 } as const;
 
 export const LA_FIRMA = {
-  titular: "Lo que hoy se pierde en su negocio no es falta de clientes.",
+  titular: "Somos una consultora que se queda a operar lo que instala.",
   problemas: [
     {
       titulo: "La llamada en plena operación",
@@ -50,7 +52,7 @@ export const LA_FIRMA = {
     },
   ],
   cuerpo:
-    "Somos una consultora. Trabajamos con dueños de consultorios, clínicas, restaurantes, salones y despachos que ya tienen clientes y operación, pero no un sistema que los atienda a tiempo.",
+    "Trabajamos con dueños de consultorios, clínicas, restaurantes, salones y despachos que ya tienen clientes y operación, pero no un sistema que los atienda a tiempo.",
   pilares: [
     {
       rotulo: "Diseñamos",
@@ -389,7 +391,8 @@ export const SOCIOS = [
 ] as const;
 
 export const CIERRE = {
-  titular: "Hable con el agente o agende una demostración.",
+  titular: "Llame ahora. Contesta el agente.",
+  formulario: "O déjenos sus datos y agendamos una demostración.",
   notaTelefono: "Este número lo contesta el agente de voz de Dimia, a cualquier hora.",
   declaracion: "Sistemas de decisión para empresas que ya no alcanzan a contestar.",
 } as const;
@@ -421,3 +424,71 @@ export const PREGUNTAS = [
     r: "Puede agregar bloques de 100 minutos por $590 MXN cada uno.",
   },
 ] as const;
+
+/**
+ * Conversaciones de demostración por giro. Son ejemplos de cómo habla el agente
+ * (manual de marca, «La voz al teléfono»), no llamadas de clientes reales.
+ */
+export type Giro = {
+  giro: string;
+  lineas: { quien: "agente" | "cliente"; texto: string }[];
+  resultado: { tipo: string; dia: string; hora: string; detalle: string };
+};
+
+export const CONVERSACIONES: Giro[] = [
+  {
+    giro: "Restaurante",
+    lineas: [
+      { quien: "agente", texto: "Buenas noches, habla el asistente del restaurante. ¿En qué le ayudo?" },
+      { quien: "cliente", texto: "Quiero una mesa para cuatro el jueves en la noche." },
+      { quien: "agente", texto: "Jueves 4, seis y media de la tarde, cuatro personas. ¿Es correcto?" },
+      { quien: "cliente", texto: "Sí, perfecto." },
+      { quien: "agente", texto: "Listo. Le llega la confirmación por WhatsApp." },
+    ],
+    resultado: { tipo: "Reserva", dia: "Jueves 4", hora: "18:30", detalle: "4 personas" },
+  },
+  {
+    giro: "Consultorio",
+    lineas: [
+      { quien: "agente", texto: "Buenas noches, habla el asistente del consultorio. ¿En qué le ayudo?" },
+      { quien: "cliente", texto: "Necesito cita con la doctora, de preferencia en la mañana." },
+      { quien: "agente", texto: "Tengo martes 9 a las diez de la mañana. ¿Le acomoda?" },
+      { quien: "cliente", texto: "Sí, ese día está bien." },
+      { quien: "agente", texto: "Queda agendada. Un día antes le recuerdo por WhatsApp." },
+    ],
+    resultado: { tipo: "Cita", dia: "Martes 9", hora: "10:00", detalle: "Consulta general" },
+  },
+  {
+    giro: "Salón",
+    lineas: [
+      { quien: "agente", texto: "Buenas noches, habla el asistente del salón. ¿En qué le ayudo?" },
+      { quien: "cliente", texto: "¿Tienen lugar para corte y tinte el sábado?" },
+      { quien: "agente", texto: "Sábado 13 a las once de la mañana, corte y tinte. ¿Se lo aparto?" },
+      { quien: "cliente", texto: "Sí, por favor." },
+      { quien: "agente", texto: "Apartado. Le mando la confirmación por WhatsApp." },
+    ],
+    resultado: { tipo: "Cita", dia: "Sábado 13", hora: "11:00", detalle: "Corte y tinte" },
+  },
+  {
+    giro: "Despacho",
+    lineas: [
+      { quien: "agente", texto: "Buenas noches, habla el asistente del despacho. ¿En qué le ayudo?" },
+      { quien: "cliente", texto: "Quiero una asesoría sobre mi declaración anual." },
+      { quien: "agente", texto: "Jueves 11, cinco de la tarde, asesoría fiscal. ¿Es correcto?" },
+      { quien: "cliente", texto: "Sí, gracias." },
+      { quien: "agente", texto: "Agendada. Le llega el detalle por WhatsApp." },
+    ],
+    resultado: { tipo: "Asesoría", dia: "Jueves 11", hora: "17:00", detalle: "Declaración anual" },
+  },
+];
+
+/** Diagrama del día: horario de atención de ejemplo frente a las 24 horas del agente. */
+export const DIA = {
+  titular: "Su negocio cierra. Su teléfono, ya no.",
+  entrada:
+    "Las llamadas no llegan solo en horario de oficina. El agente contesta las que su equipo no alcanza: en plena operación, a la hora de comida y después de cerrar.",
+  apertura: 9,
+  cierre: 19,
+  filas: ["Su recepción", "Agente Dimia"],
+  nota: "Horario de atención de ejemplo: 9:00 a 19:00.",
+} as const;

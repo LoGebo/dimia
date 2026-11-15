@@ -9,6 +9,30 @@
   background: var(--panel);
 }
 
+/* Papel: la única superficie clara. Reasigna los tokens para que todo lo de adentro cambie solo. */
+.tonoPapel {
+  background: var(--papel);
+  color: var(--papel-texto);
+  border-top-color: var(--papel-linea);
+  --hueso: var(--papel-texto);
+  --acero: var(--papel-texto-2);
+  --linea: var(--papel-linea);
+  --linea-2: var(--papel-texto-2);
+  --panel: #ffffff;
+  --acento: var(--acento-hondo);
+  --tinta: var(--papel);
+  --bueno: var(--papel-bueno);
+}
+
+.tonoPapel .botonPrimario {
+  color: #ffffff;
+}
+
+.tonoPapel .botonPrimario:hover {
+  background: var(--papel-texto);
+  border-color: var(--papel-texto);
+}
+
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;

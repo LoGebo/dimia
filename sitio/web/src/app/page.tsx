@@ -2,6 +2,7 @@ import { Navegacion } from "@/componentes/Navegacion";
 import { Hero } from "@/componentes/Hero";
 import { Carrusel } from "@/componentes/Carrusel";
 import { Firma } from "@/componentes/Firma";
+import { Dia } from "@/componentes/Dia";
 import { Productos } from "@/componentes/Productos";
 import { Metodo } from "@/componentes/Metodo";
 import { Practica } from "@/componentes/Practica";
@@ -18,8 +19,9 @@ export default function Inicio() {
       <main>
         <Hero />
         {MOSTRAR_CARRUSEL && <Carrusel />}
-        <Firma />
+        <Dia />
         <Productos />
+        <Firma />
         <Metodo />
         <Practica />
         <Planes />

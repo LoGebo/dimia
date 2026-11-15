@@ -71,16 +71,17 @@ export function Contacto() {
   return (
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
+        <h2 className={ui.titulo}>{CIERRE.titular}</h2>
+
+        {/* El teléfono es la demostración: contesta el propio agente. */}
+        <a href={FIRMA.telefonoHref} className={css.cartel}>
+          <span className={css.telefono}>{FIRMA.telefono}</span>
+          <span className={css.nota}>{CIERRE.notaTelefono}</span>
+        </a>
+
         <div className={css.columnas}>
           <div className={css.izquierda}>
-            <h2 className={ui.titulo}>{CIERRE.titular}</h2>
-
-            {/* El teléfono es la demostración: contesta el propio agente. */}
-            <a href={FIRMA.telefonoHref} className={css.llamada}>
-              <span className={css.telefono}>{FIRMA.telefono}</span>
-              <span className={css.nota}>{CIERRE.notaTelefono}</span>
-            </a>
-
+            <p className={ui.entrada}>{CIERRE.formulario}</p>
             <p className={css.correo}>
               También puede escribirnos a <a href={`mailto:${FIRMA.correo}`}>{FIRMA.correo}</a>
             </p>
@@ -96,7 +97,7 @@ export function Contacto() {
                 <span className={css.etiqueta}>Negocio</span>
                 <input name="empresa" type="text" required autoComplete="organization" className={css.entrada} />
               </label>
-              <label className={css.campo}>
+              <label className={`${css.campo} ${css.campoAncho}`}>
                 <span className={css.etiqueta}>Teléfono o correo</span>
                 <input name="contacto" type="text" required className={css.entrada} />
               </label>
@@ -109,10 +110,12 @@ export function Contacto() {
                 aria-hidden="true"
                 className={css.trampa}
               />
-              <button type="submit" disabled={estado === "enviando"} className={`${ui.botonPrimario} ${css.boton}`}>
-                {textoBoton}
-              </button>
-              <p className={css.aclaracion}>Le contestamos el mismo día hábil.</p>
+              <div className={css.envio}>
+                <button type="submit" disabled={estado === "enviando"} className={`${ui.botonPrimario} ${css.boton}`}>
+                  {textoBoton}
+                </button>
+                <p className={css.aclaracion}>Le contestamos el mismo día hábil.</p>
+              </div>
             </form>
 
             {aviso && (

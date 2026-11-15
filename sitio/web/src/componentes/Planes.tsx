@@ -18,7 +18,7 @@ export function Planes() {
   const filas = PLANES.comparacion.filter((f) => f.fila !== "Precio mensual" && new Set(f.valores).size > 1);
 
   return (
-    <section id="precios" className={ui.seccion}>
+    <section id="precios" className={`${ui.seccion} ${ui.tonoPapel}`}>
       <div className={ui.contenedor}>
         <div className={css.cabeza}>
           <div className={ui.encabezado}>

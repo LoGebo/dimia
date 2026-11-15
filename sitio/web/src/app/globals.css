@@ -16,11 +16,19 @@
   --alerta: #e0a838;
   --critico: #e2685c;
 
+  /* superficie clara: papel, con su propio azul y sus propios grises */
+  --papel-texto: #0b0f17;
+  --papel-texto-2: #3f4a5c;
+  --papel-linea: #c9d0dc;
+  --papel-bueno: #12805c;
+
   /* ── Escala tipográfica: la única del sitio ──────────────────────
      Ningún componente escribe un tamaño a mano; usa uno de estos.
-     Newsreader solo para --t-1 y --t-2. Plex Mono solo para cifras. */
-  --t-1: clamp(40px, 5.4vw, 76px);   /* titular de portada · Newsreader 300 */
-  --t-2: clamp(30px, 3.4vw, 48px);   /* titular de sección · Newsreader 300 */
+     Newsreader solo para --t-1, --t-2 y --t-dialogo. Plex Mono solo para cifras. */
+  --t-1: clamp(44px, 7.4vw, 112px); /* titular de portada · Newsreader 300 */
+  --t-2: clamp(32px, 4vw, 60px);     /* titular de sección · Newsreader 300 */
+  --t-dialogo: clamp(22px, 2.1vw, 30px); /* líneas de la conversación · Newsreader 300 */
+  --t-cartel: clamp(28px, 8.6vw, 136px); /* el teléfono como anuncio · Plex Mono */
   --t-3: 20px;                       /* subtítulo · Archivo 600 */
   --t-entrada: clamp(18px, 1.4vw, 20px); /* párrafo de entrada · Archivo 400 */
   --t-cuerpo: 16px;                  /* cuerpo · Archivo 400 */

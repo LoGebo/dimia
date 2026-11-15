@@ -1,0 +1,308 @@
+.escenario {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
+  border: 1px solid var(--linea-2);
+  background: var(--panel);
+}
+
+/* ── giros ── */
+
+.giros {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--linea);
+  padding: 24px 0;
+}
+
+.girosTitulo {
+  padding: 0 24px 16px;
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+.giro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 24px;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  font-size: var(--t-cuerpo);
+  font-weight: 600;
+  color: var(--acero);
+  text-align: left;
+  cursor: pointer;
+  transition: color 150ms var(--curva), background-color 150ms var(--curva);
+}
+
+.giro i {
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+}
+
+.giro:hover {
+  color: var(--hueso);
+}
+
+.giro[data-activo="1"] {
+  color: var(--hueso);
+  background: var(--panel-2);
+  border-left-color: var(--acento);
+}
+
+.giro[data-activo="1"] i {
+  background: var(--acento);
+  border-color: var(--acento);
+}
+
+/* ── la llamada ── */
+
+.llamada {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.barra {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.hora {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-dato);
+  color: var(--laton);
+}
+
+.contexto {
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+.lineas {
+  list-style: none;
+  padding: 28px 32px 32px;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.linea {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 16px;
+  align-items: baseline;
+  transition: opacity 420ms var(--curva), transform 420ms var(--curva);
+}
+
+.linea[data-visible="0"] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.quien {
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--acero);
+}
+
+.linea[data-quien="agente"] .quien {
+  color: var(--acento);
+}
+
+.texto {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: var(--t-dialogo);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--hueso);
+  text-wrap: pretty;
+}
+
+.linea[data-quien="cliente"] .texto {
+  color: var(--acero);
+}
+
+@keyframes pulso {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1; }
+}
+
+.escribiendo {
+  display: flex;
+  gap: 6px;
+  padding-left: 88px;
+  margin-top: -4px;
+}
+
+.escribiendo i {
+  width: 6px;
+  height: 6px;
+  background: var(--acero);
+  animation: pulso 1.1s ease-in-out infinite;
+}
+
+.escribiendo i:nth-child(2) { animation-delay: 150ms; }
+.escribiendo i:nth-child(3) { animation-delay: 300ms; }
+
+/* ── resultado: la cita que sí quedó ── */
+
+.resultado {
+  border-left: 1px solid var(--linea);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background: var(--tinta);
+}
+
+.estado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--acero);
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.estado i {
+  width: 8px;
+  height: 8px;
+  background: var(--acento);
+  animation: latido 1.9s ease-in-out infinite;
+}
+
+.resultado[data-listo="1"] .estado {
+  color: var(--bueno);
+}
+
+.resultado[data-listo="1"] .estado i {
+  background: var(--bueno);
+  animation: none;
+}
+
+.dia {
+  margin-top: auto;
+  padding-top: 32px;
+  font-size: var(--t-cuerpo);
+  font-weight: 600;
+  color: var(--hueso);
+}
+
+.horaCita {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-2);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--hueso);
+  margin-top: 8px;
+  transition: opacity 300ms var(--curva);
+}
+
+.resultado[data-listo="0"] .horaCita {
+  color: var(--linea-2);
+}
+
+.resultado[data-listo="0"] .dia,
+.resultado[data-listo="0"] .detalle {
+  opacity: 0.18;
+}
+
+.detalle {
+  margin-top: 10px;
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+.aviso {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--linea);
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+@media (max-width: 1080px) {
+  .escenario {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+
+  .giros {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: 0;
+    border-bottom: 1px solid var(--linea);
+    padding: 16px 16px 0;
+  }
+
+  .girosTitulo {
+    width: 100%;
+    padding: 0 8px 12px;
+  }
+
+  .giro {
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    padding: 0 14px;
+  }
+
+  .giro[data-activo="1"] {
+    border-bottom-color: var(--acento);
+  }
+}
+
+@media (max-width: 680px) {
+  .escenario {
+    grid-template-columns: 1fr;
+  }
+
+  .giros {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .giro {
+    flex: 0 0 auto;
+  }
+
+  .girosTitulo {
+    display: none;
+  }
+
+  .barra,
+  .lineas {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .linea {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .escribiendo {
+    padding-left: 0;
+  }
+
+  .resultado {
+    border-left: 0;
+    border-top: 1px solid var(--linea);
+    padding: 20px;
+  }
+
+  .dia {
+    padding-top: 20px;
+  }
+}
