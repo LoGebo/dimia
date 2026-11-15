@@ -18,7 +18,7 @@ export const FIRMA = {
 
 
 export const NAVEGACION = [
-  { href: "#agente", texto: "El agente" },
+  { href: "#agente", texto: "Producto" },
   { href: "#metodo", texto: "Cómo trabajamos" },
   { href: "#servicios", texto: "Servicios" },
   { href: "#precios", texto: "Precios" },
@@ -491,4 +491,138 @@ export const DIA = {
   cierre: 19,
   filas: ["Su recepción", "Agente Dimia"],
   nota: "Horario de atención de ejemplo: 9:00 a 19:00.",
+} as const;
+
+/**
+ * Panel de demostración de la portada: así se ve el día en el panel del negocio.
+ * Datos de ejemplo de un restaurante, no de un cliente real.
+ */
+export type EstadoLlamada = "confirmada" | "sinConfirmar" | "resuelta" | "transferida";
+
+export const PANEL_DEMO = {
+  negocio: "Restaurante",
+  menu: ["Hoy", "Agenda", "Bandeja", "Clientes", "Recados", "Resumen"],
+  dia: "Hoy · jueves 4",
+  estados: {
+    confirmada: { texto: "Confirmada", color: "var(--bueno)" },
+    sinConfirmar: { texto: "Sin confirmar", color: "var(--alerta)" },
+    resuelta: { texto: "Resuelta", color: "var(--acero)" },
+    transferida: { texto: "Pasó a su equipo", color: "var(--acento)" },
+  },
+  llamadas: [
+    {
+      hora: "21:04",
+      duracion: "00:42",
+      resumen: "Reserva para 4 · jueves 18:30",
+      estado: "confirmada" as EstadoLlamada,
+      lineas: [
+        { quien: "agente", texto: "Buenas noches, habla el asistente del restaurante. ¿En qué le ayudo?" },
+        { quien: "cliente", texto: "Quiero una mesa para cuatro el jueves en la noche." },
+        { quien: "agente", texto: "Jueves 4, seis y media de la tarde, cuatro personas. ¿Es correcto?" },
+        { quien: "cliente", texto: "Sí, perfecto." },
+      ],
+      cierre: "Reserva #A-2291 escrita · confirmación enviada por WhatsApp",
+    },
+    {
+      hora: "20:37",
+      duracion: "00:21",
+      resumen: "Pregunta si hay estacionamiento",
+      estado: "resuelta" as EstadoLlamada,
+      lineas: [
+        { quien: "cliente", texto: "¿Tienen estacionamiento?" },
+        { quien: "agente", texto: "Sí, hay estacionamiento sin costo para clientes. ¿Le ayudo con una reserva?" },
+        { quien: "cliente", texto: "No por ahora, gracias." },
+      ],
+      cierre: "Respondida con la información registrada del negocio",
+    },
+    {
+      hora: "19:52",
+      duracion: "00:38",
+      resumen: "Reserva para 2 · viernes 14:00",
+      estado: "sinConfirmar" as EstadoLlamada,
+      lineas: [
+        { quien: "cliente", texto: "Una mesa para dos mañana a las dos." },
+        { quien: "agente", texto: "Viernes 5, dos de la tarde, dos personas. ¿Es correcto?" },
+        { quien: "cliente", texto: "Sí." },
+      ],
+      cierre: "Reserva escrita · esperando respuesta al WhatsApp de confirmación",
+    },
+    {
+      hora: "18:15",
+      duracion: "00:55",
+      resumen: "Pide hablar con el gerente",
+      estado: "transferida" as EstadoLlamada,
+      lineas: [
+        { quien: "cliente", texto: "Quisiera hablar con el gerente, por favor." },
+        { quien: "agente", texto: "Con gusto. Le paso con una persona del equipo." },
+      ],
+      cierre: "Llamada transferida al número del encargado",
+    },
+    {
+      hora: "13:40",
+      duracion: "00:47",
+      resumen: "Reserva para 6 · sábado 21:00",
+      estado: "confirmada" as EstadoLlamada,
+      lineas: [
+        { quien: "cliente", texto: "Somos seis para el sábado en la noche." },
+        { quien: "agente", texto: "Sábado 6, nueve de la noche, seis personas. ¿Es correcto?" },
+        { quien: "cliente", texto: "Así es." },
+      ],
+      cierre: "Reserva #A-2285 escrita · el cliente confirmó por WhatsApp",
+    },
+  ],
+} as const;
+
+export const DECLARACION = {
+  fuerte: "Un sistema, no un bot.",
+  resto: "El agente contesta, la base de datos decide la agenda y nosotros respondemos por que funcione cada día.",
+  puntos: [
+    {
+      titulo: "Habla como su negocio",
+      texto: "Español de México, de usted. Se presenta como asistente y nunca finge ser una persona.",
+    },
+    {
+      titulo: "No encima citas",
+      texto: "La disponibilidad la decide la base de datos. Un horario ocupado no se puede volver a dar.",
+    },
+    {
+      titulo: "Operado por Dimia",
+      texto: "Lo instalamos, lo vigilamos y lo ajustamos. Usted no administra ningún sistema.",
+    },
+  ],
+} as const;
+
+/** Capítulos del producto, en el orden en que pasa una llamada. */
+export const CAPITULOS = {
+  contesta: {
+    numero: "1.0",
+    nombre: "Contesta",
+    titular: "Cada llamada, atendida.",
+    entrada:
+      "Se presenta como asistente de su negocio, entiende lo que le piden y confirma con números. A la segunda confusión, pasa la llamada a su equipo.",
+  },
+  agenda: {
+    numero: "2.0",
+    nombre: "Agenda",
+    titular: "Una agenda que no se encima.",
+    entrada:
+      "El agente no decide si hay lugar: lo decide la base de datos. Atiende a cualquier hora y nunca da dos veces el mismo horario.",
+  },
+  confirma: {
+    numero: "3.0",
+    nombre: "Confirma",
+    titular: "La confirmación sale sola.",
+    entrada:
+      "Al colgar, el cliente recibe su cita por WhatsApp y puede confirmarla con una respuesta. En el panel usted ve quién confirmó y quién sigue sin hacerlo.",
+  },
+} as const;
+
+/** Mensaje de WhatsApp de ejemplo, con botones de respuesta rápida. */
+export const WHATSAPP_DEMO = {
+  remitente: "Restaurante",
+  mensaje: "Su reserva quedó registrada: jueves 4 a las 18:30, para 4 personas. ¿Nos confirma su asistencia?",
+  hora: "21:05",
+  botones: ["Confirmar", "Cambiar"],
+  respuestaHora: "21:07",
+  confirmacion: "Gracias. Su reserva está confirmada.",
 } as const;

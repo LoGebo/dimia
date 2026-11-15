@@ -24,22 +24,28 @@
 
   /* ── Escala tipográfica: la única del sitio ──────────────────────
      Ningún componente escribe un tamaño a mano; usa uno de estos.
-     Newsreader solo para --t-1, --t-2 y --t-dialogo. Plex Mono solo para cifras. */
-  --t-1: clamp(44px, 7.4vw, 112px); /* titular de portada · Newsreader 300 */
-  --t-2: clamp(32px, 4vw, 60px);     /* titular de sección · Newsreader 300 */
-  --t-dialogo: clamp(22px, 2.1vw, 30px); /* líneas de la conversación · Newsreader 300 */
+     Titulares en Archivo 600 con tracking cerrado; Newsreader queda para la voz
+     (las líneas que dice el agente y las citas). Plex Mono solo para cifras y horas. */
+  --t-1: clamp(44px, 6vw, 84px);     /* titular de portada · Archivo 600 */
+  --t-2: clamp(32px, 3.8vw, 56px);   /* titular de sección · Archivo 600 */
   --t-cartel: clamp(28px, 8.6vw, 136px); /* el teléfono como anuncio · Plex Mono */
-  --t-3: 20px;                       /* subtítulo · Archivo 600 */
-  --t-entrada: clamp(18px, 1.4vw, 20px); /* párrafo de entrada · Archivo 400 */
-  --t-cuerpo: 16px;                  /* cuerpo · Archivo 400 */
-  --t-nota: 14px;                    /* notas, menú, etiquetas · Archivo */
-  --t-dato: 15px;                    /* cifras, horas · Plex Mono */
+  --t-dialogo: clamp(20px, 1.8vw, 26px); /* lo que dice el agente · Newsreader 300 */
+  --t-entrada: clamp(18px, 1.6vw, 22px); /* párrafo de entrada · Archivo 400 */
+  --t-3: 18px;                       /* subtítulo · Archivo 600 */
+  --t-cuerpo: 15px;                  /* cuerpo · Archivo 400 */
+  --t-nota: 13px;                    /* notas, menú, etiquetas, interfaz · Archivo */
+  --t-dato: 13px;                    /* cifras, horas · Plex Mono */
+
+  /* tres niveles de texto, como en un panel: principal, secundario, apagado */
+  --texto-1: var(--hueso);
+  --texto-2: color-mix(in srgb, var(--hueso) 72%, var(--acero));
+  --texto-3: var(--acero);
 
   --serif: var(--fuente-display), Georgia, serif;
   --sans: var(--fuente-sans), ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
   --mono: var(--fuente-mono), ui-monospace, monospace;
 
-  --ancho: 1280px;
+  --ancho: 1216px;
   --margen: clamp(20px, 4vw, 56px);
   --seccion: clamp(80px, 9vw, 136px);
 

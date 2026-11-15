@@ -1,21 +1,24 @@
-.cabeza {
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-  gap: 24px clamp(40px, 6vw, 96px);
-  align-items: end;
-  margin-bottom: clamp(48px, 6vw, 80px);
-}
-
 .diagrama {
   margin: 0;
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid var(--linea-2);
+  background: var(--panel);
   display: grid;
   gap: 8px;
+}
+
+.titulo {
+  margin-bottom: 24px;
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--texto-1);
 }
 
 .escala,
 .fila {
   display: grid;
-  grid-template-columns: 140px repeat(24, minmax(0, 1fr));
+  grid-template-columns: 128px repeat(24, minmax(0, 1fr));
   gap: 4px;
   align-items: center;
 }
@@ -23,26 +26,26 @@
 .horaEscala {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  font-size: var(--t-nota);
+  font-size: var(--t-dato);
   color: var(--acero);
+  white-space: nowrap;
 }
 
 .nombreFila {
   font-size: var(--t-nota);
   font-weight: 600;
-  color: var(--hueso);
+  color: var(--texto-2);
 }
 
 .celda {
   display: block;
   aspect-ratio: 1;
   border: 1px solid var(--linea);
-  background: transparent;
 }
 
 .celda[data-atiende="equipo"] {
-  background: var(--papel-texto-2);
-  border-color: var(--papel-texto-2);
+  background: var(--linea-2);
+  border-color: var(--linea-2);
 }
 
 .celda[data-atiende="agente"] {
@@ -52,38 +55,12 @@
 
 .nota {
   margin-top: 12px;
-  padding-left: 144px;
+  padding-left: 132px;
   font-size: var(--t-nota);
   color: var(--acero);
 }
 
-.problemas {
-  list-style: none;
-  padding: 0;
-  margin-top: clamp(64px, 8vw, 104px);
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 40px;
-}
-
-.problema {
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  padding-top: 24px;
-  border-top: 2px solid var(--papel-texto);
-}
-
 @media (max-width: 900px) {
-  .cabeza {
-    grid-template-columns: 1fr;
-  }
-
-  .problemas {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-
   .escala,
   .fila {
     grid-template-columns: repeat(24, minmax(0, 1fr));

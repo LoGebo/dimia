@@ -1,6 +1,6 @@
 .garantia {
   min-width: 0;
-  background: var(--tinta);
+  background: var(--panel);
   border: 1px solid var(--linea-2);
   padding: clamp(24px, 3vw, 40px);
 }

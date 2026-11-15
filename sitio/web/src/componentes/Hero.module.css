@@ -4,97 +4,89 @@
 }
 
 .contenedor {
-  position: relative;
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: clamp(120px, 15vh, 168px) var(--margen) clamp(80px, 9vw, 128px);
+  padding: clamp(136px, 18vh, 200px) var(--margen) 0;
 }
 
 .titular {
-  font-family: var(--serif);
-  font-weight: 300;
+  font-family: var(--sans);
+  font-weight: 600;
   font-size: var(--t-1);
-  line-height: 0.98;
-  letter-spacing: -0.025em;
+  line-height: 1;
+  letter-spacing: -0.045em;
   text-wrap: balance;
-  color: var(--hueso);
-  max-width: 15ch;
+  color: var(--texto-1);
+  max-width: 16ch;
 }
 
 .cuadrado {
   display: inline-block;
-  width: 0.12em;
-  height: 0.12em;
-  margin-left: 0.05em;
+  width: 0.15em;
+  height: 0.15em;
+  margin-left: 0.04em;
   background: var(--acento);
 }
 
-.fila {
-  margin-top: clamp(32px, 4vw, 56px);
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-  gap: 32px clamp(40px, 6vw, 96px);
-  align-items: end;
-}
-
 .entrada {
+  margin-top: 24px;
   font-size: var(--t-entrada);
-  line-height: 1.55;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
   color: var(--acero);
-  max-width: 52ch;
+  max-width: 46ch;
 }
 
 .acciones {
+  margin-top: 36px;
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 20px 32px;
-  justify-content: flex-end;
+  gap: 12px;
 }
 
-.llamada {
-  display: grid;
-  gap: 2px;
+.numero {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  color: var(--acero);
 }
 
-.llamadaNota {
+/* El producto, grande, saliendo del pliegue y apagándose hacia abajo. */
+.escenario {
+  max-width: calc(var(--ancho) + 96px);
+  margin: clamp(56px, 7vw, 96px) auto 0;
+  padding: 0 var(--margen);
+}
+
+.marco {
+  mask-image: linear-gradient(to bottom, #000 86%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 86%, transparent 100%);
+}
+
+.leyenda {
+  margin: -24px 0 0;
+  padding-bottom: clamp(64px, 8vw, 112px);
+  position: relative;
+  text-align: center;
   font-size: var(--t-nota);
   color: var(--acero);
 }
 
-.telefono {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--t-3);
-  color: var(--hueso);
-  transition: color 150ms var(--curva);
-}
-
-.llamada:hover .telefono {
-  color: var(--acento);
-}
-
-.demo {
-  margin-top: clamp(56px, 7vw, 96px);
-}
-
-@media (max-width: 900px) {
-  .fila {
-    grid-template-columns: 1fr;
-  }
-
-  .acciones {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .contenedor {
     padding-top: 112px;
   }
 
   .acciones {
     flex-direction: column;
-    align-items: stretch;
+  }
+
+  .marco {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .leyenda {
+    margin-top: 12px;
   }
 }

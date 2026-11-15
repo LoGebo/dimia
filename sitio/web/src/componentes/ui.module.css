@@ -22,6 +22,9 @@
   --acento: var(--acento-hondo);
   --tinta: var(--papel);
   --bueno: var(--papel-bueno);
+  --texto-1: var(--papel-texto);
+  --texto-2: var(--papel-texto-2);
+  --texto-3: var(--papel-texto-2);
 }
 
 .tonoPapel .botonPrimario {
@@ -48,19 +51,20 @@
 }
 
 .titulo {
-  font-family: var(--serif);
-  font-weight: 300;
+  font-family: var(--sans);
+  font-weight: 600;
   font-size: var(--t-2);
-  line-height: 1.1;
-  letter-spacing: -0.012em;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
   text-wrap: balance;
   color: var(--hueso);
 }
 
 .entrada {
   font-size: var(--t-entrada);
-  line-height: 1.55;
-  color: var(--acero);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--texto-2);
   max-width: 60ch;
 }
 
@@ -151,4 +155,26 @@
   .botonSecundario {
     width: 100%;
   }
+}
+
+/* Titular en dos tonos: la primera frase en hueso, el resto apagado. */
+.apagado {
+  color: var(--acero);
+}
+
+/* Rótulo numerado de capítulo: 1.0 Contesta. La numeración sí es secuencia. */
+.capitulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-nota);
+  font-weight: 500;
+  color: var(--texto-2);
+}
+
+.capitulo b {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--laton);
 }

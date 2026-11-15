@@ -1,42 +1,40 @@
-.columnas {
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-  gap: clamp(40px, 6vw, 96px);
-  align-items: start;
+/* La cita va en Newsreader: es la voz de la firma, no un titular de interfaz. */
+.cita {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: var(--t-2);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: var(--texto-1);
+  max-width: 22ch;
 }
 
-.columnas > div:first-child {
-  margin-bottom: 0;
+.cuerpo {
+  margin-top: 28px;
 }
 
 .pilares {
   list-style: none;
   padding: 0;
+  margin-top: clamp(56px, 7vw, 88px);
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
 }
 
 .pilar {
   display: grid;
+  align-content: start;
   gap: 8px;
-  padding: 28px 0;
-  border-top: 1px solid var(--linea);
-}
-
-.pilar:last-child {
-  border-bottom: 1px solid var(--linea);
-}
-
-/* Los tres verbos en la serif de titular: son la tesis de la firma. */
-.verbo {
-  font-family: var(--serif);
-  font-weight: 300;
-  font-size: var(--t-dialogo);
-  line-height: 1.2;
-  color: var(--hueso);
+  padding-top: 20px;
+  border-top: 2px solid var(--papel-texto);
 }
 
 @media (max-width: 900px) {
-  .columnas {
+  .pilares {
     grid-template-columns: 1fr;
+    gap: 28px;
   }
 }

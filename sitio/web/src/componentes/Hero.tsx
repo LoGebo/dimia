@@ -1,5 +1,5 @@
 import { FIRMA, HERO } from "@/contenido/sitio";
-import { Conversacion } from "./Conversacion";
+import { PanelDemo } from "./PanelDemo";
 import ui from "./ui.module.css";
 import css from "./Hero.module.css";
 
@@ -11,24 +11,24 @@ export function Hero() {
           {HERO.titular.replace(/\.$/, "")}
           <i className={css.cuadrado} aria-hidden="true" />
         </h1>
+        <p className={css.entrada}>{HERO.entrada}</p>
 
-        <div className={css.fila}>
-          <p className={css.entrada}>{HERO.entrada}</p>
-
-          <div className={css.acciones}>
-            <a href="#contacto" className={ui.botonPrimario}>
-              {HERO.ctaPrimario}
-            </a>
-            <a href={FIRMA.telefonoHref} className={css.llamada}>
-              <span className={css.llamadaNota}>{HERO.llamada}</span>
-              <span className={css.telefono}>{FIRMA.telefono}</span>
-            </a>
-          </div>
+        <div className={css.acciones}>
+          <a href="#contacto" className={ui.botonPrimario}>
+            {HERO.ctaPrimario}
+          </a>
+          <a href={FIRMA.telefonoHref} className={ui.botonSecundario}>
+            Llamar al agente
+            <span className={css.numero}>{FIRMA.telefono}</span>
+          </a>
         </div>
+      </div>
 
-        <div className={css.demo}>
-          <Conversacion />
+      <div className={css.escenario}>
+        <div className={css.marco}>
+          <PanelDemo />
         </div>
+        <p className={css.leyenda}>Panel de Dimia con datos de ejemplo. Toque una llamada para ver qué se dijo.</p>
       </div>
     </section>
   );

@@ -5,28 +5,29 @@
 .contenedor {
   max-width: var(--ancho);
   margin: 0 auto;
-  padding: 40px var(--margen);
-  display: flex;
-  align-items: center;
-  gap: 48px;
+  padding: clamp(48px, 6vw, 72px) var(--margen);
+  display: grid;
+  gap: 32px;
+  justify-items: center;
 }
 
 .titulo {
-  flex: 0 0 auto;
-  max-width: 20ch;
-  font-size: var(--t-nota);
-  line-height: 1.4;
+  font-family: var(--mono);
+  font-size: var(--t-dato);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--acero);
+  text-align: center;
 }
 
 .logos {
-  flex: 1 1 auto;
+  width: 100%;
   list-style: none;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px 40px;
+  gap: 32px 48px;
   flex-wrap: wrap;
 }
 
@@ -38,7 +39,7 @@
 .logo {
   width: auto;
   filter: grayscale(1) brightness(1.6);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .nombre {
@@ -48,18 +49,7 @@
 }
 
 @media (max-width: 900px) {
-  .contenedor {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 24px;
-  }
-
-  .titulo {
-    max-width: none;
-  }
-
   .logos {
-    width: 100%;
-    justify-content: flex-start;
+    justify-content: center;
   }
 }
