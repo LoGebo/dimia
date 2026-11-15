@@ -80,3 +80,7 @@
     padding-left: 0;
   }
 }
+
+/* esquinas suaves */
+.diagrama { border-radius: var(--radio); border-color: var(--borde-fuerte); }
+.celda { border-radius: 4px; }

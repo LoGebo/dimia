@@ -153,3 +153,8 @@
 .codigo code {
   font: inherit;
 }
+
+/* esquinas suaves */
+.garantia { border-radius: var(--radio); border-color: var(--borde-fuerte); }
+.repetir { border-radius: 999px; }
+.codigo { border-radius: var(--radio-chico); }

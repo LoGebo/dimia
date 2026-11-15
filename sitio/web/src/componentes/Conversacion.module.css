@@ -306,3 +306,7 @@
     padding-top: 20px;
   }
 }
+
+/* esquinas suaves */
+.escenario { border-radius: var(--radio); overflow: hidden; border-color: var(--borde-fuerte); }
+.giro { border-radius: var(--radio-chico); margin: 0 8px; }

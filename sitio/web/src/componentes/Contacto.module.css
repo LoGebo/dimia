@@ -10,7 +10,7 @@
 }
 
 .cartel:hover {
-  background: var(--hueso);
+  background: var(--acento-hover);
 }
 
 .telefono {
@@ -166,3 +166,9 @@
     width: 100%;
   }
 }
+
+/* esquinas suaves */
+.cartel { border-radius: var(--radio); }
+.formulario { border-radius: var(--radio); border-color: var(--borde-fuerte); }
+.entrada { border-radius: var(--radio-chico); border-color: var(--borde-fuerte); }
+.aviso { border-radius: var(--radio-chico); }

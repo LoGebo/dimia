@@ -168,3 +168,11 @@
     padding: 28px 20px;
   }
 }
+
+/* esquinas suaves: tres tarjetas separadas */
+.planes { border: 0; gap: 16px; }
+.plan { border: 1px solid var(--borde-fuerte); border-radius: var(--radio); background: rgba(255, 255, 255, 0.02); }
+.plan + .plan { border-left: 1px solid var(--borde-fuerte); border-top: 1px solid var(--borde-fuerte); }
+.plan[data-elegido="1"] { outline: 0; border-color: var(--hueso); background: rgba(255, 255, 255, 0.05); }
+.toggle { border-radius: 999px; padding: 3px; border-color: var(--borde-fuerte); }
+.opcion { border-radius: 999px; min-height: 36px; }

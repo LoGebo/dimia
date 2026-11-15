@@ -144,3 +144,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* esquinas suaves */
+.celda { border-radius: var(--radio); border-color: var(--borde-fuerte); }
+.chat { border-radius: 12px; }
+.burbuja { border-radius: 12px 12px 12px 4px; }
+.respuesta { border-radius: 12px 12px 4px 12px; }
+.botones span { border-radius: 8px; }

@@ -8,7 +8,9 @@
   --hueso: #eef1f7;
   --acero: #97a2b5;
   --acero-2: #66718a; /* no llega a 4.5:1 sobre tinta: nunca para texto, solo filetes y estados */
-  --acento: #6e9bf5;
+  /* El acento sobre tinta es blanco (hueso); el azul queda solo en su versión honda. */
+  --acento: var(--hueso);
+  --acento-hover: color-mix(in srgb, var(--hueso) 80%, var(--tinta));
   --acento-hondo: #1f47c4;
   --laton: #c8a45c;
   --papel: #f2f4f8;
@@ -50,13 +52,18 @@
   --seccion: clamp(80px, 9vw, 136px);
 
   --curva: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* esquinas y bordes suaves, como en una interfaz de producto */
+  --radio: 14px;
+  --radio-chico: 8px;
+  --borde: rgba(255, 255, 255, 0.08);
+  --borde-fuerte: rgba(255, 255, 255, 0.14);
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  border-radius: 0;
 }
 
 html {
@@ -74,6 +81,7 @@ body {
 }
 
 body {
+  font-feature-settings: "cv11", "ss01";
   font-family: var(--sans);
   font-size: var(--t-cuerpo);
   line-height: 1.6;

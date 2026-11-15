@@ -1,80 +1,89 @@
-/* Portada partida: el mensaje a la izquierda, el cuadrado azul a la derecha, de orilla a orilla. */
 .hero {
   position: relative;
-  min-height: max(100svh, 760px);
-  display: grid;
-  grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
   overflow: hidden;
+  padding-bottom: clamp(64px, 8vw, 120px);
 }
 
-.texto {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  padding: 112px clamp(32px, 4vw, 72px) 56px max(var(--margen), calc((100vw - var(--ancho)) / 2 + var(--margen)));
+/* Halo de luz detrás del titular y del producto. */
+.luz {
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 1100px;
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 0%, color-mix(in srgb, var(--acento-hondo) 55%, transparent), transparent 70%),
+    radial-gradient(ellipse 30% 30% at 50% 55%, color-mix(in srgb, var(--acento-hondo) 30%, transparent), transparent 70%);
+  pointer-events: none;
 }
 
-/* El campo azul es un cuadrado: la forma del sistema, a escala de pantalla. */
-.campo {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  align-self: stretch;
+.contenedor {
   position: relative;
-  width: 100%;
-  min-height: 100%;
-  background: var(--acento-hondo);
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(140px, 19vh, 200px) var(--margen) 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.vivo {
+.aviso {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px;
-  border: 1px solid var(--linea-2);
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-fuerte);
+  background: rgba(255, 255, 255, 0.04);
   font-size: var(--t-nota);
   font-weight: 500;
   color: var(--texto-2);
+  transition: background-color 150ms var(--curva);
 }
 
-.vivo i {
-  width: 8px;
-  height: 8px;
-  background: var(--acento);
+.aviso:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.avisoPunto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bueno);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bueno) 25%, transparent);
+}
+
+.avisoFlecha {
+  color: var(--acero);
 }
 
 .titular {
-  margin-top: 24px;
+  margin-top: 28px;
   font-family: var(--sans);
   font-weight: 600;
-  font-size: clamp(44px, 4.9vw, 76px);
-  line-height: 0.98;
-  letter-spacing: -0.048em;
+  font-size: clamp(44px, 6.4vw, 88px);
+  line-height: 1;
+  letter-spacing: -0.045em;
   text-wrap: balance;
-  color: var(--texto-1);
-}
-
-.cuadrado {
-  display: inline-block;
-  width: 0.15em;
-  height: 0.15em;
-  margin-left: 0.04em;
-  background: var(--acento);
+  background: linear-gradient(180deg, #ffffff 35%, color-mix(in srgb, var(--hueso) 55%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .entrada {
   margin-top: 24px;
   font-size: var(--t-entrada);
-  line-height: 1.45;
+  line-height: 1.5;
   letter-spacing: -0.01em;
   color: var(--acero);
-  max-width: 44ch;
+  max-width: 40ch;
 }
 
 .acciones {
   margin-top: 36px;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
 }
 
@@ -85,59 +94,43 @@
   color: var(--acero);
 }
 
-.promesas {
-  list-style: none;
-  padding: 28px 0 0;
-  margin-top: 36px;
-  border-top: 1px solid var(--linea);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 28px;
-  font-size: var(--t-nota);
-  font-weight: 500;
-  color: var(--texto-2);
+/* El producto en perspectiva, inclinado hacia atrás y apagándose abajo. */
+.escenario {
+  position: relative;
+  max-width: 1200px;
+  margin: clamp(64px, 8vw, 104px) auto 0;
+  padding: 0 var(--margen);
+  perspective: 2400px;
 }
 
-.promesas li {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+.marco {
+  transform: rotateX(14deg) scale(0.98);
+  transform-origin: 50% 0%;
+  border-radius: var(--radio);
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--borde-fuerte);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 40px 120px -20px color-mix(in srgb, var(--acento-hondo) 45%, transparent);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
 }
 
-.promesas i {
-  width: 8px;
-  height: 8px;
-}
-
-@media (max-width: 1000px) {
-  .hero {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .texto {
-    padding: 120px var(--margen) 56px;
-  }
-
-  .campo {
-    grid-column: 1;
-    grid-row: 2;
-    min-height: 0;
-    aspect-ratio: 1;
-    max-height: 760px;
-  }
-}
-
-@media (max-width: 640px) {
-  .texto {
-    padding-top: 104px;
+@media (max-width: 720px) {
+  .contenedor {
+    padding-top: 120px;
   }
 
   .acciones {
     flex-direction: column;
+    width: 100%;
   }
 
-  .campo {
-    aspect-ratio: auto;
+  .marco {
+    transform: none;
+    padding: 4px;
+    mask-image: none;
+    -webkit-mask-image: none;
   }
 }

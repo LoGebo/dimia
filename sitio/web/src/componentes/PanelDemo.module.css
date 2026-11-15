@@ -316,3 +316,9 @@
     display: none;
   }
 }
+
+/* esquinas suaves */
+.ventana { border-radius: 10px; overflow: hidden; border-color: var(--borde-fuerte); }
+.menu, .fila { border-radius: 6px; }
+.lista .fila { border-radius: 0; }
+.puntos i { border-radius: 50%; }

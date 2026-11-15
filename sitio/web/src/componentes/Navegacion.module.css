@@ -62,7 +62,7 @@
 }
 
 .agendar:hover {
-  background: var(--hueso);
+  background: var(--acento-hover);
 }
 
 .botonMenu {
@@ -162,3 +162,14 @@
     margin-left: 0;
   }
 }
+
+/* barra translúcida y botón en píldora */
+.barra[data-compacta="1"] {
+  background: color-mix(in srgb, var(--tinta) 72%, transparent);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border-bottom-color: var(--borde);
+}
+.agendar { border-radius: 999px; min-height: 34px; padding: 0 16px; font-weight: 500; }
+.botonMenu { border-radius: 999px; border-color: var(--borde-fuerte); }
+.agendarMenu { border-radius: 999px; }

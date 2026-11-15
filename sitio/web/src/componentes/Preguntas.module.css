@@ -79,3 +79,6 @@
     padding-right: 0;
   }
 }
+
+.pregunta { border-bottom-color: var(--borde); }
+.lista { border-top-color: var(--borde); }

@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import { FIRMA } from "@/contenido/sitio";
 import "./globals.css";
 
-const archivo = Archivo({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "800"],
   variable: "--fuente-sans",
   display: "swap",
 });
@@ -120,7 +119,7 @@ const ESQUEMA = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-MX" className={`${archivo.variable} ${newsreader.variable} ${plexMono.variable}`}>
+    <html lang="es-MX" className={`${inter.variable} ${newsreader.variable} ${plexMono.variable}`}>
       <body>
         {children}
         <script

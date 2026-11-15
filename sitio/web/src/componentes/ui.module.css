@@ -54,6 +54,10 @@
 .titulo {
   font-family: var(--sans);
   font-weight: 600;
+  background: linear-gradient(180deg, var(--texto-1) 30%, color-mix(in srgb, var(--texto-1) 62%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   font-size: var(--t-2);
   line-height: 1.04;
   letter-spacing: -0.035em;
@@ -104,10 +108,11 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 52px;
-  padding: 0 24px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
   font-size: var(--t-cuerpo);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
   white-space: nowrap;
   cursor: pointer;
@@ -121,18 +126,18 @@
 }
 
 .botonPrimario:hover {
-  background: var(--hueso);
-  border-color: var(--hueso);
+  background: var(--acento-hover);
+  border-color: var(--acento-hover);
 }
 
 .botonSecundario {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--hueso);
-  border: 1px solid var(--linea-2);
+  border: 1px solid var(--borde-fuerte);
 }
 
 .botonSecundario:hover {
-  border-color: var(--hueso);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Estado con cuadrado de color */
@@ -161,6 +166,7 @@
 /* Titular en dos tonos: la primera frase en hueso, el resto apagado. */
 .apagado {
   color: var(--acero);
+  -webkit-text-fill-color: var(--acero);
 }
 
 /* Rótulo numerado de capítulo: 1.0 Contesta. La numeración sí es secuencia. */

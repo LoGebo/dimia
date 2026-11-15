@@ -1,10 +1,10 @@
-/* Franja azul: la tesis sobre el color de la marca. */
+/* La tesis con una luz azul que entra por la esquina. */
 section.franja {
-  background: var(--acento-hondo);
-  border-top: 0;
-  --acero: color-mix(in srgb, var(--hueso) 62%, var(--acento-hondo));
-  --texto-2: color-mix(in srgb, var(--hueso) 80%, var(--acento-hondo));
-  --acento: var(--hueso);
+  overflow: hidden;
+  border-top: 1px solid var(--borde);
+  background:
+    radial-gradient(ellipse 60% 70% at 85% 0%, color-mix(in srgb, var(--acento-hondo) 38%, transparent), transparent 70%),
+    var(--tinta);
 }
 
 .tesis {
@@ -30,6 +30,7 @@ section.franja {
   width: 8px;
   height: 8px;
   background: var(--hueso);
+  border-radius: 2px;
   margin-bottom: 12px;
 }
 

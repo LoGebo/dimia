@@ -35,3 +35,6 @@ section.capitulo[data-tono="papel"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* sin filete de color arriba: el capítulo se separa por luz, no por línea */
+section.capitulo { border-top: 1px solid var(--borde); }
