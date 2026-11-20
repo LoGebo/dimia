@@ -1,9 +1,12 @@
 /* El cierre en el azul de la marca: el teléfono es el botón más grande del sitio. */
 .cartel {
   display: grid;
-  gap: 12px;
-  margin-top: clamp(32px, 4vw, 56px);
-  padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 56px);
+  gap: 8px;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: clamp(28px, 3vw, 40px);
+  padding: 20px 28px;
   background: var(--acento);
   color: var(--tinta);
   transition: background-color 200ms var(--curva);
@@ -16,15 +19,15 @@
 .telefono {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  font-size: var(--t-cartel);
-  line-height: 1;
-  letter-spacing: -0.04em;
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   color: var(--tinta);
 }
 
 .nota {
-  font-size: var(--t-cuerpo);
+  font-size: var(--t-nota);
   font-weight: 500;
   color: var(--tinta);
 }
