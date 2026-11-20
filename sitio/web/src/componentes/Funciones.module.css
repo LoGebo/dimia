@@ -12,7 +12,7 @@
   padding: 8px 8px 28px;
   border-radius: var(--radio);
   border: 1px solid var(--borde-fuerte);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+  background: var(--superficie);
 }
 
 .lienzo {
@@ -98,7 +98,7 @@
   border-radius: 6px;
   font-size: 12px;
   color: var(--acero);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--superficie);
   border: 1px solid var(--borde);
 }
 
@@ -200,7 +200,7 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--texto-1);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--superficie-2);
 }
 
 .nodo[data-equipo="1"] {

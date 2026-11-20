@@ -36,7 +36,7 @@ export default function Inicio() {
         <Hero />
         {MOSTRAR_CARRUSEL && <Carrusel />}
 
-        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
+        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada tono="papel">
           <Funciones />
         </Seccion>
 
@@ -59,7 +59,7 @@ export default function Inicio() {
           </div>
         </Seccion>
 
-        <Seccion id="integraciones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada>
+        <Seccion id="integraciones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada tono="papel">
           <Integraciones />
         </Seccion>
 

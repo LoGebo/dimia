@@ -12,7 +12,7 @@
   padding: 28px;
   border-radius: var(--radio);
   border: 1px solid var(--borde-fuerte);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--superficie);
 }
 
 /* Línea que une los pasos, solo en escritorio. */
@@ -67,7 +67,7 @@
   padding: 24px;
   border-radius: var(--radio);
   border: 1px solid var(--borde-fuerte);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--superficie);
 }
 
 .inicial {

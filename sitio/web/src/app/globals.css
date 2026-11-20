@@ -58,6 +58,8 @@
   --radio-chico: 8px;
   --borde: rgba(255, 255, 255, 0.08);
   --borde-fuerte: rgba(255, 255, 255, 0.14);
+  --superficie: rgba(255, 255, 255, 0.02);
+  --superficie-2: rgba(255, 255, 255, 0.05);
 }
 
 *,

@@ -26,6 +26,10 @@
   --texto-1: var(--papel-texto);
   --texto-2: var(--papel-texto-2);
   --texto-3: var(--papel-texto-2);
+  --borde: var(--papel-linea);
+  --borde-fuerte: var(--papel-linea);
+  --superficie: #ffffff;
+  --superficie-2: #ffffff;
 }
 
 .tonoPapel .botonPrimario {
@@ -131,7 +135,7 @@
 }
 
 .botonSecundario {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--superficie-2);
   color: var(--hueso);
   border: 1px solid var(--borde-fuerte);
 }

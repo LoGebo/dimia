@@ -4,7 +4,7 @@ import css from "./Preguntas.module.css";
 
 export function Preguntas() {
   return (
-    <section id="preguntas" className={`${ui.seccion} ${ui.tonoPanel}`}>
+    <section id="preguntas" className={`${ui.seccion} ${ui.tonoPapel}`}>
       <div className={ui.contenedor}>
         <div className={css.columnas}>
           <div className={ui.encabezado}>
