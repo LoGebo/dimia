@@ -1,0 +1,42 @@
+/* La tesis con una luz azul que entra por la esquina. */
+section.franja {
+  overflow: hidden;
+  border-top: 1px solid var(--borde);
+  background:
+    radial-gradient(ellipse 60% 70% at 85% 0%, color-mix(in srgb, var(--acento-hondo) 38%, transparent), transparent 70%),
+    var(--tinta);
+}
+
+.tesis {
+  max-width: 24ch;
+}
+
+.puntos {
+  list-style: none;
+  padding: 0;
+  margin-top: clamp(56px, 7vw, 96px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+}
+
+.punto {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.punto i {
+  width: 8px;
+  height: 8px;
+  background: var(--hueso);
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .puntos {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}

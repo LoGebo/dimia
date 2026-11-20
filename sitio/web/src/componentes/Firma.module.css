@@ -1,67 +1,40 @@
-.declaracion {
+/* La cita va en Newsreader: es la voz de la firma, no un titular de interfaz. */
+.cita {
   margin: 0;
-  max-width: 24ch;
-  font-family: var(--fuente-display), Georgia, serif;
+  font-family: var(--serif);
   font-weight: 300;
-  font-size: clamp(32px, 4.4vw, 66px);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: var(--hueso);
-  text-wrap: pretty;
-}
-
-.columnas {
-  margin-top: clamp(56px, 7vw, 112px);
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: clamp(32px, 6vw, 112px);
-  align-items: start;
+  font-size: var(--t-2);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: var(--texto-1);
+  max-width: 22ch;
 }
 
 .cuerpo {
-  margin: 0;
-  max-width: 44ch;
-  font-size: 18px;
-  line-height: 1.62;
-  color: var(--acero);
+  margin-top: 28px;
 }
 
 .pilares {
-  margin: 0;
-  border-top: 1px solid var(--linea-2);
+  list-style: none;
+  padding: 0;
+  margin-top: clamp(56px, 7vw, 88px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
 }
 
 .pilar {
   display: grid;
-  grid-template-columns: minmax(150px, 2fr) minmax(0, 3fr);
-  gap: 8px 32px;
-  align-items: baseline;
-  padding: 24px 0;
-  border-bottom: 1px solid var(--linea);
+  align-content: start;
+  gap: 8px;
+  padding-top: 20px;
+  border-top: 2px solid var(--papel-texto);
 }
 
-.verbo {
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(26px, 2.6vw, 38px);
-  line-height: 1;
-  letter-spacing: -0.016em;
-  color: var(--hueso);
-}
-
-.pilarTexto {
-  margin: 0;
-  font-size: 16.5px;
-  line-height: 1.55;
-  color: var(--acero);
-}
-
-@media (max-width: 860px) {
-  .columnas {
+@media (max-width: 900px) {
+  .pilares {
     grid-template-columns: 1fr;
-  }
-
-  .pilar {
-    grid-template-columns: 1fr;
+    gap: 28px;
   }
 }

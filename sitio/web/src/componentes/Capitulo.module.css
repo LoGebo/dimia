@@ -1,0 +1,40 @@
+/* Cada capítulo lleva su color: un filete arriba, el número y un velo apenas teñido. */
+section.capitulo {
+  --color: var(--acento);
+  border-top: 2px solid var(--color);
+  background: color-mix(in srgb, var(--color) 9%, var(--tinta));
+}
+
+section.capitulo[data-tono="laton"] {
+  --color: var(--laton);
+}
+
+section.capitulo[data-tono="papel"] {
+  --color: var(--acento-hondo);
+  background: var(--papel);
+}
+
+.capitulo :global(b) {
+  color: var(--color);
+}
+
+.cabeza {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: 20px clamp(40px, 6vw, 96px);
+  align-items: end;
+}
+
+.pieza {
+  margin-top: clamp(48px, 6vw, 80px);
+}
+
+@media (max-width: 900px) {
+  .cabeza {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* sin filete de color arriba: el capítulo se separa por luz, no por línea */
+section.capitulo { border-top: 1px solid var(--borde); }

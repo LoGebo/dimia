@@ -7,40 +7,70 @@
   --linea-2: #2f3a4d;
   --hueso: #eef1f7;
   --acero: #97a2b5;
-  --acero-2: #66718a;
-  --acento: #6e9bf5;
+  --acero-2: #66718a; /* no llega a 4.5:1 sobre tinta: nunca para texto, solo filetes y estados */
+  /* El acento sobre tinta es blanco (hueso); el azul queda solo en su versión honda. */
+  --acento: var(--hueso);
+  --acento-hover: color-mix(in srgb, var(--hueso) 80%, var(--tinta));
   --acento-hondo: #1f47c4;
   --laton: #c8a45c;
-  --laton-papel: #a8853f;
   --papel: #f2f4f8;
   --bueno: #3fb68b;
   --alerta: #e0a838;
   --critico: #e2685c;
 
-  /* superficie clara */
-  --papel-tinta: #0b0f17;
-  --papel-tinta-2: #3f4a5c;
+  /* superficie clara: papel, con su propio azul y sus propios grises */
+  --papel-texto: #0b0f17;
+  --papel-texto-2: #3f4a5c;
   --papel-linea: #c9d0dc;
   --papel-bueno: #12805c;
-  --papel-critico: #c4392f;
 
-  --ancho: 1440px;
-  --margen: clamp(20px, 4vw, 64px);
-  --seccion: clamp(72px, 11vw, 168px);
+  /* ── Escala tipográfica: la única del sitio ──────────────────────
+     Ningún componente escribe un tamaño a mano; usa uno de estos.
+     Titulares en Archivo 600 con tracking cerrado; Newsreader queda para la voz
+     (las líneas que dice el agente y las citas). Plex Mono solo para cifras y horas. */
+  --t-1: clamp(44px, 6vw, 84px);     /* titular de portada · Archivo 600 */
+  --t-2: clamp(32px, 3.8vw, 56px);   /* titular de sección · Archivo 600 */
+  --t-cartel: clamp(24px, 7.6vw, 120px); /* el teléfono como anuncio · Plex Mono */
+  --t-dialogo: clamp(20px, 1.8vw, 26px); /* lo que dice el agente · Newsreader 300 */
+  --t-entrada: clamp(18px, 1.6vw, 22px); /* párrafo de entrada · Archivo 400 */
+  --t-3: 18px;                       /* subtítulo · Archivo 600 */
+  --t-cuerpo: 15px;                  /* cuerpo · Archivo 400 */
+  --t-nota: 13px;                    /* notas, menú, etiquetas, interfaz · Archivo */
+  --t-dato: 13px;                    /* cifras, horas · Plex Mono */
+
+  /* tres niveles de texto, como en un panel: principal, secundario, apagado */
+  --texto-1: var(--hueso);
+  --texto-2: color-mix(in srgb, var(--hueso) 72%, var(--acero));
+  --texto-3: var(--acero);
+
+  --serif: var(--fuente-display), Georgia, serif;
+  --sans: var(--fuente-sans), ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+  --mono: var(--fuente-mono), ui-monospace, monospace;
+
+  --ancho: 1216px;
+  --margen: clamp(20px, 4vw, 56px);
+  --seccion: clamp(80px, 9vw, 136px);
 
   --curva: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* esquinas y bordes suaves, como en una interfaz de producto */
+  --radio: 14px;
+  --radio-chico: 8px;
+  --borde: rgba(255, 255, 255, 0.08);
+  --borde-fuerte: rgba(255, 255, 255, 0.14);
+  --superficie: rgba(255, 255, 255, 0.02);
+  --superficie-2: rgba(255, 255, 255, 0.05);
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  border-radius: 0;
 }
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 92px;
+  scroll-padding-top: 80px;
 }
 
 html,
@@ -53,36 +83,37 @@ body {
 }
 
 body {
-  font-family: var(--fuente-sans), ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.62;
+  font-feature-settings: "cv11", "ss01";
+  font-family: var(--sans);
+  font-size: var(--t-cuerpo);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* La página es una hoja sobre el pie: al llegar al final, el pie queda descubierto. */
-main {
-  position: relative;
-  z-index: 1;
-  background: var(--tinta);
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
 }
 
 a {
-  color: var(--hueso);
+  color: inherit;
   text-decoration: none;
 }
 
-a:hover {
-  color: var(--acento);
-}
-
-button {
+button,
+input,
+select,
+textarea {
   font: inherit;
   color: inherit;
-}
-
-input {
-  font: inherit;
 }
 
 img,
@@ -93,7 +124,7 @@ svg {
 
 ::selection {
   background: var(--acento);
-  color: #08111f;
+  color: var(--tinta);
 }
 
 :focus-visible {
@@ -101,52 +132,19 @@ svg {
   outline-offset: 3px;
 }
 
-/* ── animaciones ───────────────────────────────────────────
-   CUIDADO: los CSS Modules renombran el nombre de la animación al compilar.
-   Una animación usada desde un .module.css necesita sus @keyframes DENTRO de
-   ese módulo, o la referencia apunta a un nombre que no existe y no pasa nada.
-   Aquí solo viven las que se aplican por estilo en línea desde el TSX.        */
-
-@keyframes celda {
-  0%, 100% { background-color: #0b0f17; }
-  50%      { background-color: #182131; }
-}
-
-@keyframes celdaAzul {
-  0%, 100% { background-color: #0b0f17; }
-  50%      { background-color: #1e2c48; }
-}
-
 @keyframes latido {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.28; }
 }
 
-/* Revelado al entrar en pantalla.
-   Solo se esconde cuando el script confirmó que puede revelarlo:
-   sin JS, con error o con movimiento reducido, el contenido se ve. */
-html[data-revelado="1"] [data-revelar] {
-  opacity: 0;
-  transform: translateY(16px);
-}
-
-html[data-revelado="1"] [data-revelar][data-visible="1"] {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 620ms var(--curva),
-    transform 620ms var(--curva);
-}
-
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 
-  [data-anima],
-  [data-revelar] {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    clip-path: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

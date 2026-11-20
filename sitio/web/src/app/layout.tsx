@@ -1,19 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { Inter, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import { FIRMA } from "@/contenido/sitio";
 import "./globals.css";
 
-const archivo = Archivo({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "800"],
   variable: "--fuente-sans",
   display: "swap",
 });
 
 const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
+  weight: ["300"],
+  style: ["normal"],
   variable: "--fuente-display",
   display: "swap",
 });
@@ -32,12 +31,12 @@ const SITIO =
   process.env.NEXT_PUBLIC_SITIO ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://dimia.mx");
 const DESCRIPCION =
-  "Consultora mexicana que diseña, construye y opera sistemas de decisión: datos confiables, inteligencia artificial aplicada, automatización y medición contra ingreso real.";
+  "Consultora mexicana que instala y opera agentes de voz: contestan su número las 24 horas, agendan la cita en firme y la confirman por WhatsApp. También datos, automatización y medición contra ingreso.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO),
   title: {
-    default: "Dimia Consulting — Donde el dato decide",
+    default: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
     template: "%s · Dimia Consulting",
   },
   description: DESCRIPCION,
@@ -61,13 +60,13 @@ export const metadata: Metadata = {
     locale: "es_MX",
     url: SITIO,
     siteName: FIRMA.nombre,
-    title: "Dimia Consulting — Donde el dato decide",
+    title: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
     description: DESCRIPCION,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: FIRMA.nombre }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dimia Consulting — Donde el dato decide",
+    title: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
     description: DESCRIPCION,
     images: ["/og.png"],
   },
@@ -120,7 +119,7 @@ const ESQUEMA = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-MX" className={`${archivo.variable} ${newsreader.variable} ${plexMono.variable}`}>
+    <html lang="es-MX" className={`${inter.variable} ${newsreader.variable} ${plexMono.variable}`}>
       <body>
         {children}
         <script

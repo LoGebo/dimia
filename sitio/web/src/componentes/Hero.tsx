@@ -1,53 +1,46 @@
-import { HERO } from "@/contenido/sitio";
-import { FondoConSelector } from "./FondoConSelector";
-import { Flecha } from "./Iconos";
+import { FIRMA, HERO } from "@/contenido/sitio";
+import { PanelDemo } from "./PanelDemo";
+import ui from "./ui.module.css";
 import css from "./Hero.module.css";
 
 export function Hero() {
   return (
     <section id="inicio" className={css.hero}>
-      <FondoConSelector />
+      {/* Luz de fondo: un halo azul hondo detrás del titular. */}
+      <div className={css.luz} aria-hidden="true" />
 
-      <div className={css.cuerpo}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          data-anima="1"
-          src="/marca/lockup-tinta.svg"
-          alt="Dimia Consulting"
-          width={3017}
-          height={1101}
-          className={css.lockup}
-        />
+      <div className={css.contenedor}>
+        <a href="#funciones" className={css.aviso}>
+          <span className={css.avisoPunto} aria-hidden="true" />
+          {HERO.aviso}
+          <span className={css.avisoFlecha} aria-hidden="true">
+            →
+          </span>
+        </a>
 
-        <div className={css.columnas}>
-          <h1 data-anima="1" className={css.titular}>
-            {HERO.titular}
-            <i className={css.cuadradoTitular} />
-          </h1>
+        <h1 className={css.titular}>{HERO.titular}</h1>
+        <p className={css.entrada}>{HERO.entrada}</p>
 
-          <div data-anima="1" className={css.derecha}>
-            <p className={css.bajada}>
-              {HERO.bajadaAntes}
-              <strong className={css.fuerte}>{HERO.bajadaFuerte}</strong>
-              {HERO.bajadaDespues}
-            </p>
-            <div className={css.acciones}>
-              <a href="#contacto" className={css.primario}>
-                {HERO.ctaPrimario}
-              </a>
-              <a href="#practica" className={css.secundario}>
-                {HERO.ctaSecundario}
-                <Flecha />
-              </a>
-            </div>
-          </div>
+        <div className={css.acciones}>
+          <a href="#contacto" className={ui.botonPrimario}>
+            {HERO.ctaPrimario}
+          </a>
+          <a href={FIRMA.telefonoHref} className={ui.botonSecundario}>
+            {HERO.llamada}
+            <span className={css.numero}>{FIRMA.telefono}</span>
+          </a>
         </div>
+
+        <ul className={css.garantias}>
+          {HERO.garantias.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
       </div>
 
-      <div data-anima="1" className={css.pie}>
-        <div className={css.pieInterior}>
-          <p className={css.pieTexto}>{HERO.pie}</p>
-          <span data-anima="1" aria-hidden="true" className={css.filete} />
+      <div className={css.escenario}>
+        <div className={css.marco}>
+          <PanelDemo />
         </div>
       </div>
     </section>

@@ -1,133 +1,72 @@
-/* Pila de expedientes: cada carta es sticky con un tope escalonado, así la siguiente
-   se desliza encima y deja a la vista el renglón de título de las anteriores. */
-
-.pila {
-  --cabeza: 76px;
+.etapas {
   list-style: none;
-  margin: 0;
   padding: 0;
   display: grid;
-  gap: clamp(32px, 14vh, 160px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.carta {
-  position: sticky;
-  top: calc(96px + var(--i) * var(--cabeza));
-  min-height: clamp(240px, 34vh, 340px);
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  border: 1px solid var(--linea);
-  border-top-color: var(--linea-2);
+.etapa {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 0 28px 0 0;
+}
+
+.etapa + .etapa {
+  padding-left: 28px;
+  border-left: 1px solid var(--linea);
 }
 
 .cabeza {
-  display: grid;
-  grid-template-columns: clamp(64px, 8vw, 112px) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  height: var(--cabeza);
-  padding: 0 clamp(20px, 3vw, 44px);
-  border-bottom: 1px solid var(--linea);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--linea-2);
+}
+
+.etapa:first-child .cabeza {
+  border-bottom-color: var(--laton);
+}
+
+.numero,
+.duracion {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-dato);
 }
 
 .numero {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  color: var(--acero-2);
-}
-
-.nombre {
-  margin: 0;
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(26px, 2.8vw, 40px);
-  line-height: 1;
-  letter-spacing: -0.016em;
-  color: var(--hueso);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--laton);
 }
 
 .duracion {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 14px;
-  color: var(--hueso);
-  white-space: nowrap;
-}
-
-.cuadro {
-  width: 7px;
-  height: 7px;
-  display: block;
-  background: var(--acento);
-}
-
-.duracion[data-continuo="1"] {
   color: var(--acero);
 }
 
-.duracion[data-continuo="1"] .cuadro {
-  background: var(--linea-2);
+@media (max-width: 1000px) {
+  .etapas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 48px;
+  }
+
+  .etapa:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
 }
 
-.cuerpo {
-  flex: 1 1 auto;
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  padding: clamp(24px, 2.6vw, 36px) clamp(20px, 3vw, 44px) clamp(28px, 3vw, 44px)
-    calc(clamp(20px, 3vw, 44px) + clamp(64px, 8vw, 112px) + 16px);
-  overflow: hidden;
-}
-
-.texto {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  max-width: 34ch;
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(22px, 2.2vw, 32px);
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: var(--acero);
-  text-wrap: pretty;
-}
-
-@media (max-width: 760px) {
-  .pila {
-    gap: 12px;
+@media (max-width: 600px) {
+  .etapas {
+    grid-template-columns: 1fr;
+    row-gap: 40px;
   }
 
-  .carta {
-    position: static;
-    min-height: 0;
+  .etapa,
+  .etapa + .etapa {
+    padding: 0;
+    border-left: 0;
   }
-
-  .cabeza {
-    grid-template-columns: 36px minmax(0, 1fr);
-    height: auto;
-    padding: 20px;
-    row-gap: 8px;
-  }
-
-  .duracion {
-    grid-column: 2;
-  }
-
-  .cuerpo {
-    padding: 24px 20px 28px;
-  }
-
-  .texto {
-    font-size: 21px;
-  }
-
 }

@@ -1,0 +1,233 @@
+.rejilla {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 28px;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde-fuerte);
+  background: var(--superficie);
+}
+
+.lienzo {
+  height: 176px;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 0%, color-mix(in srgb, var(--acento-hondo) 26%, transparent), transparent 70%),
+    var(--tinta);
+  border: 1px solid var(--borde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.titulo {
+  margin: 24px 20px 0;
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--texto-1);
+}
+
+.texto {
+  margin: 8px 20px 0;
+  font-size: var(--t-cuerpo);
+  line-height: 1.55;
+  color: var(--acero);
+}
+
+/* ── ilustraciones ── */
+
+.horas {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 3px;
+}
+
+.horas i {
+  height: 36px;
+  border-radius: 3px;
+  background: var(--hueso);
+}
+
+.horas i[data-noche="0"] {
+  opacity: 0.4;
+}
+
+.horas span {
+  grid-column: span 8;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--acero);
+}
+
+.horas span:nth-of-type(2) {
+  text-align: center;
+}
+
+.horas span:nth-of-type(3) {
+  text-align: right;
+}
+
+.agenda,
+.lista {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: 6px;
+}
+
+.agenda li,
+.lista li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--acero);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+}
+
+.agenda span,
+.lista span {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--acero);
+}
+
+.agenda li[data-estado="ocupado"] {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.agenda li[data-estado="nuevo"] {
+  background: var(--hueso);
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.agenda li[data-estado="nuevo"] span {
+  color: var(--tinta);
+}
+
+.lista li {
+  color: var(--texto-1);
+}
+
+.lista i {
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.lista i[data-color="bueno"] { background: var(--bueno); }
+.lista i[data-color="alerta"] { background: var(--alerta); }
+.lista i[data-color="hueso"] { background: var(--hueso); }
+
+.chat {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.burbuja,
+.pregunta {
+  max-width: 86%;
+  padding: 9px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.burbuja {
+  justify-self: start;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--panel-2);
+  color: var(--texto-1);
+}
+
+.pregunta {
+  justify-self: end;
+  border-radius: 12px 12px 4px 12px;
+  background: var(--hueso);
+  color: var(--tinta);
+  font-weight: 500;
+}
+
+.botones {
+  display: flex;
+  gap: 6px;
+  width: 86%;
+}
+
+.botones span {
+  flex: 1;
+  text-align: center;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--borde-fuerte);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-1);
+}
+
+.transfiere {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.nodo {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-fuerte);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-1);
+  background: var(--superficie-2);
+}
+
+.nodo[data-equipo="1"] {
+  background: var(--hueso);
+  color: var(--tinta);
+}
+
+@keyframes viaja {
+  from { background-position: 0 0; }
+  to   { background-position: 24px 0; }
+}
+
+.flecha {
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--acero) 0 8px, transparent 8px 12px);
+  animation: viaja 1.2s linear infinite;
+}
+
+@media (max-width: 1000px) {
+  .rejilla {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+}

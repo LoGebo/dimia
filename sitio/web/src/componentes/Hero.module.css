@@ -1,248 +1,162 @@
-/* Estas keyframes viven aquí a propósito: los CSS Modules renombran la
-   referencia y no encontrarían una definición global. */
-
-@keyframes revelaMarca {
-  from { clip-path: inset(0 100% 0 0); opacity: 0.4; }
-  to   { clip-path: inset(0 0 0 0); opacity: 1; }
-}
-
-@keyframes sube {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: none; }
-}
-
-@keyframes cuenta {
-  0%, 100% { opacity: 0.28; }
-  50%      { opacity: 1; }
-}
-
-@keyframes aterriza {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: none; }
-}
-
-@keyframes creceFilete {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-
 .hero {
   position: relative;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-  border-bottom: 1px solid var(--linea);
+  padding-bottom: clamp(64px, 8vw, 120px);
 }
 
-.fondo {
+/* Halo de luz detrás del titular y del producto. */
+.luz {
   position: absolute;
-  inset: 0;
+  inset: -20% -10% auto;
+  height: 1100px;
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 0%, color-mix(in srgb, var(--acento-hondo) 55%, transparent), transparent 70%),
+    radial-gradient(ellipse 30% 30% at 50% 55%, color-mix(in srgb, var(--acento-hondo) 30%, transparent), transparent 70%);
   pointer-events: none;
 }
 
-.reticula {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(76%, 1120px);
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  grid-template-rows: repeat(7, 1fr);
-  gap: 1px;
-  background: #0f151f;
-  mask-image: linear-gradient(100deg, transparent 2%, rgba(0, 0, 0, 0.5) 30%, #000 76%);
-  -webkit-mask-image: linear-gradient(100deg, transparent 2%, rgba(0, 0, 0, 0.5) 30%, #000 76%);
-}
-
-.cuerpo {
+.contenedor {
   position: relative;
-  flex: 1;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(140px, 19vh, 200px) var(--margen) 0;
+  text-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  max-width: var(--ancho);
-  width: 100%;
-  margin: 0 auto;
-  padding: clamp(120px, 15vh, 190px) var(--margen) clamp(40px, 6vh, 64px);
-}
-
-.lockup {
-  display: block;
-  width: min(560px, 72vw);
-  height: auto;
-  margin: 0 0 clamp(44px, 7vh, 80px);
-  animation: revelaMarca 1100ms var(--curva) 200ms both;
-}
-
-.columnas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(32px, 5vw, 72px);
   align-items: center;
+}
+
+.aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-fuerte);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: var(--t-nota);
+  font-weight: 500;
+  color: var(--texto-2);
+  transition: background-color 150ms var(--curva);
+}
+
+.aviso:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.avisoPunto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bueno);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bueno) 25%, transparent);
+}
+
+.avisoFlecha {
+  color: var(--acero);
 }
 
 .titular {
-  flex: 1 1 540px;
-  min-width: 0;
-  font-family: var(--fuente-display), Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(24px, 2.7vw, 40px);
-  line-height: 1.14;
-  letter-spacing: -0.012em;
-  text-wrap: balance;
-  margin: 0;
-  color: var(--hueso);
-  animation: sube 800ms var(--curva) 700ms both;
-}
-
-/* Cierra la secuencia de entrada: el cuadrado del titular aterriza. */
-.cuadradoTitular {
-  display: inline-block;
-  width: 0.15em;
-  height: 0.15em;
-  background: var(--acento);
-  margin-left: 0.18em;
-  vertical-align: baseline;
-  animation: aterriza 260ms var(--curva) 1400ms both;
-}
-
-.derecha {
-  flex: 1 1 360px;
-  min-width: 0;
-  animation: sube 800ms var(--curva) 900ms both;
-}
-
-.bajada {
-  font-size: clamp(18px, 1.5vw, 21px);
-  line-height: 1.5;
-  color: var(--acero);
-  margin: 0 0 32px;
-  max-width: 34ch;
-}
-
-.fuerte {
+  margin-top: 28px;
+  font-family: var(--sans);
   font-weight: 600;
-  color: var(--hueso);
+  font-size: clamp(44px, 6.4vw, 88px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  background: linear-gradient(180deg, #ffffff 35%, color-mix(in srgb, var(--hueso) 55%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.entrada {
+  margin-top: 24px;
+  font-size: var(--t-entrada);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--acero);
+  max-width: 40ch;
 }
 
 .acciones {
+  margin-top: 36px;
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-}
-
-.primario {
-  display: flex;
-  align-items: center;
-  min-height: 48px;
-  padding: 0 26px;
-  background: var(--acento);
-  color: #0b0f17;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  transition: background 150ms ease-out;
-}
-
-.primario:hover {
-  background: var(--hueso);
-  color: #0b0f17;
-}
-
-.secundario {
-  display: flex;
-  align-items: center;
+  justify-content: center;
   gap: 12px;
-  min-height: 48px;
-  padding: 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--hueso);
-  white-space: nowrap;
-  border-bottom: 1px solid var(--linea-2);
-  transition: color 150ms ease-out, border-color 150ms ease-out;
 }
 
-.secundario:hover {
-  color: var(--acento);
-  border-color: var(--acento);
-}
-
-.pie {
-  position: relative;
-  animation: sube 800ms var(--curva) 1100ms both;
-}
-
-.pieInterior {
-  max-width: var(--ancho);
-  margin: 0 auto;
-  padding: 0 var(--margen) 26px;
+.garantias {
+  list-style: none;
+  padding: 0;
+  margin-top: 24px;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  font-size: var(--t-nota);
+  color: var(--acero);
 }
 
-.pieTexto {
-  font-family: var(--fuente-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--acero-2);
-  margin: 0;
+.garantias li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* En teléfono todo respira más: titular más chico, columnas separadas y
-   botones a lo ancho para que no se sientan apretados. */
-@media (max-width: 640px) {
-  .cuerpo {
-    padding-top: clamp(104px, 14vh, 140px);
-    padding-bottom: 40px;
-  }
+.garantias li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bueno);
+}
 
-  .columnas {
-    gap: 34px;
-    align-items: stretch;
-  }
+.numero {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  color: var(--acero);
+}
 
-  .titular {
-    font-size: 22px;
-    line-height: 1.26;
-  }
+/* El producto en perspectiva, inclinado hacia atrás y apagándose abajo. */
+.escenario {
+  position: relative;
+  max-width: 1200px;
+  margin: clamp(64px, 8vw, 104px) auto 0;
+  padding: 0 var(--margen);
+  perspective: 2400px;
+}
 
-  .bajada {
-    font-size: 16.5px;
-    margin-bottom: 24px;
-    max-width: none;
+.marco {
+  transform: rotateX(14deg) scale(0.98);
+  transform-origin: 50% 0%;
+  border-radius: var(--radio);
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--borde-fuerte);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 40px 120px -20px color-mix(in srgb, var(--acento-hondo) 45%, transparent);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+
+@media (max-width: 720px) {
+  .contenedor {
+    padding-top: 120px;
   }
 
   .acciones {
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .primario,
-  .secundario {
     width: 100%;
-    min-height: 52px;
-    justify-content: center;
   }
 
-  .secundario {
-    padding: 0 18px;
+  .marco {
+    transform: none;
+    padding: 4px;
+    mask-image: none;
+    -webkit-mask-image: none;
   }
-}
-
-.filete {
-  width: 1px;
-  height: 38px;
-  background: var(--linea-2);
-  display: block;
-  flex: 0 0 auto;
-  animation: cuenta 3.4s ease-in-out infinite;
 }
