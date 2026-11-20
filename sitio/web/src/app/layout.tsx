@@ -36,7 +36,7 @@ const DESCRIPCION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO),
   title: {
-    default: "Dimia — Agente de voz que contesta, agenda y confirma sus citas",
+    default: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
     template: "%s · Dimia Consulting",
   },
   description: DESCRIPCION,
@@ -60,13 +60,13 @@ export const metadata: Metadata = {
     locale: "es_MX",
     url: SITIO,
     siteName: FIRMA.nombre,
-    title: "Dimia — Agente de voz que contesta, agenda y confirma sus citas",
+    title: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
     description: DESCRIPCION,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: FIRMA.nombre }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dimia — Agente de voz que contesta, agenda y confirma sus citas",
+    title: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
     description: DESCRIPCION,
     images: ["/og.png"],
   },

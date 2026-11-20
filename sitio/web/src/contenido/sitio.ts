@@ -26,10 +26,10 @@ export const NAVEGACION = [
 ] as const;
 
 export const HERO = {
-  aviso: "Agente de voz para negocios con agenda",
+  aviso: "Software de agentes de voz para negocios con agenda",
   titular: "Nunca pierda otra cita por no contestar el teléfono.",
   entrada:
-    "Instalamos un agente de voz en su número: contesta las 24 horas, agenda la cita en su calendario y la confirma por WhatsApp. Nosotros lo configuramos y lo operamos.",
+    "Dimia es un software que pone un agente de voz en su número: contesta las 24 horas, agenda la cita en su calendario y la confirma por WhatsApp. Usted lo sigue todo desde su panel; nosotros lo configuramos y lo operamos.",
   ctaPrimario: "Agendar demostración",
   llamada: "Hable con el agente",
   hora: "21:04",
