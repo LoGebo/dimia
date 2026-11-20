@@ -29,12 +29,12 @@ export const HERO = {
   aviso: "Software de agentes de voz para negocios con agenda",
   titular: "Nunca pierda otra cita por no contestar el teléfono.",
   entrada:
-    "Dimia es un software que pone un agente de voz en su número: contesta las 24 horas, agenda la cita en su calendario y la confirma por WhatsApp. Usted lo sigue todo desde su panel; nosotros lo configuramos y lo operamos.",
+    "Dimia es un software que contesta su teléfono las 24 horas, agenda la cita y la confirma por WhatsApp.",
   ctaPrimario: "Agendar demostración",
   llamada: "Hable con el agente",
   hora: "21:04",
   contexto: "Su negocio ya cerró. El agente contesta.",
-  garantias: ["Sin costo de activación", "Desde $2,990 MXN al mes", "Español de México, de usted"],
+  garantias: ["Sin costo de activación", "Desde $2,990 MXN al mes", "Español de México"],
 } as const;
 
 export const LA_FIRMA = {
