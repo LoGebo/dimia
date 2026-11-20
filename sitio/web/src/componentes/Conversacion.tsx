@@ -55,7 +55,7 @@ export function Conversacion() {
   return (
     <div className={css.escenario}>
       <div className={css.giros} role="tablist" aria-label="Elija su tipo de negocio">
-        <p className={css.girosTitulo}>Escuche cómo contesta en su giro</p>
+        <p className={css.girosTitulo}>Vea cómo contesta en su giro</p>
         {CONVERSACIONES.map((c, i) => (
           <button
             key={c.giro}

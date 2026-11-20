@@ -21,10 +21,7 @@ export function Integraciones() {
     <ul className={css.integraciones}>
       {INTEGRACIONES.lista.map((x) => (
         <li key={x.nombre} className={css.integracion}>
-          <span className={css.inicial} aria-hidden="true">
-            {x.nombre.charAt(0)}
-          </span>
-          <h3 className={css.titulo}>{x.nombre}</h3>
+          <h3 className={css.tituloSolo}>{x.nombre}</h3>
           <p className={css.texto}>{x.texto}</p>
         </li>
       ))}

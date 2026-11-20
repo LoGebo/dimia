@@ -8,7 +8,8 @@ export function Preguntas() {
       <div className={ui.contenedor}>
         <div className={css.columnas}>
           <div className={ui.encabezado}>
-            <h2 className={ui.titulo}>Preguntas frecuentes</h2>
+            <p className={ui.rotulo}>Preguntas</p>
+            <h2 className={ui.titulo}>Lo que más nos preguntan</h2>
           </div>
 
           <div className={css.lista}>

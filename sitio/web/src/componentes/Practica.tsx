@@ -9,10 +9,10 @@ export function Practica() {
       <div className={ui.contenedor}>
         <div className={css.columnas}>
           <div className={ui.encabezado}>
-            <h2 className={ui.titulo}>Además del agente</h2>
+            <p className={ui.rotulo}>Otros servicios</p>
+            <h2 className={ui.titulo}>Además del agente, le ayudamos con su negocio.</h2>
             <p className={ui.entrada}>
-              El agente suele ser el primer paso. Detrás de él trabajamos en cinco frentes que comparten la misma base de
-              datos.
+              Muchos clientes empiezan con el agente. Si después necesita más, también hacemos esto.
             </p>
           </div>
 

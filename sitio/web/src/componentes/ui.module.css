@@ -55,6 +55,23 @@
   margin-bottom: clamp(48px, 6vw, 80px);
 }
 
+/* Dice en qué parte de la página está el cliente. Coincide con el menú. */
+.rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--texto-2);
+}
+
+.rotulo::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--hueso);
+}
+
 .titulo {
   font-family: var(--sans);
   font-weight: 600;

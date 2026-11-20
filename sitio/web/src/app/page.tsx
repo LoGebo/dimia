@@ -36,22 +36,23 @@ export default function Inicio() {
         <Hero />
         {MOSTRAR_CARRUSEL && <Carrusel />}
 
-        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
+        <Seccion id="funciones" rotulo="Qué hace" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
           <Funciones />
         </Seccion>
 
-        <Seccion id="giros" titular={GIROS.titular} entrada={GIROS.entrada}>
+        <Seccion id="giros" rotulo="Por giro" titular={GIROS.titular} entrada={GIROS.entrada}>
           <Conversacion />
         </Seccion>
 
-        <Seccion id="whatsapp" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada} tono="papel">
+        <Seccion id="whatsapp" rotulo="Confirmación" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada} tono="papel">
           <Confirma />
         </Seccion>
 
         <Seccion
           id="agenda"
-          titular="Una agenda que nunca se encima."
-          entrada="El agente no decide si hay lugar: lo decide la base de datos. Un horario ocupado no se puede volver a dar."
+          rotulo="Agenda"
+          titular="Contesta a cualquier hora y nunca encima dos citas."
+          entrada="Antes de dar un horario, el agente revisa su agenda. Si ya está ocupado, ofrece el siguiente libre en la misma llamada."
         >
           <div className={css.bento}>
             <Dia />
@@ -59,11 +60,11 @@ export default function Inicio() {
           </div>
         </Seccion>
 
-        <Seccion id="integraciones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada tono="papel">
+        <Seccion id="integraciones" rotulo="Conexiones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada tono="papel">
           <Integraciones />
         </Seccion>
 
-        <Seccion id="pasos" titular={PASOS.titular} entrada={PASOS.entrada} centrada>
+        <Seccion id="pasos" rotulo="Cómo empezar" titular={PASOS.titular} entrada={PASOS.entrada} centrada>
           <Pasos />
         </Seccion>
 

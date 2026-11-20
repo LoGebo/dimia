@@ -10,7 +10,7 @@ const TIEMPOS = [900, 1400, 1500] as const;
 
 /** La garantía como demostración: un horario ocupado no se puede volver a dar. */
 export function Garantia() {
-  const { colision, restriccion } = GARANTIA;
+  const { colision } = GARANTIA;
   const [fase, setFase] = useState<Fase>(0);
   const raiz = useRef<HTMLDivElement>(null);
   const relojes = useRef<number[]>([]);
@@ -85,13 +85,6 @@ export function Garantia() {
         </div>
       </div>
 
-      <details className={css.detalle}>
-        <summary className={css.resumen}>Ver la regla en la base de datos</summary>
-        <p className={css.notaCodigo}>{restriccion.pie}</p>
-        <pre className={css.codigo}>
-          <code>{restriccion.codigo}</code>
-        </pre>
-      </details>
     </div>
   );
 }

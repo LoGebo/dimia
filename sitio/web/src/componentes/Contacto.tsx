@@ -71,6 +71,7 @@ export function Contacto() {
   return (
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
+        <p className={`${ui.rotulo} ${css.rotulo}`}>Contacto</p>
         <h2 className={ui.titulo}>{CIERRE_CTA.titular}</h2>
         <p className={`${ui.entrada} ${css.bajada}`}>{CIERRE_CTA.entrada}</p>
 

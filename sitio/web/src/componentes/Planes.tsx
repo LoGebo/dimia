@@ -22,6 +22,7 @@ export function Planes() {
       <div className={ui.contenedor}>
         <div className={css.cabeza}>
           <div className={ui.encabezado}>
+            <p className={ui.rotulo}>Precios</p>
             <h2 className={ui.titulo}>{PLANES.titular}</h2>
           </div>
 

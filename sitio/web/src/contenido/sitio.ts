@@ -82,62 +82,62 @@ export type Frente = {
 export const PRACTICA: Frente[] = [
   {
     indice: "01",
-    titulo: "Estrategia y arquitectura de decisión",
-    resumen: "Qué decide el negocio, con qué dato y en qué momento.",
+    titulo: "Diagnóstico de su operación",
+    resumen: "Qué conviene cambiar primero en su negocio y cuánto cuesta.",
     detalle:
-      "Levantamos la operación real, identificamos las decisiones que hoy se toman a ciegas y definimos la arquitectura mínima que las sostiene. El entregable es una hoja de ruta con secuencia, costo y responsable, no un diagnóstico para archivar.",
+      "Revisamos cómo trabaja hoy su negocio y dónde se pierden clientes o tiempo. Le entregamos un plan por etapas, con costo y responsable de cada paso.",
     puntos: [
-      "Mapa de decisiones y datos faltantes",
-      "Hoja de ruta por etapas medibles",
-      "Caso de negocio con supuestos abiertos",
+      "Dónde se pierden clientes y tiempo",
+      "Plan por etapas",
+      "Costo de cada paso",
     ],
   },
   {
     indice: "02",
-    titulo: "Datos e infraestructura analítica",
-    resumen: "Bases confiables y tableros que un dueño puede leer solo.",
+    titulo: "Datos y reportes",
+    resumen: "Toda su información en un solo lugar y reportes fáciles de leer.",
     detalle:
-      "Consolidamos fuentes dispersas en una base única con reglas explícitas, y construimos los tableros que la dirección usa para decidir sin que nadie se los explique.",
+      "Juntamos la información que hoy está en hojas de cálculo, sistemas y libretas, y armamos reportes que usted entiende sin que nadie se los explique.",
     puntos: [
-      "Integración de fuentes y limpieza",
-      "Modelo de datos documentado",
-      "Tableros de operación y dirección",
+      "Información de varias fuentes en un solo lugar",
+      "Reportes de ventas y operación",
+      "Datos limpios y ordenados",
     ],
   },
   {
     indice: "03",
-    titulo: "Inteligencia artificial aplicada",
-    resumen: "El método, no el argumento. Se justifica por lo que resuelve.",
+    titulo: "Inteligencia artificial para tareas repetitivas",
+    resumen: "Solo donde de verdad le ahorra trabajo.",
     detalle:
-      "Aplicamos modelos donde hay un tramo repetitivo, un texto que nadie lee o una conversación que nadie alcanza a atender. Cada uso queda acotado, evaluado y con salida auditable.",
+      "La usamos en tareas que se repiten todos los días: atender conversaciones, leer documentos o clasificar información. Cada uso se prueba y se revisa antes de dejarlo operando.",
     puntos: [
-      "Agentes de voz y atención conversacional",
-      "Clasificación y extracción documental",
-      "Evaluación y control de calidad del modelo",
+      "Atención por voz y por chat",
+      "Lectura y clasificación de documentos",
+      "Revisión de la calidad de las respuestas",
     ],
   },
   {
     indice: "04",
-    titulo: "Automatización de operaciones",
-    resumen: "El tramo mecánico, ejecutado y auditado.",
+    titulo: "Automatización de tareas",
+    resumen: "Recordatorios, cobranza y seguimiento sin hacerlos a mano.",
     detalle:
-      "Confirmaciones, recordatorios, cobranza, seguimiento, altas y reportes. Automatizamos el tramo mecánico y dejamos cada acción con registro, responsable y reversa.",
+      "Confirmaciones, recordatorios, cobranza, seguimiento, altas y reportes. Los dejamos funcionando solos y cada acción queda registrada.",
     puntos: [
-      "Flujos con registro por acción",
-      "Integración con sistemas existentes",
-      "Alertas por excepción, no por volumen",
+      "Cada acción queda registrada",
+      "Funciona con los sistemas que ya usa",
+      "Le avisa solo cuando algo sale mal",
     ],
   },
   {
     indice: "05",
-    titulo: "Medición contra ingreso",
-    resumen: "Qué acción produjo cada oportunidad y cuánto valió.",
+    titulo: "Medición de su publicidad",
+    resumen: "Qué anuncio o llamada le trajo cada cliente y cuánto dinero dejó.",
     detalle:
-      "Conectamos campañas, llamadas y oportunidades con el ingreso facturado. La conversación deja de ser sobre clics y pasa a ser sobre pesos.",
+      "Conectamos sus anuncios y sus llamadas con lo que de verdad vendió. Así sabe en qué vale la pena invertir.",
     puntos: [
-      "Origen registrado por oportunidad",
-      "Conciliación con facturación",
-      "Reporte único para dirección",
+      "De dónde llegó cada cliente",
+      "Cuánto vendió cada anuncio",
+      "Un solo reporte para decidir",
     ],
   },
 ];
@@ -226,17 +226,17 @@ export const PASOS_LLAMADA = [
 
 export const GARANTIA = {
   rotulo: "La garantía",
-  titular: "Dos citas encimadas son imposibles por diseño",
+  titular: "Si el horario está ocupado, ofrece otro",
   cuerpo:
-    "La disponibilidad no se calcula en la conversación: la decide la base. Si el horario ya está tomado, la reserva se rechaza y el agente ofrece el siguiente hueco en la misma llamada.",
+    "El agente no puede dar un horario que ya está tomado. Si el cliente lo pide, le ofrece el siguiente libre sin colgar.",
   ruta: ["Llamada", "Consulta de disponibilidad", "Restricción de la base", "Reserva confirmada"],
   colision: {
     confirmada: { horario: "17:00–17:30", estado: "Confirmada" },
-    rechazada: { horario: "17:15–17:45", estado: "Rechazada por la base" },
-    ofrecida: { horario: "17:45–18:15", estado: "Se ofrece" },
+    rechazada: { horario: "17:15–17:45", estado: "Ocupado" },
+    ofrecida: { horario: "17:45–18:15", estado: "Se le ofrece" },
     nota: "Se ofrece 17:45 en la misma llamada.",
     repetir: "Repetir la demostración",
-    registro: ["Cita existente", "Nueva solicitud", "Siguiente hueco"],
+    registro: ["Cita que ya existe", "Lo que pide el cliente", "Lo que ofrece el agente"],
   },
   /** La restricción tal cual vive en proyectos/voz/supabase/migrations/20260822000001_esquema_inicial.sql */
   restriccion: {
@@ -269,7 +269,7 @@ export const PLANES = {
       canales: "Llamadas, WhatsApp, Instagram y Messenger",
       panel: "Panel esencial",
       soporte: "WhatsApp",
-      paraQuien: "Empresas que quieren empezar a capturar oportunidades",
+      paraQuien: "Para empezar a contestar todas sus llamadas",
       premium: 499,
       elegido: false,
     },
@@ -281,7 +281,7 @@ export const PLANES = {
       canales: "Todos los canales disponibles",
       panel: "Panel completo",
       soporte: "WhatsApp",
-      paraQuien: "Equipos que reciben clientes por varios canales",
+      paraQuien: "Para negocios que atienden por teléfono y otros canales",
       premium: 1249,
       elegido: true,
     },
@@ -293,7 +293,7 @@ export const PLANES = {
       canales: "Todos los canales disponibles",
       panel: "Panel completo",
       soporte: "Prioritario",
-      paraQuien: "Operaciones con mayor volumen, áreas o puntos de atención",
+      paraQuien: "Para negocios con más llamadas, áreas o sucursales",
       premium: 2499,
       elegido: false,
     },
@@ -396,7 +396,7 @@ export const CIERRE = {
   titular: "Llame ahora. Contesta el agente.",
   formulario: "O déjenos sus datos y agendamos una demostración.",
   notaTelefono: "Este número lo contesta el agente de voz de Dimia, a cualquier hora.",
-  declaracion: "Sistemas de decisión para empresas que ya no alcanzan a contestar.",
+  declaracion: "Software de agentes de voz para negocios que viven de su agenda.",
 } as const;
 
 /** Preguntas frecuentes. Cada respuesta sale del manual de marca o de los planes: nada inventado. */
@@ -411,7 +411,7 @@ export const PREGUNTAS = [
   },
   {
     p: "¿Puede dar una cita en un horario que ya está ocupado?",
-    r: "No. La disponibilidad la decide la base de datos, no la conversación. Si el horario está tomado, la reserva se rechaza y el agente ofrece el siguiente espacio libre en la misma llamada.",
+    r: "No. Antes de dar un horario, el agente revisa su agenda. Si ya está ocupado, ofrece el siguiente libre en la misma llamada.",
   },
   {
     p: "¿Puede inventar horarios o precios?",
@@ -676,23 +676,23 @@ export const FUNCIONES = {
 
 export const GIROS = {
   titular: "Funciona para cualquier negocio que vive de su agenda.",
-  entrada: "Elija su giro y escuche cómo contesta el agente una llamada fuera de horario.",
+  entrada: "Elija su giro y vea cómo contesta el agente una llamada cuando su negocio ya cerró.",
 } as const;
 
 export const WHATSAPP = {
-  titular: "Confirmaciones por WhatsApp, sin que nadie las mande.",
+  titular: "Al colgar, el cliente confirma por WhatsApp.",
   entrada:
-    "El cliente recibe su cita al colgar y la confirma con un botón. Usted ve en el panel quién confirmó y quién sigue sin hacerlo, y decide qué pasa con las citas sin respuesta.",
+    "Le llega su cita por WhatsApp y la confirma con un botón. En su panel usted ve quién confirmó y quién no.",
 } as const;
 
 export const INTEGRACIONES = {
   titular: "Se conecta con lo que ya usa.",
   entrada: "No tiene que cambiar su forma de trabajar.",
   lista: [
-    { nombre: "Su número de teléfono", texto: "El agente contesta en su línea por telefonía SIP." },
-    { nombre: "WhatsApp", texto: "Confirmaciones y avisos con plantillas aprobadas por Meta." },
+    { nombre: "Su número de teléfono", texto: "El agente contesta en el mismo número que sus clientes ya conocen." },
+    { nombre: "WhatsApp", texto: "Confirmaciones y avisos con mensajes aprobados por WhatsApp." },
     { nombre: "Calendario", texto: "Las citas quedan en la agenda que usted ya revisa." },
-    { nombre: "CRM", texto: "Cada cliente y cada llamada, registrados donde los necesita." },
+    { nombre: "Su lista de clientes", texto: "Cada cliente y cada llamada quedan registrados." },
   ],
 } as const;
 
