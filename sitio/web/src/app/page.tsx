@@ -36,7 +36,7 @@ export default function Inicio() {
         <Hero />
         {MOSTRAR_CARRUSEL && <Carrusel />}
 
-        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada tono="papel">
+        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
           <Funciones />
         </Seccion>
 
@@ -44,7 +44,7 @@ export default function Inicio() {
           <Conversacion />
         </Seccion>
 
-        <Seccion id="whatsapp" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada}>
+        <Seccion id="whatsapp" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada} tono="papel">
           <Confirma />
         </Seccion>
 
