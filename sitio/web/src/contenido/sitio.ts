@@ -681,16 +681,16 @@ export const INTEGRACIONES = {
   entrada: "Su teléfono, sus redes sociales, su correo y su calendario. No tiene que cambiar su forma de trabajar.",
   /** Logos en public/marca/integraciones (Simple Icons, CC0). El color es el de cada marca. */
   lista: [
-    { nombre: "Su número de teléfono", logo: "", color: "" },
-    { nombre: "WhatsApp", logo: "whatsapp", color: "#25D366" },
-    { nombre: "Messenger", logo: "messenger", color: "#0099FF" },
-    { nombre: "Facebook", logo: "facebook", color: "#0866FF" },
-    { nombre: "Instagram", logo: "instagram", color: "#E4405F" },
-    { nombre: "TikTok", logo: "tiktok", color: "#000000" },
-    { nombre: "LinkedIn", logo: "linkedin", color: "#0A66C2" },
-    { nombre: "Gmail", logo: "gmail", color: "#EA4335" },
-    { nombre: "Google Calendar", logo: "googlecalendar", color: "#4285F4" },
-    { nombre: "Google Sheets", logo: "googlesheets", color: "#34A853" },
+    { nombre: "Su teléfono", logo: "", color: "", grupo: "Atención" },
+    { nombre: "WhatsApp", logo: "whatsapp", color: "#25D366", grupo: "Atención" },
+    { nombre: "Messenger", logo: "messenger", color: "#0099FF", grupo: "Atención" },
+    { nombre: "Facebook", logo: "facebook", color: "#0866FF", grupo: "Redes sociales" },
+    { nombre: "Instagram", logo: "instagram", color: "#E4405F", grupo: "Redes sociales" },
+    { nombre: "TikTok", logo: "tiktok", color: "#000000", grupo: "Redes sociales" },
+    { nombre: "LinkedIn", logo: "linkedin", color: "#0A66C2", grupo: "Redes sociales" },
+    { nombre: "Gmail", logo: "gmail", color: "#EA4335", grupo: "Herramientas" },
+    { nombre: "Google Calendar", logo: "googlecalendar", color: "#4285F4", grupo: "Herramientas" },
+    { nombre: "Google Sheets", logo: "googlesheets", color: "#34A853", grupo: "Herramientas" },
   ],
 } as const;
 
