@@ -1,8 +1,5 @@
 import { Navegacion } from "@/componentes/Navegacion";
-import { Hero } from "@/componentes/Hero";
 import { PortadaLlamada } from "@/componentes/portadas/PortadaLlamada";
-import { PortadaNumero } from "@/componentes/portadas/PortadaNumero";
-import { PortadaDia } from "@/componentes/portadas/PortadaDia";
 import { Carrusel } from "@/componentes/Carrusel";
 import { Seccion } from "@/componentes/Seccion";
 import { Funciones } from "@/componentes/Funciones";
@@ -12,7 +9,7 @@ import { Garantia } from "@/componentes/Garantia";
 import { Dia } from "@/componentes/Dia";
 import { Integraciones, Pasos } from "@/componentes/Pasos";
 import { Planes } from "@/componentes/Planes";
-import { Practica } from "@/componentes/Practica";
+import { Servicios } from "@/componentes/Servicios";
 import { Preguntas } from "@/componentes/Preguntas";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
@@ -31,24 +28,16 @@ import css from "./page.module.css";
  * qué es · qué hace · si sirve para mi giro · cómo confirma · con qué se conecta ·
  * cómo empiezo · cuánto cuesta · dudas · contacto.
  */
-/* Opciones de portada para comparar: /?portada=a, b o c. Sin parámetro, la actual. */
-const PORTADAS = { a: PortadaLlamada, b: PortadaNumero, c: PortadaDia } as const;
-
-export default async function Inicio({
-  searchParams,
-}: {
-  searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
-}) {
-  const { portada } = await searchParams;
-  const Portada = typeof portada === "string" && portada in PORTADAS ? PORTADAS[portada as keyof typeof PORTADAS] : Hero;
+export default function Inicio() {
   return (
     <>
-      <Navegacion solida={Portada === PortadaDia} />
+      <Navegacion />
       <main>
-        <Portada />
+        <PortadaLlamada />
         {MOSTRAR_CARRUSEL && <Carrusel />}
+        <Servicios />
 
-        <Seccion id="funciones" rotulo="Qué hace" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
+        <Seccion id="funciones" rotulo="Agente de voz" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
           <Funciones />
         </Seccion>
 
@@ -81,7 +70,6 @@ export default async function Inicio({
         </Seccion>
 
         <Planes />
-        <Practica />
         <Preguntas />
         <Contacto />
       </main>

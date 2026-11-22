@@ -21,8 +21,22 @@ export function Integraciones() {
     <ul className={css.integraciones}>
       {INTEGRACIONES.lista.map((x) => (
         <li key={x.nombre} className={css.integracion}>
-          <h3 className={css.tituloSolo}>{x.nombre}</h3>
-          <p className={css.texto}>{x.texto}</p>
+          {x.logo ? (
+            <span
+              className={css.logo}
+              aria-hidden="true"
+              style={{
+                backgroundColor: x.color,
+                maskImage: `url(/marca/integraciones/${x.logo}.svg)`,
+                WebkitMaskImage: `url(/marca/integraciones/${x.logo}.svg)`,
+              }}
+            />
+          ) : (
+            <span className={css.logoTexto} aria-hidden="true">
+              +52
+            </span>
+          )}
+          <span className={css.nombre}>{x.nombre}</span>
         </li>
       ))}
     </ul>

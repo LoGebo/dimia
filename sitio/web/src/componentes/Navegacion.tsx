@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { FIRMA, NAVEGACION } from "@/contenido/sitio";
 import css from "./Navegacion.module.css";
 
-/** `solida`: la barra lleva fondo desde el inicio (para portadas claras). */
-export function Navegacion({ solida = false }: { solida?: boolean }) {
+export function Navegacion() {
   const [compacta, setCompacta] = useState(false);
   const [menu, setMenu] = useState(false);
 
@@ -30,7 +29,7 @@ export function Navegacion({ solida = false }: { solida?: boolean }) {
   }, [menu]);
 
   return (
-    <header className={css.barra} data-compacta={solida || compacta || menu ? "1" : "0"}>
+    <header className={css.barra} data-compacta={compacta || menu ? "1" : "0"}>
       <div className={css.interior}>
         <a href="#inicio" aria-label={`${FIRMA.nombre}, inicio`} className={css.marca} onClick={() => setMenu(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

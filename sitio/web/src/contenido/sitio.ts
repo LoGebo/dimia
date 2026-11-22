@@ -18,18 +18,18 @@ export const FIRMA = {
 
 
 export const NAVEGACION = [
-  { href: "#funciones", texto: "Qué hace" },
-  { href: "#giros", texto: "Por giro" },
+  { href: "#servicios", texto: "Servicios" },
+  { href: "#funciones", texto: "Agente de voz" },
   { href: "#pasos", texto: "Cómo empezar" },
   { href: "#precios", texto: "Precios" },
   { href: "#preguntas", texto: "Preguntas" },
 ] as const;
 
 export const HERO = {
-  aviso: "Software de agentes de voz para negocios con agenda",
-  titular: "Nunca pierda otra cita por no contestar el teléfono.",
+  aviso: "Optimización con inteligencia artificial",
+  titular: "Inteligencia artificial que trabaja en su negocio.",
   entrada:
-    "Dimia es un software que contesta su teléfono las 24 horas, agenda la cita y la confirma por WhatsApp.",
+    "Dimia es un software que contesta sus llamadas, agenda citas y automatiza las tareas repetitivas de su operación, las 24 horas.",
   ctaPrimario: "Agendar demostración",
   llamada: "Hable con el agente",
   hora: "21:04",
@@ -79,66 +79,57 @@ export type Frente = {
   puntos: string[];
 };
 
+/** Servicios de Dimia. El primero va destacado. */
 export const PRACTICA: Frente[] = [
   {
-    indice: "01",
-    titulo: "Diagnóstico de su operación",
-    resumen: "Qué conviene cambiar primero en su negocio y cuánto cuesta.",
+    indice: "ia",
+    titulo: "Optimización con inteligencia artificial",
+    resumen: "Ponemos inteligencia artificial donde le ahorra tiempo o dinero.",
     detalle:
-      "Revisamos cómo trabaja hoy su negocio y dónde se pierden clientes o tiempo. Le entregamos un plan por etapas, con costo y responsable de cada paso.",
+      "Revisamos cómo trabaja su negocio y aplicamos inteligencia artificial en las tareas que se repiten todos los días: atender clientes, responder mensajes, leer documentos y clasificar información. Cada uso se prueba y se revisa antes de dejarlo operando.",
     puntos: [
-      "Dónde se pierden clientes y tiempo",
-      "Plan por etapas",
-      "Costo de cada paso",
-    ],
-  },
-  {
-    indice: "02",
-    titulo: "Datos y reportes",
-    resumen: "Toda su información en un solo lugar y reportes fáciles de leer.",
-    detalle:
-      "Juntamos la información que hoy está en hojas de cálculo, sistemas y libretas, y armamos reportes que usted entiende sin que nadie se los explique.",
-    puntos: [
-      "Información de varias fuentes en un solo lugar",
-      "Reportes de ventas y operación",
-      "Datos limpios y ordenados",
-    ],
-  },
-  {
-    indice: "03",
-    titulo: "Inteligencia artificial para tareas repetitivas",
-    resumen: "Solo donde de verdad le ahorra trabajo.",
-    detalle:
-      "La usamos en tareas que se repiten todos los días: atender conversaciones, leer documentos o clasificar información. Cada uso se prueba y se revisa antes de dejarlo operando.",
-    puntos: [
-      "Atención por voz y por chat",
+      "Atención a clientes por voz y por chat",
       "Lectura y clasificación de documentos",
       "Revisión de la calidad de las respuestas",
     ],
   },
   {
-    indice: "04",
+    indice: "voz",
+    titulo: "Agentes de voz",
+    resumen: "Contestan su teléfono, agendan y confirman citas las 24 horas.",
+    detalle: "Un agente contesta en su número, agenda en su calendario y confirma por WhatsApp.",
+    puntos: ["Contesta a cualquier hora", "Agenda sin encimar citas", "Confirma por WhatsApp"],
+  },
+  {
+    indice: "automatizacion",
     titulo: "Automatización de tareas",
     resumen: "Recordatorios, cobranza y seguimiento sin hacerlos a mano.",
     detalle:
       "Confirmaciones, recordatorios, cobranza, seguimiento, altas y reportes. Los dejamos funcionando solos y cada acción queda registrada.",
-    puntos: [
-      "Cada acción queda registrada",
-      "Funciona con los sistemas que ya usa",
-      "Le avisa solo cuando algo sale mal",
-    ],
+    puntos: ["Cada acción queda registrada", "Funciona con los sistemas que ya usa", "Le avisa solo cuando algo sale mal"],
   },
   {
-    indice: "05",
-    titulo: "Medición de su publicidad",
-    resumen: "Qué anuncio o llamada le trajo cada cliente y cuánto dinero dejó.",
+    indice: "datos",
+    titulo: "Datos y reportes",
+    resumen: "Toda su información en un solo lugar y reportes fáciles de leer.",
     detalle:
-      "Conectamos sus anuncios y sus llamadas con lo que de verdad vendió. Así sabe en qué vale la pena invertir.",
-    puntos: [
-      "De dónde llegó cada cliente",
-      "Cuánto vendió cada anuncio",
-      "Un solo reporte para decidir",
-    ],
+      "Juntamos la información que hoy está en hojas de cálculo, sistemas y libretas, y armamos reportes que usted entiende sin que nadie se los explique.",
+    puntos: ["Información de varias fuentes en un solo lugar", "Reportes de ventas y operación", "Datos limpios y ordenados"],
+  },
+  {
+    indice: "publicidad",
+    titulo: "Medición de su publicidad",
+    resumen: "Qué anuncio o llamada le trajo cada cliente y cuánto vendió.",
+    detalle: "Conectamos sus anuncios y sus llamadas con lo que de verdad vendió. Así sabe en qué vale la pena invertir.",
+    puntos: ["De dónde llegó cada cliente", "Cuánto vendió cada anuncio", "Un solo reporte para decidir"],
+  },
+  {
+    indice: "diagnostico",
+    titulo: "Diagnóstico de su operación",
+    resumen: "Qué conviene cambiar primero en su negocio y cuánto cuesta.",
+    detalle:
+      "Revisamos cómo trabaja hoy su negocio y dónde se pierden clientes o tiempo. Le entregamos un plan por etapas, con costo y responsable de cada paso.",
+    puntos: ["Dónde se pierden clientes y tiempo", "Plan por etapas", "Costo de cada paso"],
   },
 ];
 
@@ -687,12 +678,19 @@ export const WHATSAPP = {
 
 export const INTEGRACIONES = {
   titular: "Se conecta con lo que ya usa.",
-  entrada: "No tiene que cambiar su forma de trabajar.",
+  entrada: "Su teléfono, sus redes sociales, su correo y su calendario. No tiene que cambiar su forma de trabajar.",
+  /** Logos en public/marca/integraciones (Simple Icons, CC0). El color es el de cada marca. */
   lista: [
-    { nombre: "Su número de teléfono", texto: "El agente contesta en el mismo número que sus clientes ya conocen." },
-    { nombre: "WhatsApp", texto: "Confirmaciones y avisos con mensajes aprobados por WhatsApp." },
-    { nombre: "Calendario", texto: "Las citas quedan en la agenda que usted ya revisa." },
-    { nombre: "Su lista de clientes", texto: "Cada cliente y cada llamada quedan registrados." },
+    { nombre: "Su número de teléfono", logo: "", color: "" },
+    { nombre: "WhatsApp", logo: "whatsapp", color: "#25D366" },
+    { nombre: "Messenger", logo: "messenger", color: "#0099FF" },
+    { nombre: "Facebook", logo: "facebook", color: "#0866FF" },
+    { nombre: "Instagram", logo: "instagram", color: "#E4405F" },
+    { nombre: "TikTok", logo: "tiktok", color: "#000000" },
+    { nombre: "LinkedIn", logo: "linkedin", color: "#0A66C2" },
+    { nombre: "Gmail", logo: "gmail", color: "#EA4335" },
+    { nombre: "Google Calendar", logo: "googlecalendar", color: "#4285F4" },
+    { nombre: "Google Sheets", logo: "googlesheets", color: "#34A853" },
   ],
 } as const;
 

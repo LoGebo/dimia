@@ -31,12 +31,12 @@ const SITIO =
   process.env.NEXT_PUBLIC_SITIO ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://dimia.mx");
 const DESCRIPCION =
-  "Consultora mexicana que instala y opera agentes de voz: contestan su número las 24 horas, agendan la cita en firme y la confirman por WhatsApp. También datos, automatización y medición contra ingreso.";
+  "Dimia optimiza su negocio con inteligencia artificial: agentes de voz que contestan y agendan las 24 horas, automatización de tareas, datos y reportes, y medición de su publicidad.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO),
   title: {
-    default: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
+    default: "Dimia — Optimización con inteligencia artificial para su negocio",
     template: "%s · Dimia Consulting",
   },
   description: DESCRIPCION,
@@ -60,13 +60,13 @@ export const metadata: Metadata = {
     locale: "es_MX",
     url: SITIO,
     siteName: FIRMA.nombre,
-    title: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
+    title: "Dimia — Optimización con inteligencia artificial para su negocio",
     description: DESCRIPCION,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: FIRMA.nombre }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dimia — Software de agentes de voz que contestan, agendan y confirman sus citas",
+    title: "Dimia — Optimización con inteligencia artificial para su negocio",
     description: DESCRIPCION,
     images: ["/og.png"],
   },

@@ -1,0 +1,118 @@
+.rejilla {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde-fuerte);
+  background: var(--superficie);
+}
+
+/* La optimización con inteligencia artificial ocupa dos columnas y va en azul. */
+.tarjeta[data-destacada="1"] {
+  grid-column: span 2;
+  grid-row: span 2;
+  background:
+    radial-gradient(ellipse 80% 80% at 100% 0%, color-mix(in srgb, #ffffff 14%, transparent), transparent 60%),
+    var(--acento-hondo);
+  border-color: transparent;
+  color: #ffffff;
+  --texto-1: #ffffff;
+  --acero: rgba(255, 255, 255, 0.82);
+  --hueso: #ffffff;
+}
+
+.titulo {
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--texto-1);
+}
+
+.tarjeta[data-destacada="1"] .titulo {
+  font-size: clamp(26px, 2.6vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.resumen {
+  margin-top: 8px;
+  font-size: var(--t-cuerpo);
+  line-height: 1.55;
+  color: var(--acero);
+}
+
+.tarjeta[data-destacada="1"] .resumen {
+  margin-top: 14px;
+  font-size: var(--t-entrada);
+  color: #ffffff;
+}
+
+.detalle {
+  margin-top: 18px;
+  max-width: 52ch;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--acero);
+}
+
+.puntos {
+  list-style: none;
+  padding: 0;
+  margin-top: auto;
+  padding-top: 20px;
+  display: grid;
+  gap: 8px;
+  font-size: var(--t-nota);
+  color: var(--acero);
+}
+
+.puntos li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.puntos li::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  background: var(--hueso);
+}
+
+.enlace {
+  margin-top: 16px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: var(--texto-1);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 1000px) {
+  .rejilla {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tarjeta[data-destacada="1"] {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta[data-destacada="1"] {
+    grid-column: auto;
+  }
+}
