@@ -28,12 +28,7 @@ import css from "./page.module.css";
  * qué es · qué hace · si sirve para mi giro · cómo confirma · con qué se conecta ·
  * cómo empiezo · cuánto cuesta · dudas · contacto.
  */
-export default async function Inicio({
-  searchParams,
-}: {
-  searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
-}) {
-  const { logos } = await searchParams;
+export default function Inicio() {
   return (
     <>
       <Navegacion />
@@ -67,7 +62,7 @@ export default async function Inicio({
         </Seccion>
 
         <Seccion id="integraciones" rotulo="Conexiones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada tono="papel">
-          <Integraciones variante={logos === "grupos" ? "grupos" : "centro"} />
+          <Integraciones />
         </Seccion>
 
         <Seccion id="pasos" rotulo="Cómo empezar" titular={PASOS.titular} entrada={PASOS.entrada} centrada>

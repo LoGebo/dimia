@@ -76,85 +76,6 @@
   color: var(--texto-1);
 }
 
-/* Opción 1: centro */
-.centro {
-  position: relative;
-  width: min(100%, 640px);
-  aspect-ratio: 1;
-  margin: 0 auto;
-}
-
-.lineas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.lineas line {
-  stroke: var(--papel-linea);
-  stroke-width: 0.25;
-  stroke-dasharray: 1 1;
-}
-
-.nucleo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 26%;
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 22%;
-  background: #0b0f17;
-}
-
-.nucleo img {
-  width: 66%;
-  height: auto;
-}
-
-.orbita {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.nodo {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.ficha {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  background: #ffffff;
-  border: 1px solid var(--papel-linea);
-}
-
-.logoNodo {
-  width: 30px;
-  height: 30px;
-  font-size: 15px;
-}
-
-.nombreNodo {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--texto-1);
-  white-space: nowrap;
-}
-
 /* Opción 2: grupos */
 .grupos {
   display: grid;
@@ -210,26 +131,5 @@
 
   .grupos {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  .ficha {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-  }
-
-  .logoNodo {
-    width: 22px;
-    height: 22px;
-  }
-
-  .nombreNodo {
-    font-size: 10px;
-  }
-
-  .nucleo {
-    border-radius: 18%;
   }
 }

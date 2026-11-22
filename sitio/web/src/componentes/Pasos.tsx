@@ -36,40 +36,8 @@ function Logo({ x, className }: { x: Integracion; className: string }) {
   );
 }
 
-/** Opción 1: Dimia al centro y cada plataforma conectada a su alrededor. */
-function Centro() {
-  const n = INTEGRACIONES.lista.length;
-  const nodos = INTEGRACIONES.lista.map((x, i) => {
-    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-    return { x, left: 50 + 40 * Math.cos(a), top: 50 + 40 * Math.sin(a) };
-  });
-  return (
-    <div className={css.centro}>
-      <svg className={css.lineas} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        {nodos.map((p) => (
-          <line key={p.x.nombre} x1="50" y1="50" x2={p.left} y2={p.top} />
-        ))}
-      </svg>
-      <div className={css.nucleo}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/marca/logotipo-tinta.svg" alt="Dimia" width={3017} height={771} />
-      </div>
-      <ul className={css.orbita}>
-        {nodos.map((p) => (
-          <li key={p.x.nombre} className={css.nodo} style={{ left: `${p.left}%`, top: `${p.top}%` }}>
-            <span className={css.ficha}>
-              <Logo x={p.x} className={css.logoNodo} />
-            </span>
-            <span className={css.nombreNodo}>{p.x.nombre}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/** Opción 2: las plataformas agrupadas por para qué sirven. */
-function Grupos() {
+/** Las plataformas agrupadas por para qué sirven. */
+export function Integraciones() {
   const grupos = ["Atención", "Redes sociales", "Herramientas"] as const;
   return (
     <div className={css.grupos}>
@@ -90,8 +58,4 @@ function Grupos() {
       ))}
     </div>
   );
-}
-
-export function Integraciones({ variante = "centro" }: { variante?: "centro" | "grupos" }) {
-  return variante === "grupos" ? <Grupos /> : <Centro />;
 }
