@@ -7,7 +7,7 @@
 export const FIRMA = {
   nombre: "Dimia Consulting",
   dominio: "dimia.mx",
-  correo: "hola@dimia.mx",
+  correo: "ventas@dimia.mx",
   telefono: "+52 81 1518 8129",
   telefonoHref: "tel:+528115188129",
   // [ URL de la página de Dimia en LinkedIn por confirmar ]: vacío, el pie no pinta el enlace.
@@ -387,7 +387,7 @@ export const CIERRE = {
   titular: "Llame ahora. Contesta el agente.",
   formulario: "O déjenos sus datos y agendamos una demostración.",
   notaTelefono: "Este número lo contesta el agente de voz de Dimia, a cualquier hora.",
-  declaracion: "Software de agentes de voz para negocios que viven de su agenda.",
+  declaracion: "Software de inteligencia artificial para optimizar la operación de cualquier negocio.",
 } as const;
 
 /** Preguntas frecuentes. Cada respuesta sale del manual de marca o de los planes: nada inventado. */

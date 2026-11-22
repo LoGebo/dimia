@@ -47,7 +47,7 @@ export async function POST(peticion: Request) {
 
   const llave = process.env.RESEND_API_KEY;
   const remitente = process.env.CORREO_REMITENTE ?? "Dimia Consulting <onboarding@resend.dev>";
-  const destino = process.env.CORREO_DESTINO ?? "hola@dimia.mx";
+  const destino = process.env.CORREO_DESTINO ?? "ventas@dimia.mx";
 
   // Sin llave el sitio no finge un envío exitoso: lo dice y ofrece la salida.
   if (!llave) {
