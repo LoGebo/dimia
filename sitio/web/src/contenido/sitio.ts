@@ -29,7 +29,7 @@ export const HERO = {
   aviso: "Optimización con inteligencia artificial",
   titular: "Inteligencia artificial que trabaja en su negocio.",
   entrada:
-    "Dimia es un software que contesta sus llamadas, agenda citas y automatiza las tareas repetitivas de su operación, las 24 horas.",
+    "Dimia es un software que automatiza las tareas repetitivas del negocio: atiende clientes, da seguimiento, organiza documentos y genera reportes, las 24 horas.",
   ctaPrimario: "Agendar demostración",
   llamada: "Hable con el agente",
   hora: "21:04",
