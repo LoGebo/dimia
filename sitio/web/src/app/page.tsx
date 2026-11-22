@@ -1,5 +1,5 @@
 import { Navegacion } from "@/componentes/Navegacion";
-import { Hero } from "@/componentes/Hero";
+import { PortadaLlamada } from "@/componentes/portadas/PortadaLlamada";
 import { Carrusel } from "@/componentes/Carrusel";
 import { Seccion } from "@/componentes/Seccion";
 import { Funciones } from "@/componentes/Funciones";
@@ -9,7 +9,7 @@ import { Garantia } from "@/componentes/Garantia";
 import { Dia } from "@/componentes/Dia";
 import { Integraciones, Pasos } from "@/componentes/Pasos";
 import { Planes } from "@/componentes/Planes";
-import { Practica } from "@/componentes/Practica";
+import { Servicios } from "@/componentes/Servicios";
 import { Preguntas } from "@/componentes/Preguntas";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
@@ -33,10 +33,11 @@ export default function Inicio() {
     <>
       <Navegacion />
       <main>
-        <Hero />
+        <PortadaLlamada />
         {MOSTRAR_CARRUSEL && <Carrusel />}
+        <Servicios />
 
-        <Seccion id="funciones" rotulo="Qué hace" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
+        <Seccion id="funciones" rotulo="Agente de voz" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
           <Funciones />
         </Seccion>
 
@@ -69,7 +70,6 @@ export default function Inicio() {
         </Seccion>
 
         <Planes />
-        <Practica />
         <Preguntas />
         <Contacto />
       </main>
