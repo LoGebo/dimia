@@ -34,7 +34,7 @@ export const HERO = {
   llamada: "Hable con el agente",
   hora: "21:04",
   contexto: "Su negocio ya cerró. El agente contesta.",
-  garantias: ["Sin costo de activación", "Desde $2,990 MXN al mes", "Español de México"],
+  garantias: ["Sin costo de activación", "Desde $2,990 MXN al mes"],
 } as const;
 
 export const LA_FIRMA = {
