@@ -13,7 +13,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: clamp(40px, 6vw, 96px);
-  align-items: center;
+  align-items: start;
 }
 
 .etiqueta {
@@ -78,9 +78,39 @@
   border-radius: 22px;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   padding: 20px;
-  min-height: 520px;
+  min-height: 640px;
   display: flex;
   flex-direction: column;
+}
+
+.pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.pestana {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-fuerte);
+  background: transparent;
+  color: var(--acero);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 200ms var(--curva), color 200ms var(--curva);
+}
+
+.pestana:hover {
+  color: var(--hueso);
+}
+
+.pestana[aria-selected="true"] {
+  background: var(--hueso);
+  border-color: var(--hueso);
+  color: var(--tinta);
 }
 
 .cabeza {
@@ -152,7 +182,7 @@
   transform: translateY(6px);
 }
 
-.linea[data-quien="agente"] {
+.linea[data-quien="dimia"] {
   justify-self: start;
   background: var(--panel-2);
   color: var(--hueso);
@@ -164,6 +194,38 @@
   background: var(--hueso);
   color: var(--tinta);
   border-bottom-right-radius: 4px;
+}
+
+.dato {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  font-size: var(--t-cuerpo);
+  color: var(--acero);
+  transition: opacity 400ms var(--curva), transform 400ms var(--curva);
+}
+
+.dato strong {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--hueso);
+  text-align: right;
+}
+
+.dato[data-visible="0"] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.ejemplo {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--acero);
 }
 
 .quien {
