@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CONVERSACIONES, FIRMA, HERO } from "@/contenido/sitio";
+import { FIRMA, HERO } from "@/contenido/sitio";
 import ui from "../ui.module.css";
 import css from "./PortadaLlamada.module.css";
 
@@ -17,8 +17,6 @@ type Escena = {
   renglones: Renglon[];
   resultado: { titulo: string; dato: string; nota: string };
 };
-
-const LLAMADA = CONVERSACIONES[0];
 
 /** Ejemplos de lo que hace el sistema. Datos de ejemplo, no de clientes reales. */
 const ESCENAS: Escena[] = [
@@ -61,7 +59,7 @@ const ESCENAS: Escena[] = [
     },
   },
   {
-    pestana: "Arma reportes",
+    pestana: "Genera reportes",
     estado: "Reporte listo",
     contexto: "Lunes 08:00 · Salón",
     aviso: "El resumen de la semana, antes de abrir.",
@@ -78,20 +76,30 @@ const ESCENAS: Escena[] = [
     },
   },
   {
-    pestana: "Atiende llamadas",
+    pestana: "Atiende clientes",
     estado: "Llamada contestada",
-    contexto: "21:04 · Restaurante",
-    aviso: "El restaurante ya cerró. Contesta el agente.",
-    renglones: LLAMADA.lineas.slice(0, 4).map((l) => ({
-      tipo: "mensaje" as const,
-      quien: l.quien === "agente" ? ("dimia" as const) : ("cliente" as const),
-      nombre: l.quien === "agente" ? "Agente" : "Cliente",
-      texto: l.texto,
-    })),
+    contexto: "20:15 · Clínica dental",
+    aviso: "La clínica ya cerró. El agente da la información.",
+    renglones: [
+      { tipo: "mensaje", quien: "cliente", nombre: "Cliente", texto: "Hola, ¿cuánto cuesta una limpieza y qué horario tienen?" },
+      {
+        tipo: "mensaje",
+        quien: "dimia",
+        nombre: "Agente",
+        texto: "La limpieza cuesta $650. Atendemos de lunes a sábado, de 9:00 a 19:00.",
+      },
+      { tipo: "mensaje", quien: "cliente", nombre: "Cliente", texto: "¿Aceptan tarjeta?" },
+      {
+        tipo: "mensaje",
+        quien: "dimia",
+        nombre: "Agente",
+        texto: "Sí, tarjeta y transferencia. ¿Le envío la información por WhatsApp?",
+      },
+    ],
     resultado: {
-      titulo: "Reserva agendada",
-      dato: `${LLAMADA.resultado.dia} · ${LLAMADA.resultado.hora} · ${LLAMADA.resultado.detalle}`,
-      nota: "Confirmación enviada por WhatsApp",
+      titulo: "Información enviada",
+      dato: "Precios, horario y ubicación",
+      nota: "El contacto queda guardado para darle seguimiento",
     },
   },
 ];
