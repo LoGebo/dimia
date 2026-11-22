@@ -7,7 +7,7 @@
 export const FIRMA = {
   nombre: "Dimia Consulting",
   dominio: "dimia.mx",
-  correo: "hola@dimia.mx",
+  correo: "ventas@dimia.mx",
   telefono: "+52 81 1518 8129",
   telefonoHref: "tel:+528115188129",
   // [ URL de la página de Dimia en LinkedIn por confirmar ]: vacío, el pie no pinta el enlace.
