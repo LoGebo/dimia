@@ -1,5 +1,8 @@
 import { Navegacion } from "@/componentes/Navegacion";
 import { Hero } from "@/componentes/Hero";
+import { PortadaLlamada } from "@/componentes/portadas/PortadaLlamada";
+import { PortadaNumero } from "@/componentes/portadas/PortadaNumero";
+import { PortadaDia } from "@/componentes/portadas/PortadaDia";
 import { Carrusel } from "@/componentes/Carrusel";
 import { Seccion } from "@/componentes/Seccion";
 import { Funciones } from "@/componentes/Funciones";
@@ -28,12 +31,21 @@ import css from "./page.module.css";
  * qué es · qué hace · si sirve para mi giro · cómo confirma · con qué se conecta ·
  * cómo empiezo · cuánto cuesta · dudas · contacto.
  */
-export default function Inicio() {
+/* Opciones de portada para comparar: /?portada=a, b o c. Sin parámetro, la actual. */
+const PORTADAS = { a: PortadaLlamada, b: PortadaNumero, c: PortadaDia } as const;
+
+export default async function Inicio({
+  searchParams,
+}: {
+  searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
+}) {
+  const { portada } = await searchParams;
+  const Portada = typeof portada === "string" && portada in PORTADAS ? PORTADAS[portada as keyof typeof PORTADAS] : Hero;
   return (
     <>
-      <Navegacion />
+      <Navegacion solida={Portada === PortadaDia} />
       <main>
-        <Hero />
+        <Portada />
         {MOSTRAR_CARRUSEL && <Carrusel />}
 
         <Seccion id="funciones" rotulo="Qué hace" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>

@@ -1,0 +1,125 @@
+.portada {
+  background: var(--acento-hondo);
+  color: #ffffff;
+}
+
+.contenedor {
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: clamp(128px, 18vh, 184px) var(--margen) clamp(64px, 8vw, 104px);
+}
+
+.etiqueta {
+  font-size: var(--t-nota);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.titular {
+  margin-top: 20px;
+  max-width: 18ch;
+  font-size: clamp(38px, 5.2vw, 72px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.numero {
+  margin-top: clamp(36px, 5vw, 56px);
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  padding: 20px 20px 20px 28px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: var(--tinta);
+  transition: transform 200ms var(--curva);
+}
+
+.numero:hover {
+  transform: translateY(-2px);
+}
+
+.cifra {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(26px, 3.6vw, 48px);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.llamar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--tinta);
+  color: #ffffff;
+  font-size: var(--t-cuerpo);
+  font-weight: 600;
+}
+
+.entrada {
+  margin-top: 28px;
+  max-width: 46ch;
+  font-size: var(--t-entrada);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pie {
+  margin-top: clamp(40px, 6vw, 72px);
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.demo {
+  font-size: var(--t-cuerpo);
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.datos {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  font-size: var(--t-nota);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.datos li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.datos li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
+}
+
+@media (max-width: 560px) {
+  .numero {
+    display: flex;
+    padding: 20px;
+  }
+
+  .llamar {
+    width: 100%;
+    justify-content: center;
+  }
+}
