@@ -1,0 +1,195 @@
+.figura {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 8px 0;
+  padding: 20px;
+  background: #ffffff;
+  font-family: var(--mono);
+  font-size: var(--t-dato);
+  font-variant-numeric: tabular-nums;
+}
+
+.figura figcaption {
+  display: grid;
+  gap: 4px;
+  color: var(--texto-3);
+}
+
+.figura strong {
+  font-family: var(--sans);
+  font-size: 17px;
+  color: var(--texto);
+}
+
+.barras {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barras li {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 12px;
+}
+
+.barras b {
+  text-align: right;
+}
+
+.barras li[data-propio] > span:first-child,
+.barras li[data-propio] b {
+  color: #1f47c4;
+  font-weight: 600;
+}
+
+.pista {
+  position: relative;
+  height: 18px;
+  background: var(--papel);
+}
+
+.relleno {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #a3a9b5;
+}
+
+.barras li[data-propio] .relleno {
+  background: #1f47c4;
+}
+
+/* Bigote del intervalo, con topes. */
+.intervalo {
+  position: absolute;
+  top: 5px;
+  height: 8px;
+  border-inline: 2px solid #0b0f17;
+  background: linear-gradient(#0b0f17 0 0) center / 100% 2px no-repeat;
+}
+
+.escala {
+  display: flex;
+  justify-content: space-between;
+  margin: -8px 60px 0 202px;
+  color: var(--texto-3);
+}
+
+.desliza {
+  overflow-x: auto;
+  background: #ffffff;
+}
+
+.tabla {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: var(--t-dato);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla th,
+.tabla td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--linea);
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.tabla th:first-child {
+  text-align: left;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.tabla thead th {
+  font-weight: 500;
+  color: var(--texto-3);
+}
+
+.tabla tbody tr[data-propio] > * {
+  color: #1f47c4;
+  font-weight: 600;
+}
+
+.paneles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.paneles svg {
+  display: block;
+  width: 100%;
+  fill: var(--texto-3);
+  font-size: 11px;
+}
+
+.guia {
+  stroke: var(--linea);
+}
+
+.entrena,
+.examen {
+  fill: none;
+  stroke-width: 2;
+}
+
+.entrena {
+  stroke: #a3a9b5;
+}
+
+.examen {
+  stroke: #1f47c4;
+}
+
+.punto,
+.cifra {
+  fill: #1f47c4;
+}
+
+.cifra {
+  font-weight: 600;
+}
+
+.clave {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  background: #a3a9b5;
+}
+
+.clave[data-examen] {
+  margin-left: 12px;
+  background: #1f47c4;
+}
+
+@media (max-width: 640px) {
+  .figura {
+    padding: 14px;
+  }
+
+  .barras li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+  }
+
+  .pista {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .escala {
+    margin: -8px 0 0;
+  }
+
+  .paneles {
+    grid-template-columns: 1fr;
+  }
+}

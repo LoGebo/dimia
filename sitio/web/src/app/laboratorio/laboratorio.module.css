@@ -289,6 +289,37 @@
   font-size: var(--t-dato);
 }
 
+.flujo {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Diagrama de flujo vertical: cajas unidas por una línea. */
+.flujo li {
+  position: relative;
+  padding: 12px 16px;
+  border: 1px solid var(--borde-fuerte);
+  background: #ffffff;
+  font-family: var(--mono);
+  font-size: var(--t-dato);
+}
+
+.flujo li + li {
+  margin-top: 24px;
+}
+
+.flujo li + li::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 24px;
+  width: 2px;
+  height: 24px;
+  background: #1f47c4;
+}
+
 @media (max-width: 900px) {
   .faseCabeza,
   .publicaciones {
