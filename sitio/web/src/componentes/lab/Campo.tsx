@@ -12,7 +12,7 @@ const PUNTOS_I = [
 ];
 const ETAPAS = ["Sus datos", "Adaptar", "Evaluar", "Servir"];
 /** Milisegundos de cada etapa: la palabra final se queda más tiempo. */
-const DURA = [3200, 3600, 3200, 5600];
+const DURA = [2000, 2500, 2200, 4200];
 const CICLO = DURA.reduce((a, b) => a + b);
 const azar = (i: number, k: number) => {
   const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
@@ -25,7 +25,7 @@ function destino(e: number, i: number, t: number): [number, number] {
   if (e === 1) {
     // tres órbitas alrededor de un núcleo: el entrenamiento
     const anillo = i % 3;
-    const a = (i / N) * Math.PI * 6 + t * 0.00025 * (anillo + 1);
+    const a = (i / N) * Math.PI * 6 + t * 0.00035 * (anillo + 1);
     const r = 0.3 + anillo * 0.3;
     return [Math.cos(a) * r, Math.sin(a) * r];
   }
@@ -100,8 +100,8 @@ export function Campo() {
     };
 
     const pintar = (t: number) => {
-      // Al entrar, la nube dura apenas medio segundo y enseguida se ordena.
-      inicio ||= t - (DURA[0] - 500);
+      // Al entrar, la nube dura apenas un cuarto de segundo y enseguida se ordena.
+      inicio ||= t - (DURA[0] - 250);
       let e = 3;
       if (!quieto) {
         let resto = (t - inicio) % CICLO;
@@ -117,7 +117,7 @@ export function Campo() {
         const [dx, dy] = letra
           ? [((letra.x - 0.5) * anchoPalabra) / rx, ((letra.y - 0.5) * anchoPalabra) / PROPORCION / ry]
           : destino(Math.min(e, 2), i, t);
-        const k = quieto ? 1 : (letra ? 0.05 : 0.025) + azar(i, 3) * 0.05;
+        const k = quieto ? 1 : (letra ? 0.075 : 0.045) + azar(i, 3) * 0.07;
         // en la nube los cuadros flotan; al aparecer, llegan desde fuera
         const deriva = e === 0 && !quieto ? Math.sin(t * 0.0012 + i) * 14 : 0;
         const tx = dx * (e === 0 ? ancho * 0.48 : rx) + deriva;
