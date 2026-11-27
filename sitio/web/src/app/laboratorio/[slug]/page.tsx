@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Navegacion } from "@/componentes/Navegacion";
 import { Pie } from "@/componentes/Pie";
+import { Grafica } from "@/componentes/lab/Graficas";
 import { PortadaPublicacion } from "@/componentes/lab/Portada";
 import { PUBLICACIONES } from "@/contenido/laboratorio";
 import ui from "@/componentes/ui.module.css";
@@ -53,6 +54,14 @@ export default async function PaginaPublicacion({ params }: Props) {
               {a.parrafos.map((t) => (
                 <p key={t}>{t}</p>
               ))}
+              {a.flujo && (
+                <ol className={css.flujo}>
+                  {a.flujo.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ol>
+              )}
+              {a.graficas?.map((g) => <Grafica key={g} tipo={g} />)}
               {a.codigo && (
                 <pre>
                   <code>{a.codigo}</code>
