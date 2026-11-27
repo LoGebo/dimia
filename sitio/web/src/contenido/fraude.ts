@@ -39,3 +39,11 @@ export const PERDIDA: { modelo: string; entrenamiento: Serie; examen: Serie }[] 
     examen: [[1, 0.2611], [2, 0.2627], [3, 0.2865]],
   },
 ];
+
+// Gasto de API medido en los 58 historiales, llevado a 1,000. Los Qwen son los modelos base.
+export const COSTOS: { modelo: string; abierto?: boolean; usd: number }[] = [
+  { modelo: "Claude Sonnet 5.5", usd: 10.64 },
+  { modelo: "Claude Opus 4.5", usd: 9.64 },
+  { modelo: "Qwen3.5-27B base", abierto: true, usd: 0.77 },
+  { modelo: "Qwen3.5-9B base", abierto: true, usd: 0.18 },
+];

@@ -169,15 +169,24 @@ export const PUBLICACIONES: Publicacion[] = [
       {
         titulo: "El problema",
         parrafos: [
-          "Las reglas revisan un recibo a la vez. Hay fraudes que solo se ven al leer el mes completo de una persona: cada recibo cumple, el conjunto no. Por ejemplo, una compra que parece normal y se repite en varias tiendas durante tres semanas.",
-          "Un revisor así tiene que encontrar el patrón sin acusar a quien hizo todo bien. Cada falsa alarma es tiempo de su equipo revisando algo que estaba correcto.",
+          "Las reglas revisan un recibo a la vez: monto, categoría, comprobante, aprobación. Hay fraudes que solo se ven al leer el mes completo de una persona. Cada recibo cumple y el conjunto no: compras repetidas en varias tiendas, una misma aprobación usada para gastos distintos, un viaje que no cuadra con lo que se cobró.",
+          "Revisar eso a mano significa leer todo, de todos, cada mes. Un revisor automático que acusa de más tampoco sirve: cada falsa alarma es tiempo de su equipo y una persona a la que se le pide explicar algo que estaba correcto.",
+          "Un modelo general conoce el fraude en abstracto. No sabe qué es normal en su empresa.",
         ],
       },
       {
-        titulo: "Por qué un modelo propio",
+        titulo: "El fraude depende de sus datos",
         parrafos: [
-          "Un revisor de gastos lee nombres, montos, viajes y comidas de su personal. Con un modelo de pesos abiertos, la empresa puede correrlo en su propia infraestructura, decidir con qué se ajusta y conservar la versión que ya probó, sin depender de los cambios de un proveedor.",
-          "Eso es ser dueño de su inteligencia. La pregunta era si un modelo pequeño, ajustado a una sola tarea, alcanza para hacerla.",
+          "Lo que en una empresa es un gasto rutinario, en otra es una señal. Depende de sus políticas, de los puestos, de las ciudades donde opera, de sus proveedores y de los casos que ya le tocó resolver.",
+          "Ese conocimiento es propio. No viene dentro de un modelo público y es lo que distingue un patrón de una coincidencia. Los datos que lo contienen además son sensibles: nombres, montos, viajes y comidas de su personal.",
+        ],
+      },
+      {
+        titulo: "Por qué hicimos ajuste fino",
+        parrafos: [
+          "La meta era comprobar que a un modelo pequeño se le puede enseñar un criterio específico, en lugar de pedírselo en cada consulta a uno más grande.",
+          "El cambio se ve en el mismo modelo, antes y después. Sin ajustar, Qwen3.5-9B marcó 19 de 26 casos limpios. Ajustado, marcó 2. En detección pasó de 22 a 25 de 32. En esta prueba usamos casos sintéticos; en una empresa, el material de aprendizaje serían sus propios casos.",
+          "Con un modelo de pesos abiertos, la empresa puede correrlo en su infraestructura, decidir con qué se ajusta y conservar la versión que ya probó, sin depender de los cambios de un proveedor. Eso es ser dueño de su inteligencia.",
         ],
       },
       {
@@ -243,10 +252,22 @@ semilla            2026`,
         graficas: ["tabla"],
       },
       {
-        titulo: "Costo",
+        titulo: "Cuánto se puede ahorrar",
         parrafos: [
-          "El ajuste del modelo de 9B tomó unos 13 minutos de una tarjeta.",
-          "Como referencia, consultar los 58 historiales por API costó 0.56 dólares con Claude Opus 4.5 y 0.01 con Qwen3.5-9B base. Esa segunda cifra es del modelo sin ajustar en un proveedor externo, no del nuestro.",
+          "En nuestra prueba, el modelo abierto de 9B costó alrededor de 50 veces menos por consulta que Claude Opus 4.5: 0.18 contra 9.64 dólares por cada 1,000 meses revisados.",
+          "Esa cifra es del modelo base en un proveedor externo. Muestra lo que cuesta correr un modelo de ese tamaño; el costo de operar el nuestro, ya ajustado, depende de dónde se instale.",
+        ],
+        graficas: ["costo"],
+        codigo: `meses        Opus 4.5    Qwen 9B base
+1,000        USD 9.64    USD 0.18
+10,000       USD 96.40   USD 1.81
+100,000      USD 964     USD 18.10`,
+      },
+      {
+        titulo: "API o modelo propio",
+        parrafos: [
+          "Por API se paga cada consulta, y la cuenta crece al mismo ritmo que su operación. Con un modelo propio en su infraestructura no hay cobro por consulta: se paga la máquina.",
+          "La decisión sale de comparar ambas cuentas con su volumen real. Con pocas revisiones, una máquina dedicada puede costar más que la API. Conviene cuando el volumen es alto, cuando varias tareas comparten la misma máquina o cuando los datos no deben salir de la empresa.",
         ],
       },
       {
