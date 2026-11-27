@@ -18,18 +18,18 @@ export const FIRMA = {
 
 
 export const NAVEGACION = [
-  { href: "#servicios", texto: "Servicios" },
-  { href: "#funciones", texto: "Agente de voz" },
-  { href: "#pasos", texto: "Cómo empezar" },
-  { href: "#precios", texto: "Precios" },
-  { href: "#preguntas", texto: "Preguntas" },
+  { href: "/#servicios", texto: "Servicios" },
+  { href: "/#funciones", texto: "Agente de voz" },
+  { href: "/#pasos", texto: "Cómo empezar" },
+  { href: "/laboratorio", texto: "Laboratorio" },
+  { href: "/#precios", texto: "Precios" },
+  { href: "/#preguntas", texto: "Preguntas" },
 ] as const;
 
 export const HERO = {
-  aviso: "Optimización con inteligencia artificial",
-  titular: "Inteligencia artificial que trabaja en su negocio.",
+  titular: "Cambiamos la forma de trabajar de su empresa.",
   entrada:
-    "Dimia es un software que automatiza las tareas repetitivas del negocio: atiende clientes, da seguimiento, organiza documentos y genera reportes, las 24 horas.",
+    "Somos una consultora de inteligencia artificial. Montamos la infraestructura, construimos los sistemas y los operamos con su equipo.",
   ctaPrimario: "Agendar demostración",
   llamada: "Hable con el agente",
   hora: "21:04",
@@ -92,6 +92,13 @@ export const PRACTICA: Frente[] = [
       "Lectura y clasificación de documentos",
       "Revisión de la calidad de las respuestas",
     ],
+  },
+  {
+    indice: "infraestructura",
+    titulo: "Infraestructura de inteligencia artificial",
+    resumen: "Montamos en su empresa lo necesario para usar modelos con sus datos.",
+    detalle: "Servidores o nube privada, modelos, accesos y registro de uso, instalados y operando.",
+    puntos: ["Servidores propios o nube privada", "Accesos y registro de uso", "Operación continua"],
   },
   {
     indice: "voz",
@@ -387,7 +394,7 @@ export const CIERRE = {
   titular: "Llame ahora. Contesta el agente.",
   formulario: "O déjenos sus datos y agendamos una demostración.",
   notaTelefono: "Este número lo contesta el agente de voz de Dimia, a cualquier hora.",
-  declaracion: "Software de inteligencia artificial para optimizar la operación de cualquier negocio.",
+  declaracion: "Consultora de inteligencia artificial. Diseñamos, construimos y operamos.",
 } as const;
 
 /** Preguntas frecuentes. Cada respuesta sale del manual de marca o de los planes: nada inventado. */
@@ -477,7 +484,7 @@ export const CONVERSACIONES: Giro[] = [
 
 /** Diagrama del día: horario de atención de ejemplo frente a las 24 horas del agente. */
 export const DIA = {
-  titular: "Su negocio cierra. Su teléfono, ya no.",
+  titular: "Llamadas fuera de horario",
   entrada:
     "Las llamadas no llegan solo en horario de oficina. El agente contesta las que su equipo no alcanza: en plena operación, a la hora de comida y después de cerrar.",
   apertura: 9,
@@ -629,8 +636,8 @@ export const WHATSAPP_DEMO = {
 
 /** Lo que hace el agente. Cada tarjeta lleva una ilustración de interfaz. */
 export const FUNCIONES = {
-  titular: "Un agente que atiende su teléfono como lo haría su mejor recepcionista.",
-  entrada: "Contesta, entiende lo que le piden y deja la cita escrita antes de colgar.",
+  titular: "Contesta, agenda y deja todo por escrito.",
+  entrada: "El agente de voz entiende lo que le piden y registra la cita antes de colgar.",
   tarjetas: [
     {
       clave: "contesta",
@@ -666,19 +673,19 @@ export const FUNCIONES = {
 } as const;
 
 export const GIROS = {
-  titular: "Funciona para cualquier negocio que vive de su agenda.",
-  entrada: "Elija su giro y vea cómo contesta el agente una llamada cuando su negocio ya cerró.",
+  titular: "Así contesta en su giro.",
+  entrada: "Elija uno y lea una llamada de ejemplo fuera de horario.",
 } as const;
 
 export const WHATSAPP = {
-  titular: "Al colgar, el cliente confirma por WhatsApp.",
+  titular: "El cliente confirma por WhatsApp.",
   entrada:
-    "Le llega su cita por WhatsApp y la confirma con un botón. En su panel usted ve quién confirmó y quién no.",
+    "Recibe su cita al colgar y responde con un botón. En su panel usted ve quién confirmó.",
 } as const;
 
 export const INTEGRACIONES = {
   titular: "Se conecta con lo que ya usa.",
-  entrada: "Su teléfono, sus redes sociales, su correo y su calendario. No tiene que cambiar su forma de trabajar.",
+  entrada: "Su teléfono, sus redes sociales, su correo y su calendario. No tiene que cambiar de herramientas.",
   /** Logos en public/marca/integraciones (Simple Icons, CC0). El color es el de cada marca. */
   lista: [
     { nombre: "Su teléfono", logo: "", color: "", grupo: "Atención" },
@@ -716,10 +723,10 @@ export const PASOS = {
 export const MAS_SERVICIOS = {
   titular: "Además del agente.",
   entrada:
-    "Somos una consultora mexicana. Cuando el agente ya está operando, también trabajamos en los datos, las automatizaciones y la medición de su negocio.",
+    "Somos una consultora de inteligencia artificial. Cuando el agente ya está operando, también trabajamos en los datos, las automatizaciones y la medición de su negocio.",
 } as const;
 
 export const CIERRE_CTA = {
-  titular: "Cada llamada sin contestar es un cliente que llama a otro lado.",
-  entrada: "Llame ahora a nuestro número y hable con el agente, o agende una demostración.",
+  titular: "Pruebe el agente por teléfono.",
+  entrada: "Llame a nuestro número o déjenos sus datos para una demostración.",
 } as const;

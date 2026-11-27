@@ -2,23 +2,23 @@
   list-style: none;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 16px;
 }
 
 .tarjeta {
   display: flex;
   flex-direction: column;
+  grid-column: span 2;
   padding: 28px;
   border-radius: var(--radio);
   border: 1px solid var(--borde-fuerte);
   background: var(--superficie);
 }
 
-/* La optimización con inteligencia artificial ocupa dos columnas y va en azul. */
+/* La optimización con inteligencia artificial ocupa la primera fila y va en azul. */
 .tarjeta[data-destacada="1"] {
-  grid-column: span 2;
-  grid-row: span 2;
+  grid-column: 1 / -1;
   background:
     radial-gradient(ellipse 80% 80% at 100% 0%, color-mix(in srgb, #ffffff 14%, transparent), transparent 60%),
     var(--acento-hondo);
@@ -97,22 +97,12 @@
   text-underline-offset: 4px;
 }
 
-@media (max-width: 1000px) {
-  .rejilla {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tarjeta[data-destacada="1"] {
-    grid-row: auto;
-  }
-}
-
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .rejilla {
     grid-template-columns: 1fr;
   }
 
-  .tarjeta[data-destacada="1"] {
+  .rejilla > .tarjeta {
     grid-column: auto;
   }
 }

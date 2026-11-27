@@ -8,11 +8,10 @@ export function Preguntas() {
       <div className={ui.contenedor}>
         <div className={css.columnas}>
           <div className={ui.encabezado}>
-            <p className={ui.rotulo}>Preguntas</p>
-            <h2 className={ui.titulo}>Lo que más nos preguntan</h2>
+            <h2 data-revela="titulo" className={ui.titulo}>Preguntas frecuentes</h2>
           </div>
 
-          <div className={css.lista}>
+          <div data-revela="lista" className={css.lista}>
             {PREGUNTAS.map((q) => (
               <details key={q.p} className={css.pregunta}>
                 <summary className={css.resumen}>

@@ -43,6 +43,7 @@ export const metadata: Metadata = {
   applicationName: FIRMA.nombre,
   authors: [{ name: FIRMA.nombre, url: SITIO }],
   keywords: [
+    "consultora de inteligencia artificial",
     "consultoría en datos",
     "agente de voz",
     "automatización de operaciones",

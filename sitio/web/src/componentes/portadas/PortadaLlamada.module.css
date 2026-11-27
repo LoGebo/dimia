@@ -16,14 +16,7 @@
   align-items: start;
 }
 
-.etiqueta {
-  font-size: var(--t-nota);
-  font-weight: 600;
-  color: var(--texto-2);
-}
-
 .titular {
-  margin-top: 20px;
   font-size: clamp(40px, 5vw, 68px);
   font-weight: 600;
   line-height: 1.02;

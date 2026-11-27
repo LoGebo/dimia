@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FIRMA, NAVEGACION } from "@/contenido/sitio";
 import css from "./Navegacion.module.css";
 
-export function Navegacion() {
+export function Navegacion({ claro = false }: { claro?: boolean }) {
   const [compacta, setCompacta] = useState(false);
   const [menu, setMenu] = useState(false);
 
@@ -31,9 +31,9 @@ export function Navegacion() {
   return (
     <header className={css.barra} data-compacta={compacta || menu ? "1" : "0"}>
       <div className={css.interior}>
-        <a href="#inicio" aria-label={`${FIRMA.nombre}, inicio`} className={css.marca} onClick={() => setMenu(false)}>
+        <a href="/#inicio" aria-label={`${FIRMA.nombre}, inicio`} className={css.marca} onClick={() => setMenu(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/marca/logotipo-tinta.svg" alt="" width={3017} height={771} className={css.logotipo} />
+          <img src={claro ? "/marca/logotipo-papel.svg" : "/marca/logotipo-tinta.svg"} alt="" width={3017} height={771} className={css.logotipo} />
         </a>
 
         <nav className={css.enlaces} aria-label="Principal">
@@ -44,7 +44,7 @@ export function Navegacion() {
           ))}
         </nav>
 
-        <a href="#contacto" className={css.agendar}>
+        <a href="/#contacto" className={css.agendar}>
           Agendar demostración
         </a>
 
@@ -70,7 +70,7 @@ export function Navegacion() {
               {e.texto}
             </a>
           ))}
-          <a href="#contacto" onClick={() => setMenu(false)} className={css.agendarMenu}>
+          <a href="/#contacto" onClick={() => setMenu(false)} className={css.agendarMenu}>
             Agendar demostración
           </a>
           <a href={FIRMA.telefonoHref} className={css.telefonoMenu}>
