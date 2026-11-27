@@ -49,6 +49,7 @@ function Tabla() {
         <thead>
           <tr>
             <th scope="col">Modelo</th>
+            <th scope="col">Aciertos totales</th>
             <th scope="col">Detectados</th>
             <th scope="col">Falsas alarmas</th>
             <th scope="col">Precisión por recibo</th>
@@ -60,6 +61,7 @@ function Tabla() {
           {FILAS.map((f) => (
             <tr key={f.modelo} data-propio={f.propio || undefined}>
               <th scope="row">{f.modelo}</th>
+              <td>{f.detectados + EXAMEN.limpios - f.alarmas}/{EXAMEN.fraude + EXAMEN.limpios}</td>
               <td>{f.detectados}/{EXAMEN.fraude}</td>
               <td>{f.alarmas}/{EXAMEN.limpios}</td>
               <td>{f.precision.toFixed(2)}</td>

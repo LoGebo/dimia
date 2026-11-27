@@ -154,14 +154,15 @@ export const PUBLICACIONES: Publicacion[] = [
   {
     slug: "su-inteligencia-en-deteccion-de-fraude",
     tipo: "Benchmark",
-    titulo: "Nuestro modelo de 9B igualó a Claude Opus 4.5 detectando fraude, con 2 falsas alarmas contra 19",
+    titulo: "Nuestro modelo de 9B le ganó a Claude Opus 4.5, un modelo de frontera, en revisión de fraude",
     resumen:
-      "Lo desarrollamos en Dimia. En nuestra prueba con 58 historiales sintéticos, un modelo pequeño ajustado encontró 25 de 32 casos con fraude, la misma cifra que Claude Opus 4.5.",
+      "Lo desarrollamos. En nuestra prueba con 58 historiales sintéticos acertó 49, contra 38 de Claude Sonnet 5.5 y 32 de Claude Opus 4.5.",
     apartados: [
       {
         titulo: "Resumen",
         parrafos: [
-          "En Dimia desarrollamos un revisor de gastos de personal: diseñamos los datos, ajustamos el modelo y construimos la evaluación. La base es Qwen3.5-9B, de pesos abiertos y 9 mil millones de parámetros. En el mismo examen y con la misma instrucción, igualó a Claude Opus 4.5 en detección y levantó 2 falsas alarmas en 26 casos limpios, contra 19.",
+          "En esta tarea, nuestro modelo les ganó a dos modelos de frontera: clasificó bien 49 de 58 historiales, contra 38 de Claude Sonnet 5.5 y 32 de Claude Opus 4.5.",
+          "Desarrollamos un revisor de gastos de personal: diseñamos los datos, ajustamos el modelo y construimos la evaluación. La base es Qwen3.5-9B, de pesos abiertos y 9 mil millones de parámetros. En el mismo examen y con la misma instrucción, igualó a Claude Opus 4.5 en detección y levantó 2 falsas alarmas en 26 casos limpios, contra 19.",
           "Abajo están el método y las cifras completas.",
         ],
         graficas: ["alarmas", "deteccion"],
