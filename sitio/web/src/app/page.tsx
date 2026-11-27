@@ -10,6 +10,7 @@ import { Dia } from "@/componentes/Dia";
 import { Integraciones, Pasos } from "@/componentes/Pasos";
 import { Planes } from "@/componentes/Planes";
 import { Servicios } from "@/componentes/Servicios";
+import { Revelar } from "@/componentes/Revelar";
 import { Preguntas } from "@/componentes/Preguntas";
 import { Contacto } from "@/componentes/Contacto";
 import { Pie } from "@/componentes/Pie";
@@ -31,29 +32,30 @@ import css from "./page.module.css";
 export default function Inicio() {
   return (
     <>
+      <Revelar />
       <Navegacion />
       <main>
         <PortadaLlamada />
         {MOSTRAR_CARRUSEL && <Carrusel />}
         <Servicios />
 
-        <Seccion id="funciones" rotulo="Agente de voz" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
+        <Seccion id="funciones" titular={FUNCIONES.titular} entrada={FUNCIONES.entrada} centrada>
           <Funciones />
         </Seccion>
 
-        <Seccion id="giros" rotulo="Por giro" titular={GIROS.titular} entrada={GIROS.entrada}>
+        <Seccion id="giros" titular={GIROS.titular} entrada={GIROS.entrada}>
           <Conversacion />
         </Seccion>
 
-        <Seccion id="whatsapp" rotulo="Confirmación" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada} tono="papel">
+        <Seccion id="whatsapp" titular={WHATSAPP.titular} entrada={WHATSAPP.entrada} tono="papel">
           <Confirma />
         </Seccion>
 
         <Seccion
           id="agenda"
-          rotulo="Agenda"
-          titular="Contesta a cualquier hora y nunca encima dos citas."
-          entrada="Antes de dar un horario, el agente revisa su agenda. Si ya está ocupado, ofrece el siguiente libre en la misma llamada."
+         
+          titular="Dos citas nunca ocupan el mismo horario."
+          entrada="El agente revisa la agenda antes de ofrecer un horario. Si está tomado, propone el siguiente libre."
         >
           <div className={css.bento}>
             <Dia />
@@ -61,11 +63,11 @@ export default function Inicio() {
           </div>
         </Seccion>
 
-        <Seccion id="integraciones" rotulo="Conexiones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada tono="papel">
+        <Seccion id="integraciones" titular={INTEGRACIONES.titular} entrada={INTEGRACIONES.entrada} centrada tono="papel">
           <Integraciones />
         </Seccion>
 
-        <Seccion id="pasos" rotulo="Cómo empezar" titular={PASOS.titular} entrada={PASOS.entrada} centrada>
+        <Seccion id="pasos" titular={PASOS.titular} entrada={PASOS.entrada} centrada>
           <Pasos />
         </Seccion>
 

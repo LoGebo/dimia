@@ -137,6 +137,48 @@ svg {
   50%      { opacity: 0.28; }
 }
 
+/*
+ * Entradas al hacer scroll. <Revelar> pone .revela en <html> y data-visto en cada
+ * elemento cuando aparece. Sin JavaScript o con movimiento reducido, todo se ve fijo.
+ */
+@keyframes entra-titulo {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); translate: 0 64px; }
+  to   { opacity: 1; clip-path: inset(-10% 0 -10% 0); translate: 0 0; }
+}
+
+@keyframes entra-texto {
+  from { opacity: 0; translate: 0 48px; filter: blur(8px); }
+}
+
+@keyframes entra-logo {
+  from { opacity: 0; translate: 0 32px; scale: 0.4; filter: blur(10px); }
+}
+
+@media screen {
+  .revela :is([data-revela="titulo"], [data-revela="texto"], [data-revela="lista"] > *, [data-revela="logos"] > *) {
+    --entrada: entra-texto;
+
+    &:not([data-visto]) { opacity: 0; }
+    &[data-visto="entra"] {
+      animation: var(--entrada) 900ms cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i, 0) * 130ms) backwards;
+    }
+  }
+}
+
+.revela [data-revela="titulo"] { --entrada: entra-titulo; }
+.revela [data-revela="logos"] > * { --entrada: entra-logo; }
+
+[data-revela] > :first-child { --i: 0; }
+[data-revela] > :nth-child(2) { --i: 1; }
+[data-revela] > :nth-child(3) { --i: 2; }
+[data-revela] > :nth-child(4) { --i: 3; }
+[data-revela] > :nth-child(n + 5) { --i: 4; }
+
+/* En una sola columna cada elemento entra solo: sin escalonado. */
+@media (max-width: 1000px) {
+  [data-revela="lista"] > * { --i: 0 !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 

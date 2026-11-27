@@ -71,9 +71,8 @@ export function Contacto() {
   return (
     <section id="contacto" className={ui.seccion}>
       <div className={ui.contenedor}>
-        <p className={`${ui.rotulo} ${css.rotulo}`}>Contacto</p>
-        <h2 className={ui.titulo}>{CIERRE_CTA.titular}</h2>
-        <p className={`${ui.entrada} ${css.bajada}`}>{CIERRE_CTA.entrada}</p>
+        <h2 data-revela="titulo" className={ui.titulo}>{CIERRE_CTA.titular}</h2>
+        <p data-revela="texto" className={`${ui.entrada} ${css.bajada}`}>{CIERRE_CTA.entrada}</p>
 
         {/* El teléfono es la demostración: contesta el propio agente. */}
         <a href={FIRMA.telefonoHref} className={css.cartel}>
@@ -83,7 +82,7 @@ export function Contacto() {
 
         <div className={css.columnas}>
           <div className={css.izquierda}>
-            <p className={ui.entrada}>{CIERRE.formulario}</p>
+            <p data-revela="texto" className={ui.entrada}>{CIERRE.formulario}</p>
             <p className={css.correo}>
               También puede escribirnos a <a href={`mailto:${FIRMA.correo}`}>{FIRMA.correo}</a>
             </p>

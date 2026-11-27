@@ -1,0 +1,84 @@
+/* Todo se dibuja con currentColor; --realce es el segundo color de cada fase. */
+.svg {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  fill: currentColor;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.lleno { fill: currentColor; }
+.hueco { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.marca { fill: var(--realce); }
+.guia { fill: none; stroke: currentColor; stroke-opacity: 0.25; stroke-dasharray: 2 4; }
+.trazo { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.riel { opacity: 0.18; }
+
+.orbita { transform-origin: 200px 110px; animation: girar calc(4s + var(--n) * 2s) linear infinite; }
+.giro { transform-origin: 200px 110px; animation: girar 7s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.onda {
+  fill: none; stroke: currentColor; transform-origin: 200px 110px; opacity: 0;
+  animation: onda 4s linear calc(var(--n) * -0.8s) infinite;
+}
+@keyframes onda { from { transform: scale(1); opacity: 0.9; } to { transform: scale(5); opacity: 0; } }
+
+.linea { animation: escribir 6s steps(24) calc(var(--n) * 0.5s) infinite backwards; }
+@keyframes escribir { 0% { clip-path: inset(0 100% 0 0); } 25%, 100% { clip-path: inset(0 0 0 0); } }
+
+.selector {
+  fill: none; stroke: var(--realce); stroke-width: 3; opacity: 0;
+  animation: turno 6s steps(1) calc(var(--n) * 1.5s) infinite;
+}
+.selector:last-of-type { stroke-width: 3; }
+@keyframes turno { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+
+.barra {
+  fill: var(--realce); transform-box: fill-box; transform-origin: left;
+  animation: llenar 5s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--n) * 0.25s) infinite backwards;
+}
+@keyframes llenar { 0% { transform: scaleX(0); } 35%, 92% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+
+.pasoA, .pasoB {
+  offset-rotate: 0deg;
+  offset-path: path("M60 110H150L230 56H330");
+  animation: viajar 3.5s linear calc(var(--n) * -0.5s) infinite;
+}
+.pasoB { offset-path: path("M60 110H150L230 164H330"); fill: var(--realce); }
+.pasoA { x: -4.5px; }
+@keyframes viajar { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+
+.serie {
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-dasharray: 1;
+  animation: dibujar 6s linear infinite;
+}
+@keyframes dibujar { 0% { stroke-dashoffset: 1; } 70%, 100% { stroke-dashoffset: 0; } }
+.alerta { fill: var(--realce); animation: aparecer 6s steps(1) infinite; }
+@keyframes aparecer { 0% { opacity: 0; } 45%, 100% { opacity: 1; } }
+
+.cerco {
+  fill: none; stroke: var(--realce); stroke-width: 2; stroke-dasharray: 12 6;
+  animation: correr 1.6s linear infinite;
+}
+@keyframes correr { to { stroke-dashoffset: -36; } }
+.latido { animation: pulsar 2.4s ease-in-out calc(var(--n) * 0.17s) infinite; }
+@keyframes pulsar { 50% { opacity: 0.2; } }
+
+.flujo {
+  fill: none; stroke: currentColor; stroke-width: 1.5; stroke-dasharray: 4 8;
+  animation: correr 1.8s linear calc(var(--n) * -0.4s) infinite;
+}
+
+.fila { animation: entrar 6s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--n) * 0.45s) infinite backwards; }
+@keyframes entrar { 0% { opacity: 0; transform: translateX(-24px); } 12%, 90% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+.medidor, .tope { animation: cargar 5s steps(1) calc(var(--n) * 0.17s) infinite backwards; }
+.tope { fill: var(--realce); }
+@keyframes cargar { 0% { opacity: 0.15; } 8%, 80% { opacity: 1; } 100% { opacity: 0.15; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .svg * { animation: none !important; }
+  .onda { opacity: 0.2; }
+}

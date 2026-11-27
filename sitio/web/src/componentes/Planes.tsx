@@ -22,8 +22,7 @@ export function Planes() {
       <div className={ui.contenedor}>
         <div className={css.cabeza}>
           <div className={ui.encabezado}>
-            <p className={ui.rotulo}>Precios</p>
-            <h2 className={ui.titulo}>{PLANES.titular}</h2>
+            <h2 data-revela="titulo" className={ui.titulo}>{PLANES.titular}</h2>
           </div>
 
           <div className={css.interruptor}>
@@ -51,7 +50,7 @@ export function Planes() {
           </div>
         </div>
 
-        <ol className={css.planes}>
+        <ol data-revela="lista" className={css.planes}>
           {PLANES.columnas.map((c, i) => (
             <li key={c.nombre} className={css.plan} data-elegido={c.elegido ? "1" : "0"}>
               <div className={css.planCabeza}>
@@ -82,7 +81,7 @@ export function Planes() {
           ))}
         </ol>
 
-        <ul className={css.condiciones}>
+        <ul data-revela="lista" className={css.condiciones}>
           {PLANES.condiciones.map((cond) => (
             <li key={cond}>{cond}</li>
           ))}

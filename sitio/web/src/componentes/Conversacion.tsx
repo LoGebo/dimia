@@ -54,25 +54,24 @@ export function Conversacion() {
 
   return (
     <div className={css.escenario}>
-      <div className={css.giros} role="tablist" aria-label="Elija su tipo de negocio">
-        <p className={css.girosTitulo}>Vea cómo contesta en su giro</p>
+      <div className={css.giros} role="group" aria-label="Elija su tipo de negocio">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/marca/lockup-tinta.svg" alt="Dimia Consulting" width={3017} height={1101} className={css.marca} />
         {CONVERSACIONES.map((c, i) => (
           <button
             key={c.giro}
             type="button"
-            role="tab"
-            aria-selected={i === giro}
+            aria-pressed={i === giro}
             className={css.giro}
             data-activo={i === giro ? "1" : "0"}
             onClick={() => elegir(i)}
           >
-            <i aria-hidden="true" />
             {c.giro}
           </button>
         ))}
       </div>
 
-      <div className={css.llamada} role="tabpanel" aria-live="polite">
+      <div className={css.llamada} aria-live="polite">
         <div className={css.barra}>
           <span className={css.hora}>{HERO.hora}</span>
           <span className={css.contexto}>{HERO.contexto}</span>

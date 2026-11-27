@@ -152,7 +152,6 @@ export function PortadaLlamada() {
     <section id="inicio" className={css.portada}>
       <div className={css.rejilla}>
         <div className={css.texto}>
-          <p className={css.etiqueta}>{HERO.aviso}</p>
           <h1 className={css.titular}>{HERO.titular}</h1>
           <p className={css.entrada}>{HERO.entrada}</p>
           <div className={css.acciones}>

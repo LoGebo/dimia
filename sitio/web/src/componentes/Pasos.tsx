@@ -4,7 +4,7 @@ import css from "./Pasos.module.css";
 /** Tres pasos en orden: aquí la numeración sí es información. */
 export function Pasos() {
   return (
-    <ol className={css.pasos}>
+    <ol data-revela="lista" className={css.pasos}>
       {PASOS.lista.map((p, i) => (
         <li key={p.titulo} className={css.paso}>
           <span className={css.numero}>{i + 1}</span>
@@ -44,7 +44,7 @@ export function Integraciones() {
       {grupos.map((g) => (
         <div key={g} className={css.grupo}>
           <p className={css.grupoTitulo}>{g}</p>
-          <ul className={css.chips}>
+          <ul data-revela="lista" className={css.chips}>
             {INTEGRACIONES.lista
               .filter((x) => x.grupo === g)
               .map((x) => (

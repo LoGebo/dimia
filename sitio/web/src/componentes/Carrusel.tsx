@@ -6,8 +6,8 @@ export function Carrusel() {
   return (
     <section aria-label={NOTA_CLIENTES} className={css.seccion}>
       <div className={css.contenedor}>
-        <p className={css.titulo}>{NOTA_CLIENTES}</p>
-        <ul className={css.logos}>
+        <p data-revela="texto" className={css.titulo}>{NOTA_CLIENTES}</p>
+        <ul data-revela="logos" className={css.logos}>
           {CLIENTES.map((cliente) => (
             <li key={cliente.nombre} className={css.celda}>
               {cliente.logo ? (

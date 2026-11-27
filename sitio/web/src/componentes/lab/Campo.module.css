@@ -1,0 +1,32 @@
+.campo {
+  width: 100%;
+}
+
+.lienzo {
+  display: block;
+  width: 100%;
+  height: clamp(240px, 34vh, 440px);
+}
+
+.etapas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 720px;
+  margin: 16px auto 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--t-dato);
+}
+
+.etapas li {
+  padding-top: 12px;
+  border-top: 2px solid var(--linea);
+  color: var(--acero);
+  transition: color 300ms, border-color 300ms;
+}
+
+.etapas li[data-activa] {
+  border-color: var(--acento-hondo);
+  color: var(--texto-1);
+}

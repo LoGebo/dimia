@@ -78,7 +78,7 @@ function Ilustracion({ clave }: { clave: string }) {
 
 export function Funciones() {
   return (
-    <ul className={css.rejilla}>
+    <ul data-revela="lista" className={css.rejilla}>
       {FUNCIONES.tarjetas.map((t) => (
         <li key={t.clave} className={css.tarjeta}>
           <div className={css.lienzo}>
