@@ -1,7 +1,7 @@
-import { EXAMEN, FILAS, PERDIDA, type Fila } from "@/contenido/fraude";
+import { COSTOS, EXAMEN, FILAS, PERDIDA, type Fila } from "@/contenido/fraude";
 import css from "./Graficas.module.css";
 
-export type Grafica = "deteccion" | "alarmas" | "tabla" | "perdida";
+export type Grafica = "deteccion" | "alarmas" | "tabla" | "perdida" | "costo";
 
 function Intervalos({ campo }: { campo: "deteccion" | "alarmas" }) {
   const esDeteccion = campo === "deteccion";
@@ -116,8 +116,32 @@ function Perdida() {
   );
 }
 
+function Costo() {
+  const tope = Math.max(...COSTOS.map((c) => c.usd));
+  return (
+    <figure className={css.figura}>
+      <figcaption>
+        <strong>Costo por 1,000 meses revisados</strong>
+        <span>Menos es mejor · dólares de API · modelos abiertos sin ajustar, en un proveedor externo</span>
+      </figcaption>
+      <ul className={css.barras}>
+        {COSTOS.map((c) => (
+          <li key={c.modelo} data-propio={c.abierto || undefined}>
+            <span>{c.modelo}</span>
+            <span className={css.pista} aria-hidden="true">
+              <i className={css.relleno} style={{ width: `${(c.usd / tope) * 100}%` }} />
+            </span>
+            <b>${c.usd.toFixed(2)}</b>
+          </li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
 export function Grafica({ tipo }: { tipo: Grafica }) {
   if (tipo === "tabla") return <Tabla />;
   if (tipo === "perdida") return <Perdida />;
+  if (tipo === "costo") return <Costo />;
   return <Intervalos campo={tipo} />;
 }
